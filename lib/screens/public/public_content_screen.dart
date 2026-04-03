@@ -59,11 +59,16 @@ class PublicContentScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 18),
-                          Text(
-                            title,
-                            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                  fontSize: 46,
-                                ),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 720),
+                            child: Text(
+                              title,
+                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                    fontSize: stacked ? 52 : 44,
+                                    height: 1.04,
+                                    letterSpacing: -1.1,
+                                  ),
+                            ),
                           ),
                           const SizedBox(height: 16),
                           ConstrainedBox(
@@ -229,6 +234,8 @@ class _SidePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryAction = actions.isNotEmpty ? actions.first : null;
+
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -246,36 +253,21 @@ class _SidePanel extends StatelessWidget {
                     color: AppTheme.publicMuted,
                   ),
             ),
-            if (actions.isNotEmpty) const SizedBox(height: 18),
+            if (primaryAction != null) const SizedBox(height: 18),
           ],
-          for (final action in actions) ...[
-            action.filled
-                ? FilledButton(
-                    onPressed: () => context.go(action.path),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                      backgroundColor: AppTheme.publicText,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Text(action.label),
-                  )
-                : OutlinedButton(
-                    onPressed: () => context.go(action.path),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                      foregroundColor: AppTheme.publicText,
-                      side: const BorderSide(color: AppTheme.publicLine),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Text(action.label),
-                  ),
-            const SizedBox(height: 12),
-          ],
+          if (primaryAction != null)
+            FilledButton(
+              onPressed: () => context.go(primaryAction.path),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+                backgroundColor: AppTheme.publicText,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(primaryAction.label),
+            ),
         ],
       ),
     );

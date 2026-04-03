@@ -50,6 +50,8 @@ class _HeroSection extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stacked = constraints.maxWidth < 940;
+          final headlineSize = stacked ? 60.0 : 48.0;
+
           final left = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -67,49 +69,26 @@ class _HeroSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              Text(
-                'Generate leads, run outreach, follow up, book meetings, and carry the billing in one system.',
-                style: Theme.of(context).textTheme.headlineLarge,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 620),
+                child: Text(
+                  'Generate leads, run outreach, follow up, book meetings, and carry the billing in one system.',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontSize: headlineSize,
+                        height: 1.02,
+                        letterSpacing: -1.4,
+                      ),
+                ),
               ),
               const SizedBox(height: 18),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 700),
+                constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
                   'Orchestrate helps businesses move from prospecting to booked meetings without losing the billing, payment, and record trail that follows the work.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.publicMuted,
                       ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  FilledButton(
-                    onPressed: () => context.go('/client/create-account'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.publicText,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    child: const Text('Create account'),
-                  ),                  OutlinedButton(
-                    onPressed: () => context.go('/client/login'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.publicText,
-                      side: const BorderSide(color: AppTheme.publicLine),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    child: const Text('Sign in'),
-                  ),
-                ],
               ),
             ],
           );
@@ -383,138 +362,6 @@ class _PricingSection extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _ContactSection extends StatelessWidget {
-  const _ContactSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 900;
-          final left = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Start with the right entry point', style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: Text(
-                  'Create an account if you want to enter the client pipeline. Use contact if you want to talk through fit, service scope, or billing structure before moving forward.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.publicMuted,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 22),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  FilledButton(
-                    onPressed: () => context.go('/client/create-account'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.publicText,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    child: const Text('Create account'),
-                  ),
-                  OutlinedButton(
-                    onPressed: () => context.go('/contact'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.publicText,
-                      side: const BorderSide(color: AppTheme.publicLine),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    child: const Text('Contact'),
-                  ),
-                ],
-              ),
-            ],
-          );
-
-          final right = const _ContactPanel();
-
-          if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [left, const SizedBox(height: 18), right],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 7, child: left),
-              const SizedBox(width: 20),
-              Expanded(flex: 4, child: right),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _ContactPanel extends StatelessWidget {
-  const _ContactPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    const items = [
-      'Business fit and service scope',
-      'Opportunity versus Revenue plan',
-      'Billing cadence and statements',
-      'Client onboarding and activation',
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('What contact is for', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 16),
-          for (final item in items) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Icon(Icons.circle, size: 8, color: AppTheme.publicAccent),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(item, style: Theme.of(context).textTheme.bodyLarge),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-        ],
       ),
     );
   }
