@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/Brand/brand_assets.dart';
+import '../core/brand/brand_assets.dart';
 import '../core/theme/app_theme.dart';
 
 class PublicShell extends StatelessWidget {
