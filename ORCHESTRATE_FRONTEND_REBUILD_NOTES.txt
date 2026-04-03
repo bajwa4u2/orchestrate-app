@@ -1,0 +1,81 @@
+ORCHESTRATE FRONTEND REBUILD NOTES
+Date: 2026-04-03
+
+What changed
+- Replaced the flat seven-item shell with a grouped three-family structure:
+  - Public layer
+  - Operator shell
+  - Client portal shell
+- Replaced the old route tree with constitutional route families:
+  - /app/* for operator
+  - /client/* for client portal
+  - / for public entry
+- Added backend-aware operator sections:
+  - Command
+  - Pipeline
+  - Execution
+  - Clients
+  - Revenue
+  - Deliverability
+  - Communications
+  - Records
+  - Settings
+- Added client portal sections:
+  - Overview
+  - Billing
+  - Agreements
+  - Statements
+  - Requests
+  - Notifications
+  - Account
+- Upgraded API client to support operator and client header contexts.
+- Added runtime config for backend connection and access headers through dart-define.
+- Reframed UI language away from developer wording and placeholder dashboard language.
+
+Runtime contract
+The backend uses header-based access context on protected operator and client endpoints.
+Provide these values at runtime with --dart-define when needed.
+
+Operator session
+- API_BASE_URL
+- OPERATOR_USER_ID
+- OPERATOR_ORGANIZATION_ID
+- OPERATOR_MEMBER_ROLE
+- OPERATOR_USER_EMAIL (optional)
+
+Client session
+- API_BASE_URL
+- CLIENT_USER_ID
+- CLIENT_ORGANIZATION_ID
+- CLIENT_ID
+- CLIENT_USER_EMAIL (optional)
+
+Example launch shape
+flutter run -d chrome \
+  --dart-define=API_BASE_URL=http://localhost:3000/v1 \
+  --dart-define=OPERATOR_USER_ID=YOUR_USER_ID \
+  --dart-define=OPERATOR_ORGANIZATION_ID=YOUR_ORG_ID \
+  --dart-define=OPERATOR_MEMBER_ROLE=OWNER \
+  --dart-define=CLIENT_USER_ID=YOUR_USER_ID \
+  --dart-define=CLIENT_ORGANIZATION_ID=YOUR_ORG_ID \
+  --dart-define=CLIENT_ID=YOUR_CLIENT_ID
+
+Files rebuilt directly
+- lib/core/config/app_config.dart
+- lib/core/network/api_client.dart
+- lib/core/router.dart
+- lib/core/theme/app_theme.dart
+- lib/core/widgets/async_surface.dart
+- lib/core/widgets/section_header.dart
+- lib/core/widgets/surface.dart
+- lib/data/repositories/operator_repository.dart
+- lib/data/repositories/client_portal_repository.dart
+- lib/shell/app_shell.dart
+- lib/screens/operator_workspace_screen.dart
+- lib/screens/client_workspace_screen.dart
+- lib/screens/public_home_screen.dart
+- legacy screen entry files converted into wrappers so old imports do not drift.
+
+Note
+This environment does not have Flutter installed, so final compilation was not executed here.
+The code was rebuilt carefully against the provided source tree and backend contracts, but you should run flutter pub get and flutter run in your local environment to verify final integration.

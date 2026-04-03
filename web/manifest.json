@@ -1,0 +1,12 @@
+{
+  "name": "Orchestrate",
+  "short_name": "Orchestrate",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#060B17",
+  "theme_color": "#060B17",
+  "description": "Orchestrate revenue operations application.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": []
+}
