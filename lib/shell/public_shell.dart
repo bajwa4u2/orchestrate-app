@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/Brand/brand_assets.dart';
 import '../core/theme/app_theme.dart';
 
 class PublicShell extends StatelessWidget {
@@ -40,31 +41,8 @@ class PublicShell extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                             onTap: () => context.go('/'),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.publicAccent,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Orchestrate',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium
-                                        ?.copyWith(
-                                          fontSize: 28,
-                                          height: 1.0,
-                                        ),
-                                  ),
-                                ],
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: BrandAssets.logo(context, height: 26),
                             ),
                           );
 

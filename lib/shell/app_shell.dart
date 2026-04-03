@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/Brand/brand_assets.dart';
 import '../core/theme/app_theme.dart';
 
 class AppShell extends StatelessWidget {
@@ -42,24 +43,15 @@ class AppShell extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 14,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: AppTheme.accent,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Orchestrate',
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 28),
-                          ),
-                        ],
+                      InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => context.go('/app/command'),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: BrandAssets.logo(context, height: 26),
+                        ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 14),
                       Text(
                         'Opportunity, billing, and records carried in one system.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
