@@ -42,7 +42,7 @@ class _HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.fromLTRB(32, 28, 32, 32),
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
         borderRadius: BorderRadius.circular(32),
@@ -68,14 +68,14 @@ class _HeroSection extends StatelessWidget {
                       ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 520),
                 child: Text(
                   'From outreach to revenue, carried in one system.',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontSize: stacked ? 34 : 38,
-                        height: 1.12,
+                        height: 1.10,
                         letterSpacing: -0.6,
                       ),
                 ),
@@ -158,27 +158,27 @@ class _HeroSignalPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Wrap(
-        spacing: 18,
-        runSpacing: 14,
+        spacing: 28,
+        runSpacing: 16,
         children: const [
           _HeroSignalItem(
             label: 'Pipeline',
-            value: 'Connected',
+            value: 'Active',
           ),
           _HeroSignalItem(
             label: 'Revenue',
-            value: 'Attached',
+            value: 'Tracked',
           ),
           _HeroSignalItem(
             label: 'Continuity',
-            value: 'Carried',
+            value: 'Continuous',
           ),
         ],
       ),
@@ -198,13 +198,13 @@ class _HeroSignalItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 120, maxWidth: 180),
+      constraints: const BoxConstraints(minWidth: 130, maxWidth: 180),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
           ),
@@ -213,6 +213,7 @@ class _HeroSignalItem extends StatelessWidget {
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppTheme.publicText,
+                  fontWeight: FontWeight.w600,
                 ),
           ),
         ],
