@@ -35,7 +35,7 @@ class PublicShell extends StatelessWidget {
                       constraints: const BoxConstraints(maxWidth: 1280),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          final compact = constraints.maxWidth < 1120;
+                          final compact = constraints.maxWidth < 980;
 
                           final brand = InkWell(
                             borderRadius: BorderRadius.circular(10),
@@ -46,52 +46,75 @@ class PublicShell extends StatelessWidget {
                             ),
                           );
 
-                          final navLinks = Wrap(
-                            spacing: 0,
-                            runSpacing: 4,
-                            alignment: WrapAlignment.end,
-                            crossAxisAlignment: WrapCrossAlignment.center,
+                          final navLinks = Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               _TopLink(
                                 label: 'How it works',
                                 onTap: () => context.go('/how-it-works'),
                                 active: currentPath == '/how-it-works',
                               ),
+                              const SizedBox(width: 6),
                               _TopLink(
                                 label: 'Pricing',
                                 onTap: () => context.go('/pricing'),
                                 active: currentPath == '/pricing',
                               ),
+                              const SizedBox(width: 6),
                               _TopLink(
                                 label: 'Contact',
                                 onTap: () => context.go('/contact'),
                                 active: currentPath == '/contact',
                               ),
-                              _TopLink(
-                                label: 'Sign in',
-                                onTap: () => context.go('/client/login'),
-                                active: currentPath == '/client/login',
-                              ),
                             ],
                           );
 
-                          final cta = FilledButton(
-                            onPressed: () => context.go('/client/create-account'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppTheme.publicText,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              minimumSize: const Size(0, 48),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                          final accessGroup = Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextButton(
+                                onPressed: () => context.go('/client/login'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: currentPath == '/client/login'
+                                      ? AppTheme.publicText
+                                      : AppTheme.publicMuted,
+                                  overlayColor: AppTheme.publicSurfaceSoft,
+                                  backgroundColor: Colors.transparent,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  minimumSize: const Size(0, 40),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                            ),
-                            child: const Text('Create account'),
+                                  textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: currentPath == '/client/login'
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
+                                      ),
+                                ),
+                                child: const Text('Sign in'),
+                              ),
+                              const SizedBox(width: 12),
+                              FilledButton(
+                                onPressed: () => context.go('/client/create-account'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppTheme.publicText,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  minimumSize: const Size(0, 46),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                                child: const Text('Create account'),
+                              ),
+                            ],
                           );
 
                           if (compact) {
@@ -100,13 +123,15 @@ class PublicShell extends StatelessWidget {
                               children: [
                                 brand,
                                 const SizedBox(height: 10),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(child: navLinks),
-                                    const SizedBox(width: 14),
-                                    cta,
-                                  ],
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      navLinks,
+                                      const SizedBox(width: 24),
+                                      accessGroup,
+                                    ],
+                                  ),
                                 ),
                               ],
                             );
@@ -115,11 +140,11 @@ class PublicShell extends StatelessWidget {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Flexible(flex: 0, child: brand),
+                              brand,
                               const Spacer(),
-                              Flexible(child: navLinks),
-                              const SizedBox(width: 16),
-                              cta,
+                              navLinks,
+                              const SizedBox(width: 28),
+                              accessGroup,
                             ],
                           );
                         },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/brand/brand_assets.dart';
 import '../../core/theme/app_theme.dart';
 
 class OpsLoginScreen extends StatelessWidget {
@@ -11,6 +12,7 @@ class OpsLoginScreen extends StatelessWidget {
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
+        backgroundColor: AppTheme.publicBackground,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -20,15 +22,8 @@ class OpsLoginScreen extends StatelessWidget {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final stacked = constraints.maxWidth < 920;
-                    final form = const _AccessCard(
-                      title: 'Operator access',
-                      subtitle:
-                          'Access is provisioned directly. Use your operator account to enter the working system.',
-                      supporting:
-                          'This path is not promoted publicly as open sign-up because the workspace carries operational, billing, and deliverability responsibilities.',
-                      primaryLabel: 'Sign in',
-                    );
 
+                    final form = const _AccessCard();
                     final side = const _OpsContextCard();
 
                     if (stacked) {
@@ -58,7 +53,7 @@ class OpsLoginScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 18),
+                        const SizedBox(width: 20),
                         Expanded(flex: 5, child: side),
                       ],
                     );
@@ -74,22 +69,12 @@ class OpsLoginScreen extends StatelessWidget {
 }
 
 class _AccessCard extends StatelessWidget {
-  const _AccessCard({
-    required this.title,
-    required this.subtitle,
-    required this.supporting,
-    required this.primaryLabel,
-  });
-
-  final String title;
-  final String subtitle;
-  final String supporting;
-  final String primaryLabel;
+  const _AccessCard();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
         borderRadius: BorderRadius.circular(28),
@@ -98,36 +83,47 @@ class _AccessCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 12),
+          BrandAssets.logo(context, height: 28),
+          const SizedBox(height: 24),
+
           Text(
-            subtitle,
+            'Operator access',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+
+          const SizedBox(height: 10),
+
+          Text(
+            'Sign in to enter the working system.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.publicSurfaceSoft,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Text(
-              supporting,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
+
+          const SizedBox(height: 28),
+
+          const _FieldLabel('Email'),
+          const SizedBox(height: 8),
+          const TextField(
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              hintText: 'name@company.com',
             ),
           ),
-          const SizedBox(height: 22),
-          const TextField(decoration: InputDecoration(labelText: 'Email')),
-          const SizedBox(height: 14),
+
+          const SizedBox(height: 16),
+
+          const _FieldLabel('Password'),
+          const SizedBox(height: 8),
           const TextField(
             obscureText: true,
-            decoration: InputDecoration(labelText: 'Password'),
+            decoration: InputDecoration(
+              hintText: 'Enter password',
+            ),
           ),
-          const SizedBox(height: 18),
+
+          const SizedBox(height: 22),
+
           FilledButton(
             onPressed: () {},
             style: FilledButton.styleFrom(
@@ -135,12 +131,17 @@ class _AccessCard extends StatelessWidget {
               backgroundColor: AppTheme.publicText,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
               ),
+              textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-            child: Text(primaryLabel),
+            child: const Text('Sign in'),
           ),
+
           const SizedBox(height: 12),
+
           OutlinedButton.icon(
             onPressed: () {},
             icon: const Icon(Icons.g_mobiledata),
@@ -148,11 +149,13 @@ class _AccessCard extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(54),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
           ),
+
           const SizedBox(height: 10),
+
           OutlinedButton.icon(
             onPressed: () {},
             icon: const Icon(Icons.business_center_outlined),
@@ -160,7 +163,7 @@ class _AccessCard extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(54),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
           ),
@@ -199,36 +202,49 @@ class _OpsContextCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              'Controlled workspace entry',
+              'Operator workspace',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppTheme.publicAccent,
                   ),
             ),
           ),
+
           const SizedBox(height: 18),
+
           Text(
-            'This path enters the operator workspace, not the public product layer.',
-            style: Theme.of(context).textTheme.headlineMedium,
+            'Access stays controlled.',
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
+
           const SizedBox(height: 12),
+
           Text(
-            'Operator access is kept separate because this side of the system carries working responsibility across outreach, billing, deliverability, and records.',
+            'This path enters the operational layer of the system. It is provisioned deliberately because it carries execution, billing, deliverability, and records.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
           ),
+
           const SizedBox(height: 18),
+
           for (final point in points) ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Padding(
                   padding: EdgeInsets.only(top: 8),
-                  child: Icon(Icons.circle, size: 8, color: AppTheme.publicAccent),
+                  child: Icon(
+                    Icons.circle,
+                    size: 8,
+                    color: AppTheme.publicAccent,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(point, style: Theme.of(context).textTheme.bodyLarge),
+                  child: Text(
+                    point,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                 ),
               ],
             ),
@@ -236,6 +252,22 @@ class _OpsContextCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: AppTheme.publicText,
+          ),
     );
   }
 }

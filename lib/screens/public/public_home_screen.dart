@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../widgets/public_overview_widget.dart';
 
 class PublicHomeScreen extends StatelessWidget {
   const PublicHomeScreen({super.key});
@@ -49,8 +50,7 @@ class _HeroSection extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 940;
-          final headlineSize = stacked ? 60.0 : 48.0;
+          final stacked = constraints.maxWidth < 1080;
 
           final left = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,44 +70,63 @@ class _HeroSection extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 620),
+                constraints: const BoxConstraints(maxWidth: 520),
                 child: Text(
-                  'Generate leads, run outreach, follow up, book meetings, and carry the billing in one system.',
+                  'From outreach to revenue, carried in one system.',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: headlineSize,
-                        height: 1.02,
-                        letterSpacing: -1.4,
+                        fontSize: stacked ? 34 : 38,
+                        height: 1.12,
+                        letterSpacing: -0.6,
                       ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 620),
+                constraints: const BoxConstraints(maxWidth: 550),
                 child: Text(
-                  'Orchestrate helps businesses move from prospecting to booked meetings without losing the billing, payment, and record trail that follows the work.',
+                  'Orchestrate keeps lead generation, outreach, meetings, invoices, payments, reminders, and records connected in one operating flow.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.publicMuted,
+                        height: 1.5,
                       ),
                 ),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () => context.go('/client/create-account'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.publicText,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 50),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text('Create account'),
               ),
             ],
           );
 
-          final right = const _HeroPanel();
+          final right = const _HeroRightColumn();
 
           if (stacked) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [left, const SizedBox(height: 24), right],
+              children: [
+                left,
+                const SizedBox(height: 28),
+                right,
+              ],
             );
           }
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 6, child: left),
-              const SizedBox(width: 28),
-              Expanded(flex: 5, child: right),
+              Expanded(flex: 5, child: left),
+              const SizedBox(width: 40),
+              Expanded(flex: 6, child: right),
             ],
           );
         },
@@ -116,42 +135,86 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-class _HeroPanel extends StatelessWidget {
-  const _HeroPanel();
+class _HeroRightColumn extends StatelessWidget {
+  const _HeroRightColumn();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _HeroSignalPanel(),
+        SizedBox(height: 14),
+        PublicOverviewWidget(),
+      ],
+    );
+  }
+}
+
+class _HeroSignalPanel extends StatelessWidget {
+  const _HeroSignalPanel();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppTheme.publicLine),
       ),
+      child: Wrap(
+        spacing: 18,
+        runSpacing: 14,
+        children: const [
+          _HeroSignalItem(
+            label: 'Pipeline',
+            value: 'Connected',
+          ),
+          _HeroSignalItem(
+            label: 'Revenue',
+            value: 'Attached',
+          ),
+          _HeroSignalItem(
+            label: 'Continuity',
+            value: 'Carried',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroSignalItem extends StatelessWidget {
+  const _HeroSignalItem({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 120, maxWidth: 180),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          _MetricRow(label: 'Leads sourced', value: '184'),
-          SizedBox(height: 12),
-          _MetricRow(label: 'Replies active', value: '37'),
-          SizedBox(height: 12),
-          _MetricRow(label: 'Meetings booked', value: '12'),
-          SizedBox(height: 18),
-          Divider(height: 1, color: AppTheme.publicLine),
-          SizedBox(height: 18),
-          _MetricRow(label: 'Invoices issued', value: '26'),
-          SizedBox(height: 12),
-          _MetricRow(label: 'Payments received', value: '18'),
-          SizedBox(height: 12),
-          _MetricRow(label: 'Reminders pending', value: '09'),
-          SizedBox(height: 18),
-          Divider(height: 1, color: AppTheme.publicLine),
-          SizedBox(height: 18),
-          _StatusRow(label: 'Domain posture', value: 'Verified'),
-          SizedBox(height: 10),
-          _StatusRow(label: 'Mailboxes', value: 'Stable'),
-          SizedBox(height: 10),
-          _StatusRow(label: 'Statements', value: 'Ready'),
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.publicText,
+                ),
+          ),
         ],
       ),
     );
@@ -545,68 +608,6 @@ class _PricingCard extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-class _MetricRow extends StatelessWidget {
-  const _MetricRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(value, style: Theme.of(context).textTheme.titleLarge),
-      ],
-    );
-  }
-}
-
-class _StatusRow extends StatelessWidget {
-  const _StatusRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.publicAccentSoft,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.publicAccent,
-                ),
-          ),
-        ),
-      ],
     );
   }
 }

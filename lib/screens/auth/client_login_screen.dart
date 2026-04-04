@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/brand/brand_assets.dart';
 import '../../core/theme/app_theme.dart';
 
 class ClientLoginScreen extends StatelessWidget {
@@ -13,6 +14,7 @@ class ClientLoginScreen extends StatelessWidget {
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
+        backgroundColor: AppTheme.publicBackground,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -52,7 +54,7 @@ class ClientLoginScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 18),
+                        const SizedBox(width: 20),
                         Expanded(flex: 5, child: side),
                       ],
                     );
@@ -74,17 +76,17 @@ class _ClientAccessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = createMode ? 'Create account' : 'Sign in';
+    final title = createMode ? 'Enter Orchestrate' : 'Access your workspace';
     final subtitle = createMode
-        ? 'Start your client account here. Registration opens your place in the system and leads into onboarding, qualification, and activation.'
-        : 'Sign in to review service progress, billing, reminders, and account records in one place.';
-    final supporting = createMode
-        ? 'Creating an account does not turn on the full service automatically. It starts a controlled client journey that can move through review, onboarding, and activation.'
-        : 'Client access stays separate from the operator workspace so clients can see what matters without inheriting operator-level complexity.';
-    final primaryLabel = createMode ? 'Create account' : 'Sign in';
+        ? 'Start your client account here.'
+        : 'Sign in to review progress, billing, and account records.';
+    final primaryLabel = createMode ? 'Request access' : 'Sign in';
+    final switchLabel = createMode
+        ? 'Already have an account? Sign in'
+        : 'Need an account? Request access';
 
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
         borderRadius: BorderRadius.circular(28),
@@ -93,49 +95,72 @@ class _ClientAccessCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 12),
+          BrandAssets.logo(context, height: 28),
+          const SizedBox(height: 24),
           Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
+            title,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  height: 1.02,
                 ),
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.publicSurfaceSoft,
-              borderRadius: BorderRadius.circular(18),
-            ),
+          const SizedBox(height: 10),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
             child: Text(
-              supporting,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              subtitle,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.publicMuted,
                   ),
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 28),
           if (createMode) ...[
-            const TextField(decoration: InputDecoration(labelText: 'Full name')),
-            const SizedBox(height: 14),
-            const TextField(decoration: InputDecoration(labelText: 'Company name')),
-            const SizedBox(height: 14),
+            const _FieldLabel('Name'),
+            const SizedBox(height: 8),
+            const TextField(
+              decoration: InputDecoration(
+                hintText: 'Your full name',
+              ),
+            ),
+            const SizedBox(height: 16),
+            const _FieldLabel('Company'),
+            const SizedBox(height: 8),
+            const TextField(
+              decoration: InputDecoration(
+                hintText: 'Company name',
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
-          const TextField(decoration: InputDecoration(labelText: 'Email')),
-          const SizedBox(height: 14),
+          const _FieldLabel('Email'),
+          const SizedBox(height: 8),
+          const TextField(
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              hintText: 'name@company.com',
+            ),
+          ),
+          const SizedBox(height: 16),
+          const _FieldLabel('Password'),
+          const SizedBox(height: 8),
           const TextField(
             obscureText: true,
-            decoration: InputDecoration(labelText: 'Password'),
+            decoration: InputDecoration(
+              hintText: 'Enter password',
+            ),
           ),
           if (createMode) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
+            const _FieldLabel('Confirm password'),
+            const SizedBox(height: 8),
             const TextField(
               obscureText: true,
-              decoration: InputDecoration(labelText: 'Confirm password'),
+              decoration: InputDecoration(
+                hintText: 'Confirm password',
+              ),
             ),
           ],
-          const SizedBox(height: 18),
+          const SizedBox(height: 22),
           FilledButton(
             onPressed: () {},
             style: FilledButton.styleFrom(
@@ -143,21 +168,31 @@ class _ClientAccessCard extends StatelessWidget {
               backgroundColor: AppTheme.publicText,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
               ),
+              textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
             child: Text(primaryLabel),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () => context.go(createMode ? '/client/login' : '/client/create-account'),
+            onPressed: () => context.go(
+              createMode ? '/client/login' : '/client/create-account',
+            ),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(54),
+              foregroundColor: AppTheme.publicText,
+              side: const BorderSide(color: AppTheme.publicLine),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
               ),
+              textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-            child: Text(createMode ? 'Already have an account? Sign in' : 'Need an account? Create one'),
+            child: Text(switchLabel),
           ),
           const SizedBox(height: 10),
           TextButton(
@@ -165,8 +200,10 @@ class _ClientAccessCard extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.publicMuted,
               padding: EdgeInsets.zero,
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text('Need help with onboarding or fit? Contact us'),
+            child: const Text('Need help first? Contact us'),
           ),
         ],
       ),
@@ -181,25 +218,24 @@ class _ClientContextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badge = createMode ? 'Controlled client entry' : 'Client-facing surface';
+    final badge = createMode ? 'Client entry' : 'Client access';
     final heading = createMode
-        ? 'Registration opens the door. Activation happens in stages.'
-        : 'This path is meant for review, visibility, and account clarity.';
+        ? 'Entry stays open. Activation stays controlled.'
+        : 'A clear view without operator clutter.';
     final body = createMode
-        ? 'After account creation, the system can move the client through verification, onboarding, qualification, and activation. This keeps entry open without turning the service into unmanaged access.'
-        : 'Clients should be able to understand where the work stands, what has been billed, what is due, and what records exist without needing the operator workspace.';
+        ? 'Requesting access starts a controlled client path through review, onboarding, and activation.'
+        : 'Clients should be able to review work, billing, reminders, and records without entering the operator workspace.';
     final points = createMode
         ? const [
-            'Create an account',
-            'Verify account details',
-            'Move through onboarding',
-            'Enter active client state',
+            'Submit account request',
+            'Review and onboarding',
+            'Activation when ready',
           ]
         : const [
-            'Campaign and meeting visibility',
+            'Service progress',
             'Invoices and payment status',
             'Reminders and statements',
-            'Agreements and account history',
+            'Account history',
           ];
 
     return Container(
@@ -228,7 +264,7 @@ class _ClientContextCard extends StatelessWidget {
           const SizedBox(height: 18),
           Text(
             heading,
-            style: Theme.of(context).textTheme.headlineMedium,
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 12),
           Text(
@@ -244,18 +280,41 @@ class _ClientContextCard extends StatelessWidget {
               children: [
                 const Padding(
                   padding: EdgeInsets.only(top: 8),
-                  child: Icon(Icons.circle, size: 8, color: AppTheme.publicAccent),
+                  child: Icon(
+                    Icons.circle,
+                    size: 8,
+                    color: AppTheme.publicAccent,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(point, style: Theme.of(context).textTheme.bodyLarge),
+                  child: Text(
+                    point,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            if (point != points.last) const SizedBox(height: 12),
           ],
         ],
       ),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: AppTheme.publicText,
+          ),
     );
   }
 }

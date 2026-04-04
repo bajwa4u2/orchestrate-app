@@ -128,21 +128,21 @@ class _IntroPanel extends StatelessWidget {
           _IntroBody(),
           SizedBox(height: 28),
           _InfoCard(
-            title: 'Use this form for',
+            title: 'When to use this page',
             body:
-                'Service fit, pricing, billing support, onboarding questions, partnership conversations, or general business inquiries.',
+                'Use this page when you want to talk through fit, scope, pricing, onboarding, or billing support before moving forward.',
           ),
           SizedBox(height: 16),
           _InfoCard(
-            title: 'What this is not',
+            title: 'What to include',
             body:
-                'This is not a placeholder page or a static brochure block. It is the actual public entry point for direct contact.',
+                'Tell us what your business needs, what stage you are in, and any useful context that can help shape the conversation.',
           ),
           SizedBox(height: 16),
           _InfoCard(
-            title: 'Current submission status',
+            title: 'What happens next',
             body:
-                'This screen now behaves like a real contact form on the frontend. Delivery to email or backend storage still needs to be wired separately.',
+                'Your inquiry becomes the starting point for a direct business conversation about next steps.',
           ),
         ],
       ),
@@ -181,7 +181,9 @@ class _IntroTitle extends StatelessWidget {
     return Text(
       'Talk through fit, scope, and next steps',
       style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 44,
+            fontSize: 42,
+            height: 1.04,
+            letterSpacing: -0.8,
           ),
     );
   }
@@ -193,7 +195,7 @@ class _IntroBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Tell us what you are trying to do, where you are in the process, and what kind of help you need. We can use this to sort service fit, pricing, onboarding, or billing-related questions before you move forward.',
+      'Use this page to start a direct business conversation with Orchestrate. This is the right place for service fit, pricing, onboarding, billing support, or partnership inquiries.',
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: AppTheme.publicMuted,
           ),
@@ -283,7 +285,7 @@ class _FormCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Fill out the form below and we can use it as the starting point for the conversation.',
+              'Share a few details and we will use that to begin the conversation.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.publicMuted,
                   ),
@@ -320,7 +322,7 @@ class _FormCard extends StatelessWidget {
                             if (trimmed.isEmpty) {
                               return 'Please enter your email.';
                             }
-                            final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+4');
+                            final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
                             if (!emailPattern.hasMatch(trimmed)) {
                               return 'Please enter a valid email address.';
                             }
@@ -363,7 +365,7 @@ class _FormCard extends StatelessWidget {
                             if (trimmed.isEmpty) {
                               return 'Please enter your email.';
                             }
-                            final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+4');
+                            final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
                             if (!emailPattern.hasMatch(trimmed)) {
                               return 'Please enter a valid email address.';
                             }
@@ -409,7 +411,7 @@ class _FormCard extends StatelessWidget {
               child: _AppTextField(
                 controller: messageController,
                 hintText:
-                    'Tell us what you need, what stage you are in, and any useful context for the conversation.',
+                    'Tell us what you need, what stage you are in, and anything useful for the conversation.',
                 maxLines: 7,
                 validator: (value) {
                   final trimmed = value?.trim() ?? '';
@@ -449,7 +451,7 @@ class _FormCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Text(
-                  'Form captured. The screen is working as a real contact form on the frontend. Next step is wiring submission to your backend or email flow.',
+                  'Thanks. Your inquiry has been captured and is ready for the next step.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.publicText,
                         fontWeight: FontWeight.w600,
