@@ -20,6 +20,7 @@ class ClientShell extends StatelessWidget {
         body: Column(
           children: [
             Container(
+              width: double.infinity,
               decoration: const BoxDecoration(
                 color: AppTheme.publicBackground,
                 border: Border(bottom: BorderSide(color: AppTheme.publicLine)),
@@ -58,44 +59,40 @@ class ClientShell extends StatelessWidget {
                             ),
                           );
 
-                          final nav = Wrap(
-                            alignment: WrapAlignment.end,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _NavChip(
-                                label: 'Overview',
-                                active: currentPath == '/client/workspace',
-                                onTap: () => context.go('/client/workspace'),
-                              ),
-                              _NavChip(
-                                label: 'Billing',
-                                active: currentPath == '/client/billing',
-                                onTap: () => context.go('/client/billing'),
-                              ),
-                              _NavChip(
-                                label: 'Agreements',
-                                active: currentPath == '/client/agreements',
-                                onTap: () => context.go('/client/agreements'),
-                              ),
-                              _NavChip(
-                                label: 'Statements',
-                                active: currentPath == '/client/statements',
-                                onTap: () => context.go('/client/statements'),
-                              ),
-                              _NavChip(
-                                label: 'Account',
-                                active: currentPath == '/client/account',
-                                onTap: () => context.go('/client/account'),
-                              ),
-                            ],
-                          );
+                          final navItems = <Widget>[
+                            _NavChip(
+                              label: 'Overview',
+                              active: currentPath == '/client/workspace',
+                              onTap: () => context.go('/client/workspace'),
+                            ),
+                            _NavChip(
+                              label: 'Billing',
+                              active: currentPath == '/client/billing',
+                              onTap: () => context.go('/client/billing'),
+                            ),
+                            _NavChip(
+                              label: 'Agreements',
+                              active: currentPath == '/client/agreements',
+                              onTap: () => context.go('/client/agreements'),
+                            ),
+                            _NavChip(
+                              label: 'Statements',
+                              active: currentPath == '/client/statements',
+                              onTap: () => context.go('/client/statements'),
+                            ),
+                            _NavChip(
+                              label: 'Account',
+                              active: currentPath == '/client/account',
+                              onTap: () => context.go('/client/account'),
+                            ),
+                          ];
 
                           final signOut = TextButton(
                             onPressed: () async {
                               await AuthSessionController.instance.clear();
-                              if (context.mounted) context.go('/client/login');
+                              if (context.mounted) {
+                                context.go('/client/login');
+                              }
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: AppTheme.publicMuted,
@@ -113,26 +110,36 @@ class ClientShell extends StatelessWidget {
                               children: [
                                 brandBlock,
                                 const SizedBox(height: 14),
-                                nav,
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: navItems,
+                                ),
                                 const SizedBox(height: 8),
-                                Align(alignment: Alignment.centerLeft, child: signOut),
+                                signOut,
                               ],
                             );
                           }
 
                           return Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Expanded(flex: 3, child: Align(alignment: Alignment.centerLeft, child: brandBlock)),
-                              const SizedBox(width: 24),
-                              Expanded(
-                                flex: 7,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Flexible(child: Align(alignment: Alignment.centerRight, child: nav)),
-                                    const SizedBox(width: 12),
-                                    signOut,
-                                  ],
+                              brandBlock,
+                              const Spacer(),
+                              Flexible(
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ..._withSpacing(navItems, 6),
+                                        const SizedBox(width: 10),
+                                        signOut,
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -150,6 +157,17 @@ class ClientShell extends StatelessWidget {
       ),
     );
   }
+}
+
+List<Widget> _withSpacing(List<Widget> widgets, double spacing) {
+  final items = <Widget>[];
+  for (var i = 0; i < widgets.length; i++) {
+    if (i > 0) {
+      items.add(SizedBox(width: spacing));
+    }
+    items.add(widgets[i]);
+  }
+  return items;
 }
 
 class _NavChip extends StatelessWidget {
