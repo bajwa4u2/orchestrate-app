@@ -13,7 +13,6 @@ class ClientShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final session = AuthSessionController.instance;
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
@@ -28,38 +27,30 @@ class ClientShell extends StatelessWidget {
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
+                  padding: const EdgeInsets.fromLTRB(28, 16, 28, 16),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1280),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          final compact = constraints.maxWidth < 1080;
+                          final compact = constraints.maxWidth < 1120;
 
                           final brandBlock = InkWell(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                             onTap: () => context.go('/client/workspace'),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Column(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  BrandAssets.logo(context, height: 26),
-                                  const SizedBox(height: 10),
+                                  BrandAssets.logo(context, height: 28),
+                                  const SizedBox(width: 14),
                                   Text(
                                     'Client workspace',
                                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontSize: 16,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    session.workspaceName.isNotEmpty
-                                        ? session.workspaceName
-                                        : 'Workspace account',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          color: AppTheme.publicMuted,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.publicText,
                                         ),
                                   ),
                                 ],
@@ -121,26 +112,25 @@ class ClientShell extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 brandBlock,
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 14),
                                 nav,
                                 const SizedBox(height: 8),
-                                signOut,
+                                Align(alignment: Alignment.centerLeft, child: signOut),
                               ],
                             );
                           }
 
                           return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(flex: 3, child: brandBlock),
+                              Expanded(flex: 3, child: Align(alignment: Alignment.centerLeft, child: brandBlock)),
                               const SizedBox(width: 24),
                               Expanded(
                                 flex: 7,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    nav,
-                                    const SizedBox(height: 8),
+                                    Flexible(child: Align(alignment: Alignment.centerRight, child: nav)),
+                                    const SizedBox(width: 12),
                                     signOut,
                                   ],
                                 ),
