@@ -11,21 +11,51 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final headerBody = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
+        Text(
+          title,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(height: 1.08),
+        ),
+        if (subtitle.trim().isNotEmpty) ...[
+          const SizedBox(height: 10),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.muted),
+            ),
+          ),
+        ],
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = constraints.maxWidth < 840 || trailing == null;
+        if (stacked) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 8),
-              Text(subtitle, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.muted)),
+              headerBody,
+              if (trailing != null) ...[
+                const SizedBox(height: 16),
+                trailing!,
+              ],
             ],
-          ),
-        ),
-        if (trailing != null) trailing!,
-      ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: headerBody),
+            const SizedBox(width: 20),
+            trailing!,
+          ],
+        );
+      },
     );
   }
 }

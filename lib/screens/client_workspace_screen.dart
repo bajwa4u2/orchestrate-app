@@ -27,58 +27,32 @@ class ClientWorkspaceScreen extends StatelessWidget {
     final repository = ClientPortalRepository();
 
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 6, bottom: 16),
-        child: AsyncSurface<_ClientViewData>(
-          future: _load(repository),
-          builder: (context, data) {
-            final view = data ?? _ClientViewData.empty(section);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SectionHeader(title: view.title, subtitle: view.subtitle),
-                const SizedBox(height: 24),
-                if (view.notice != null) ...[
-                  _Banner(message: view.notice!, isError: false),
-                  const SizedBox(height: 20),
-                ],
-                if (view.stats.isNotEmpty) ...[
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      for (final stat in view.stats)
-                        SizedBox(
-                          width: 220,
-                          child: Surface(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(stat.label, style: Theme.of(context).textTheme.bodyMedium),
-                                const SizedBox(height: 14),
-                                Text(
-                                  stat.value,
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                        color: stat.tone ?? AppTheme.text,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                _Panel(title: view.primaryTitle, rows: view.primaryRows, emptyLabel: view.primaryEmpty),
-                if (view.secondaryTitle != null) ...[
-                  const SizedBox(height: 20),
-                  _Panel(title: view.secondaryTitle!, rows: view.secondaryRows, emptyLabel: view.secondaryEmpty),
-                ],
+      padding: const EdgeInsets.only(bottom: 20),
+      child: AsyncSurface<_ClientViewData>(
+        future: _load(repository),
+        builder: (context, data) {
+          final view = data ?? _ClientViewData.empty(section);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SectionHeader(title: view.title, subtitle: view.subtitle),
+              const SizedBox(height: 28),
+              if (view.notice != null) ...[
+                _Banner(message: view.notice!, isError: false),
+                const SizedBox(height: 20),
               ],
-            );
-          },
-        ),
+              if (view.stats.isNotEmpty) ...[
+                _StatsGrid(stats: view.stats),
+                const SizedBox(height: 24),
+              ],
+              _Panel(title: view.primaryTitle, rows: view.primaryRows, emptyLabel: view.primaryEmpty),
+              if (view.secondaryTitle != null) ...[
+                const SizedBox(height: 20),
+                _Panel(title: view.secondaryTitle!, rows: view.secondaryRows, emptyLabel: view.secondaryEmpty),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -262,6 +236,54 @@ class _ClientRow {
   final String secondary;
 }
 
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({required this.stats});
+
+  final List<_ClientStat> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final columns = width >= 1080 ? 4 : width >= 720 ? 2 : 1;
+        final gap = 16.0;
+        final itemWidth = columns == 1 ? width : (width - gap * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final stat in stats)
+              SizedBox(
+                width: itemWidth,
+                child: Surface(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stat.label,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        stat.value,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              color: stat.tone ?? AppTheme.text,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _Panel extends StatelessWidget {
   const _Panel({required this.title, required this.rows, required this.emptyLabel});
 
@@ -284,7 +306,7 @@ class _Panel extends StatelessWidget {
               children: [
                 for (var index = 0; index < rows.length; index++) ...[
                   _PanelRow(row: rows[index]),
-                  if (index != rows.length - 1) const Divider(height: 26),
+                  if (index != rows.length - 1) const Divider(height: 30),
                 ],
               ],
             ),
@@ -301,13 +323,47 @@ class _PanelRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 3, child: Text(row.title, style: Theme.of(context).textTheme.titleMedium)),
-        Expanded(flex: 4, child: Text(row.primary, style: Theme.of(context).textTheme.bodyLarge)),
-        Expanded(flex: 4, child: Text(row.secondary, style: Theme.of(context).textTheme.bodyMedium)),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 880;
+
+        final title = Text(
+          row.title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.text),
+        );
+        final primary = Text(
+          row.primary.isEmpty ? '—' : row.primary,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.text),
+        );
+        final secondary = Text(
+          row.secondary.isEmpty ? '—' : row.secondary,
+          style: Theme.of(context).textTheme.bodyMedium,
+        );
+
+        if (compact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              title,
+              const SizedBox(height: 10),
+              primary,
+              const SizedBox(height: 8),
+              secondary,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 3, child: title),
+            const SizedBox(width: 24),
+            Expanded(flex: 4, child: primary),
+            const SizedBox(width: 24),
+            Expanded(flex: 4, child: secondary),
+          ],
+        );
+      },
     );
   }
 }
@@ -320,21 +376,18 @@ class _Banner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Surface(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Row(
-          children: [
-            Icon(
-              isError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
-              size: 18,
-              color: isError ? AppTheme.rose : AppTheme.accent,
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message, style: Theme.of(context).textTheme.bodyMedium)),
-          ],
-        ),
+    return Surface(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+            size: 18,
+            color: isError ? AppTheme.rose : AppTheme.accent,
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(message, style: Theme.of(context).textTheme.bodyMedium)),
+        ],
       ),
     );
   }
