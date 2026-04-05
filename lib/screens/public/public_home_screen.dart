@@ -93,7 +93,7 @@ class _HeroSection extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => context.go('/client/create-account'),
+                onPressed: () => context.go('/client/join'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppTheme.publicText,
                   foregroundColor: Colors.white,

@@ -82,7 +82,7 @@ class _HeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           FilledButton(
-            onPressed: () => context.go('/client/create-account'),
+            onPressed: () => context.go('/client/join'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
               backgroundColor: AppTheme.publicText,
@@ -316,7 +316,7 @@ class _NextStepSection extends StatelessWidget {
           final actions = Column(
             children: [
               FilledButton(
-                onPressed: () => context.go('/client/create-account'),
+                onPressed: () => context.go('/client/join'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                   backgroundColor: AppTheme.publicText,
