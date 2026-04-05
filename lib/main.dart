@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'core/auth/auth_session.dart';
 import 'core/router.dart';
@@ -6,6 +7,7 @@ import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
   await AuthSessionController.instance.init();
   runApp(const OrchestrateApp());
 }

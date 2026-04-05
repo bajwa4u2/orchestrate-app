@@ -5,13 +5,32 @@ import '../core/brand/brand_assets.dart';
 import '../core/theme/app_theme.dart';
 
 class PublicShell extends StatelessWidget {
-  const PublicShell({super.key, required this.currentPath, required this.child});
+  const PublicShell({
+    super.key,
+    required this.currentPath,
+    required this.child,
+  });
 
   final String currentPath;
   final Widget child;
 
+  bool _shouldUsePublicChrome(String path) {
+    return path == '/' ||
+        path == '/how-it-works' ||
+        path == '/pricing' ||
+        path == '/contact' ||
+        path.startsWith('/legal/');
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_shouldUsePublicChrome(currentPath)) {
+      return Theme(
+        data: AppTheme.lightTheme,
+        child: child,
+      );
+    }
+
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
@@ -29,7 +48,8 @@ class PublicShell extends StatelessWidget {
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1280),
@@ -41,7 +61,8 @@ class PublicShell extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                             onTap: () => context.go('/'),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 6),
                               child: BrandAssets.logo(context, height: 26),
                             ),
                           );
@@ -81,16 +102,24 @@ class PublicShell extends StatelessWidget {
                                   overlayColor: AppTheme.publicSurfaceSoft,
                                   backgroundColor: Colors.transparent,
                                   elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
                                   minimumSize: const Size(0, 40),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: currentPath == '/client/login'
-                                            ? FontWeight.w600
-                                            : FontWeight.w500,
+                                  textStyle: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        fontWeight:
+                                            currentPath == '/client/login'
+                                                ? FontWeight.w600
+                                                : FontWeight.w500,
                                       ),
                                 ),
                                 child: const Text('Sign in'),
@@ -102,13 +131,20 @@ class PublicShell extends StatelessWidget {
                                   backgroundColor: AppTheme.publicText,
                                   foregroundColor: Colors.white,
                                   elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
                                   minimumSize: const Size(0, 46),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  textStyle: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),
@@ -158,7 +194,9 @@ class PublicShell extends StatelessWidget {
             Container(
               decoration: const BoxDecoration(
                 color: AppTheme.publicBackground,
-                border: Border(top: BorderSide(color: AppTheme.publicLine)),
+                border: Border(
+                  top: BorderSide(color: AppTheme.publicLine),
+                ),
               ),
               padding: const EdgeInsets.fromLTRB(28, 20, 28, 24),
               child: Center(
@@ -167,31 +205,61 @@ class PublicShell extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final compact = constraints.maxWidth < 920;
+
                       final legalHeading = Text(
                         'Legal',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppTheme.publicText,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppTheme.publicText,
+                                ),
                       );
 
                       final links = Wrap(
                         spacing: 18,
                         runSpacing: 10,
                         children: [
-                          _FooterLink(label: 'Terms of Use', onTap: () => context.go('/legal/terms')),
-                          _FooterLink(label: 'Privacy Policy', onTap: () => context.go('/legal/privacy')),
-                          _FooterLink(label: 'Billing Policy', onTap: () => context.go('/legal/billing')),
-                          _FooterLink(label: 'Refund Policy', onTap: () => context.go('/legal/refunds')),
-                          _FooterLink(label: 'Acceptable Use', onTap: () => context.go('/legal/acceptable-use')),
-                          _FooterLink(label: 'Service Agreement', onTap: () => context.go('/legal/service-agreement')),
-                          _FooterLink(label: 'Deliverability Notice', onTap: () => context.go('/legal/deliverability')),
+                          _FooterLink(
+                            label: 'Terms of Use',
+                            onTap: () => context.go('/legal/terms'),
+                          ),
+                          _FooterLink(
+                            label: 'Privacy Policy',
+                            onTap: () => context.go('/legal/privacy'),
+                          ),
+                          _FooterLink(
+                            label: 'Billing Policy',
+                            onTap: () => context.go('/legal/billing'),
+                          ),
+                          _FooterLink(
+                            label: 'Refund Policy',
+                            onTap: () => context.go('/legal/refunds'),
+                          ),
+                          _FooterLink(
+                            label: 'Acceptable Use',
+                            onTap: () =>
+                                context.go('/legal/acceptable-use'),
+                          ),
+                          _FooterLink(
+                            label: 'Service Agreement',
+                            onTap: () =>
+                                context.go('/legal/service-agreement'),
+                          ),
+                          _FooterLink(
+                            label: 'Deliverability Notice',
+                            onTap: () =>
+                                context.go('/legal/deliverability'),
+                          ),
                         ],
                       );
 
                       if (compact) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [legalHeading, const SizedBox(height: 14), links],
+                          children: [
+                            legalHeading,
+                            const SizedBox(height: 14),
+                            links,
+                          ],
                         );
                       }
 
@@ -216,7 +284,11 @@ class PublicShell extends StatelessWidget {
 }
 
 class _TopLink extends StatelessWidget {
-  const _TopLink({required this.label, required this.onTap, required this.active});
+  const _TopLink({
+    required this.label,
+    required this.onTap,
+    required this.active,
+  });
 
   final String label;
   final VoidCallback onTap;
@@ -234,7 +306,9 @@ class _TopLink extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         minimumSize: const Size(0, 40),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: active ? FontWeight.w600 : FontWeight.w500,
             ),
@@ -245,7 +319,10 @@ class _TopLink extends StatelessWidget {
 }
 
 class _FooterLink extends StatelessWidget {
-  const _FooterLink({required this.label, required this.onTap});
+  const _FooterLink({
+    required this.label,
+    required this.onTap,
+  });
 
   final String label;
   final VoidCallback onTap;

@@ -14,7 +14,12 @@ import '../shell/client_shell.dart';
 import '../shell/public_shell.dart';
 import 'auth/auth_session.dart';
 
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _clientShellNavigatorKey = GlobalKey<NavigatorState>();
+final _appShellNavigatorKey = GlobalKey<NavigatorState>();
+
 final router = GoRouter(
+  navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
   refreshListenable: AuthSessionController.instance,
   redirect: (context, state) {
@@ -87,57 +92,109 @@ final router = GoRouter(
       path: '/client/reset-password',
       builder: (context, state) => const ClientLoginScreen(resetMode: true),
     ),
-    ShellRoute(
-      builder: (context, state, child) =>
-          PublicShell(currentPath: state.uri.path, child: child),
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const PublicHomeScreen(),
+
+    GoRoute(
+      path: '/',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: const PublicHomeScreen(),
         ),
-        GoRoute(
-          path: '/how-it-works',
-          builder: (context, state) => buildHowItWorksScreen(),
-        ),
-        GoRoute(
-          path: '/pricing',
-          builder: (context, state) => const PricingScreen(),
-        ),
-        GoRoute(
-          path: '/contact',
-          builder: (context, state) => const ContactScreen(),
-        ),
-        GoRoute(
-          path: '/legal/terms',
-          builder: (context, state) => buildTermsScreen(),
-        ),
-        GoRoute(
-          path: '/legal/privacy',
-          builder: (context, state) => buildPrivacyScreen(),
-        ),
-        GoRoute(
-          path: '/legal/billing',
-          builder: (context, state) => buildBillingPolicyScreen(),
-        ),
-        GoRoute(
-          path: '/legal/refunds',
-          builder: (context, state) => buildRefundPolicyScreen(),
-        ),
-        GoRoute(
-          path: '/legal/acceptable-use',
-          builder: (context, state) => buildAcceptableUseScreen(),
-        ),
-        GoRoute(
-          path: '/legal/service-agreement',
-          builder: (context, state) => buildServiceAgreementScreen(),
-        ),
-        GoRoute(
-          path: '/legal/deliverability',
-          builder: (context, state) => buildDeliverabilityScreen(),
-        ),
-      ],
+      ),
     ),
+    GoRoute(
+      path: '/how-it-works',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildHowItWorksScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/pricing',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: const PricingScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/contact',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: const ContactScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/terms',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildTermsScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/privacy',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildPrivacyScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/billing',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildBillingPolicyScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/refunds',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildRefundPolicyScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/acceptable-use',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildAcceptableUseScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/service-agreement',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildServiceAgreementScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/deliverability',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildDeliverabilityScreen(),
+        ),
+      ),
+    ),
+
     ShellRoute(
+      navigatorKey: _clientShellNavigatorKey,
       builder: (context, state, child) =>
           ClientShell(currentPath: state.uri.path, child: child),
       routes: [
@@ -168,7 +225,9 @@ final router = GoRouter(
         ),
       ],
     ),
+
     ShellRoute(
+      navigatorKey: _appShellNavigatorKey,
       builder: (context, state, child) =>
           AppShell(currentPath: state.uri.path, child: child),
       routes: [
@@ -235,9 +294,7 @@ final router = GoRouter(
   errorBuilder: (context, state) => Theme(
     data: ThemeData.light(useMaterial3: true),
     child: const Scaffold(
-      body: Center(
-        child: Text('This surface is unavailable.'),
-      ),
+      body: Center(child: Text('This surface is unavailable.')),
     ),
   ),
 );
