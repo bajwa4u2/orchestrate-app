@@ -16,16 +16,18 @@ class CommandScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.only(top: 12, bottom: 28),
+        padding: const EdgeInsets.only(top: 8, bottom: 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SectionHeader(title: 'Command', subtitle: ''),
-            const SizedBox(height: 24),
+            const SectionHeader(
+              title: 'Command',
+              subtitle: 'Live system posture, today\'s movement, and where attention is needed now.',
+            ),
+            const SizedBox(height: 20),
             AsyncSurface<ControlOverview>(
               future: repository.fetchOverview(),
-              builder: (context, overview) =>
-                  _CommandBody(overview: overview),
+              builder: (context, overview) => _CommandBody(overview: overview),
             ),
           ],
         ),
@@ -48,21 +50,21 @@ class _CommandBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _StatusCard(overview: data),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         _TodayBand(overview: data),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         _FlowSection(overview: data),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         LayoutBuilder(
           builder: (context, constraints) {
-            final stacked = constraints.maxWidth < 980;
+            final singleColumn = constraints.maxWidth < 980;
 
-            if (stacked) {
+            if (singleColumn) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _PressurePanel(items: pressureItems),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   _FootingPanel(overview: data),
                 ],
               );
@@ -71,9 +73,15 @@ class _CommandBody extends StatelessWidget {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _PressurePanel(items: pressureItems)),
-                const SizedBox(width: 20),
-                Expanded(child: _FootingPanel(overview: data)),
+                Expanded(
+                  flex: 5,
+                  child: _PressurePanel(items: pressureItems),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 4,
+                  child: _FootingPanel(overview: data),
+                ),
               ],
             );
           },
@@ -125,6 +133,26 @@ String _statusLine(ControlOverview? overview) {
   if ((overview.today.sent) > 0 && (overview.today.replies) == 0) return 'Sending active';
   if ((overview.today.replies) > 0) return 'Replies active';
   return 'System live';
+}
+
+String _statusSupport(ControlOverview? overview) {
+  if (overview == null) return 'Waiting for live control data.';
+  if (overview.execution.failedJobs > 0) {
+    return 'Execution has broken items that need recovery before the system settles.';
+  }
+  if (overview.alerts.open > 0) {
+    return 'There is unresolved alert pressure inside the operating layer.';
+  }
+  if (overview.deliverability.degradedMailboxes > 0) {
+    return 'Mailboxes need review before sending posture is fully clean.';
+  }
+  if (_replyPressure(overview)) {
+    return 'Reply load is now ahead of today\'s outbound movement.';
+  }
+  if ((overview.today.booked) > 0) {
+    return 'Meetings are already converting out of today\'s work.';
+  }
+  return 'Outbound, replies, and booking posture are stable right now.';
 }
 
 String _postureLabel(ControlOverview? overview) {
@@ -205,7 +233,7 @@ class _StatusCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 880;
+          final stacked = constraints.maxWidth < 920;
 
           final lead = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,6 +261,17 @@ class _StatusCard extends StatelessWidget {
               Text(
                 _statusLine(overview),
                 style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Text(
+                  _statusSupport(overview),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.muted,
+                        height: 1.45,
+                      ),
+                ),
               ),
             ],
           );
@@ -294,34 +333,46 @@ class _TodayBand extends StatelessWidget {
     ];
 
     return Surface(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 760) {
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                for (final item in items)
-                  SizedBox(
-                    width: constraints.maxWidth < 520
-                        ? constraints.maxWidth
-                        : (constraints.maxWidth - 12) / 2,
-                    child: _MetricTile(item: item),
-                  ),
-              ],
-            );
-          }
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Today',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.muted,
+                ),
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 760) {
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    for (final item in items)
+                      SizedBox(
+                        width: constraints.maxWidth < 520
+                            ? constraints.maxWidth
+                            : (constraints.maxWidth - 12) / 2,
+                        child: _MetricTile(item: item),
+                      ),
+                  ],
+                );
+              }
 
-          return Row(
-            children: [
-              for (int i = 0; i < items.length; i++) ...[
-                Expanded(child: _MetricTile(item: items[i])),
-                if (i != items.length - 1) const SizedBox(width: 12),
-              ],
-            ],
-          );
-        },
+              return Row(
+                children: [
+                  for (int i = 0; i < items.length; i++) ...[
+                    Expanded(child: _MetricTile(item: items[i])),
+                    if (i != items.length - 1) const SizedBox(width: 12),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -359,10 +410,18 @@ class _FlowSection extends StatelessWidget {
     ];
 
     return Surface(
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Flow', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 6),
+          Text(
+            'The operating chain from lead intake to meeting conversion.',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.muted,
+                ),
+          ),
           const SizedBox(height: 18),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -447,14 +506,21 @@ class _PressurePanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Pressure', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 18),
+          const SizedBox(height: 6),
+          Text(
+            'Signals that need active handling before they spread.',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.muted,
+                ),
+          ),
+          const SizedBox(height: 16),
           if (items.isEmpty)
             const _QuietState(label: 'Clear')
           else
             ...[
               for (int i = 0; i < items.length; i++) ...[
                 _PressureRow(item: items[i]),
-                if (i != items.length - 1) const SizedBox(height: 12),
+                if (i != items.length - 1) const SizedBox(height: 10),
               ],
             ],
         ],
@@ -475,7 +541,14 @@ class _FootingPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Footing', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 18),
+          const SizedBox(height: 6),
+          Text(
+            'The underlying operating base carrying today\'s work.',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.muted,
+                ),
+          ),
+          const SizedBox(height: 16),
           _ReadRow(
             label: 'Organizations',
             value: (overview?.totals.organizations ?? 0).toString(),
@@ -593,7 +666,7 @@ class _FlowTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: data.accent ? AppTheme.panelSoft : AppTheme.panel,
         borderRadius: BorderRadius.circular(24),
@@ -612,7 +685,7 @@ class _FlowTile extends StatelessWidget {
                   color: AppTheme.muted,
                 ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 20),
           Text('${data.value}', style: Theme.of(context).textTheme.headlineLarge),
           const SizedBox(height: 10),
           Text(
@@ -645,7 +718,7 @@ class _PressureRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
         color: AppTheme.panelSoft,
         borderRadius: BorderRadius.circular(18),
@@ -689,7 +762,7 @@ class _QuietState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.panelSoft,
         borderRadius: BorderRadius.circular(18),

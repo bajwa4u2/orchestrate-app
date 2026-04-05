@@ -107,27 +107,45 @@ class AppShell extends StatelessWidget {
                         bottom: false,
                         left: false,
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(28, 20, 28, 16),
+                          padding: const EdgeInsets.fromLTRB(28, 18, 28, 14),
                           child: Center(
                             child: ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: _maxContentWidth),
                               child: Row(
                                 children: [
-                                  _TopPill(label: 'Operator'),
-                                  const SizedBox(width: 10),
-                                  _TopPill(label: 'Today'),
-                                  const Spacer(),
-                                  TextButton(
-                                    onPressed: () => context.go('/'),
-                                    child: const Text('Public site'),
+                                  Expanded(
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        _headerLabel(currentPath),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                              color: AppTheme.subdued,
+                                              letterSpacing: 0.2,
+                                            ),
+                                      ),
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  TextButton(
-                                    onPressed: () async {
-                                      await AuthSessionController.instance.clear();
-                                      if (context.mounted) context.go('/ops/login');
-                                    },
-                                    child: const Text('Sign out'),
+                                  const SizedBox(width: 18),
+                                  Flexible(
+                                    child: Wrap(
+                                      alignment: WrapAlignment.end,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                      children: [
+                                        const _TopPill(label: 'Operator'),
+                                        const _TopPill(label: 'Today'),
+                                        TextButton(
+                                          onPressed: () async {
+                                            await AuthSessionController.instance.clear();
+                                            if (context.mounted) context.go('/ops/login');
+                                          },
+                                          child: const Text('Sign out'),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -138,7 +156,7 @@ class AppShell extends StatelessWidget {
                     ),
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+                        padding: const EdgeInsets.fromLTRB(28, 22, 28, 28),
                         child: Center(
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: _maxContentWidth),
@@ -155,6 +173,15 @@ class AppShell extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static String _headerLabel(String path) {
+    for (final group in groups) {
+      for (final item in group.items) {
+        if (item.path == path) return group.label;
+      }
+    }
+    return 'Operator workspace';
   }
 }
 
@@ -181,7 +208,10 @@ class _OperatorBrand extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            BrandAssets.logo(context, height: 28),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: BrandAssets.logo(context, height: 28),
+            ),
             const SizedBox(height: 12),
             Text('Operations', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 6),
