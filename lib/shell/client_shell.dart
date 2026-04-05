@@ -34,7 +34,7 @@ class ClientShell extends StatelessWidget {
                       constraints: const BoxConstraints(maxWidth: 1280),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          final compact = constraints.maxWidth < 1120;
+                          final compact = constraints.maxWidth < 920;
 
                           final logo = InkWell(
                             borderRadius: BorderRadius.circular(12),
@@ -46,27 +46,27 @@ class ClientShell extends StatelessWidget {
                           );
 
                           final navItems = <Widget>[
-                            _NavChip(
+                            _NavLink(
                               label: 'Overview',
                               active: currentPath == '/client/workspace',
                               onTap: () => context.go('/client/workspace'),
                             ),
-                            _NavChip(
+                            _NavLink(
                               label: 'Billing',
                               active: currentPath == '/client/billing',
                               onTap: () => context.go('/client/billing'),
                             ),
-                            _NavChip(
+                            _NavLink(
                               label: 'Agreements',
                               active: currentPath == '/client/agreements',
                               onTap: () => context.go('/client/agreements'),
                             ),
-                            _NavChip(
+                            _NavLink(
                               label: 'Statements',
                               active: currentPath == '/client/statements',
                               onTap: () => context.go('/client/statements'),
                             ),
-                            _NavChip(
+                            _NavLink(
                               label: 'Account',
                               active: currentPath == '/client/account',
                               onTap: () => context.go('/client/account'),
@@ -82,7 +82,7 @@ class ClientShell extends StatelessWidget {
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: AppTheme.publicMuted,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                               textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -97,33 +97,39 @@ class ClientShell extends StatelessWidget {
                                 logo,
                                 const SizedBox(height: 14),
                                 Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [...navItems, signOut],
+                                  alignment: WrapAlignment.start,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 4,
+                                  runSpacing: 6,
+                                  children: [
+                                    ...navItems,
+                                    const SizedBox(width: 6),
+                                    signOut,
+                                  ],
                                 ),
                               ],
                             );
                           }
 
                           return Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               logo,
                               const Spacer(),
-                              Flexible(
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        ..._withSpacing(navItems, 6),
-                                        const SizedBox(width: 12),
-                                        signOut,
-                                      ],
-                                    ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  ..._withSpacing(navItems, 2),
+                                  const SizedBox(width: 12),
+                                  Container(
+                                    width: 1,
+                                    height: 22,
+                                    color: AppTheme.publicLine,
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  signOut,
+                                ],
                               ),
                             ],
                           );
@@ -153,8 +159,8 @@ List<Widget> _withSpacing(List<Widget> widgets, double spacing) {
   return items;
 }
 
-class _NavChip extends StatelessWidget {
-  const _NavChip({required this.label, required this.active, required this.onTap});
+class _NavLink extends StatelessWidget {
+  const _NavLink({required this.label, required this.active, required this.onTap});
 
   final String label;
   final bool active;
@@ -166,9 +172,9 @@ class _NavChip extends StatelessWidget {
       onPressed: onTap,
       style: TextButton.styleFrom(
         foregroundColor: active ? AppTheme.publicText : AppTheme.publicMuted,
-        backgroundColor: active ? AppTheme.publicSurfaceSoft : Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        overlayColor: AppTheme.publicSurfaceSoft,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: active ? FontWeight.w600 : FontWeight.w500,
             ),
