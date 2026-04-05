@@ -1,65 +1,110 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/brand/brand_assets.dart';
+import '../../core/auth/auth_session.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/repositories/auth_repository.dart';
 
-class ClientLoginScreen extends StatelessWidget {
-  const ClientLoginScreen({super.key, this.createMode = false});
+class ClientLoginScreen extends StatefulWidget {
+  const ClientLoginScreen({super.key, this.createMode = false, this.verificationMode = false, this.resetMode = false});
 
   final bool createMode;
+  final bool verificationMode;
+  final bool resetMode;
+
+  @override
+  State<ClientLoginScreen> createState() => _ClientLoginScreenState();
+}
+
+class _ClientLoginScreenState extends State<ClientLoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _fullName = TextEditingController();
+  final _company = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _website = TextEditingController();
+  final _resetPassword = TextEditingController();
+  bool _busy = false;
+  String? _message;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.verificationMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _verifyFromLink());
+    }
+  }
+
+  Future<void> _verifyFromLink() async {
+    final token = GoRouterState.of(context).uri.queryParameters['token'];
+    if (token == null || token.isEmpty) return;
+    setState(() => _busy = true);
+    try {
+      await AuthRepository().verifyEmail(token);
+      setState(() => _message = 'Email verified. You can sign in now.');
+    } catch (error) {
+      setState(() => _error = _humanize(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _fullName.dispose();
+    _company.dispose();
+    _email.dispose();
+    _password.dispose();
+    _website.dispose();
+    _resetPassword.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: AppTheme.lightTheme,
-      child: Scaffold(
-        backgroundColor: AppTheme.publicBackground,
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
+    final join = widget.createMode;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: AppTheme.publicLine)),
+            child: Padding(
               padding: const EdgeInsets.all(28),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1080),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final stacked = constraints.maxWidth < 920;
-                    final form = _ClientAccessCard(createMode: createMode);
-                    final side = _ClientContextCard(createMode: createMode);
-
-                    if (stacked) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _BackLink(onTap: () => context.go('/')),
-                          const SizedBox(height: 18),
-                          form,
-                          const SizedBox(height: 18),
-                          side,
-                        ],
-                      );
-                    }
-
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 6,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _BackLink(onTap: () => context.go('/')),
-                              const SizedBox(height: 18),
-                              form,
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(flex: 5, child: side),
-                      ],
-                    );
-                  },
-                ),
+              child: Form(
+                key: _formKey,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(join ? 'Join Orchestrate' : 'Client sign in', style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 10),
+                  Text(join ? 'Create a client account and enter your workspace.' : 'Continue into your client workspace.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+                  const SizedBox(height: 24),
+                  if (_message != null) _Banner(message: _message!, error: false),
+                  if (_error != null) _Banner(message: _error!, error: true),
+                  if (join) ...[
+                    _field(_fullName, 'Full name'),
+                    const SizedBox(height: 14),
+                    _field(_company, 'Company name'),
+                    const SizedBox(height: 14),
+                    _field(_website, 'Website', required: false),
+                    const SizedBox(height: 14),
+                  ],
+                  _field(_email, 'Email', keyboardType: TextInputType.emailAddress),
+                  const SizedBox(height: 14),
+                  _field(_password, join ? 'Create password' : 'Password', obscure: true),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: _busy ? null : () => join ? _register() : _login(),
+                    child: Text(_busy ? 'Working...' : (join ? 'Create account' : 'Sign in')),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Text(join ? 'Already have an account?' : 'Need an account?'),
+                    TextButton(onPressed: () => context.go(join ? '/client/login' : '/client/join'), child: Text(join ? 'Sign in' : 'Create account')),
+                  ]),
+                ]),
               ),
             ),
           ),
@@ -67,273 +112,70 @@ class ClientLoginScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _field(TextEditingController controller, String label, {bool obscure = false, bool required = true, TextInputType? keyboardType}) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      validator: required ? (value) => (value == null || value.trim().isEmpty) ? '$label is required.' : null : null,
+      decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+    );
+  }
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _busy = true; _error = null; _message = null; });
+    try {
+      final response = await AuthRepository().registerClient(
+        fullName: _fullName.text.trim(),
+        email: _email.text.trim(),
+        password: _password.text,
+        companyName: _company.text.trim(),
+        websiteUrl: _website.text.trim().isEmpty ? null : _website.text.trim(),
+      );
+      await AuthSessionController.instance.applyAuthResponse(response);
+      if (mounted) context.go('/client/workspace');
+    } catch (error) {
+      setState(() => _error = _humanize(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _busy = true; _error = null; _message = null; });
+    try {
+      final response = await AuthRepository().loginClient(email: _email.text.trim(), password: _password.text);
+      await AuthSessionController.instance.applyAuthResponse(response);
+      if (mounted) context.go('/client/workspace');
+    } catch (error) {
+      setState(() => _error = _humanize(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _humanize(Object error) {
+    final text = error.toString();
+    if (text.contains('incorrect')) return 'That email or password did not work.';
+    if (text.contains('already exists')) return 'An account with this email already exists.';
+    return 'We could not complete that request.';
+  }
 }
 
-class _ClientAccessCard extends StatelessWidget {
-  const _ClientAccessCard({required this.createMode});
-
-  final bool createMode;
-
+class _Banner extends StatelessWidget {
+  const _Banner({required this.message, required this.error});
+  final String message;
+  final bool error;
   @override
   Widget build(BuildContext context) {
-    final title = createMode ? 'Enter Orchestrate' : 'Access your workspace';
-    final subtitle = createMode
-        ? 'Start your client account here.'
-        : 'Sign in to review progress, billing, and account records.';
-    final primaryLabel = createMode ? 'Request access' : 'Sign in';
-    final switchLabel = createMode
-        ? 'Already have an account? Sign in'
-        : 'Need an account? Request access';
-
     return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          BrandAssets.logo(context, height: 28),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  height: 1.02,
-                ),
-          ),
-          const SizedBox(height: 10),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          if (createMode) ...[
-            const _FieldLabel('Name'),
-            const SizedBox(height: 8),
-            const TextField(
-              decoration: InputDecoration(
-                hintText: 'Your full name',
-              ),
-            ),
-            const SizedBox(height: 16),
-            const _FieldLabel('Company'),
-            const SizedBox(height: 8),
-            const TextField(
-              decoration: InputDecoration(
-                hintText: 'Company name',
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-          const _FieldLabel('Email'),
-          const SizedBox(height: 8),
-          const TextField(
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              hintText: 'name@company.com',
-            ),
-          ),
-          const SizedBox(height: 16),
-          const _FieldLabel('Password'),
-          const SizedBox(height: 8),
-          const TextField(
-            obscureText: true,
-            decoration: InputDecoration(
-              hintText: 'Enter password',
-            ),
-          ),
-          if (createMode) ...[
-            const SizedBox(height: 16),
-            const _FieldLabel('Confirm password'),
-            const SizedBox(height: 8),
-            const TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                hintText: 'Confirm password',
-              ),
-            ),
-          ],
-          const SizedBox(height: 22),
-          FilledButton(
-            onPressed: () {},
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              backgroundColor: AppTheme.publicText,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            child: Text(primaryLabel),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => context.go(
-              createMode ? '/client/login' : '/client/create-account',
-            ),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              foregroundColor: AppTheme.publicText,
-              side: const BorderSide(color: AppTheme.publicLine),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            child: Text(switchLabel),
-          ),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: () => context.go('/contact'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.publicMuted,
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 32),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text('Need help first? Contact us'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClientContextCard extends StatelessWidget {
-  const _ClientContextCard({required this.createMode});
-
-  final bool createMode;
-
-  @override
-  Widget build(BuildContext context) {
-    final badge = createMode ? 'Client entry' : 'Client access';
-    final heading = createMode
-        ? 'Entry stays open. Activation stays controlled.'
-        : 'A clear view without operator clutter.';
-    final body = createMode
-        ? 'Requesting access starts a controlled client path through review, onboarding, and activation.'
-        : 'Clients should be able to review work, billing, reminders, and records without entering the operator workspace.';
-    final points = createMode
-        ? const [
-            'Submit account request',
-            'Review and onboarding',
-            'Activation when ready',
-          ]
-        : const [
-            'Service progress',
-            'Invoices and payment status',
-            'Reminders and statements',
-            'Account history',
-          ];
-
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.publicAccentSoft,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              badge,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.publicAccent,
-                  ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            heading,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            body,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 18),
-          for (final point in points) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Icon(
-                    Icons.circle,
-                    size: 8,
-                    color: AppTheme.publicAccent,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    point,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ),
-              ],
-            ),
-            if (point != points.last) const SizedBox(height: 12),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppTheme.publicText,
-          ),
-    );
-  }
-}
-
-class _BackLink extends StatelessWidget {
-  const _BackLink({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onTap,
-      icon: const Icon(Icons.arrow_back),
-      label: const Text('Back to public site'),
-      style: TextButton.styleFrom(
-        foregroundColor: AppTheme.publicMuted,
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
-      ),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: error ? Colors.red.shade50 : Colors.green.shade50, borderRadius: BorderRadius.circular(12)),
+      child: Text(message),
     );
   }
 }

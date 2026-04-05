@@ -97,7 +97,7 @@ class PublicShell extends StatelessWidget {
                               ),
                               const SizedBox(width: 12),
                               FilledButton(
-                                onPressed: () => context.go('/client/create-account'),
+                                onPressed: () => context.go('/client/join'),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: AppTheme.publicText,
                                   foregroundColor: Colors.white,
@@ -112,7 +112,7 @@ class PublicShell extends StatelessWidget {
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),
-                                child: const Text('Create account'),
+                                child: const Text('Join'),
                               ),
                             ],
                           );

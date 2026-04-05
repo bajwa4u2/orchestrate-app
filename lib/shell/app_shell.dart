@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/auth/auth_session.dart';
 import '../core/brand/brand_assets.dart';
 import '../core/theme/app_theme.dart';
 
@@ -132,6 +133,14 @@ class AppShell extends StatelessWidget {
                           TextButton(
                             onPressed: () => context.go('/'),
                             child: const Text('Public site'),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () async {
+                              await AuthSessionController.instance.clear();
+                              if (context.mounted) context.go('/ops/login');
+                            },
+                            child: const Text('Sign out'),
                           ),
                         ],
                       ),
