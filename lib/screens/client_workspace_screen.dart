@@ -27,10 +27,10 @@ class ClientWorkspaceScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 12, 28, 32),
+        padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1280),
+            constraints: const BoxConstraints(maxWidth: 1240),
             child: AsyncSurface<_ClientLoadState>(
               future: _loadSafe(repository),
               builder: (context, data) {
@@ -50,19 +50,19 @@ class ClientWorkspaceScreen extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     SectionHeader(
                       title: view.title,
                       subtitle: view.subtitle,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     if (view.notice != null) ...[
                       _NoticeStrip(message: view.notice!, isPositive: AppConfig.hasClientAccess),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                     ],
                     if (view.stats.isNotEmpty) ...[
                       _StatsBand(stats: view.stats),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 18),
                     ],
                     _PanelLayout(
                       primaryTitle: view.primaryTitle,
@@ -289,8 +289,8 @@ class _StatsBand extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F7F4),
-        borderRadius: BorderRadius.circular(22),
+        color: const Color(0xFFF7F8F5),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: LayoutBuilder(
@@ -315,7 +315,7 @@ class _StatsBand extends StatelessWidget {
                 if (i != stats.length - 1)
                   Container(
                     width: 1,
-                    height: 88,
+                    height: 76,
                     color: AppTheme.publicLine,
                   ),
               ],
@@ -335,7 +335,7 @@ class _StatsBandItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -345,7 +345,7 @@ class _StatsBandItem extends StatelessWidget {
                   color: AppTheme.publicMuted,
                 ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             stat.value,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -546,12 +546,12 @@ class _NoticeStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isPositive ? const Color(0xFFF4F8F4) : const Color(0xFFF6F7F8),
+        color: isPositive ? const Color(0xFFF6FAF6) : const Color(0xFFF9FAF9),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isPositive ? const Color(0xFFD9E7DA) : AppTheme.publicLine,
+          color: isPositive ? const Color(0xFFDCE8DD) : const Color(0xFFE3E6E2),
         ),
       ),
       child: Row(
