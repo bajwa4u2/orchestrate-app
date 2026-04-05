@@ -28,17 +28,28 @@ class ClientWorkspaceScreen extends StatelessWidget {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 28),
-        child: AsyncSurface<_ClientViewData>(
-          future: _load(repository),
+        child: AsyncSurface<_ClientLoadState>(
+          future: _loadSafe(repository),
           builder: (context, data) {
-            final view = data ?? _ClientViewData.empty(section);
+            final state = data ?? _ClientLoadState(view: _ClientViewData.empty(section));
+            if (state.errorMessage != null) {
+              return _ErrorState(message: state.errorMessage!);
+            }
+
+            final view = state.view;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  'Client workspace',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppTheme.publicMuted,
+                      ),
+                ),
+                const SizedBox(height: 10),
                 SectionHeader(
                   title: view.title,
                   subtitle: view.subtitle,
-                  eyebrow: view.eyebrow,
                 ),
                 const SizedBox(height: 22),
                 if (view.notice != null) ...[
@@ -65,10 +76,21 @@ class ClientWorkspaceScreen extends StatelessWidget {
               ],
             );
           },
-          errorBuilder: (context, error, _) => _ErrorState(message: _humanizeError(error)),
         ),
       ),
     );
+  }
+
+  Future<_ClientLoadState> _loadSafe(ClientPortalRepository repository) async {
+    try {
+      final view = await _load(repository);
+      return _ClientLoadState(view: view);
+    } catch (error) {
+      return _ClientLoadState(
+        view: _ClientViewData.empty(section),
+        errorMessage: _humanizeError(error),
+      );
+    }
   }
 
   Future<_ClientViewData> _load(ClientPortalRepository repository) async {
@@ -80,7 +102,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
         final communications = _asMap(overview['communications']);
         final client = _asMap(overview['client']);
         return _ClientViewData(
-          eyebrow: 'Client workspace',
           title: 'Overview',
           subtitle: 'Account standing, active work, billing posture, and open items.',
           notice: AppConfig.hasClientAccess
@@ -123,7 +144,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
       case ClientSection.billing:
         final invoices = await repository.fetchInvoices();
         return _ClientViewData(
-          eyebrow: 'Client workspace',
           title: 'Billing',
           subtitle: 'Invoices, receipts, and current payment standing.',
           stats: [
@@ -139,7 +159,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
       case ClientSection.agreements:
         final agreements = await repository.fetchAgreements();
         return _ClientViewData(
-          eyebrow: 'Client workspace',
           title: 'Agreements',
           subtitle: 'Service agreements and current renewal footing.',
           primaryTitle: 'Agreements',
@@ -150,7 +169,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
       case ClientSection.statements:
         final statements = await repository.fetchStatements();
         return _ClientViewData(
-          eyebrow: 'Client workspace',
           title: 'Statements',
           subtitle: 'Quarterly, half-year, and annual record summaries.',
           primaryTitle: 'Statements',
@@ -161,7 +179,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
       case ClientSection.requests:
         final reminders = await repository.fetchReminders();
         return _ClientViewData(
-          eyebrow: 'Client workspace',
           title: 'Requests',
           subtitle: 'Items that require attention, response, or scheduled follow-through.',
           primaryTitle: 'Requests',
@@ -177,7 +194,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
         final notifications = results[0];
         final dispatches = results[1];
         return _ClientViewData(
-          eyebrow: 'Client workspace',
           title: 'Notifications',
           subtitle: 'Account alerts and delivered communications.',
           primaryTitle: 'Notifications',
@@ -193,7 +209,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
         final client = _asMap(overview['client']);
         final communications = _asMap(overview['communications']);
         return _ClientViewData(
-          eyebrow: 'Client workspace',
           title: 'Account',
           subtitle: 'Profile, access footing, and communication path.',
           primaryTitle: 'Profile',
@@ -209,9 +224,15 @@ class ClientWorkspaceScreen extends StatelessWidget {
   }
 }
 
+class _ClientLoadState {
+  const _ClientLoadState({required this.view, this.errorMessage});
+
+  final _ClientViewData view;
+  final String? errorMessage;
+}
+
 class _ClientViewData {
   const _ClientViewData({
-    this.eyebrow,
     required this.title,
     required this.subtitle,
     this.notice,
@@ -224,7 +245,6 @@ class _ClientViewData {
     this.secondaryEmpty = 'Nothing is available.',
   });
 
-  final String? eyebrow;
   final String title;
   final String subtitle;
   final String? notice;
@@ -237,7 +257,6 @@ class _ClientViewData {
   final String secondaryEmpty;
 
   factory _ClientViewData.empty(ClientSection section) => _ClientViewData(
-        eyebrow: 'Client workspace',
         title: section.name[0].toUpperCase() + section.name.substring(1),
         subtitle: '',
         primaryTitle: 'Overview',
@@ -485,7 +504,10 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Client workspace', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted)),
+          Text(
+            'Client workspace',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted),
+          ),
           const SizedBox(height: 10),
           Text('This page could not load.', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 10),
