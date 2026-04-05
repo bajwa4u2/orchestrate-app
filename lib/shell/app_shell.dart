@@ -35,7 +35,7 @@ class AppShell extends StatelessWidget {
         body: Row(
           children: [
             Container(
-              width: 296,
+              width: 300,
               color: AppTheme.sidebar,
               child: SafeArea(
                 bottom: false,
@@ -44,21 +44,10 @@ class AppShell extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () => context.go('/app/command'),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: BrandAssets.logo(context, height: 26),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        'Opportunity, billing, and records carried in one system.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
-                      ),
-                      const SizedBox(height: 20),
+                      _OperatorBrand(currentPath: currentPath),
+                      const SizedBox(height: 18),
                       Container(
+                        width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
                           color: AppTheme.panel,
@@ -70,7 +59,10 @@ class AppShell extends StatelessWidget {
                             Container(
                               width: 10,
                               height: 10,
-                              decoration: const BoxDecoration(color: AppTheme.emerald, shape: BoxShape.circle),
+                              decoration: const BoxDecoration(
+                                color: AppTheme.emerald,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -82,7 +74,7 @@ class AppShell extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 20),
                       Expanded(
                         child: ListView.separated(
                           itemCount: groups.length,
@@ -110,25 +102,9 @@ class AppShell extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppTheme.panel,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppTheme.line),
-                            ),
-                            child: Text('Operator', style: Theme.of(context).textTheme.titleMedium),
-                          ),
+                          _TopPill(label: 'Operator'),
                           const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppTheme.panel,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppTheme.line),
-                            ),
-                            child: Text('Today', style: Theme.of(context).textTheme.titleMedium),
-                          ),
+                          _TopPill(label: 'Today'),
                           const Spacer(),
                           TextButton(
                             onPressed: () => context.go('/'),
@@ -158,6 +134,66 @@ class AppShell extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _OperatorBrand extends StatelessWidget {
+  const _OperatorBrand({required this.currentPath});
+
+  final String currentPath;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => context.go('/app/command'),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(10, 10, 12, 12),
+        decoration: BoxDecoration(
+          color: currentPath == '/app/command' ? AppTheme.panel : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: currentPath == '/app/command' ? AppTheme.line : Colors.transparent,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BrandAssets.logo(context, height: 28),
+            const SizedBox(height: 12),
+            Text(
+              'Operations',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Opportunity, billing, and records carried in one system.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TopPill extends StatelessWidget {
+  const _TopPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.panel,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.line),
+      ),
+      child: Text(label, style: Theme.of(context).textTheme.titleMedium),
     );
   }
 }

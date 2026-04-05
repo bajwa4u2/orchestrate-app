@@ -48,8 +48,7 @@ class PublicShell extends StatelessWidget {
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1280),
@@ -58,11 +57,10 @@ class PublicShell extends StatelessWidget {
                           final compact = constraints.maxWidth < 980;
 
                           final brand = InkWell(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                             onTap: () => context.go('/'),
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 6),
+                              padding: const EdgeInsets.symmetric(vertical: 6),
                               child: BrandAssets.logo(context, height: 26),
                             ),
                           );
@@ -107,19 +105,14 @@ class PublicShell extends StatelessWidget {
                                     vertical: 8,
                                   ),
                                   minimumSize: const Size(0, 40),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  textStyle: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight:
-                                            currentPath == '/client/login'
-                                                ? FontWeight.w600
-                                                : FontWeight.w500,
+                                  textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: currentPath == '/client/login'
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
                                       ),
                                 ),
                                 child: const Text('Sign in'),
@@ -136,15 +129,11 @@ class PublicShell extends StatelessWidget {
                                     vertical: 12,
                                   ),
                                   minimumSize: const Size(0, 46),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  textStyle: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
+                                  textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),
@@ -208,10 +197,9 @@ class PublicShell extends StatelessWidget {
 
                       final legalHeading = Text(
                         'Legal',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppTheme.publicText,
-                                ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppTheme.publicText,
+                            ),
                       );
 
                       final links = Wrap(
@@ -236,18 +224,15 @@ class PublicShell extends StatelessWidget {
                           ),
                           _FooterLink(
                             label: 'Acceptable Use',
-                            onTap: () =>
-                                context.go('/legal/acceptable-use'),
+                            onTap: () => context.go('/legal/acceptable-use'),
                           ),
                           _FooterLink(
                             label: 'Service Agreement',
-                            onTap: () =>
-                                context.go('/legal/service-agreement'),
+                            onTap: () => context.go('/legal/service-agreement'),
                           ),
                           _FooterLink(
                             label: 'Deliverability Notice',
-                            onTap: () =>
-                                context.go('/legal/deliverability'),
+                            onTap: () => context.go('/legal/deliverability'),
                           ),
                         ],
                       );
