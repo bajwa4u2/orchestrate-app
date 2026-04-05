@@ -14,7 +14,6 @@ class ClientShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = AuthSessionController.instance;
-
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
@@ -29,41 +28,40 @@ class ClientShell extends StatelessWidget {
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 14, 28, 14),
+                  padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1280),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          final compact = constraints.maxWidth < 1100;
+                          final compact = constraints.maxWidth < 1080;
 
-                          final identityBlock = InkWell(
+                          final brandBlock = InkWell(
                             borderRadius: BorderRadius.circular(14),
                             onTap: () => context.go('/client/workspace'),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   BrandAssets.logo(context, height: 26),
-                                  if (session.workspaceName.isNotEmpty) ...[
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      'Client workspace',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color: AppTheme.publicText,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      session.workspaceName,
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                            color: AppTheme.publicMuted,
-                                          ),
-                                    ),
-                                  ],
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Client workspace',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                          fontSize: 16,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    session.workspaceName.isNotEmpty
+                                        ? session.workspaceName
+                                        : 'Workspace account',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: AppTheme.publicMuted,
+                                        ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -100,34 +98,33 @@ class ClientShell extends StatelessWidget {
                                 active: currentPath == '/client/account',
                                 onTap: () => context.go('/client/account'),
                               ),
-                              const SizedBox(width: 8),
-                              TextButton(
-                                onPressed: () async {
-                                  await AuthSessionController.instance.clear();
-                                  if (context.mounted) context.go('/client/login');
-                                },
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppTheme.publicText,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                  textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                ),
-                                child: const Text('Sign out'),
-                              ),
                             ],
+                          );
+
+                          final signOut = TextButton(
+                            onPressed: () async {
+                              await AuthSessionController.instance.clear();
+                              if (context.mounted) context.go('/client/login');
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppTheme.publicMuted,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            child: const Text('Sign out'),
                           );
 
                           if (compact) {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                identityBlock,
+                                brandBlock,
                                 const SizedBox(height: 16),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: nav,
-                                ),
+                                nav,
+                                const SizedBox(height: 8),
+                                signOut,
                               ],
                             );
                           }
@@ -135,16 +132,17 @@ class ClientShell extends StatelessWidget {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                flex: 4,
-                                child: identityBlock,
-                              ),
+                              Expanded(flex: 3, child: brandBlock),
                               const SizedBox(width: 24),
                               Expanded(
-                                flex: 6,
-                                child: Align(
-                                  alignment: Alignment.topRight,
-                                  child: nav,
+                                flex: 7,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    nav,
+                                    const SizedBox(height: 8),
+                                    signOut,
+                                  ],
                                 ),
                               ),
                             ],
