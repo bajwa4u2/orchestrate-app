@@ -11,6 +11,9 @@ class AppShell extends StatelessWidget {
   final String currentPath;
   final Widget child;
 
+  static const double _sidebarWidth = 292;
+  static const double _maxContentWidth = 1320;
+
   static const groups = [
     _NavGroup('Command', [_NavItem('Command', '/app/command')]),
     _NavGroup('Pipeline', [_NavItem('Leads', '/app/pipeline')]),
@@ -35,7 +38,7 @@ class AppShell extends StatelessWidget {
         body: Row(
           children: [
             Container(
-              width: 300,
+              width: _sidebarWidth,
               color: AppTheme.sidebar,
               child: SafeArea(
                 bottom: false,
@@ -96,35 +99,52 @@ class AppShell extends StatelessWidget {
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.fromLTRB(28, 20, 28, 16),
+                      width: double.infinity,
                       decoration: const BoxDecoration(
                         border: Border(bottom: BorderSide(color: AppTheme.line)),
                       ),
-                      child: Row(
-                        children: [
-                          _TopPill(label: 'Operator'),
-                          const SizedBox(width: 10),
-                          _TopPill(label: 'Today'),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () => context.go('/'),
-                            child: const Text('Public site'),
+                      child: SafeArea(
+                        bottom: false,
+                        left: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(28, 20, 28, 16),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+                              child: Row(
+                                children: [
+                                  _TopPill(label: 'Operator'),
+                                  const SizedBox(width: 10),
+                                  _TopPill(label: 'Today'),
+                                  const Spacer(),
+                                  TextButton(
+                                    onPressed: () => context.go('/'),
+                                    child: const Text('Public site'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton(
+                                    onPressed: () async {
+                                      await AuthSessionController.instance.clear();
+                                      if (context.mounted) context.go('/ops/login');
+                                    },
+                                    child: const Text('Sign out'),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: () async {
-                              await AuthSessionController.instance.clear();
-                              if (context.mounted) context.go('/ops/login');
-                            },
-                            child: const Text('Sign out'),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(30, 28, 30, 30),
-                        child: child,
+                        padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+                            child: SizedBox.expand(child: child),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -163,10 +183,7 @@ class _OperatorBrand extends StatelessWidget {
           children: [
             BrandAssets.logo(context, height: 28),
             const SizedBox(height: 12),
-            Text(
-              'Operations',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Operations', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(
               'Opportunity, billing, and records carried in one system.',
@@ -263,12 +280,14 @@ class _ShellNavButton extends StatelessWidget {
 
 class _NavGroup {
   const _NavGroup(this.label, this.items);
+
   final String label;
   final List<_NavItem> items;
 }
 
 class _NavItem {
   const _NavItem(this.label, this.path);
+
   final String label;
   final String path;
 }

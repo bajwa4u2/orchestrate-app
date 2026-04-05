@@ -14,7 +14,7 @@ class PublicShell extends StatelessWidget {
   final String currentPath;
   final Widget child;
 
-  static const double _shellMaxWidth = 1280;
+  static const double _maxFrameWidth = 1320;
 
   bool _shouldUsePublicChrome(String path) {
     return path == '/' ||
@@ -27,10 +27,7 @@ class PublicShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!_shouldUsePublicChrome(currentPath)) {
-      return Theme(
-        data: AppTheme.lightTheme,
-        child: child,
-      );
+      return Theme(data: AppTheme.lightTheme, child: child);
     }
 
     return Theme(
@@ -39,9 +36,16 @@ class PublicShell extends StatelessWidget {
         backgroundColor: AppTheme.publicBackground,
         body: Column(
           children: [
-            _PublicTopBar(currentPath: currentPath),
-            Expanded(child: child),
-            const _PublicFooter(),
+            _PublicHeader(currentPath: currentPath),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: _maxFrameWidth),
+                  child: SizedBox.expand(child: child),
+                ),
+              ),
+            ),
+            _PublicFooter(),
           ],
         ),
       ),
@@ -49,8 +53,8 @@ class PublicShell extends StatelessWidget {
   }
 }
 
-class _PublicTopBar extends StatelessWidget {
-  const _PublicTopBar({required this.currentPath});
+class _PublicHeader extends StatelessWidget {
+  const _PublicHeader({required this.currentPath});
 
   final String currentPath;
 
@@ -60,9 +64,7 @@ class _PublicTopBar extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         color: AppTheme.publicBackground,
-        border: Border(
-          bottom: BorderSide(color: AppTheme.publicLine),
-        ),
+        border: Border(bottom: BorderSide(color: AppTheme.publicLine)),
       ),
       child: SafeArea(
         bottom: false,
@@ -70,36 +72,44 @@ class _PublicTopBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: PublicShell._shellMaxWidth),
+              constraints: const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final compact = constraints.maxWidth < 1024;
 
-                  final brand = _ShellBrand(onTap: () => context.go('/'));
+                  final brand = InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => context.go('/'),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: BrandAssets.logo(context, height: 28),
+                    ),
+                  );
 
-                  final navLinks = Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                  final nav = Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      _TopLink(
+                      _HeaderLink(
                         label: 'How it works',
-                        onTap: () => context.go('/how-it-works'),
                         active: currentPath == '/how-it-works',
+                        onTap: () => context.go('/how-it-works'),
                       ),
-                      _TopLink(
+                      _HeaderLink(
                         label: 'Pricing',
-                        onTap: () => context.go('/pricing'),
                         active: currentPath == '/pricing',
+                        onTap: () => context.go('/pricing'),
                       ),
-                      _TopLink(
+                      _HeaderLink(
                         label: 'Contact',
-                        onTap: () => context.go('/contact'),
                         active: currentPath == '/contact',
+                        onTap: () => context.go('/contact'),
                       ),
                     ],
                   );
 
-                  final accessGroup = Row(
+                  final actions = Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(
@@ -108,20 +118,8 @@ class _PublicTopBar extends StatelessWidget {
                           foregroundColor: currentPath == '/client/login'
                               ? AppTheme.publicText
                               : AppTheme.publicMuted,
-                          overlayColor: AppTheme.publicSurfaceSoft,
-                          backgroundColor: Colors.transparent,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          minimumSize: const Size(0, 42),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: currentPath == '/client/login'
-                                    ? FontWeight.w600
-                                    : FontWeight.w500,
-                              ),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Text('Sign in'),
                       ),
@@ -131,16 +129,9 @@ class _PublicTopBar extends StatelessWidget {
                         style: FilledButton.styleFrom(
                           backgroundColor: AppTheme.publicText,
                           foregroundColor: Colors.white,
-                          elevation: 0,
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          minimumSize: const Size(0, 46),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
                         ),
                         child: const Text('Join'),
                       ),
@@ -152,15 +143,14 @@ class _PublicTopBar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         brand,
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              navLinks,
+                              nav,
                               const SizedBox(width: 20),
-                              accessGroup,
+                              actions,
                             ],
                           ),
                         ),
@@ -169,13 +159,12 @@ class _PublicTopBar extends StatelessWidget {
                   }
 
                   return Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       brand,
                       const Spacer(),
-                      navLinks,
+                      nav,
                       const SizedBox(width: 24),
-                      accessGroup,
+                      actions,
                     ],
                   );
                 },
@@ -189,86 +178,60 @@ class _PublicTopBar extends StatelessWidget {
 }
 
 class _PublicFooter extends StatelessWidget {
-  const _PublicFooter();
-
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       decoration: const BoxDecoration(
         color: AppTheme.publicBackground,
-        border: Border(
-          top: BorderSide(color: AppTheme.publicLine),
-        ),
+        border: Border(top: BorderSide(color: AppTheme.publicLine)),
       ),
-      padding: const EdgeInsets.fromLTRB(28, 20, 28, 24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: PublicShell._shellMaxWidth),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 920;
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(28, 20, 28, 24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 920;
 
-              final legalHeading = Text(
-                'Legal',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppTheme.publicText,
-                    ),
-              );
+                final label = Text(
+                  'Legal',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppTheme.publicText,
+                      ),
+                );
 
-              final links = Wrap(
-                spacing: 18,
-                runSpacing: 10,
-                children: [
-                  _FooterLink(
-                    label: 'Terms of Use',
-                    onTap: () => context.go('/legal/terms'),
-                  ),
-                  _FooterLink(
-                    label: 'Privacy Policy',
-                    onTap: () => context.go('/legal/privacy'),
-                  ),
-                  _FooterLink(
-                    label: 'Billing Policy',
-                    onTap: () => context.go('/legal/billing'),
-                  ),
-                  _FooterLink(
-                    label: 'Refund Policy',
-                    onTap: () => context.go('/legal/refunds'),
-                  ),
-                  _FooterLink(
-                    label: 'Acceptable Use',
-                    onTap: () => context.go('/legal/acceptable-use'),
-                  ),
-                  _FooterLink(
-                    label: 'Service Agreement',
-                    onTap: () => context.go('/legal/service-agreement'),
-                  ),
-                  _FooterLink(
-                    label: 'Deliverability Notice',
-                    onTap: () => context.go('/legal/deliverability'),
-                  ),
-                ],
-              );
-
-              if (compact) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                final links = Wrap(
+                  spacing: 18,
+                  runSpacing: 10,
                   children: [
-                    legalHeading,
-                    const SizedBox(height: 14),
-                    links,
+                    _FooterLink(label: 'Terms of Use', onTap: () => context.go('/legal/terms')),
+                    _FooterLink(label: 'Privacy Policy', onTap: () => context.go('/legal/privacy')),
+                    _FooterLink(label: 'Billing Policy', onTap: () => context.go('/legal/billing')),
+                    _FooterLink(label: 'Refund Policy', onTap: () => context.go('/legal/refunds')),
+                    _FooterLink(label: 'Acceptable Use', onTap: () => context.go('/legal/acceptable-use')),
+                    _FooterLink(label: 'Service Agreement', onTap: () => context.go('/legal/service-agreement')),
+                    _FooterLink(label: 'Deliverability Notice', onTap: () => context.go('/legal/deliverability-notice')),
                   ],
                 );
-              }
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(width: 160, child: legalHeading),
-                  Expanded(child: links),
-                ],
-              );
-            },
+                if (compact) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [label, const SizedBox(height: 14), links],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 140, child: label),
+                    Expanded(child: links),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -276,23 +239,31 @@ class _PublicFooter extends StatelessWidget {
   }
 }
 
-class _ShellBrand extends StatelessWidget {
-  const _ShellBrand({required this.onTap});
+class _HeaderLink extends StatelessWidget {
+  const _HeaderLink({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
 
+  final String label;
+  final bool active;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: BrandAssets.logo(context, height: 26),
-        ),
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: active ? AppTheme.publicText : AppTheme.publicMuted,
+        backgroundColor: active ? AppTheme.publicSurfaceSoft : Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+            ),
       ),
+      child: Text(label),
     );
   }
 }
@@ -305,45 +276,18 @@ class _FooterLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        foregroundColor: AppTheme.publicMuted,
-        padding: EdgeInsets.zero,
-        minimumSize: const Size(0, 0),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppTheme.publicMuted,
+              ),
+        ),
       ),
-      child: Text(label),
-    );
-  }
-}
-
-class _TopLink extends StatelessWidget {
-  const _TopLink({required this.label, required this.onTap, required this.active});
-
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        foregroundColor: active ? AppTheme.publicText : AppTheme.publicMuted,
-        backgroundColor: active ? AppTheme.publicSurfaceSoft : Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        minimumSize: const Size(0, 42),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-            ),
-      ),
-      child: Text(label),
     );
   }
 }
