@@ -27,51 +27,56 @@ class ClientWorkspaceScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.only(top: 12, bottom: 32),
-        child: AsyncSurface<_ClientLoadState>(
-          future: _loadSafe(repository),
-          builder: (context, data) {
-            final state = data ?? _ClientLoadState(view: _ClientViewData.empty(section));
-            if (state.errorMessage != null) {
-              return _ErrorState(message: state.errorMessage!);
-            }
+        padding: const EdgeInsets.fromLTRB(28, 12, 28, 32),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1280),
+            child: AsyncSurface<_ClientLoadState>(
+              future: _loadSafe(repository),
+              builder: (context, data) {
+                final state = data ?? _ClientLoadState(view: _ClientViewData.empty(section));
+                if (state.errorMessage != null) {
+                  return _ErrorState(message: state.errorMessage!);
+                }
 
-            final view = state.view;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Client workspace',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.publicMuted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 10),
-                SectionHeader(
-                  title: view.title,
-                  subtitle: view.subtitle,
-                ),
-                const SizedBox(height: 20),
-                if (view.notice != null) ...[
-                  _NoticeStrip(message: view.notice!, isPositive: AppConfig.hasClientAccess),
-                  const SizedBox(height: 20),
-                ],
-                if (view.stats.isNotEmpty) ...[
-                  _StatsBand(stats: view.stats),
-                  const SizedBox(height: 22),
-                ],
-                _PanelLayout(
-                  primaryTitle: view.primaryTitle,
-                  primaryRows: view.primaryRows,
-                  primaryEmpty: view.primaryEmpty,
-                  secondaryTitle: view.secondaryTitle,
-                  secondaryRows: view.secondaryRows,
-                  secondaryEmpty: view.secondaryEmpty,
-                ),
-              ],
-            );
-          },
+                final view = state.view;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Client workspace',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppTheme.publicMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    SectionHeader(
+                      title: view.title,
+                      subtitle: view.subtitle,
+                    ),
+                    const SizedBox(height: 20),
+                    if (view.notice != null) ...[
+                      _NoticeStrip(message: view.notice!, isPositive: AppConfig.hasClientAccess),
+                      const SizedBox(height: 20),
+                    ],
+                    if (view.stats.isNotEmpty) ...[
+                      _StatsBand(stats: view.stats),
+                      const SizedBox(height: 22),
+                    ],
+                    _PanelLayout(
+                      primaryTitle: view.primaryTitle,
+                      primaryRows: view.primaryRows,
+                      primaryEmpty: view.primaryEmpty,
+                      secondaryTitle: view.secondaryTitle,
+                      secondaryRows: view.secondaryRows,
+                      secondaryEmpty: view.secondaryEmpty,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
