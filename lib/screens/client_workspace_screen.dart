@@ -27,7 +27,7 @@ class ClientWorkspaceScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.only(top: 4, bottom: 28),
+        padding: const EdgeInsets.only(top: 12, bottom: 32),
         child: AsyncSurface<_ClientLoadState>(
           future: _loadSafe(repository),
           builder: (context, data) {
@@ -44,6 +44,7 @@ class ClientWorkspaceScreen extends StatelessWidget {
                   'Client workspace',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppTheme.publicMuted,
+                        fontWeight: FontWeight.w600,
                       ),
                 ),
                 const SizedBox(height: 10),
@@ -51,28 +52,23 @@ class ClientWorkspaceScreen extends StatelessWidget {
                   title: view.title,
                   subtitle: view.subtitle,
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 24),
                 if (view.notice != null) ...[
                   _NoticeStrip(message: view.notice!, isPositive: AppConfig.hasClientAccess),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
                 ],
                 if (view.stats.isNotEmpty) ...[
                   _StatsGrid(stats: view.stats),
-                  const SizedBox(height: 20),
-                ],
-                _Panel(
-                  title: view.primaryTitle,
-                  rows: view.primaryRows,
-                  emptyLabel: view.primaryEmpty,
-                ),
-                if (view.secondaryTitle != null) ...[
                   const SizedBox(height: 18),
-                  _Panel(
-                    title: view.secondaryTitle!,
-                    rows: view.secondaryRows,
-                    emptyLabel: view.secondaryEmpty,
-                  ),
                 ],
+                _PanelLayout(
+                  primaryTitle: view.primaryTitle,
+                  primaryRows: view.primaryRows,
+                  primaryEmpty: view.primaryEmpty,
+                  secondaryTitle: view.secondaryTitle,
+                  secondaryRows: view.secondaryRows,
+                  secondaryEmpty: view.secondaryEmpty,
+                ),
               ],
             );
           },
@@ -324,6 +320,80 @@ class _StatsGrid extends StatelessWidget {
                   ),
                 ),
               ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PanelLayout extends StatelessWidget {
+  const _PanelLayout({
+    required this.primaryTitle,
+    required this.primaryRows,
+    required this.primaryEmpty,
+    this.secondaryTitle,
+    this.secondaryRows = const [],
+    this.secondaryEmpty = 'Nothing is available.',
+  });
+
+  final String primaryTitle;
+  final List<_ClientRow> primaryRows;
+  final String primaryEmpty;
+  final String? secondaryTitle;
+  final List<_ClientRow> secondaryRows;
+  final String secondaryEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    if (secondaryTitle == null) {
+      return _Panel(
+        title: primaryTitle,
+        rows: primaryRows,
+        emptyLabel: primaryEmpty,
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 980) {
+          return Column(
+            children: [
+              _Panel(
+                title: primaryTitle,
+                rows: primaryRows,
+                emptyLabel: primaryEmpty,
+              ),
+              const SizedBox(height: 18),
+              _Panel(
+                title: secondaryTitle!,
+                rows: secondaryRows,
+                emptyLabel: secondaryEmpty,
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 7,
+              child: _Panel(
+                title: primaryTitle,
+                rows: primaryRows,
+                emptyLabel: primaryEmpty,
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              flex: 5,
+              child: _Panel(
+                title: secondaryTitle!,
+                rows: secondaryRows,
+                emptyLabel: secondaryEmpty,
+              ),
+            ),
           ],
         );
       },

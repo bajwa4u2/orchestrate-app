@@ -28,7 +28,7 @@ class ClientShell extends StatelessWidget {
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 16, 28, 16),
+                  padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1280),
@@ -36,26 +36,12 @@ class ClientShell extends StatelessWidget {
                         builder: (context, constraints) {
                           final compact = constraints.maxWidth < 1120;
 
-                          final brandBlock = InkWell(
+                          final logo = InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => context.go('/client/workspace'),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  BrandAssets.logo(context, height: 28),
-                                  const SizedBox(width: 14),
-                                  Text(
-                                    'Client workspace',
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppTheme.publicText,
-                                        ),
-                                  ),
-                                ],
-                              ),
+                              child: BrandAssets.logo(context, height: 30),
                             ),
                           );
 
@@ -96,7 +82,7 @@ class ClientShell extends StatelessWidget {
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: AppTheme.publicMuted,
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -108,23 +94,20 @@ class ClientShell extends StatelessWidget {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                brandBlock,
+                                logo,
                                 const SizedBox(height: 14),
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: navItems,
+                                  children: [...navItems, signOut],
                                 ),
-                                const SizedBox(height: 8),
-                                signOut,
                               ],
                             );
                           }
 
                           return Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              brandBlock,
+                              logo,
                               const Spacer(),
                               Flexible(
                                 child: Align(
@@ -135,7 +118,7 @@ class ClientShell extends StatelessWidget {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         ..._withSpacing(navItems, 6),
-                                        const SizedBox(width: 10),
+                                        const SizedBox(width: 12),
                                         signOut,
                                       ],
                                     ),
