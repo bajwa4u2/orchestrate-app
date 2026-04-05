@@ -33,7 +33,7 @@ class OperatorWorkspaceScreen extends StatelessWidget {
         padding: const EdgeInsets.only(top: 6, bottom: 16),
         child: AsyncSurface<_OperatorViewData>(
           future: _load(repository),
-          builder: (context, data, error) {
+          builder: (context, data) {
             final view = data ?? _OperatorViewData.empty(section);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,7 +44,6 @@ class OperatorWorkspaceScreen extends StatelessWidget {
                   trailing: view.trailingLabel == null ? null : _Badge(label: view.trailingLabel!),
                 ),
                 const SizedBox(height: 24),
-                if (error != null) _ErrorPanel(message: _humanizeError(error)),
                 if (view.notice != null) ...[
                   _InfoPanel(message: view.notice!),
                   const SizedBox(height: 20),

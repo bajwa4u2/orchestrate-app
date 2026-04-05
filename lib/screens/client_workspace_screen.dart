@@ -31,14 +31,13 @@ class ClientWorkspaceScreen extends StatelessWidget {
         padding: const EdgeInsets.only(top: 6, bottom: 16),
         child: AsyncSurface<_ClientViewData>(
           future: _load(repository),
-          builder: (context, data, error) {
+          builder: (context, data) {
             final view = data ?? _ClientViewData.empty(section);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SectionHeader(title: view.title, subtitle: view.subtitle),
                 const SizedBox(height: 24),
-                if (error != null) _Banner(message: _humanizeError(error), isError: true),
                 if (view.notice != null) ...[
                   _Banner(message: view.notice!, isError: false),
                   const SizedBox(height: 20),
