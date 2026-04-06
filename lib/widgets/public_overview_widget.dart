@@ -1,3 +1,4 @@
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -83,69 +84,96 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
     final paymentsClearedAmount = (_data!['paymentsClearedAmount'] ?? 0) as num;
     final paymentsDueAmount = (_data!['paymentsDueAmount'] ?? 0) as num;
 
+    final cards = [
+      _FlowCard(
+        title: 'Leads',
+        value: leadsActive.toString(),
+        suffix: 'active',
+        tone: _FlowTone.normal,
+      ),
+      _FlowCard(
+        title: 'Outreach',
+        value: outreachSent.toString(),
+        suffix: 'sent',
+        tone: _FlowTone.normal,
+      ),
+      _FlowCard(
+        title: 'Replies',
+        value: repliesReceived.toString(),
+        suffix: 'received',
+        tone: _FlowTone.normal,
+      ),
+      _FlowCard(
+        title: 'Meetings',
+        value: meetingsScheduled.toString(),
+        suffix: 'scheduled',
+        detail: 'Current pipeline',
+        tone: _FlowTone.emphasis,
+      ),
+      _FlowCard(
+        title: 'Invoices',
+        value: _formatCurrency(invoicesIssuedAmount),
+        suffix: 'issued',
+        detail: paymentsDueAmount > 0 ? '${_formatCurrency(paymentsDueAmount)} due' : 'Issued inside the same flow',
+        tone: _FlowTone.strong,
+      ),
+      _FlowCard(
+        title: 'Payments',
+        value: _formatCurrency(paymentsClearedAmount),
+        suffix: 'cleared',
+        detail: paymentsDueAmount > 0 ? '${_formatCurrency(paymentsDueAmount)} open' : 'Settlement carried forward',
+        tone: _FlowTone.strongest,
+      ),
+    ];
+
     return _OverviewShell(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 1180;
-          final cards = [
-            _FlowCard(
-              title: 'Leads',
-              value: leadsActive.toString(),
-              suffix: 'active',
-              tone: _FlowTone.normal,
-            ),
-            _FlowCard(
-              title: 'Outreach',
-              value: outreachSent.toString(),
-              suffix: 'sent',
-              tone: _FlowTone.normal,
-            ),
-            _FlowCard(
-              title: 'Replies',
-              value: repliesReceived.toString(),
-              suffix: 'received',
-              tone: _FlowTone.normal,
-            ),
-            _FlowCard(
-              title: 'Meetings',
-              value: meetingsScheduled.toString(),
-              suffix: 'scheduled',
-              detail: 'Current pipeline',
-              tone: _FlowTone.emphasis,
-            ),
-            _FlowCard(
-              title: 'Invoices',
-              value: _formatCurrency(invoicesIssuedAmount),
-              suffix: 'issued',
-              detail: paymentsDueAmount > 0 ? '${_formatCurrency(paymentsDueAmount)} due' : null,
-              tone: _FlowTone.strong,
-            ),
-            _FlowCard(
-              title: 'Payments',
-              value: _formatCurrency(paymentsClearedAmount),
-              suffix: 'cleared',
-              detail: paymentsDueAmount > 0 ? '${_formatCurrency(paymentsDueAmount)} open' : 'Settled',
-              tone: _FlowTone.strongest,
-            ),
-          ];
-
-          if (stacked) {
+          if (constraints.maxWidth >= 1120) {
             return Column(
               children: [
-                for (int i = 0; i < cards.length; i++) ...[
-                  cards[i],
-                  if (i != cards.length - 1) const SizedBox(height: 12),
-                ],
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (int i = 0; i < 4; i++) ...[
+                      Expanded(child: cards[i]),
+                      if (i != 3) const SizedBox(width: 12),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: cards[4]),
+                    const SizedBox(width: 12),
+                    Expanded(child: cards[5]),
+                    const Spacer(flex: 2),
+                  ],
+                ),
               ],
             );
           }
 
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          if (constraints.maxWidth >= 720) {
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final card in cards)
+                  SizedBox(
+                    width: (constraints.maxWidth - 12) / 2,
+                    child: card,
+                  ),
+              ],
+            );
+          }
+
+          return Column(
             children: [
               for (int i = 0; i < cards.length; i++) ...[
-                Expanded(child: cards[i]),
-                if (i != cards.length - 1) const _FlowConnector(),
+                cards[i],
+                if (i != cards.length - 1) const SizedBox(height: 12),
               ],
             ],
           );
@@ -188,24 +216,6 @@ class _OverviewShell extends StatelessWidget {
   }
 }
 
-class _FlowConnector extends StatelessWidget {
-  const _FlowConnector();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 18,
-      child: Center(
-        child: Container(
-          width: 18,
-          height: 1,
-          color: AppTheme.publicLine,
-        ),
-      ),
-    );
-  }
-}
-
 enum _FlowTone { normal, emphasis, strong, strongest }
 
 class _FlowCard extends StatelessWidget {
@@ -240,7 +250,7 @@ class _FlowCard extends StatelessWidget {
     };
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 154),
+      constraints: const BoxConstraints(minHeight: 156),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
         color: background,
@@ -326,7 +336,7 @@ class _EmptyState extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'This system reflects real outreach, meetings, and revenue.\nOnce active, this view updates automatically.',
+          'This system reflects real outreach, meetings, billing, and revenue. Once active, this view updates automatically.',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppTheme.publicMuted,
               ),
