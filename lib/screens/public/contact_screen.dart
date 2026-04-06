@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
+import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/repositories/public_repository.dart';
 
 class ContactScreen extends StatefulWidget {
   const ContactScreen({super.key});
@@ -15,18 +19,22 @@ class _ContactScreenState extends State<ContactScreen> {
   final _emailController = TextEditingController();
   final _companyController = TextEditingController();
   final _messageController = TextEditingController();
+  final _repository = PublicRepository();
 
-  static const List<String> _inquiryTypes = <String>[
-    'Service fit',
-    'Pricing',
-    'Billing support',
-    'Onboarding',
-    'Partnership',
-    'General inquiry',
+  static const List<_InquiryOption> _inquiryTypes = <_InquiryOption>[
+    _InquiryOption(label: 'Service fit', value: 'SERVICE_FIT'),
+    _InquiryOption(label: 'Pricing', value: 'PRICING'),
+    _InquiryOption(label: 'Billing support', value: 'BILLING_SUPPORT'),
+    _InquiryOption(label: 'Onboarding', value: 'ONBOARDING'),
+    _InquiryOption(label: 'Partnership', value: 'PARTNERSHIP'),
+    _InquiryOption(label: 'General inquiry', value: 'GENERAL_INQUIRY'),
   ];
 
-  String _selectedInquiry = _inquiryTypes.first;
+  String _selectedInquiry = _inquiryTypes.first.value;
+  bool _submitting = false;
   bool _submitted = false;
+  String? _successMessage;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -37,15 +45,89 @@ class _ContactScreenState extends State<ContactScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
     setState(() {
-      _submitted = true;
+      _submitting = true;
+      _submitted = false;
+      _successMessage = null;
+      _errorMessage = null;
     });
+
+    try {
+      final response = await _repository.submitContact(
+        name: _nameController.text,
+        email: _emailController.text,
+        company: _companyController.text,
+        inquiryType: _selectedInquiry,
+        message: _messageController.text,
+      );
+
+      final message = (response['message'] as String?)?.trim();
+
+      if (!mounted) return;
+
+      setState(() {
+        _submitting = false;
+        _submitted = true;
+        _successMessage =
+            (message != null && message.isNotEmpty)
+                ? message
+                : 'Thanks. Your inquiry has been received and routed.';
+        _errorMessage = null;
+      });
+
+      _formKey.currentState?.reset();
+      _nameController.clear();
+      _emailController.clear();
+      _companyController.clear();
+      _messageController.clear();
+      if (mounted) {
+        setState(() {
+          _selectedInquiry = _inquiryTypes.first.value;
+        });
+      }
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _submitted = false;
+        _errorMessage = _messageFromApiException(error);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _submitted = false;
+        _errorMessage =
+            'We could not send your inquiry right now. Please try again in a moment or email hello@orchestrateops.com.';
+      });
+    }
+  }
+
+  String _messageFromApiException(ApiException error) {
+    try {
+      final decoded = jsonDecode(error.body);
+      if (decoded is Map<String, dynamic>) {
+        final message = decoded['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message.trim();
+        }
+        if (message is List && message.isNotEmpty) {
+          return message.first.toString();
+        }
+      }
+    } catch (_) {}
+
+    if (error.statusCode >= 500) {
+      return 'Your inquiry was not sent because the server had a problem. Please try again in a moment.';
+    }
+
+    return 'Please review the form and try again.';
   }
 
   @override
@@ -75,7 +157,10 @@ class _ContactScreenState extends State<ContactScreen> {
                     });
                   },
                   onSubmit: _submit,
+                  submitting: _submitting,
                   submitted: _submitted,
+                  successMessage: _successMessage,
+                  errorMessage: _errorMessage,
                 );
 
                 if (stacked) {
@@ -104,6 +189,13 @@ class _ContactScreenState extends State<ContactScreen> {
       ),
     );
   }
+}
+
+class _InquiryOption {
+  const _InquiryOption({required this.label, required this.value});
+
+  final String label;
+  final String value;
 }
 
 class _IntroPanel extends StatelessWidget {
@@ -142,7 +234,7 @@ class _IntroPanel extends StatelessWidget {
           _InfoCard(
             title: 'What happens next',
             body:
-                'Your inquiry becomes the starting point for a direct business conversation about next steps.',
+                'Your inquiry is saved inside Orchestrate first, then routed to the operating inbox for follow-up.',
           ),
         ],
       ),
@@ -251,7 +343,10 @@ class _FormCard extends StatelessWidget {
     required this.selectedInquiry,
     required this.onInquiryChanged,
     required this.onSubmit,
+    required this.submitting,
     required this.submitted,
+    required this.successMessage,
+    required this.errorMessage,
   });
 
   final GlobalKey<FormState> formKey;
@@ -259,11 +354,14 @@ class _FormCard extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController companyController;
   final TextEditingController messageController;
-  final List<String> inquiryTypes;
+  final List<_InquiryOption> inquiryTypes;
   final String selectedInquiry;
   final ValueChanged<String?> onInquiryChanged;
-  final VoidCallback onSubmit;
+  final Future<void> Function() onSubmit;
+  final bool submitting;
   final bool submitted;
+  final String? successMessage;
+  final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -394,12 +492,12 @@ class _FormCard extends StatelessWidget {
                 items: inquiryTypes
                     .map(
                       (type) => DropdownMenuItem<String>(
-                        value: type,
-                        child: Text(type),
+                        value: type.value,
+                        child: Text(type.label),
                       ),
                     )
                     .toList(),
-                onChanged: onInquiryChanged,
+                onChanged: submitting ? null : onInquiryChanged,
                 decoration: _inputDecoration(context),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
                 borderRadius: BorderRadius.circular(18),
@@ -427,11 +525,13 @@ class _FormCard extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: onSubmit,
+              onPressed: submitting ? null : onSubmit,
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(54),
                 backgroundColor: AppTheme.publicText,
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: AppTheme.publicLine,
+                disabledForegroundColor: AppTheme.publicMuted,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -439,28 +539,57 @@ class _FormCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
               ),
-              child: const Text('Send inquiry'),
+              child: Text(submitting ? 'Sending inquiry...' : 'Send inquiry'),
             ),
-            if (submitted) ...[
+            if (errorMessage != null) ...[
               const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: AppTheme.publicAccentSoft,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Text(
-                  'Thanks. Your inquiry has been captured and is ready for the next step.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.publicText,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
+              _FeedbackBanner(
+                message: errorMessage!,
+                accent: const Color(0xFFB42318),
+                background: const Color(0xFFFEE4E2),
+              ),
+            ],
+            if (submitted && successMessage != null) ...[
+              const SizedBox(height: 16),
+              _FeedbackBanner(
+                message: successMessage!,
+                accent: AppTheme.publicText,
+                background: AppTheme.publicAccentSoft,
               ),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FeedbackBanner extends StatelessWidget {
+  const _FeedbackBanner({
+    required this.message,
+    required this.accent,
+    required this.background,
+  });
+
+  final String message;
+  final Color accent;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        message,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: accent,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
