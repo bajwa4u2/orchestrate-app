@@ -77,7 +77,7 @@ class _ContactScreenState extends State<ContactScreen> {
         _successMessage =
             (message != null && message.isNotEmpty)
                 ? message
-                : 'Thanks. Your inquiry has been received and routed.';
+                : 'Thanks for reaching out. Your message is with us, and we will follow up shortly.';
         _errorMessage = null;
       });
 
@@ -86,11 +86,7 @@ class _ContactScreenState extends State<ContactScreen> {
       _emailController.clear();
       _companyController.clear();
       _messageController.clear();
-      if (mounted) {
-        setState(() {
-          _selectedInquiry = _inquiryTypes.first.value;
-        });
-      }
+      _selectedInquiry = _inquiryTypes.first.value;
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -104,9 +100,25 @@ class _ContactScreenState extends State<ContactScreen> {
         _submitting = false;
         _submitted = false;
         _errorMessage =
-            'We could not send your inquiry right now. Please try again in a moment or email hello@orchestrateops.com.';
+            'We could not send your message right now. Please try again in a moment or email hello@orchestrateops.com.';
       });
     }
+  }
+
+  void _resetForm() {
+    FocusScope.of(context).unfocus();
+    _formKey.currentState?.reset();
+    _nameController.clear();
+    _emailController.clear();
+    _companyController.clear();
+    _messageController.clear();
+    setState(() {
+      _selectedInquiry = _inquiryTypes.first.value;
+      _submitted = false;
+      _successMessage = null;
+      _errorMessage = null;
+      _submitting = false;
+    });
   }
 
   String _messageFromApiException(ApiException error) {
@@ -124,7 +136,7 @@ class _ContactScreenState extends State<ContactScreen> {
     } catch (_) {}
 
     if (error.statusCode >= 500) {
-      return 'Your inquiry was not sent because the server had a problem. Please try again in a moment.';
+      return 'Your message was not sent because the server had a problem. Please try again in a moment.';
     }
 
     return 'Please review the form and try again.';
@@ -157,6 +169,7 @@ class _ContactScreenState extends State<ContactScreen> {
                     });
                   },
                   onSubmit: _submit,
+                  onSendAnother: _resetForm,
                   submitting: _submitting,
                   submitted: _submitted,
                   successMessage: _successMessage,
@@ -234,7 +247,7 @@ class _IntroPanel extends StatelessWidget {
           _InfoCard(
             title: 'What happens next',
             body:
-                'Your inquiry is saved inside Orchestrate first, then routed to the operating inbox for follow-up.',
+                'Your inquiry is saved inside Orchestrate first, then routed to the right operating inbox for follow-up.',
           ),
         ],
       ),
@@ -343,6 +356,7 @@ class _FormCard extends StatelessWidget {
     required this.selectedInquiry,
     required this.onInquiryChanged,
     required this.onSubmit,
+    required this.onSendAnother,
     required this.submitting,
     required this.submitted,
     required this.successMessage,
@@ -358,6 +372,7 @@ class _FormCard extends StatelessWidget {
   final String selectedInquiry;
   final ValueChanged<String?> onInquiryChanged;
   final Future<void> Function() onSubmit;
+  final VoidCallback onSendAnother;
   final bool submitting;
   final bool submitted;
   final String? successMessage;
@@ -372,194 +387,275 @@ class _FormCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: AppTheme.publicLine),
       ),
-      child: Form(
-        key: formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Send an inquiry',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Share a few details and we will use that to begin the conversation.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.publicMuted,
+      child: submitted
+          ? _SuccessState(
+              successMessage: successMessage ??
+                  'Thanks for reaching out. Your message is with us, and we will follow up shortly.',
+              onSendAnother: onSendAnother,
+            )
+          : Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Send an inquiry',
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-            ),
-            const SizedBox(height: 24),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final stacked = constraints.maxWidth < 640;
-                if (stacked) {
-                  return Column(
-                    children: [
-                      _FieldBlock(
-                        label: 'Name',
-                        child: _AppTextField(
-                          controller: nameController,
-                          hintText: 'Your full name',
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your name.';
-                            }
-                            return null;
-                          },
+                  const SizedBox(height: 12),
+                  Text(
+                    'Share a few details and we will use that to begin the conversation.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppTheme.publicMuted,
                         ),
-                      ),
-                      const SizedBox(height: 18),
-                      _FieldBlock(
-                        label: 'Email',
-                        child: _AppTextField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          hintText: 'name@company.com',
-                          validator: (value) {
-                            final trimmed = value?.trim() ?? '';
-                            if (trimmed.isEmpty) {
-                              return 'Please enter your email.';
-                            }
-                            final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                            if (!emailPattern.hasMatch(trimmed)) {
-                              return 'Please enter a valid email address.';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-                }
+                  ),
+                  const SizedBox(height: 24),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stacked = constraints.maxWidth < 640;
+                      if (stacked) {
+                        return Column(
+                          children: [
+                            _FieldBlock(
+                              label: 'Name',
+                              child: _AppTextField(
+                                controller: nameController,
+                                hintText: 'Your full name',
+                                enabled: !submitting,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your name.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            _FieldBlock(
+                              label: 'Email',
+                              child: _AppTextField(
+                                controller: emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                hintText: 'name@company.com',
+                                enabled: !submitting,
+                                validator: (value) {
+                                  final trimmed = value?.trim() ?? '';
+                                  if (trimmed.isEmpty) {
+                                    return 'Please enter your email.';
+                                  }
+                                  final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                                  if (!emailPattern.hasMatch(trimmed)) {
+                                    return 'Please enter a valid email address.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        );
+                      }
 
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _FieldBlock(
-                        label: 'Name',
-                        child: _AppTextField(
-                          controller: nameController,
-                          hintText: 'Your full name',
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your name.';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _FieldBlock(
+                              label: 'Name',
+                              child: _AppTextField(
+                                controller: nameController,
+                                hintText: 'Your full name',
+                                enabled: !submitting,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your name.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 18),
+                          Expanded(
+                            child: _FieldBlock(
+                              label: 'Email',
+                              child: _AppTextField(
+                                controller: emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                hintText: 'name@company.com',
+                                enabled: !submitting,
+                                validator: (value) {
+                                  final trimmed = value?.trim() ?? '';
+                                  if (trimmed.isEmpty) {
+                                    return 'Please enter your email.';
+                                  }
+                                  final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                                  if (!emailPattern.hasMatch(trimmed)) {
+                                    return 'Please enter a valid email address.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 18),
+                  _FieldBlock(
+                    label: 'Company',
+                    child: _AppTextField(
+                      controller: companyController,
+                      hintText: 'Company name',
+                      enabled: !submitting,
                     ),
-                    const SizedBox(width: 18),
-                    Expanded(
-                      child: _FieldBlock(
-                        label: 'Email',
-                        child: _AppTextField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          hintText: 'name@company.com',
-                          validator: (value) {
-                            final trimmed = value?.trim() ?? '';
-                            if (trimmed.isEmpty) {
-                              return 'Please enter your email.';
-                            }
-                            final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                            if (!emailPattern.hasMatch(trimmed)) {
-                              return 'Please enter a valid email address.';
-                            }
-                            return null;
-                          },
-                        ),
+                  ),
+                  const SizedBox(height: 18),
+                  _FieldBlock(
+                    label: 'Inquiry type',
+                    child: DropdownButtonFormField<String>(
+                      value: selectedInquiry,
+                      items: inquiryTypes
+                          .map(
+                            (type) => DropdownMenuItem<String>(
+                              value: type.value,
+                              child: Text(type.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: submitting ? null : onInquiryChanged,
+                      decoration: _inputDecoration(context),
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _FieldBlock(
+                    label: 'Message',
+                    child: _AppTextField(
+                      controller: messageController,
+                      hintText:
+                          'Tell us what you need, what stage you are in, and anything useful for the conversation.',
+                      maxLines: 7,
+                      enabled: !submitting,
+                      validator: (value) {
+                        final trimmed = value?.trim() ?? '';
+                        if (trimmed.isEmpty) {
+                          return 'Please enter a message.';
+                        }
+                        if (trimmed.length < 20) {
+                          return 'Please add a little more detail.';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: submitting ? null : onSubmit,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(54),
+                      backgroundColor: AppTheme.publicText,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: AppTheme.publicLine,
+                      disabledForegroundColor: AppTheme.publicMuted,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
                       ),
+                      textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    child: Text(submitting ? 'Sending...' : 'Send message'),
+                  ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 16),
+                    _FeedbackBanner(
+                      message: errorMessage!,
+                      accent: const Color(0xFFB42318),
+                      background: const Color(0xFFFEE4E2),
                     ),
                   ],
-                );
-              },
-            ),
-            const SizedBox(height: 18),
-            _FieldBlock(
-              label: 'Company',
-              child: _AppTextField(
-                controller: companyController,
-                hintText: 'Company name',
+                ],
               ),
             ),
-            const SizedBox(height: 18),
-            _FieldBlock(
-              label: 'Inquiry type',
-              child: DropdownButtonFormField<String>(
-                value: selectedInquiry,
-                items: inquiryTypes
-                    .map(
-                      (type) => DropdownMenuItem<String>(
-                        value: type.value,
-                        child: Text(type.label),
-                      ),
-                    )
-                    .toList(),
-                onChanged: submitting ? null : onInquiryChanged,
-                decoration: _inputDecoration(context),
-                icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-            const SizedBox(height: 18),
-            _FieldBlock(
-              label: 'Message',
-              child: _AppTextField(
-                controller: messageController,
-                hintText:
-                    'Tell us what you need, what stage you are in, and anything useful for the conversation.',
-                maxLines: 7,
-                validator: (value) {
-                  final trimmed = value?.trim() ?? '';
-                  if (trimmed.isEmpty) {
-                    return 'Please enter a message.';
-                  }
-                  if (trimmed.length < 20) {
-                    return 'Please add a little more detail.';
-                  }
-                  return null;
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: submitting ? null : onSubmit,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(54),
-                backgroundColor: AppTheme.publicText,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppTheme.publicLine,
-                disabledForegroundColor: AppTheme.publicMuted,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              child: Text(submitting ? 'Sending inquiry...' : 'Send inquiry'),
-            ),
-            if (errorMessage != null) ...[
-              const SizedBox(height: 16),
-              _FeedbackBanner(
-                message: errorMessage!,
-                accent: const Color(0xFFB42318),
-                background: const Color(0xFFFEE4E2),
-              ),
-            ],
-            if (submitted && successMessage != null) ...[
-              const SizedBox(height: 16),
-              _FeedbackBanner(
-                message: successMessage!,
-                accent: AppTheme.publicText,
-                background: AppTheme.publicAccentSoft,
-              ),
-            ],
-          ],
+    );
+  }
+}
+
+class _SuccessState extends StatelessWidget {
+  const _SuccessState({
+    required this.successMessage,
+    required this.onSendAnother,
+  });
+
+  final String successMessage;
+  final VoidCallback onSendAnother;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: AppTheme.publicAccentSoft,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.check_rounded,
+            size: 30,
+            color: AppTheme.publicText,
+          ),
         ),
-      ),
+        const SizedBox(height: 22),
+        Text(
+          'Thanks for reaching out',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          successMessage,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppTheme.publicMuted,
+              ),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppTheme.publicSurfaceSoft,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.publicLine),
+          ),
+          child: Text(
+            'We use your inquiry to start the right conversation on our side. If your message needs a direct response, we will reach out through the email you provided.',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        OutlinedButton(
+          onPressed: onSendAnother,
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(52),
+            side: const BorderSide(color: AppTheme.publicLine),
+            foregroundColor: AppTheme.publicText,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          child: const Text('Send another message'),
+        ),
+      ],
     );
   }
 }
@@ -626,6 +722,7 @@ class _AppTextField extends StatelessWidget {
     this.validator,
     this.maxLines = 1,
     this.keyboardType,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
@@ -633,6 +730,7 @@ class _AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final int maxLines;
   final TextInputType? keyboardType;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -641,6 +739,7 @@ class _AppTextField extends StatelessWidget {
       validator: validator,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      enabled: enabled,
       decoration: _inputDecoration(context).copyWith(hintText: hintText),
     );
   }
@@ -669,6 +768,10 @@ InputDecoration _inputDecoration(BuildContext context) {
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(18),
       borderSide: const BorderSide(color: Colors.redAccent),
+    ),
+    disabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(18),
+      borderSide: const BorderSide(color: AppTheme.publicLine),
     ),
   );
 }
