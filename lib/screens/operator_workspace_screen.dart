@@ -89,12 +89,19 @@ class OperatorWorkspaceScreen extends StatelessWidget {
   Future<_OperatorViewData> _load(OperatorRepository repository) async {
     switch (section) {
       case OperatorSection.command:
-        final overview = await repository.fetchCommandOverview();
+        final results = await Future.wait([
+          repository.fetchCommandOverview(),
+          repository.fetchPublicInquiries(limit: 8),
+        ]);
+        final overview = _asMap(results[0]);
+        final inquiries = _asMap(results[1]);
         final totals = _asMap(overview['totals']);
         final today = _asMap(overview['today']);
         final execution = _asMap(overview['execution']);
         final deliverability = _asMap(overview['deliverability']);
         final alerts = _asMap(overview['alerts']);
+        final inquirySummary = _asMap(inquiries['summary']);
+        final inquiryItems = _list(inquiries['items']);
         return _OperatorViewData(
           title: 'Command',
           subtitle: 'Today, pressure, delivery, and unresolved work in one frame.',
@@ -104,7 +111,7 @@ class OperatorWorkspaceScreen extends StatelessWidget {
             _Stat('Replies', _num(today['replies'])),
             _Stat('Booked', _num(today['booked'])),
             _Stat('Open alerts', _num(alerts['open']), tone: AppTheme.rose),
-            _Stat('Queued jobs', _num(execution['queuedJobs'])),
+            _Stat('Open inquiries', _num(inquirySummary['totalOpen']), tone: AppTheme.amber),
             _Stat('Degraded mailboxes', _num(deliverability['degradedMailboxes']), tone: AppTheme.amber),
           ],
           primaryTitle: 'System posture',
@@ -128,11 +135,20 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               secondary: '${_num(deliverability['degradedMailboxes'])} degraded',
             ),
             _RowData(
+              title: 'Inquiries',
+              primary: '${_num(inquirySummary['received'])} new · ${_num(inquirySummary['acknowledged'])} acknowledged',
+              secondary: '${_num(inquirySummary['notified'])} notified · ${_num(inquirySummary['closed'])} closed',
+            ),
+            _RowData(
               title: 'Alerts',
               primary: '${_num(alerts['open'])} open',
               secondary: _num(alerts['open']) == '0' ? 'No unresolved alert pressure' : 'Review required',
             ),
           ],
+          tertiaryTitle: 'Recent inquiries',
+          tertiarySubtitle: 'Public contact intake now visible inside operator command.',
+          tertiaryRows: inquiryItems.take(8).map(_publicInquiryRow).toList(),
+          tertiaryEmptyLabel: 'No public inquiries are available.',
         );
 
       case OperatorSection.pipeline:
@@ -536,6 +552,25 @@ class _DataRow extends StatelessWidget {
   }
 }
 
+
+_RowData _publicInquiryRow(dynamic source) {
+  final inquiryType = _read(source, 'inquiryType');
+  final company = _read(source, 'company');
+  final email = _read(source, 'email');
+  final status = _humanizeEnum(_read(source, 'status'));
+  final submittedAt = _read(source, 'submittedAt');
+  final submittedLabel = _formatIsoDateTime(submittedAt);
+  final message = _read(source, 'message').replaceAll('
+', ' ').trim();
+  final preview = message.length > 84 ? '${message.substring(0, 84)}…' : message;
+
+  return _RowData(
+    title: _read(source, 'name', fallback: 'Inquiry'),
+    primary: '${_humanizeEnum(inquiryType)}${company.isEmpty ? '' : ' · $company'}',
+    secondary: '${email.isEmpty ? 'No email' : email} · $status${submittedLabel.isEmpty ? '' : ' · $submittedLabel'}${preview.isEmpty ? '' : ' · $preview'}',
+  );
+}
+
 class _Badge extends StatelessWidget {
   const _Badge({required this.label});
 
@@ -766,4 +801,30 @@ String _humanizeError(Object error) {
     return 'This workspace could not load because access headers are missing or not accepted by the API.';
   }
   return 'This surface could not load right now.';
+}
+
+
+String _humanizeEnum(String value) {
+  if (value.isEmpty) return '';
+  final normalized = value.toLowerCase().split('_').where((part) => part.isNotEmpty).toList();
+  return normalized.map((part) => part[0].toUpperCase() + part.substring(1)).join(' ');
+}
+
+String _formatIsoDateTime(String value) {
+  if (value.isEmpty) return '';
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return value;
+  final local = parsed.toLocal();
+  final month = _monthLabel(local.month);
+  final hour24 = local.hour;
+  final hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
+  final minute = local.minute.toString().padLeft(2, '0');
+  final suffix = hour24 >= 12 ? 'PM' : 'AM';
+  return '$month ${local.day}, ${local.year} · $hour12:$minute $suffix';
+}
+
+String _monthLabel(int month) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (month < 1 || month > 12) return '';
+  return months[month - 1];
 }

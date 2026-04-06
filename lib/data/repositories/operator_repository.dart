@@ -25,6 +25,15 @@ class OperatorRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<Map<String, dynamic>> fetchPublicInquiries({int limit = 8}) async {
+    final json = await _apiClient.getJson(
+      '/operator/inquiries',
+      query: {'limit': '$limit'},
+      surface: ApiSurface.operator,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<Map<String, dynamic>> fetchAuthContext() async {
     final json = await _apiClient.getJson('/auth/context', surface: ApiSurface.operator);
     return Map<String, dynamic>.from(json as Map);
@@ -32,8 +41,7 @@ class OperatorRepository {
 
   Future<Map<String, dynamic>> fetchDeliverabilityOverview() async {
     final query = {
-      if (AppConfig.operatorOrganizationId.isNotEmpty)
-        'organizationId': AppConfig.operatorOrganizationId,
+      if (AppConfig.operatorOrganizationId.isNotEmpty) 'organizationId': AppConfig.operatorOrganizationId,
     };
     final json = await _apiClient.getJson('/deliverability/overview', query: query);
     return Map<String, dynamic>.from(json as Map);
@@ -42,40 +50,35 @@ class OperatorRepository {
   Future<List<dynamic>> fetchClients() => _fetchList(
         '/clients',
         query: {
-          if (AppConfig.operatorOrganizationId.isNotEmpty)
-            'organizationId': AppConfig.operatorOrganizationId,
+          if (AppConfig.operatorOrganizationId.isNotEmpty) 'organizationId': AppConfig.operatorOrganizationId,
         },
       );
 
   Future<List<dynamic>> fetchCampaigns() => _fetchList(
         '/campaigns',
         query: {
-          if (AppConfig.operatorOrganizationId.isNotEmpty)
-            'organizationId': AppConfig.operatorOrganizationId,
+          if (AppConfig.operatorOrganizationId.isNotEmpty) 'organizationId': AppConfig.operatorOrganizationId,
         },
       );
 
   Future<List<dynamic>> fetchLeads() => _fetchList(
         '/leads',
         query: {
-          if (AppConfig.operatorOrganizationId.isNotEmpty)
-            'organizationId': AppConfig.operatorOrganizationId,
+          if (AppConfig.operatorOrganizationId.isNotEmpty) 'organizationId': AppConfig.operatorOrganizationId,
         },
       );
 
   Future<List<dynamic>> fetchReplies() => _fetchList(
         '/replies',
         query: {
-          if (AppConfig.operatorOrganizationId.isNotEmpty)
-            'organizationId': AppConfig.operatorOrganizationId,
+          if (AppConfig.operatorOrganizationId.isNotEmpty) 'organizationId': AppConfig.operatorOrganizationId,
         },
       );
 
   Future<List<dynamic>> fetchMeetings() => _fetchList(
         '/meetings',
         query: {
-          if (AppConfig.operatorOrganizationId.isNotEmpty)
-            'organizationId': AppConfig.operatorOrganizationId,
+          if (AppConfig.operatorOrganizationId.isNotEmpty) 'organizationId': AppConfig.operatorOrganizationId,
         },
       );
 
