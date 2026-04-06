@@ -60,4 +60,45 @@ class BrandAssets {
       ),
     );
   }
+
+  static Widget operatorLockup(
+    BuildContext context, {
+    double symbolSize = 34,
+    double fontSize = 26,
+    String label = 'Orchestrate',
+  }) {
+    final theme = Theme.of(context);
+
+    return ExcludeSemantics(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Image.asset(
+            symbolFor(context),
+            width: symbolSize,
+            height: symbolSize,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+            semanticLabel: label,
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.fade,
+              softWrap: false,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.6,
+                    height: 1,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
