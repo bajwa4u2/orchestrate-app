@@ -17,6 +17,10 @@ class AppTheme {
   static const rose = Color(0xFFE67777);
   static const emerald = Color(0xFF48C08F);
 
+  // Added for the new inquiry screens so they compile cleanly
+  static const slate = Color(0xFF6B7280);
+  static const border = Color(0xFFE5E7EB);
+
   static const publicBackground = Color(0xFFF6F7F4);
   static const publicSurface = Color(0xFFFFFFFF);
   static const publicSurfaceSoft = Color(0xFFF0F2EE);
