@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/widgets/async_surface.dart';
@@ -715,9 +716,23 @@ class _PressureRow extends StatelessWidget {
 
   final _PressureItem item;
 
+  String? _resolveRoute() {
+    switch (item.label) {
+      case 'Reply pressure':
+      case 'Open alerts':
+      case 'Failed execution':
+      case 'Degraded mailboxes':
+        return '/app/inquiries';
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final route = _resolveRoute();
+
+    final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
         color: AppTheme.panelSoft,
@@ -749,6 +764,20 @@ class _PressureRow extends StatelessWidget {
                 ),
           ),
         ],
+      ),
+    );
+
+    if (route == null) {
+      return content;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => context.go(route),
+        child: content,
       ),
     );
   }

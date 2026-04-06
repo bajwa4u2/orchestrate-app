@@ -8,7 +8,10 @@ class OperatorRepository {
 
   Future<Map<String, dynamic>> fetchCommandOverview() async {
     if (AppConfig.hasOperatorAccess) {
-      final json = await _apiClient.getJson('/operator/command/overview', surface: ApiSurface.operator);
+      final json = await _apiClient.getJson(
+        '/operator/command/overview',
+        surface: ApiSurface.operator,
+      );
       return Map<String, dynamic>.from(json as Map);
     }
     final json = await _apiClient.getJson('/control/overview');
@@ -16,17 +19,26 @@ class OperatorRepository {
   }
 
   Future<Map<String, dynamic>> fetchRevenueOverview() async {
-    final json = await _apiClient.getJson('/operator/revenue/overview', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/operator/revenue/overview',
+      surface: ApiSurface.operator,
+    );
     return Map<String, dynamic>.from(json as Map);
   }
 
   Future<Map<String, dynamic>> fetchRecordsOverview() async {
-    final json = await _apiClient.getJson('/operator/records/overview', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/operator/records/overview',
+      surface: ApiSurface.operator,
+    );
     return Map<String, dynamic>.from(json as Map);
   }
 
   Future<Map<String, dynamic>> fetchAuthContext() async {
-    final json = await _apiClient.getJson('/auth/context', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/auth/context',
+      surface: ApiSurface.operator,
+    );
     return Map<String, dynamic>.from(json as Map);
   }
 
@@ -80,37 +92,58 @@ class OperatorRepository {
       );
 
   Future<List<dynamic>> fetchInvoices() async {
-    final json = await _apiClient.getJson('/billing/invoices', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/billing/invoices',
+      surface: ApiSurface.operator,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchAgreements() async {
-    final json = await _apiClient.getJson('/agreements', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/agreements',
+      surface: ApiSurface.operator,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchStatements() async {
-    final json = await _apiClient.getJson('/statements', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/statements',
+      surface: ApiSurface.operator,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchSubscriptions() async {
-    final json = await _apiClient.getJson('/subscriptions', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/subscriptions',
+      surface: ApiSurface.operator,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchTemplates() async {
-    final json = await _apiClient.getJson('/templates', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/templates',
+      surface: ApiSurface.operator,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchEmailDispatches() async {
-    final json = await _apiClient.getJson('/emails/dispatches', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/emails/dispatches',
+      surface: ApiSurface.operator,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchAlerts() async {
-    final json = await _apiClient.getJson('/notifications/alerts', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/notifications/alerts',
+      surface: ApiSurface.operator,
+    );
     final map = Map<String, dynamic>.from(json as Map);
     return (map['items'] as List? ?? const []).cast<dynamic>();
   }
@@ -124,8 +157,79 @@ class OperatorRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<Map<String, dynamic>> fetchInquiryById(String inquiryId) async {
+    final json = await _apiClient.getJson(
+      '/operator/inquiries/$inquiryId',
+      surface: ApiSurface.operator,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchInquiryThread(String inquiryId) async {
+    final json = await _apiClient.getJson(
+      '/operator/inquiries/$inquiryId/thread',
+      surface: ApiSurface.operator,
+    );
+
+    final map = Map<String, dynamic>.from(json as Map);
+    final items = (map['messages'] as List? ?? const [])
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+
+    return items;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchInquiryNotes(String inquiryId) async {
+    final json = await _apiClient.getJson(
+      '/operator/inquiries/$inquiryId/notes',
+      surface: ApiSurface.operator,
+    );
+
+    return (json as List? ?? const [])
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
+  Future<void> updateInquiryStatus({
+    required String inquiryId,
+    required String status,
+  }) async {
+    await _apiClient.postJson(
+      '/operator/inquiries/$inquiryId/status',
+      body: {'status': status},
+      surface: ApiSurface.operator,
+    );
+  }
+
+  Future<void> sendInquiryReply({
+    required String inquiryId,
+    required String content,
+  }) async {
+    await _apiClient.postJson(
+      '/operator/inquiries/$inquiryId/reply',
+      body: {'content': content},
+      surface: ApiSurface.operator,
+    );
+  }
+
+  Future<void> addInquiryNote({
+    required String inquiryId,
+    required String content,
+  }) async {
+    await _apiClient.postJson(
+      '/operator/inquiries/$inquiryId/notes',
+      body: {'content': content},
+      surface: ApiSurface.operator,
+    );
+  }
+
   Future<List<dynamic>> fetchReminders() async {
-    final json = await _apiClient.getJson('/reminders', surface: ApiSurface.operator);
+    final json = await _apiClient.getJson(
+      '/reminders',
+      surface: ApiSurface.operator,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 

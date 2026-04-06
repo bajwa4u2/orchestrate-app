@@ -18,14 +18,17 @@ class AppShell extends StatelessWidget {
     _NavGroup('Command', [_NavItem('Command', '/app/command')]),
     _NavGroup('Pipeline', [_NavItem('Leads', '/app/pipeline')]),
     _NavGroup('Execution', [
+      _NavItem('Inquiries', '/app/inquiries'),
       _NavItem('Campaigns', '/app/execution/campaigns'),
       _NavItem('Replies', '/app/execution/replies'),
       _NavItem('Meetings', '/app/execution/meetings'),
     ]),
+    _NavGroup('Communications', [
+      _NavItem('Communications', '/app/communications'),
+    ]),
     _NavGroup('Clients', [_NavItem('Clients', '/app/clients')]),
     _NavGroup('Revenue', [_NavItem('Revenue', '/app/revenue')]),
     _NavGroup('Deliverability', [_NavItem('Deliverability', '/app/deliverability')]),
-    _NavGroup('Communications', [_NavItem('Communications', '/app/communications')]),
     _NavGroup('Records', [_NavItem('Records', '/app/records')]),
     _NavGroup('Settings', [_NavItem('Settings', '/app/settings')]),
   ];
