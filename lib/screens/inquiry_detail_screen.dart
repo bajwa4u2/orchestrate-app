@@ -166,7 +166,7 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
                       message,
                       data.messages,
                     );
-                    final side = _buildSidePanel(context, inquiry, data.notes);
+                    final side = _buildSidePanel(context, inquiry, data.notes, status);
 
                     if (stacked) {
                       return Column(
@@ -257,7 +257,10 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
     BuildContext context,
     Map<String, dynamic> inquiry,
     List<Map<String, dynamic>> notes,
+    String status,
   ) {
+    final normalizedStatus = status.toUpperCase();
+
     return Column(
       children: [
         _card(
@@ -278,6 +281,12 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
                   OutlinedButton(
                     onPressed: _updatingStatus ? null : () => _updateStatus('ACKNOWLEDGED'),
                     child: Text(_updatingStatus ? 'Working...' : 'Acknowledge'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _updatingStatus || normalizedStatus == 'IN_PROGRESS'
+                        ? null
+                        : () => _updateStatus('IN_PROGRESS'),
+                    child: const Text('Start work'),
                   ),
                   OutlinedButton(
                     onPressed: _updatingStatus ? null : () => _updateStatus('CLOSED'),
@@ -473,6 +482,7 @@ class _StatusPill extends StatelessWidget {
       'RECEIVED' => const Color(0xFFFFF4DB),
       'NOTIFIED' => const Color(0xFFEFF4FF),
       'ACKNOWLEDGED' => const Color(0xFFE8F8F0),
+      'IN_PROGRESS' => const Color(0xFFEFF4FF),
       'CLOSED' => const Color(0xFFF3F4F6),
       'SPAM' => const Color(0xFFFDECEC),
       _ => const Color(0xFFF3F4F6),
@@ -482,6 +492,7 @@ class _StatusPill extends StatelessWidget {
       'RECEIVED' => const Color(0xFF8A5A00),
       'NOTIFIED' => const Color(0xFF1D4ED8),
       'ACKNOWLEDGED' => const Color(0xFF0F766E),
+      'IN_PROGRESS' => const Color(0xFF1D4ED8),
       'CLOSED' => const Color(0xFF4B5563),
       'SPAM' => const Color(0xFF991B1B),
       _ => const Color(0xFF4B5563),
