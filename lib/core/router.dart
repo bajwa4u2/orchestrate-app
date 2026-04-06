@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../screens/auth/client_login_screen.dart';
 import '../screens/auth/ops_login_screen.dart';
 import '../screens/client_workspace_screen.dart';
+import '../screens/inquiries_list_screen.dart';
+import '../screens/inquiry_detail_screen.dart';
 import '../screens/operator_workspace_screen.dart';
 import '../screens/public/contact_screen.dart';
 import '../screens/public/pricing_screen.dart';
@@ -240,6 +242,16 @@ final router = GoRouter(
           path: '/app/pipeline',
           builder: (context, state) =>
               const OperatorWorkspaceScreen(section: OperatorSection.pipeline),
+        ),
+        GoRoute(
+          path: '/app/inquiries',
+          builder: (context, state) => const InquiriesListScreen(),
+        ),
+        GoRoute(
+          path: '/app/inquiries/:id',
+          builder: (context, state) => InquiryDetailScreen(
+            inquiryId: state.pathParameters['id'] ?? '',
+          ),
         ),
         GoRoute(
           path: '/app/execution/campaigns',

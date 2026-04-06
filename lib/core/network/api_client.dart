@@ -38,6 +38,15 @@ class ApiClient {
     return _decode(response);
   }
 
+  Future<dynamic> patchJson(String path, {required Map<String, dynamic> body, ApiSurface surface = ApiSurface.public}) async {
+    final response = await _httpClient.patch(
+      _uri(path),
+      headers: _headers(surface),
+      body: jsonEncode(body),
+    );
+    return _decode(response);
+  }
+
   Map<String, String> _headers(ApiSurface surface) {
     final session = AuthSessionController.instance;
     final headers = <String, String>{'content-type': 'application/json'};
