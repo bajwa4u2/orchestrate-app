@@ -91,17 +91,18 @@ class OperatorWorkspaceScreen extends StatelessWidget {
       case OperatorSection.command:
         final results = await Future.wait([
           repository.fetchCommandOverview(),
-          repository.fetchPublicInquiries(limit: 8),
+          repository.fetchInquiries(limit: 8),
         ]);
-        final overview = _asMap(results[0]);
-        final inquiries = _asMap(results[1]);
+        final overview = Map<String, dynamic>.from(results[0] as Map);
+        final inquiriesResponse = Map<String, dynamic>.from(results[1] as Map);
         final totals = _asMap(overview['totals']);
         final today = _asMap(overview['today']);
         final execution = _asMap(overview['execution']);
         final deliverability = _asMap(overview['deliverability']);
         final alerts = _asMap(overview['alerts']);
-        final inquirySummary = _asMap(inquiries['summary']);
-        final inquiryItems = _list(inquiries['items']);
+        final inquirySummary = _asMap(inquiriesResponse['summary']);
+        final inquiryItems = _list(inquiriesResponse['items']);
+        final openInquiries = _inquiryCount(inquirySummary, 'NEW');
         return _OperatorViewData(
           title: 'Command',
           subtitle: 'Today, pressure, delivery, and unresolved work in one frame.',
@@ -110,8 +111,8 @@ class OperatorWorkspaceScreen extends StatelessWidget {
             _Stat('Sent today', _num(today['sent'])),
             _Stat('Replies', _num(today['replies'])),
             _Stat('Booked', _num(today['booked'])),
+            _Stat('Open inquiries', openInquiries, tone: openInquiries == 0 ? null : AppTheme.accent),
             _Stat('Open alerts', _num(alerts['open']), tone: AppTheme.rose),
-            _Stat('Open inquiries', _num(inquirySummary['totalOpen']), tone: AppTheme.amber),
             _Stat('Degraded mailboxes', _num(deliverability['degradedMailboxes']), tone: AppTheme.amber),
           ],
           primaryTitle: 'System posture',
@@ -130,14 +131,9 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               secondary: '${_num(execution['failedJobs'])} failed',
             ),
             _RowData(
-              title: 'Deliverability',
-              primary: '${_num(deliverability['activeMailboxes'])} active mailboxes',
-              secondary: '${_num(deliverability['degradedMailboxes'])} degraded',
-            ),
-            _RowData(
               title: 'Inquiries',
-              primary: '${_num(inquirySummary['received'])} new · ${_num(inquirySummary['acknowledged'])} acknowledged',
-              secondary: '${_num(inquirySummary['notified'])} notified · ${_num(inquirySummary['closed'])} closed',
+              primary: '$openInquiries open',
+              secondary: '${_inquiryCount(inquirySummary, 'ACKNOWLEDGED')} acknowledged · ${_inquiryCount(inquirySummary, 'CLOSED')} closed',
             ),
             _RowData(
               title: 'Alerts',
@@ -146,9 +142,9 @@ class OperatorWorkspaceScreen extends StatelessWidget {
             ),
           ],
           tertiaryTitle: 'Recent inquiries',
-          tertiarySubtitle: 'Public contact intake now visible inside operator command.',
-          tertiaryRows: inquiryItems.take(8).map(_publicInquiryRow).toList(),
-          tertiaryEmptyLabel: 'No public inquiries are available.',
+          tertiarySubtitle: 'Latest contact intake reaching the operating side.',
+          tertiaryRows: inquiryItems.take(8).map(_inquiryRow).toList(),
+          tertiaryEmptyLabel: 'No inquiries are available yet.',
         );
 
       case OperatorSection.pipeline:
@@ -552,25 +548,6 @@ class _DataRow extends StatelessWidget {
   }
 }
 
-
-_RowData _publicInquiryRow(dynamic source) {
-  final inquiryType = _read(source, 'inquiryType');
-  final company = _read(source, 'company');
-  final email = _read(source, 'email');
-  final status = _humanizeEnum(_read(source, 'status'));
-  final submittedAt = _read(source, 'submittedAt');
-  final submittedLabel = _formatIsoDateTime(submittedAt);
-  final message = _read(source, 'message').replaceAll('
-', ' ').trim();
-  final preview = message.length > 84 ? '${message.substring(0, 84)}…' : message;
-
-  return _RowData(
-    title: _read(source, 'name', fallback: 'Inquiry'),
-    primary: '${_humanizeEnum(inquiryType)}${company.isEmpty ? '' : ' · $company'}',
-    secondary: '${email.isEmpty ? 'No email' : email} · $status${submittedLabel.isEmpty ? '' : ' · $submittedLabel'}${preview.isEmpty ? '' : ' · $preview'}',
-  );
-}
-
 class _Badge extends StatelessWidget {
   const _Badge({required this.label});
 
@@ -639,6 +616,11 @@ String _num(dynamic value) => ((value as num?) ?? 0).toString();
 String _money(dynamic cents) {
   final amount = ((cents as num?) ?? 0) / 100;
   return '\$${amount.toStringAsFixed(2)}';
+}
+int _inquiryCount(Map<String, dynamic> summary, String key) {
+  final value = summary[key];
+  if (value is num) return value.toInt();
+  return 0;
 }
 String _read(dynamic source, String key, {String fallback = ''}) {
   if (source is Map && source[key] != null) return '${source[key]}';
@@ -795,36 +777,36 @@ _RowData _reminderRow(dynamic raw) {
     secondary: _read(item, 'bodyText'),
   );
 }
+
+_RowData _inquiryRow(dynamic item) {
+  final source = _asMap(item);
+  final company = _read(source, 'company');
+  final email = _read(source, 'email');
+  final status = _read(source, 'status', fallback: 'NEW');
+  final submittedAt = _read(source, 'createdAt');
+  final message = _read(source, 'message').replaceAll('\n', ' ').trim();
+  final preview = message.length > 88 ? '${message.substring(0, 88)}…' : message;
+  final primaryParts = <String>[
+    _read(source, 'inquiryType'),
+    if (company.isNotEmpty) company,
+    email,
+  ].where((e) => e.isNotEmpty).toList();
+  final secondaryParts = <String>[
+    status,
+    if (submittedAt.isNotEmpty) submittedAt,
+    if (preview.isNotEmpty) preview,
+  ];
+  return _RowData(
+    title: _read(source, 'name', fallback: 'Inquiry'),
+    primary: primaryParts.join(' · '),
+    secondary: secondaryParts.where((e) => e.isNotEmpty).join(' · '),
+  );
+}
+
 String _humanizeError(Object error) {
   final raw = '$error';
   if (raw.contains('401') || raw.contains('Unauthorized')) {
     return 'This workspace could not load because access headers are missing or not accepted by the API.';
   }
   return 'This surface could not load right now.';
-}
-
-
-String _humanizeEnum(String value) {
-  if (value.isEmpty) return '';
-  final normalized = value.toLowerCase().split('_').where((part) => part.isNotEmpty).toList();
-  return normalized.map((part) => part[0].toUpperCase() + part.substring(1)).join(' ');
-}
-
-String _formatIsoDateTime(String value) {
-  if (value.isEmpty) return '';
-  final parsed = DateTime.tryParse(value);
-  if (parsed == null) return value;
-  final local = parsed.toLocal();
-  final month = _monthLabel(local.month);
-  final hour24 = local.hour;
-  final hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
-  final minute = local.minute.toString().padLeft(2, '0');
-  final suffix = hour24 >= 12 ? 'PM' : 'AM';
-  return '$month ${local.day}, ${local.year} · $hour12:$minute $suffix';
-}
-
-String _monthLabel(int month) {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  if (month < 1 || month > 12) return '';
-  return months[month - 1];
 }
