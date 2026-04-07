@@ -23,6 +23,12 @@ class AuthSessionController extends ChangeNotifier {
   String get fullName => (_session?['fullName'] as String?) ?? '';
   bool get emailVerified => (_session?['emailVerified'] as bool?) ?? false;
   String get workspaceName => (_session?['workspaceName'] as String?) ?? '';
+  bool get hasSetupCompleted => (_session?['setupCompleted'] as bool?) ?? false;
+  String? get selectedPlan => (_session?['selectedPlan'] as String?)?.trim().isEmpty == true
+      ? null
+      : (_session?['selectedPlan'] as String?);
+  String get subscriptionStatus =>
+      (_session?['subscriptionStatus'] as String?) ?? 'none';
 
   Future<void> init() async {
     if (_ready) return;
@@ -40,9 +46,12 @@ class AuthSessionController extends ChangeNotifier {
   }
 
   Future<void> applyAuthResponse(Map<String, dynamic> payload) async {
+    final previous = Map<String, dynamic>.from(_session ?? const {});
     final user = Map<String, dynamic>.from((payload['user'] as Map?) ?? const {});
     final workspace = Map<String, dynamic>.from((payload['workspace'] as Map?) ?? const {});
     final session = Map<String, dynamic>.from((payload['session'] as Map?) ?? const {});
+    final setup = Map<String, dynamic>.from((payload['setup'] as Map?) ?? const {});
+
     _session = {
       'token': payload['token']?.toString() ?? '',
       'surface': session['surface']?.toString() ?? '',
@@ -53,7 +62,44 @@ class AuthSessionController extends ChangeNotifier {
       'fullName': user['fullName']?.toString() ?? '',
       'emailVerified': user['emailVerified'] == true,
       'workspaceName': workspace['displayName']?.toString() ?? '',
+      'setupCompleted': user['setupCompleted'] == true ||
+          setup['setupCompleted'] == true ||
+          previous['setupCompleted'] == true,
+      'selectedPlan': user['selectedPlan']?.toString() ??
+          setup['selectedPlan']?.toString() ??
+          previous['selectedPlan']?.toString(),
+      'subscriptionStatus': user['subscriptionStatus']?.toString() ??
+          setup['subscriptionStatus']?.toString() ??
+          previous['subscriptionStatus']?.toString() ??
+          'none',
     };
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, jsonEncode(_session));
+    notifyListeners();
+  }
+
+  Future<void> markSetupComplete({
+    String? selectedPlan,
+  }) async {
+    _session ??= {};
+    _session!['setupCompleted'] = true;
+    if (selectedPlan != null && selectedPlan.trim().isNotEmpty) {
+      _session!['selectedPlan'] = selectedPlan.trim();
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, jsonEncode(_session));
+    notifyListeners();
+  }
+
+  Future<void> rememberSelectedPlan(String? plan) async {
+    final normalized = plan?.trim();
+    if (normalized == null || normalized.isEmpty) return;
+
+    _session ??= {};
+    _session!['selectedPlan'] = normalized;
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_storageKey, jsonEncode(_session));
     notifyListeners();

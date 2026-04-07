@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/auth/client_login_screen.dart';
 import '../screens/auth/ops_login_screen.dart';
+import '../screens/client_setup_screen.dart';
 import '../screens/client_workspace_screen.dart';
 import '../screens/inquiries_list_screen.dart';
 import '../screens/inquiry_detail_screen.dart';
@@ -39,6 +40,7 @@ final router = GoRouter(
         path.startsWith('/legal/');
     final isVerificationFlow = path == '/client/verify-email';
     final isResetFlow = path == '/client/reset-password';
+    final isSetupFlow = path == '/client/setup';
     final isClientWorkspacePath =
         path.startsWith('/client/workspace') ||
         path.startsWith('/client/billing') ||
@@ -48,12 +50,13 @@ final router = GoRouter(
 
     if (!session.isAuthenticated) {
       if (path.startsWith('/app/')) return '/ops/login';
-      if (isClientWorkspacePath) return '/client/login';
+      if (isClientWorkspacePath || isSetupFlow) return '/client/login';
       return null;
     }
 
     if (session.surface == 'operator') {
       if (isOpsAuth || path == '/') return '/app/command';
+      if (path.startsWith('/client/')) return '/app/command';
       return null;
     }
 
@@ -61,6 +64,13 @@ final router = GoRouter(
       if (!session.emailVerified) {
         if (!isVerificationFlow && !isResetFlow) {
           return '/client/verify-email';
+        }
+        return null;
+      }
+
+      if (!session.hasSetupCompleted) {
+        if (!isSetupFlow) {
+          return '/client/setup';
         }
         return null;
       }
@@ -104,7 +114,10 @@ final router = GoRouter(
       path: '/client/reset-password',
       builder: (context, state) => const ClientLoginScreen(resetMode: true),
     ),
-
+    GoRoute(
+      path: '/client/setup',
+      builder: (context, state) => const ClientSetupScreen(),
+    ),
     GoRoute(
       path: '/',
       pageBuilder: (context, state) => NoTransitionPage(
@@ -204,7 +217,6 @@ final router = GoRouter(
         ),
       ),
     ),
-
     ShellRoute(
       navigatorKey: _clientShellNavigatorKey,
       builder: (context, state, child) =>
@@ -237,7 +249,6 @@ final router = GoRouter(
         ),
       ],
     ),
-
     ShellRoute(
       navigatorKey: _appShellNavigatorKey,
       builder: (context, state, child) =>
