@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/auth/client_login_screen.dart';
 import '../screens/auth/ops_login_screen.dart';
 import '../screens/client_setup_screen.dart';
+import '../screens/client_subscribe_screen.dart';
 import '../screens/client_workspace_screen.dart';
 import '../screens/inquiries_list_screen.dart';
 import '../screens/inquiry_detail_screen.dart';
@@ -30,6 +31,7 @@ final router = GoRouter(
     if (!session.isReady) return null;
 
     final path = state.uri.path;
+    final planQuery = state.uri.queryParameters['plan']?.trim().toLowerCase();
 
     final isClientAuth = path == '/client/login' || path == '/client/join';
     final isOpsAuth = path == '/ops/login' || path == '/ops/join';
@@ -41,6 +43,7 @@ final router = GoRouter(
     final isVerificationFlow = path == '/client/verify-email';
     final isResetFlow = path == '/client/reset-password';
     final isSetupFlow = path == '/client/setup';
+    final isSubscribeFlow = path == '/client/subscribe';
     final isClientWorkspacePath =
         path.startsWith('/client/workspace') ||
         path.startsWith('/client/billing') ||
@@ -50,7 +53,7 @@ final router = GoRouter(
 
     if (!session.isAuthenticated) {
       if (path.startsWith('/app/')) return '/ops/login';
-      if (isClientWorkspacePath || isSetupFlow) return '/client/login';
+      if (isClientWorkspacePath || isSetupFlow || isSubscribeFlow) return '/client/login';
       return null;
     }
 
@@ -61,6 +64,11 @@ final router = GoRouter(
     }
 
     if (session.surface == 'client') {
+      final selectedPlan = session.selectedPlan ?? planQuery;
+      final subscribeTarget = selectedPlan != null && selectedPlan.isNotEmpty
+          ? Uri(path: '/client/subscribe', queryParameters: {'plan': selectedPlan}).toString()
+          : '/client/subscribe';
+
       if (!session.emailVerified) {
         if (!isVerificationFlow && !isResetFlow) {
           return '/client/verify-email';
@@ -70,12 +78,21 @@ final router = GoRouter(
 
       if (!session.hasSetupCompleted) {
         if (!isSetupFlow) {
-          return '/client/setup';
+          return selectedPlan != null && selectedPlan.isNotEmpty
+              ? Uri(path: '/client/setup', queryParameters: {'plan': selectedPlan}).toString()
+              : '/client/setup';
         }
         return null;
       }
 
-      if (isClientAuth || path == '/' || isVerificationFlow) {
+      if (session.normalizedSubscriptionStatus != 'active') {
+        if (!isSubscribeFlow) {
+          return subscribeTarget;
+        }
+        return null;
+      }
+
+      if (isClientAuth || path == '/' || isVerificationFlow || isSubscribeFlow || isSetupFlow) {
         return '/client/workspace';
       }
 
@@ -117,6 +134,10 @@ final router = GoRouter(
     GoRoute(
       path: '/client/setup',
       builder: (context, state) => const ClientSetupScreen(),
+    ),
+    GoRoute(
+      path: '/client/subscribe',
+      builder: (context, state) => const ClientSubscribeScreen(),
     ),
     GoRoute(
       path: '/',

@@ -24,6 +24,10 @@ class ClientWorkspaceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (section == ClientSection.account) {
+      return const _ClientAccountSurface();
+    }
+
     final repository = ClientPortalRepository();
 
     return SingleChildScrollView(
@@ -260,22 +264,357 @@ class ClientWorkspaceScreen extends StatelessWidget {
         );
 
       case ClientSection.account:
-        final overview = await repository.fetchOverview();
-        final client = _asMap(overview['client']);
-        final communications = _asMap(overview['communications']);
-        return _ClientViewData(
-          title: 'Account',
-          subtitle: 'Profile, access footing, and communication path.',
-          primaryTitle: 'Profile',
-          primaryRows: [
-            _ClientRow(title: 'Display name', primary: _read(client, 'displayName'), secondary: _read(client, 'legalName')),
-            _ClientRow(title: 'Website', primary: _read(client, 'websiteUrl'), secondary: _read(client, 'industry')),
-            _ClientRow(title: 'Timezone', primary: _read(client, 'primaryTimezone'), secondary: _read(client, 'currencyCode')),
-            _ClientRow(title: 'Portal', primary: _read(communications, 'portalUrl'), secondary: 'Secure access'),
-          ],
-          primaryEmpty: 'Account details are not available.',
-        );
+        return _ClientViewData.empty(section);
     }
+  }
+}
+
+class _ClientAccountSurface extends StatefulWidget {
+  const _ClientAccountSurface();
+
+  @override
+  State<_ClientAccountSurface> createState() => _ClientAccountSurfaceState();
+}
+
+class _ClientAccountSurfaceState extends State<_ClientAccountSurface> {
+  final _formKey = GlobalKey<FormState>();
+  final _displayName = TextEditingController();
+  final _legalName = TextEditingController();
+  final _websiteUrl = TextEditingController();
+  final _bookingUrl = TextEditingController();
+  final _primaryTimezone = TextEditingController();
+  final _currencyCode = TextEditingController();
+  final _brandName = TextEditingController();
+  final _logoUrl = TextEditingController();
+  final _primaryColor = TextEditingController();
+  final _accentColor = TextEditingController();
+  final _welcomeHeadline = TextEditingController();
+
+  bool _loading = true;
+  bool _saving = false;
+  String? _error;
+  String? _message;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _displayName.dispose();
+    _legalName.dispose();
+    _websiteUrl.dispose();
+    _bookingUrl.dispose();
+    _primaryTimezone.dispose();
+    _currencyCode.dispose();
+    _brandName.dispose();
+    _logoUrl.dispose();
+    _primaryColor.dispose();
+    _accentColor.dispose();
+    _welcomeHeadline.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await ClientPortalRepository().fetchClientProfile();
+      final profile = _asMap(data['profile']);
+      final branding = _asMap(profile['branding']);
+      if (!mounted) return;
+      setState(() {
+        _displayName.text = _read(profile, 'displayName');
+        _legalName.text = _read(profile, 'legalName');
+        _websiteUrl.text = _read(profile, 'websiteUrl');
+        _bookingUrl.text = _read(profile, 'bookingUrl');
+        _primaryTimezone.text = _read(profile, 'primaryTimezone');
+        _currencyCode.text = _read(profile, 'currencyCode');
+        _brandName.text = _read(branding, 'brandName');
+        _logoUrl.text = _read(branding, 'logoUrl');
+        _primaryColor.text = _read(branding, 'primaryColor', fallback: '#111827');
+        _accentColor.text = _read(branding, 'accentColor', fallback: '#2563eb');
+        _welcomeHeadline.text = _read(branding, 'welcomeHeadline');
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'The client profile could not load right now.';
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+      _message = null;
+    });
+    try {
+      await ClientPortalRepository().updateClientProfile(
+        displayName: _displayName.text.trim(),
+        legalName: _legalName.text.trim(),
+        websiteUrl: _websiteUrl.text.trim(),
+        bookingUrl: _bookingUrl.text.trim(),
+        primaryTimezone: _primaryTimezone.text.trim(),
+        currencyCode: _currencyCode.text.trim(),
+        brandName: _brandName.text.trim(),
+        logoUrl: _logoUrl.text.trim(),
+        primaryColor: _primaryColor.text.trim(),
+        accentColor: _accentColor.text.trim(),
+        welcomeHeadline: _welcomeHeadline.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _message = 'Company profile and office branding have been saved.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'The profile could not be saved right now.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1240),
+            child: _loading
+                ? const Center(child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(),
+                  ))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Client workspace',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppTheme.publicMuted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      const SectionHeader(
+                        title: 'Account',
+                        subtitle: 'Edit company identity, client-facing office signals, and branding.',
+                      ),
+                      const SizedBox(height: 16),
+                      if (_error != null) _NoticeStrip(message: _error!, isPositive: false),
+                      if (_message != null) ...[
+                        _NoticeStrip(message: _message!, isPositive: true),
+                        const SizedBox(height: 16),
+                      ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final stacked = constraints.maxWidth < 980;
+                          final preview = _OfficePreviewCard(
+                            brandName: _brandName.text.isEmpty ? _displayName.text : _brandName.text,
+                            logoUrl: _logoUrl.text,
+                            primaryColor: _primaryColor.text,
+                            accentColor: _accentColor.text,
+                            headline: _welcomeHeadline.text,
+                          );
+                          final form = _TintedPanel(
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Company profile', style: Theme.of(context).textTheme.titleLarge),
+                                  const SizedBox(height: 18),
+                                  _field(_displayName, 'Display name'),
+                                  const SizedBox(height: 12),
+                                  _field(_legalName, 'Legal name'),
+                                  const SizedBox(height: 12),
+                                  _field(_websiteUrl, 'Website', keyboardType: TextInputType.url, required: false),
+                                  const SizedBox(height: 12),
+                                  _field(_bookingUrl, 'Booking URL', keyboardType: TextInputType.url, required: false),
+                                  const SizedBox(height: 12),
+                                  _field(_primaryTimezone, 'Primary timezone', required: false),
+                                  const SizedBox(height: 12),
+                                  _field(_currencyCode, 'Currency code', required: false),
+                                  const SizedBox(height: 20),
+                                  Text('Office branding', style: Theme.of(context).textTheme.titleLarge),
+                                  const SizedBox(height: 18),
+                                  _field(_brandName, 'Brand name', required: false),
+                                  const SizedBox(height: 12),
+                                  _field(_logoUrl, 'Logo URL', keyboardType: TextInputType.url, required: false),
+                                  const SizedBox(height: 12),
+                                  _field(_primaryColor, 'Primary color', required: false, hintText: '#111827'),
+                                  const SizedBox(height: 12),
+                                  _field(_accentColor, 'Accent color', required: false, hintText: '#2563eb'),
+                                  const SizedBox(height: 12),
+                                  _field(_welcomeHeadline, 'Welcome headline', required: false),
+                                  const SizedBox(height: 20),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton(
+                                      onPressed: _saving ? null : _save,
+                                      child: Text(_saving ? 'Saving profile...' : 'Save profile'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+
+                          if (stacked) {
+                            return Column(
+                              children: [preview, const SizedBox(height: 18), form],
+                            );
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 5, child: preview),
+                              const SizedBox(width: 18),
+                              Expanded(flex: 7, child: form),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    bool required = true,
+    TextInputType? keyboardType,
+    String? hintText,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: required
+          ? (value) => value == null || value.trim().isEmpty ? '$label is required.' : null
+          : null,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        border: const OutlineInputBorder(),
+      ),
+      onChanged: (_) => setState(() {}),
+    );
+  }
+}
+
+class _OfficePreviewCard extends StatelessWidget {
+  const _OfficePreviewCard({
+    required this.brandName,
+    required this.logoUrl,
+    required this.primaryColor,
+    required this.accentColor,
+    required this.headline,
+  });
+
+  final String brandName;
+  final String logoUrl;
+  final String primaryColor;
+  final String accentColor;
+  final String headline;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = _parseColor(primaryColor, const Color(0xFF111827));
+    final accent = _parseColor(accentColor, const Color(0xFF2563EB));
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primary, accent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    color: Colors.white.withOpacity(0.12),
+                    child: logoUrl.trim().isNotEmpty
+                        ? Image.network(
+                            logoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.apartment_rounded, color: Colors.white),
+                          )
+                        : const Icon(Icons.apartment_rounded, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    brandName.trim().isEmpty ? 'Client office' : brandName,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            headline.trim().isEmpty
+                ? 'Your account is configured for active service operations.'
+                : headline,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'This office-facing layer gives clients a stronger sense of identity, continuity, and control inside their workspace.',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.white.withOpacity(0.92),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _parseColor(String raw, Color fallback) {
+    final normalized = raw.trim().replaceAll('#', '');
+    if (normalized.length != 6) return fallback;
+    final value = int.tryParse('FF$normalized', radix: 16);
+    return value == null ? fallback : Color(value);
   }
 }
 

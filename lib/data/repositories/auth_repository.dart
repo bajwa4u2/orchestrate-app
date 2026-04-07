@@ -65,6 +65,41 @@ class AuthRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<Map<String, dynamic>> fetchClientSetup() async {
+    final json = await _apiClient.getJson('/clients/me/setup', surface: ApiSurface.client);
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  Future<Map<String, dynamic>> saveClientSetup({
+    required String countryCode,
+    required String countryName,
+    required String regionType,
+    required String regionCode,
+    required String regionName,
+    String? localityName,
+    required String industryCode,
+    required String industryLabel,
+    required String selectedPlan,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/clients/me/setup',
+      surface: ApiSurface.client,
+      body: {
+        'countryCode': countryCode,
+        'countryName': countryName,
+        'regionType': regionType,
+        'regionCode': regionCode,
+        'regionName': regionName,
+        if (localityName != null && localityName.trim().isNotEmpty)
+          'localityName': localityName.trim(),
+        'industryCode': industryCode,
+        'industryLabel': industryLabel,
+        'selectedPlan': selectedPlan,
+      },
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<void> logout() async {
     await _apiClient.postJson('/auth/logout', body: const {});
   }

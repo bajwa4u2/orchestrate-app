@@ -27,8 +27,8 @@ class AuthSessionController extends ChangeNotifier {
   String? get selectedPlan => (_session?['selectedPlan'] as String?)?.trim().isEmpty == true
       ? null
       : (_session?['selectedPlan'] as String?);
-  String get subscriptionStatus =>
-      (_session?['subscriptionStatus'] as String?) ?? 'none';
+  String get subscriptionStatus => (_session?['subscriptionStatus'] as String?) ?? 'none';
+  String get normalizedSubscriptionStatus => subscriptionStatus.trim().toLowerCase();
 
   Future<void> init() async {
     if (_ready) return;
@@ -68,47 +68,55 @@ class AuthSessionController extends ChangeNotifier {
       'selectedPlan': user['selectedPlan']?.toString() ??
           setup['selectedPlan']?.toString() ??
           previous['selectedPlan']?.toString(),
-      'subscriptionStatus': user['subscriptionStatus']?.toString() ??
-          setup['subscriptionStatus']?.toString() ??
-          previous['subscriptionStatus']?.toString() ??
-          'none',
+      'subscriptionStatus': (user['subscriptionStatus']?.toString() ??
+              setup['subscriptionStatus']?.toString() ??
+              previous['subscriptionStatus']?.toString() ??
+              'none')
+          .toLowerCase(),
+      'setup': setup,
     };
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(_session));
-    notifyListeners();
+    await _persist();
   }
 
-  Future<void> markSetupComplete({
-    String? selectedPlan,
-  }) async {
+  Future<void> applyClientSetupResponse(Map<String, dynamic> payload) async {
     _session ??= {};
-    _session!['setupCompleted'] = true;
-    if (selectedPlan != null && selectedPlan.trim().isNotEmpty) {
-      _session!['selectedPlan'] = selectedPlan.trim();
-    }
+    final client = Map<String, dynamic>.from((payload['client'] as Map?) ?? const {});
+    _session!['setupCompleted'] = client['setupCompleted'] == true;
+    _session!['selectedPlan'] = client['selectedPlan']?.toString() ?? _session!['selectedPlan'];
+    _session!['subscriptionStatus'] =
+        (client['subscriptionStatus']?.toString() ?? _session!['subscriptionStatus'] ?? 'none')
+            .toLowerCase();
+    _session!['setup'] = client['setup'];
+    await _persist();
+  }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(_session));
-    notifyListeners();
+  Future<void> setSubscriptionStatus(String status) async {
+    _session ??= {};
+    _session!['subscriptionStatus'] = status.trim().toLowerCase();
+    await _persist();
   }
 
   Future<void> rememberSelectedPlan(String? plan) async {
-    final normalized = plan?.trim();
+    final normalized = plan?.trim().toLowerCase();
     if (normalized == null || normalized.isEmpty) return;
 
     _session ??= {};
     _session!['selectedPlan'] = normalized;
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(_session));
-    notifyListeners();
+    await _persist();
   }
 
   Future<void> clear() async {
     _session = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_storageKey);
+    notifyListeners();
+  }
+
+  Future<void> _persist() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, jsonEncode(_session));
     notifyListeners();
   }
 }

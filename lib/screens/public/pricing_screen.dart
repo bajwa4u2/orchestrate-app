@@ -1,115 +1,121 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/auth_session.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/repositories/public_repository.dart';
 
-class PricingScreen extends StatelessWidget {
+class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
 
   @override
+  State<PricingScreen> createState() => _PricingScreenState();
+}
+
+class _PricingScreenState extends State<PricingScreen> {
+  late Future<Map<String, dynamic>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = PublicRepository().fetchPricing();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1180),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _HeroSection(),
-                SizedBox(height: 24),
-                _PlanCardsSection(),
-                SizedBox(height: 24),
-                _PricingDriversSection(),
-                SizedBox(height: 24),
-                _EngagementSection(),
-                SizedBox(height: 24),
-                _NextStepSection(),
-              ],
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _future,
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        final plans = (data?['plans'] as List? ?? const []).cast<dynamic>();
+        final sequence = (data?['sequence'] as List? ?? const []).cast<dynamic>();
+
+        final opportunity = _resolvePlan(plans, 'opportunity', fallbackAmountCents: 43500);
+        final revenue = _resolvePlan(plans, 'revenue', fallbackAmountCents: 87000);
+
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1180),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _HeroSection(onPrimary: () => _routePlan(context, 'opportunity')),
+                    const SizedBox(height: 24),
+                    _PlanCardsSection(
+                      opportunity: opportunity,
+                      revenue: revenue,
+                      onChooseOpportunity: () => _routePlan(context, 'opportunity'),
+                      onChooseRevenue: () => _routePlan(context, 'revenue'),
+                    ),
+                    const SizedBox(height: 24),
+                    _SequenceSection(sequence: sequence),
+                    const SizedBox(height: 24),
+                    _EngagementSection(),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  Map<String, dynamic> _resolvePlan(List<dynamic> plans, String code, {required int fallbackAmountCents}) {
+    for (final raw in plans) {
+      final plan = Map<String, dynamic>.from(raw as Map);
+      if (plan['code']?.toString().toLowerCase() == code) return plan;
+    }
+
+    return {
+      'code': code,
+      'name': code == 'revenue' ? 'Revenue' : 'Opportunity',
+      'amountCents': fallbackAmountCents,
+      'summary': code == 'revenue'
+          ? 'Everything in Opportunity plus billing and revenue operations.'
+          : 'Lead generation, outreach, follow-up, and meeting booking.',
+    };
+  }
+
+  void _routePlan(BuildContext context, String plan) {
+    final session = AuthSessionController.instance;
+    final joinRoute = Uri(path: '/client/join', queryParameters: {'plan': plan}).toString();
+    final setupRoute = Uri(path: '/client/setup', queryParameters: {'plan': plan}).toString();
+    final subscribeRoute = Uri(path: '/client/subscribe', queryParameters: {'plan': plan}).toString();
+
+    if (!session.isAuthenticated || session.surface != 'client') {
+      context.go(joinRoute);
+      return;
+    }
+
+    session.rememberSelectedPlan(plan);
+
+    if (!session.emailVerified) {
+      context.go('/client/verify-email');
+      return;
+    }
+    if (!session.hasSetupCompleted) {
+      context.go(setupRoute);
+      return;
+    }
+    if (session.normalizedSubscriptionStatus != 'active') {
+      context.go(subscribeRoute);
+      return;
+    }
+    context.go('/client/workspace');
   }
 }
 
 class _HeroSection extends StatelessWidget {
-  const _HeroSection();
+  const _HeroSection({required this.onPrimary});
+
+  final VoidCallback onPrimary;
 
   @override
   Widget build(BuildContext context) {
-    final lead = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _Eyebrow(label: 'Pricing'),
-        const SizedBox(height: 18),
-        Text(
-          'Two ways to work together',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontSize: 46,
-              ),
-        ),
-        const SizedBox(height: 16),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Text(
-            'Orchestrate is structured around two engagement models depending on whether you need outbound execution only or outbound execution with billing support.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-        ),
-      ],
-    );
-
-    final aside = Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'This is a commercial framing page, not a fake self-serve checkout. Cost depends on scope, volume, and the amount of execution carried by the system.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 18),
-          FilledButton(
-            onPressed: () => context.go('/client/join'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-              backgroundColor: AppTheme.publicText,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text('Create account'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => context.go('/contact'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-              foregroundColor: AppTheme.publicText,
-              side: const BorderSide(color: AppTheme.publicLine),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text('Contact'),
-          ),
-        ],
-      ),
-    );
-
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -121,14 +127,67 @@ class _HeroSection extends StatelessWidget {
         builder: (context, constraints) {
           final stacked = constraints.maxWidth < 940;
 
+          final lead = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _Eyebrow(label: 'Pricing'),
+              const SizedBox(height: 18),
+              Text(
+                'Choose the operating lane, then activate it properly',
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontSize: 44,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Text(
+                  'Public pricing should do one job clearly: select the right plan, create the account, complete operating profile setup, then activate subscription and begin service.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.publicMuted,
+                      ),
+                ),
+              ),
+            ],
+          );
+
+          final aside = Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: AppTheme.publicSurfaceSoft,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppTheme.publicLine),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'This is not a vague pricing brochure. It is the front door into a real client flow.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.publicMuted,
+                      ),
+                ),
+                const SizedBox(height: 18),
+                FilledButton(
+                  onPressed: onPrimary,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    backgroundColor: AppTheme.publicText,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text('Choose a plan'),
+                ),
+              ],
+            ),
+          );
+
           if (stacked) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                lead,
-                const SizedBox(height: 22),
-                aside,
-              ],
+              children: [lead, const SizedBox(height: 22), aside],
             );
           }
 
@@ -147,7 +206,17 @@ class _HeroSection extends StatelessWidget {
 }
 
 class _PlanCardsSection extends StatelessWidget {
-  const _PlanCardsSection();
+  const _PlanCardsSection({
+    required this.opportunity,
+    required this.revenue,
+    required this.onChooseOpportunity,
+    required this.onChooseRevenue,
+  });
+
+  final Map<String, dynamic> opportunity;
+  final Map<String, dynamic> revenue;
+  final VoidCallback onChooseOpportunity;
+  final VoidCallback onChooseRevenue;
 
   @override
   Widget build(BuildContext context) {
@@ -155,9 +224,8 @@ class _PlanCardsSection extends StatelessWidget {
       builder: (context, constraints) {
         final stacked = constraints.maxWidth < 900;
 
-        final opportunity = _PlanCard(
-          title: 'Opportunity',
-          body: 'For businesses that want lead generation, outreach, follow-up, and meetings handled with structure.',
+        final opportunityCard = _PlanCard(
+          plan: opportunity,
           points: const [
             'Lead sourcing and targeting',
             'Outbound outreach execution',
@@ -165,12 +233,11 @@ class _PlanCardsSection extends StatelessWidget {
             'Reply management',
             'Meeting booking',
           ],
+          onChoose: onChooseOpportunity,
         );
 
-        final revenue = _PlanCard(
-          title: 'Revenue',
-          body:
-              'For businesses that want the outbound work plus the billing, reminder, payment, and record layer that follows service delivery.',
+        final revenueCard = _PlanCard(
+          plan: revenue,
           points: const [
             'Everything included in Opportunity',
             'Invoice generation and payment tracking',
@@ -178,16 +245,15 @@ class _PlanCardsSection extends StatelessWidget {
             'Statements and account records',
             'Agreements and billing support tied to service delivery',
           ],
-          highlight:
-              'Revenue is the fuller operating model because it carries the work from outreach into actual money movement and accountability.',
+          onChoose: onChooseRevenue,
         );
 
         if (stacked) {
           return Column(
             children: [
-              opportunity,
+              opportunityCard,
               const SizedBox(height: 18),
-              revenue,
+              revenueCard,
             ],
           );
         }
@@ -195,9 +261,9 @@ class _PlanCardsSection extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: opportunity),
+            Expanded(child: opportunityCard),
             const SizedBox(width: 18),
-            Expanded(child: revenue),
+            Expanded(child: revenueCard),
           ],
         );
       },
@@ -205,11 +271,24 @@ class _PlanCardsSection extends StatelessWidget {
   }
 }
 
-class _PricingDriversSection extends StatelessWidget {
-  const _PricingDriversSection();
+class _SequenceSection extends StatelessWidget {
+  const _SequenceSection({required this.sequence});
+
+  final List<dynamic> sequence;
 
   @override
   Widget build(BuildContext context) {
+    final steps = sequence.isEmpty
+        ? const [
+            'Choose plan',
+            'Create account',
+            'Verify email',
+            'Define operating profile',
+            'Activate subscription',
+            'Begin service',
+          ]
+        : sequence.map((item) => item.toString()).toList(growable: false);
+
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
@@ -220,25 +299,16 @@ class _PricingDriversSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'What determines pricing',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Pricing depends on volume, scope, and execution depth. The model tells you how the work is carried. The commercial structure is then set by the actual operating load.',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
+          Text('What happens next', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 18),
-          const _BulletPoint(text: 'How much outreach volume needs to be carried each month.'),
-          const SizedBox(height: 12),
-          const _BulletPoint(text: 'How targeted or complex the market and lead criteria are.'),
-          const SizedBox(height: 12),
-          const _BulletPoint(text: 'Whether reply handling and meeting coordination stay light or become ongoing.'),
-          const SizedBox(height: 12),
-          const _BulletPoint(text: 'Whether billing support, reminders, statements, and records are part of the engagement.'),
-          const SizedBox(height: 12),
-          const _BulletPoint(text: 'Whether the work is campaign-based, ongoing, or operationally embedded.'),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (var i = 0; i < steps.length; i++)
+                Chip(label: Text('${i + 1}. ${steps[i]}')),
+            ],
+          ),
         ],
       ),
     );
@@ -260,105 +330,13 @@ class _EngagementSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'How engagement is defined',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
+          Text('How the plans differ', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'The model tells you how the system works. Scope is shaped based on your stage, target market, and volume of work, then finalized during onboarding.',
+            'Opportunity is outbound execution. Revenue extends that execution into billing, reminders, statements, and account continuity. The plan selected here becomes part of the operating profile and later AI work configuration.',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
-          const SizedBox(height: 18),
-          const _BulletPoint(text: 'Opportunity is for outbound execution only.'),
-          const SizedBox(height: 12),
-          const _BulletPoint(text: 'Revenue includes outbound execution plus billing support.'),
-          const SizedBox(height: 12),
-          const _BulletPoint(text: 'Scope is confirmed during onboarding, not assumed from a public page.'),
         ],
-      ),
-    );
-  }
-}
-
-class _NextStepSection extends StatelessWidget {
-  const _NextStepSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 900;
-          final textBlock = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Next step',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'If you already know you want to move forward, create an account. If you need to clarify fit, workload, or commercial structure first, use the contact page.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.publicMuted,
-                    ),
-              ),
-            ],
-          );
-
-          final actions = Column(
-            children: [
-              FilledButton(
-                onPressed: () => context.go('/client/join'),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  backgroundColor: AppTheme.publicText,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text('Create account'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => context.go('/contact'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  foregroundColor: AppTheme.publicText,
-                  side: const BorderSide(color: AppTheme.publicLine),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text('Contact'),
-              ),
-            ],
-          );
-
-          if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [textBlock, const SizedBox(height: 20), actions],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 7, child: textBlock),
-              const SizedBox(width: 24),
-              Expanded(flex: 4, child: actions),
-            ],
-          );
-        },
       ),
     );
   }
@@ -366,19 +344,22 @@ class _NextStepSection extends StatelessWidget {
 
 class _PlanCard extends StatelessWidget {
   const _PlanCard({
-    required this.title,
-    required this.body,
+    required this.plan,
     required this.points,
-    this.highlight,
+    required this.onChoose,
   });
 
-  final String title;
-  final String body;
+  final Map<String, dynamic> plan;
   final List<String> points;
-  final String? highlight;
+  final VoidCallback onChoose;
 
   @override
   Widget build(BuildContext context) {
+    final amount = ((plan['amountCents'] as num?) ?? 0) / 100;
+    final name = plan['name']?.toString() ?? 'Plan';
+    final summary = plan['summary']?.toString() ?? '';
+    final code = plan['code']?.toString().toLowerCase() ?? '';
+
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
@@ -389,31 +370,29 @@ class _PlanCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
+          Text(name, style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 8),
+          Text(
+            '\$${amount.toStringAsFixed(2)} / month',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
           const SizedBox(height: 12),
-          Text(body, style: Theme.of(context).textTheme.bodyLarge),
+          Text(summary, style: Theme.of(context).textTheme.bodyLarge),
           const SizedBox(height: 18),
           for (var i = 0; i < points.length; i++) ...[
             _BulletPoint(text: points[i]),
             if (i != points.length - 1) const SizedBox(height: 12),
           ],
-          if (highlight != null) ...[
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppTheme.publicAccentSoft,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                highlight!,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.publicText,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onChoose,
+              child: Text('Choose ${code == 'revenue' ? 'Revenue' : 'Opportunity'}'),
             ),
-          ],
+          ),
         ],
       ),
     );
