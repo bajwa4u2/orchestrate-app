@@ -142,9 +142,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Expanded(
-                              child: _buildContextPanel(context, wide: true),
+                              child: _buildBrandPanel(context, wide: true),
                             ),
-                            const SizedBox(width: 24),
+                            const SizedBox(width: 28),
                             SizedBox(
                               width: 500,
                               child: _buildFormCard(context),
@@ -154,7 +154,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _buildContextPanel(context, wide: false),
+                            _buildBrandPanel(context, wide: false),
                             const SizedBox(height: 20),
                             _buildFormCard(context),
                           ],
@@ -168,7 +168,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     );
   }
 
-  Widget _buildContextPanel(BuildContext context, {required bool wide}) {
+  Widget _buildBrandPanel(BuildContext context, {required bool wide}) {
     final theme = Theme.of(context);
 
     return Container(
@@ -193,7 +193,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
               size: 22,
             ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: wide ? 36 : 24),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: Text(
@@ -206,11 +206,11 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           ),
           const SizedBox(height: 16),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: 460),
             child: Text(
               _isJoin
-                  ? 'A measured entry into outreach, meetings, and revenue visibility.'
-                  : 'Continue into your client workspace with the account already tied to your company access.',
+                  ? 'Quiet entry for accounts, billing, and client operations.'
+                  : 'Sign in to return to your client workspace.',
               style: theme.textTheme.titleMedium?.copyWith(
                 color: AppTheme.publicMuted,
                 height: 1.45,
@@ -218,32 +218,10 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
             ),
           ),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.publicLine),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _isJoin ? 'Email verification required' : 'Account access remains controlled',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _isJoin
-                      ? 'We send a verification link before workspace access so the account begins on the right footing.'
-                      : 'If your email is not yet verified, the system routes you back into verification before workspace entry.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.publicMuted,
-                    height: 1.5,
-                  ),
-                ),
-              ],
+          Text(
+            _isJoin ? 'Orchestrate client access' : 'Orchestrate client sign in',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppTheme.publicMuted,
             ),
           ),
         ],
@@ -280,7 +258,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          'Set up your client access. We’ll send a verification email before workspace entry.',
+          'Create your account. Email verification is required before workspace access.',
           style: theme.textTheme.bodyLarge?.copyWith(
             color: AppTheme.publicMuted,
             height: 1.45,
@@ -289,11 +267,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         const SizedBox(height: 24),
         if (_message != null) _Banner(message: _message!, error: false),
         if (_error != null) _Banner(message: _error!, error: true),
-        _SectionLabel(
-          eyebrow: 'Identity',
-          title: 'Who is opening this account?',
-        ),
-        const SizedBox(height: 12),
         _field(_fullName, 'Full name'),
         const SizedBox(height: 14),
         _field(
@@ -301,12 +274,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           'Work email',
           keyboardType: TextInputType.emailAddress,
         ),
-        const SizedBox(height: 24),
-        _SectionLabel(
-          eyebrow: 'Organization',
-          title: 'What business should this workspace represent?',
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         _field(_company, 'Company name'),
         const SizedBox(height: 14),
         _field(
@@ -316,12 +284,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           keyboardType: TextInputType.url,
           hintText: 'https://yourcompany.com',
         ),
-        const SizedBox(height: 24),
-        _SectionLabel(
-          eyebrow: 'Access',
-          title: 'Create secure sign-in details',
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         _field(
           _password,
           'Password',
@@ -343,15 +306,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 18),
-        Text(
-          'You’ll verify your email before entering the workspace.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: AppTheme.publicMuted,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
           child: FilledButton(
@@ -392,7 +347,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          'Use your account credentials to return to the client workspace.',
+          'Use your work email and password to continue.',
           style: theme.textTheme.bodyLarge?.copyWith(
             color: AppTheme.publicMuted,
             height: 1.45,
@@ -757,42 +712,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (text.contains('expired')) return 'That link has expired. Request a fresh one and try again.';
     if (text.contains('invalid')) return 'That link is not valid anymore.';
     return 'We could not complete that request.';
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({
-    required this.eyebrow,
-    required this.title,
-  });
-
-  final String eyebrow;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          eyebrow,
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: AppTheme.publicMuted,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
   }
 }
 
