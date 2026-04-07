@@ -1,10 +1,11 @@
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../core/config/app_config.dart';
+import '../core/auth/auth_session.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/async_surface.dart';
-import '../core/widgets/section_header.dart';
 import '../data/repositories/client_portal_repository.dart';
 
 enum ClientSection {
@@ -12,13 +13,14 @@ enum ClientSection {
   billing,
   agreements,
   statements,
-  requests,
-  notifications,
   account,
 }
 
 class ClientWorkspaceScreen extends StatelessWidget {
-  const ClientWorkspaceScreen({super.key, required this.section});
+  const ClientWorkspaceScreen({
+    super.key,
+    required this.section,
+  });
 
   final ClientSection section;
 
@@ -32,7 +34,7 @@ class ClientWorkspaceScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
+        padding: const EdgeInsets.fromLTRB(28, 14, 28, 28),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1240),
@@ -41,48 +43,86 @@ class ClientWorkspaceScreen extends StatelessWidget {
               builder: (context, data) {
                 final state = data ?? _ClientLoadState(view: _ClientViewData.empty(section));
                 if (state.errorMessage != null) {
-                  return _ErrorState(message: state.errorMessage!);
+                  return _ScreenMessage(
+                    title: 'This area could not load right now.',
+                    message: state.errorMessage!,
+                  );
                 }
 
                 final view = state.view;
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Client workspace',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppTheme.publicMuted,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    SectionHeader(
+                    _WorkspaceHero(
+                      eyebrow: _eyebrowForSection(section),
                       title: view.title,
                       subtitle: view.subtitle,
+                      ctaLabel: _ctaLabelForSection(section),
+                      onCta: () => _handlePrimaryAction(context, section),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 18),
                     if (view.notice != null) ...[
-                      _NoticeStrip(message: view.notice!, isPositive: AppConfig.hasClientAccess),
-                      const SizedBox(height: 16),
+                      _InlineNotice(message: view.notice!),
+                      const SizedBox(height: 18),
                     ],
                     if (view.subscription != null) ...[
-                      _SubscriptionPanel(
+                      _SubscriptionBand(
                         subscription: view.subscription!,
                         onManageBilling: () => _handleManageBilling(context, repository),
                       ),
                       const SizedBox(height: 18),
                     ],
-                    if (view.stats.isNotEmpty) ...[
-                      _StatsBand(stats: view.stats),
+                    if (view.metrics.isNotEmpty) ...[
+                      _MetricsGrid(metrics: view.metrics),
                       const SizedBox(height: 18),
                     ],
-                    _PanelLayout(
-                      primaryTitle: view.primaryTitle,
-                      primaryRows: view.primaryRows,
-                      primaryEmpty: view.primaryEmpty,
-                      secondaryTitle: view.secondaryTitle,
-                      secondaryRows: view.secondaryRows,
-                      secondaryEmpty: view.secondaryEmpty,
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final stacked = constraints.maxWidth < 980;
+                        if (stacked || view.secondaryTitle == null) {
+                          return Column(
+                            children: [
+                              _DataPanel(
+                                title: view.primaryTitle,
+                                rows: view.primaryRows,
+                                emptyLabel: view.primaryEmpty,
+                              ),
+                              if (view.secondaryTitle != null) ...[
+                                const SizedBox(height: 18),
+                                _DataPanel(
+                                  title: view.secondaryTitle!,
+                                  rows: view.secondaryRows,
+                                  emptyLabel: view.secondaryEmpty,
+                                ),
+                              ],
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 7,
+                              child: _DataPanel(
+                                title: view.primaryTitle,
+                                rows: view.primaryRows,
+                                emptyLabel: view.primaryEmpty,
+                              ),
+                            ),
+                            const SizedBox(width: 18),
+                            Expanded(
+                              flex: 5,
+                              child: _DataPanel(
+                                title: view.secondaryTitle!,
+                                rows: view.secondaryRows,
+                                emptyLabel: view.secondaryEmpty,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 );
@@ -94,6 +134,50 @@ class ClientWorkspaceScreen extends StatelessWidget {
     );
   }
 
+  String _eyebrowForSection(ClientSection section) {
+    switch (section) {
+      case ClientSection.overview:
+        return 'Client workspace';
+      case ClientSection.billing:
+        return 'Payment standing';
+      case ClientSection.agreements:
+        return 'Service footing';
+      case ClientSection.statements:
+        return 'Recorded summaries';
+      case ClientSection.account:
+        return 'Account';
+    }
+  }
+
+  String _ctaLabelForSection(ClientSection section) {
+    switch (section) {
+      case ClientSection.overview:
+        return 'Review account';
+      case ClientSection.billing:
+        return 'Manage billing';
+      case ClientSection.agreements:
+        return 'Open account';
+      case ClientSection.statements:
+        return 'Open account';
+      case ClientSection.account:
+        return 'Update details';
+    }
+  }
+
+  void _handlePrimaryAction(BuildContext context, ClientSection section) {
+    switch (section) {
+      case ClientSection.overview:
+      case ClientSection.agreements:
+      case ClientSection.statements:
+      case ClientSection.account:
+        context.go('/client/account');
+        break;
+      case ClientSection.billing:
+        context.go('/client/billing');
+        break;
+    }
+  }
+
   Future<void> _handleManageBilling(
     BuildContext context,
     ClientPortalRepository repository,
@@ -101,28 +185,24 @@ class ClientWorkspaceScreen extends StatelessWidget {
     try {
       final url = await repository.createBillingPortalSession();
       final uri = Uri.tryParse(url);
-      if (uri == null) {
-        throw Exception('Invalid billing portal URL');
-      }
-
+      if (uri == null) throw Exception('Invalid billing portal URL');
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Billing portal could not open right now.')),
+          const SnackBar(content: Text('Billing could not open right now.')),
         );
       }
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Billing portal could not open right now.')),
+        const SnackBar(content: Text('Billing could not open right now.')),
       );
     }
   }
 
   Future<_ClientLoadState> _loadSafe(ClientPortalRepository repository) async {
     try {
-      final view = await _load(repository);
-      return _ClientLoadState(view: view);
+      return _ClientLoadState(view: await _load(repository));
     } catch (error) {
       return _ClientLoadState(
         view: _ClientViewData.empty(section),
@@ -139,39 +219,45 @@ class ClientWorkspaceScreen extends StatelessWidget {
         final activity = _asMap(overview['activity']);
         final communications = _asMap(overview['communications']);
         final client = _asMap(overview['client']);
+        final displayName = _read(client, 'displayName', fallback: _read(client, 'legalName', fallback: 'Client account'));
+
         return _ClientViewData(
-          title: 'Overview',
-          subtitle: 'Account standing, active work, billing posture, and open items.',
-          notice: AppConfig.hasClientAccess
-              ? 'Client access is active for this session.'
-              : 'Client access headers have not been provided for this session.',
-          stats: [
-            _ClientStat('Outstanding', _money(billing['outstandingCents']), tone: AppTheme.amber),
-            _ClientStat('Open notifications', _num(communications['openNotifications']), tone: AppTheme.rose),
-            _ClientStat('Replies', _num(activity['replies'])),
-            _ClientStat('Meetings', _num(activity['meetings']), tone: AppTheme.emerald),
+          title: 'Your workspace at a glance',
+          subtitle: 'Current standing, live delivery, and what needs your attention next.',
+          notice: AppTheme.publicBackground != Colors.transparent
+              ? 'Your workspace stays aligned with your current setup, plan, and account details.'
+              : null,
+          metrics: [
+            _Metric(label: 'Outstanding', value: _money(billing['outstandingCents']), tone: AppTheme.amber),
+            _Metric(label: 'Meetings', value: _num(activity['meetings']), tone: AppTheme.emerald),
+            _Metric(label: 'Replies', value: _num(activity['replies'])),
+            _Metric(label: 'Alerts', value: _num(communications['openNotifications']), tone: AppTheme.rose),
           ],
-          primaryTitle: 'Account',
+          primaryTitle: 'Account view',
           primaryRows: [
-            _ClientRow(
-              title: _read(client, 'displayName', fallback: _read(client, 'legalName', fallback: 'Client account')),
-              primary: [_read(client, 'status'), _read(client, 'industry')].where((e) => e.isNotEmpty).join(' · '),
-              secondary: [_read(client, 'websiteUrl'), _read(client, 'primaryTimezone')].where((e) => e.isNotEmpty).join(' · '),
+            _DataRow(
+              title: displayName,
+              primary: [_read(client, 'status'), _read(client, 'industry')]
+                  .where((value) => value.isNotEmpty)
+                  .join(' · '),
+              secondary: [_read(client, 'websiteUrl'), _read(client, 'primaryTimezone')]
+                  .where((value) => value.isNotEmpty)
+                  .join(' · '),
             ),
-            _ClientRow(
-              title: 'Portal',
-              primary: _read(communications, 'portalUrl'),
-              secondary: '${_num(communications['emailDispatches'])} email dispatches',
+            _DataRow(
+              title: 'Coverage and service',
+              primary: _read(client, 'selectedPlan', fallback: 'Plan selected'),
+              secondary: 'Review your account to update market direction and company details.',
             ),
           ],
           secondaryTitle: 'Billing standing',
           secondaryRows: [
-            _ClientRow(
+            _DataRow(
               title: 'Invoices',
               primary: _num(billing['invoiceCount']),
               secondary: '${_money(billing['collectedCents'])} collected',
             ),
-            _ClientRow(
+            _DataRow(
               title: 'Balance',
               primary: _money(billing['outstandingCents']),
               secondary: '${_money(billing['overdueCents'])} overdue',
@@ -188,19 +274,19 @@ class ClientWorkspaceScreen extends StatelessWidget {
         final subscription = results[1] as Map<String, dynamic>?;
 
         return _ClientViewData(
-          title: 'Billing',
-          subtitle: 'Invoices, receipts, and current payment standing.',
+          title: 'Billing and payment standing',
+          subtitle: 'Invoices, receipts, and your current subscription.',
           subscription: subscription,
-          stats: [
-            _ClientStat('Invoices', '${invoices.length}'),
-            _ClientStat(
-              'Paid',
-              '${_countBy(invoices, (item) => _read(item, 'status') == 'PAID')}',
+          metrics: [
+            _Metric(label: 'Invoices', value: '${invoices.length}'),
+            _Metric(
+              label: 'Paid',
+              value: '${_countBy(invoices, (item) => _read(item, 'status') == 'PAID')}',
               tone: AppTheme.emerald,
             ),
-            _ClientStat(
-              'Open',
-              '${_countBy(invoices, (item) {
+            _Metric(
+              label: 'Open',
+              value: '${_countBy(invoices, (item) {
                 final status = _read(item, 'status');
                 return status == 'OPEN' ||
                     status == 'ISSUED' ||
@@ -210,57 +296,29 @@ class ClientWorkspaceScreen extends StatelessWidget {
               tone: AppTheme.amber,
             ),
           ],
-          primaryTitle: 'Invoices',
+          primaryTitle: 'Recent invoices',
           primaryRows: invoices.take(12).map(_invoiceRow).toList(),
-          primaryEmpty: 'No invoices are available.',
+          primaryEmpty: 'No invoices are available yet.',
         );
 
       case ClientSection.agreements:
         final agreements = await repository.fetchAgreements();
         return _ClientViewData(
-          title: 'Agreements',
-          subtitle: 'Service agreements and current renewal footing.',
+          title: 'Agreements and renewals',
+          subtitle: 'Service agreements and their current standing.',
           primaryTitle: 'Agreements',
           primaryRows: agreements.take(12).map(_agreementRow).toList(),
-          primaryEmpty: 'No agreements are available.',
+          primaryEmpty: 'No agreements are available yet.',
         );
 
       case ClientSection.statements:
         final statements = await repository.fetchStatements();
         return _ClientViewData(
-          title: 'Statements',
-          subtitle: 'Quarterly, half-year, and annual record summaries.',
+          title: 'Statements and record summaries',
+          subtitle: 'Quarterly, half-year, and annual summaries when available.',
           primaryTitle: 'Statements',
           primaryRows: statements.take(12).map(_statementRow).toList(),
-          primaryEmpty: 'No statements are available.',
-        );
-
-      case ClientSection.requests:
-        final reminders = await repository.fetchReminders();
-        return _ClientViewData(
-          title: 'Requests',
-          subtitle: 'Items that require attention, response, or scheduled follow-through.',
-          primaryTitle: 'Requests',
-          primaryRows: reminders.take(12).map(_reminderRow).toList(),
-          primaryEmpty: 'No requests are available.',
-        );
-
-      case ClientSection.notifications:
-        final results = await Future.wait([
-          repository.fetchNotifications(),
-          repository.fetchEmailDispatches(),
-        ]);
-        final notifications = results[0];
-        final dispatches = results[1];
-        return _ClientViewData(
-          title: 'Notifications',
-          subtitle: 'Account alerts and delivered communications.',
-          primaryTitle: 'Notifications',
-          primaryRows: notifications.take(8).map(_notificationRow).toList(),
-          primaryEmpty: 'No notifications are available.',
-          secondaryTitle: 'Delivered emails',
-          secondaryRows: dispatches.take(8).map(_dispatchRow).toList(),
-          secondaryEmpty: 'No delivered emails are available.',
+          primaryEmpty: 'No statements are available yet.',
         );
 
       case ClientSection.account:
@@ -292,8 +350,10 @@ class _ClientAccountSurfaceState extends State<_ClientAccountSurface> {
 
   bool _loading = true;
   bool _saving = false;
-  String? _error;
+  bool _editing = false;
   String? _message;
+  String? _error;
+  Map<String, dynamic>? _profile;
 
   @override
   void initState() {
@@ -320,61 +380,70 @@ class _ClientAccountSurfaceState extends State<_ClientAccountSurface> {
   Future<void> _load() async {
     try {
       final data = await ClientPortalRepository().fetchClientProfile();
-      final profile = _asMap(data['profile']);
-      final branding = _asMap(profile['branding']);
-      if (!mounted) return;
-      setState(() {
-        _displayName.text = _read(profile, 'displayName');
-        _legalName.text = _read(profile, 'legalName');
-        _websiteUrl.text = _read(profile, 'websiteUrl');
-        _bookingUrl.text = _read(profile, 'bookingUrl');
-        _primaryTimezone.text = _read(profile, 'primaryTimezone');
-        _currencyCode.text = _read(profile, 'currencyCode');
-        _brandName.text = _read(branding, 'brandName');
-        _logoUrl.text = _read(branding, 'logoUrl');
-        _primaryColor.text = _read(branding, 'primaryColor', fallback: '#111827');
-        _accentColor.text = _read(branding, 'accentColor', fallback: '#2563eb');
-        _welcomeHeadline.text = _read(branding, 'welcomeHeadline');
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = 'The client profile could not load right now.';
-      });
+      _profile = data;
+      _displayName.text = _read(data, 'displayName');
+      _legalName.text = _read(data, 'legalName');
+      _websiteUrl.text = _read(data, 'websiteUrl');
+      _bookingUrl.text = _read(data, 'bookingUrl');
+      _primaryTimezone.text = _read(data, 'primaryTimezone');
+      _currencyCode.text = _read(data, 'currencyCode');
+      _brandName.text = _read(data, 'brandName');
+      _logoUrl.text = _read(data, 'logoUrl');
+      _primaryColor.text = _read(data, 'primaryColor');
+      _accentColor.text = _read(data, 'accentColor');
+      _welcomeHeadline.text = _read(data, 'welcomeHeadline');
+    } catch (error) {
+      _error = _humanizeError(error);
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _saving = true;
-      _error = null;
       _message = null;
+      _error = null;
     });
+
     try {
-      await ClientPortalRepository().updateClientProfile(
-        displayName: _displayName.text.trim(),
-        legalName: _legalName.text.trim(),
-        websiteUrl: _websiteUrl.text.trim(),
-        bookingUrl: _bookingUrl.text.trim(),
-        primaryTimezone: _primaryTimezone.text.trim(),
-        currencyCode: _currencyCode.text.trim(),
-        brandName: _brandName.text.trim(),
-        logoUrl: _logoUrl.text.trim(),
-        primaryColor: _primaryColor.text.trim(),
-        accentColor: _accentColor.text.trim(),
-        welcomeHeadline: _welcomeHeadline.text.trim(),
+      final saved = await ClientPortalRepository().updateClientProfile(
+        displayName: _displayName.text,
+        legalName: _legalName.text,
+        websiteUrl: _websiteUrl.text,
+        bookingUrl: _bookingUrl.text,
+        primaryTimezone: _primaryTimezone.text,
+        currencyCode: _currencyCode.text,
+        brandName: _brandName.text,
+        logoUrl: _logoUrl.text,
+        primaryColor: _primaryColor.text,
+        accentColor: _accentColor.text,
+        welcomeHeadline: _welcomeHeadline.text,
       );
-      if (!mounted) return;
-      setState(() {
-        _message = 'Company profile and office branding have been saved.';
+
+      _profile = saved;
+      await AuthSessionController.instance.applyClientSetupResponse({
+        'client': {
+          'setupCompleted': true,
+          'selectedPlan': _profile?['selectedPlan'],
+          'subscriptionStatus': _profile?['subscriptionStatus'],
+          'setup': _profile?['setup'],
+        },
       });
-    } catch (_) {
+
       if (!mounted) return;
       setState(() {
-        _error = 'The profile could not be saved right now.';
+        _editing = false;
+        _message = 'Your account details were updated.';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = _humanizeError(error);
       });
     } finally {
       if (mounted) {
@@ -385,124 +454,296 @@ class _ClientAccountSurfaceState extends State<_ClientAccountSurface> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_error != null && _profile == null) {
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 14, 28, 28),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1240),
+              child: _ScreenMessage(
+                title: 'Account details could not load right now.',
+                message: _error!,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
+        padding: const EdgeInsets.fromLTRB(28, 14, 28, 28),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1240),
-            child: _loading
-                ? const Center(child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(),
-                  ))
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Client workspace',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppTheme.publicMuted,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      const SectionHeader(
-                        title: 'Account',
-                        subtitle: 'Edit company identity, client-facing office signals, and branding.',
-                      ),
-                      const SizedBox(height: 16),
-                      if (_error != null) _NoticeStrip(message: _error!, isPositive: false),
-                      if (_message != null) ...[
-                        _NoticeStrip(message: _message!, isPositive: true),
-                        const SizedBox(height: 16),
-                      ],
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final stacked = constraints.maxWidth < 980;
-                          final preview = _OfficePreviewCard(
-                            brandName: _brandName.text.isEmpty ? _displayName.text : _brandName.text,
-                            logoUrl: _logoUrl.text,
-                            primaryColor: _primaryColor.text,
-                            accentColor: _accentColor.text,
-                            headline: _welcomeHeadline.text,
-                          );
-                          final form = _TintedPanel(
-                            child: Form(
-                              key: _formKey,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Company profile', style: Theme.of(context).textTheme.titleLarge),
-                                  const SizedBox(height: 18),
-                                  _field(_displayName, 'Display name'),
-                                  const SizedBox(height: 12),
-                                  _field(_legalName, 'Legal name'),
-                                  const SizedBox(height: 12),
-                                  _field(_websiteUrl, 'Website', keyboardType: TextInputType.url, required: false),
-                                  const SizedBox(height: 12),
-                                  _field(_bookingUrl, 'Booking URL', keyboardType: TextInputType.url, required: false),
-                                  const SizedBox(height: 12),
-                                  _field(_primaryTimezone, 'Primary timezone', required: false),
-                                  const SizedBox(height: 12),
-                                  _field(_currencyCode, 'Currency code', required: false),
-                                  const SizedBox(height: 20),
-                                  Text('Office branding', style: Theme.of(context).textTheme.titleLarge),
-                                  const SizedBox(height: 18),
-                                  _field(_brandName, 'Brand name', required: false),
-                                  const SizedBox(height: 12),
-                                  _field(_logoUrl, 'Logo URL', keyboardType: TextInputType.url, required: false),
-                                  const SizedBox(height: 12),
-                                  _field(_primaryColor, 'Primary color', required: false, hintText: '#111827'),
-                                  const SizedBox(height: 12),
-                                  _field(_accentColor, 'Accent color', required: false, hintText: '#2563eb'),
-                                  const SizedBox(height: 12),
-                                  _field(_welcomeHeadline, 'Welcome headline', required: false),
-                                  const SizedBox(height: 20),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: FilledButton(
-                                      onPressed: _saving ? null : _save,
-                                      child: Text(_saving ? 'Saving profile...' : 'Save profile'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _WorkspaceHero(
+                  eyebrow: 'Account',
+                  title: 'Company identity and workspace details',
+                  subtitle: 'Keep your account current so your workspace, records, and billing stay aligned.',
+                  ctaLabel: _editing ? 'Stop editing' : 'Update details',
+                  onCta: () => setState(() {
+                    _editing = !_editing;
+                    _message = null;
+                    _error = null;
+                  }),
+                ),
+                const SizedBox(height: 18),
+                if (_message != null) ...[
+                  _InlineNotice(message: _message!),
+                  const SizedBox(height: 18),
+                ],
+                if (_error != null) ...[
+                  _InlineNotice(message: _error!, error: true),
+                  const SizedBox(height: 18),
+                ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stacked = constraints.maxWidth < 980;
 
-                          if (stacked) {
-                            return Column(
-                              children: [preview, const SizedBox(height: 18), form],
-                            );
-                          }
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 5, child: preview),
-                              const SizedBox(width: 18),
-                              Expanded(flex: 7, child: form),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                    final preview = _IdentityPreviewCard(
+                      displayName: _displayName.text,
+                      brandName: _brandName.text,
+                      logoUrl: _logoUrl.text,
+                      primaryColor: _primaryColor.text,
+                      accentColor: _accentColor.text,
+                      headline: _welcomeHeadline.text,
+                      websiteUrl: _websiteUrl.text,
+                      bookingUrl: _bookingUrl.text,
+                    );
+
+                    final details = _EditableAccountPanel(
+                      formKey: _formKey,
+                      editing: _editing,
+                      saving: _saving,
+                      displayName: _displayName,
+                      legalName: _legalName,
+                      websiteUrl: _websiteUrl,
+                      bookingUrl: _bookingUrl,
+                      primaryTimezone: _primaryTimezone,
+                      currencyCode: _currencyCode,
+                      brandName: _brandName,
+                      logoUrl: _logoUrl,
+                      primaryColor: _primaryColor,
+                      accentColor: _accentColor,
+                      welcomeHeadline: _welcomeHeadline,
+                      onSave: _save,
+                    );
+
+                    if (stacked) {
+                      return Column(
+                        children: [
+                          preview,
+                          const SizedBox(height: 18),
+                          details,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 5, child: preview),
+                        const SizedBox(width: 18),
+                        Expanded(flex: 7, child: details),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _field(
-    TextEditingController controller,
-    String label, {
+class _EditableAccountPanel extends StatelessWidget {
+  const _EditableAccountPanel({
+    required this.formKey,
+    required this.editing,
+    required this.saving,
+    required this.displayName,
+    required this.legalName,
+    required this.websiteUrl,
+    required this.bookingUrl,
+    required this.primaryTimezone,
+    required this.currencyCode,
+    required this.brandName,
+    required this.logoUrl,
+    required this.primaryColor,
+    required this.accentColor,
+    required this.welcomeHeadline,
+    required this.onSave,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final bool editing;
+  final bool saving;
+  final TextEditingController displayName;
+  final TextEditingController legalName;
+  final TextEditingController websiteUrl;
+  final TextEditingController bookingUrl;
+  final TextEditingController primaryTimezone;
+  final TextEditingController currencyCode;
+  final TextEditingController brandName;
+  final TextEditingController logoUrl;
+  final TextEditingController primaryColor;
+  final TextEditingController accentColor;
+  final TextEditingController welcomeHeadline;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DataPanel(
+      title: editing ? 'Update account details' : 'Current account details',
+      customChild: Form(
+        key: formKey,
+        child: Column(
+          children: [
+            _AccountFieldRow(
+              child: _field(
+                controller: displayName,
+                label: 'Display name',
+                enabled: editing,
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: legalName,
+                label: 'Legal name',
+                enabled: editing,
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: websiteUrl,
+                label: 'Website',
+                enabled: editing,
+                required: false,
+                keyboardType: TextInputType.url,
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: bookingUrl,
+                label: 'Booking link',
+                enabled: editing,
+                required: false,
+                keyboardType: TextInputType.url,
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: primaryTimezone,
+                label: 'Primary timezone',
+                enabled: editing,
+                required: false,
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: currencyCode,
+                label: 'Currency',
+                enabled: editing,
+                required: false,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Workspace presentation',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.publicText,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _AccountFieldRow(
+              child: _field(
+                controller: brandName,
+                label: 'Brand name',
+                enabled: editing,
+                required: false,
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: logoUrl,
+                label: 'Logo URL',
+                enabled: editing,
+                required: false,
+                keyboardType: TextInputType.url,
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: primaryColor,
+                label: 'Primary color',
+                enabled: editing,
+                required: false,
+                hintText: '#111827',
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: accentColor,
+                label: 'Accent color',
+                enabled: editing,
+                required: false,
+                hintText: '#2563eb',
+              ),
+            ),
+            _AccountFieldRow(
+              child: _field(
+                controller: welcomeHeadline,
+                label: 'Workspace headline',
+                enabled: editing,
+                required: false,
+              ),
+            ),
+            if (editing) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: saving ? null : onSave,
+                  child: Text(saving ? 'Saving...' : 'Save changes'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _field({
+    required TextEditingController controller,
+    required String label,
+    bool enabled = true,
     bool required = true,
     TextInputType? keyboardType,
     String? hintText,
   }) {
     return TextFormField(
       controller: controller,
+      enabled: enabled,
       keyboardType: keyboardType,
       validator: required
           ? (value) => value == null || value.trim().isEmpty ? '$label is required.' : null
@@ -511,26 +752,47 @@ class _ClientAccountSurfaceState extends State<_ClientAccountSurface> {
         labelText: label,
         hintText: hintText,
         border: const OutlineInputBorder(),
+        filled: !enabled,
+        fillColor: enabled ? null : const Color(0xFFF7F8F5),
       ),
-      onChanged: (_) => setState(() {}),
     );
   }
 }
 
-class _OfficePreviewCard extends StatelessWidget {
-  const _OfficePreviewCard({
+class _AccountFieldRow extends StatelessWidget {
+  const _AccountFieldRow({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: child,
+    );
+  }
+}
+
+class _IdentityPreviewCard extends StatelessWidget {
+  const _IdentityPreviewCard({
+    required this.displayName,
     required this.brandName,
     required this.logoUrl,
     required this.primaryColor,
     required this.accentColor,
     required this.headline,
+    required this.websiteUrl,
+    required this.bookingUrl,
   });
 
+  final String displayName;
   final String brandName;
   final String logoUrl;
   final String primaryColor;
   final String accentColor;
   final String headline;
+  final String websiteUrl;
+  final String bookingUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -550,61 +812,65 @@ class _OfficePreviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white24),
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    color: Colors.white.withOpacity(0.12),
-                    child: logoUrl.trim().isNotEmpty
-                        ? Image.network(
-                            logoUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.apartment_rounded, color: Colors.white),
-                          )
-                        : const Icon(Icons.apartment_rounded, color: Colors.white),
-                  ),
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  color: Colors.white.withOpacity(0.12),
+                  child: logoUrl.trim().isNotEmpty
+                      ? Image.network(
+                          logoUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.apartment_rounded, color: Colors.white),
+                        )
+                      : const Icon(Icons.apartment_rounded, color: Colors.white),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    brandName.trim().isEmpty ? 'Client office' : brandName,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  brandName.trim().isNotEmpty
+                      ? brandName
+                      : (displayName.trim().isNotEmpty ? displayName : 'Client workspace'),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
           Text(
-            headline.trim().isEmpty
-                ? 'Your account is configured for active service operations.'
-                : headline,
+            headline.trim().isNotEmpty
+                ? headline
+                : 'Your client workspace is presented with the identity and details you set here.',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
-                  height: 1.15,
+                  height: 1.12,
                 ),
           ),
           const SizedBox(height: 12),
           Text(
-            'This office-facing layer gives clients a stronger sense of identity, continuity, and control inside their workspace.',
+            'This is not a placeholder surface. It is the account layer clients return to for continuity, billing, and account footing.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.white.withOpacity(0.92),
                 ),
           ),
+          if (websiteUrl.trim().isNotEmpty || bookingUrl.trim().isNotEmpty) ...[
+            const SizedBox(height: 18),
+            if (websiteUrl.trim().isNotEmpty)
+              _PreviewLine(label: 'Website', value: websiteUrl),
+            if (bookingUrl.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _PreviewLine(label: 'Booking', value: bookingUrl),
+            ],
+          ],
         ],
       ),
     );
@@ -618,8 +884,449 @@ class _OfficePreviewCard extends StatelessWidget {
   }
 }
 
+class _PreviewLine extends StatelessWidget {
+  const _PreviewLine({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '$label · $value',
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.white.withOpacity(0.88),
+          ),
+    );
+  }
+}
+
+class _WorkspaceHero extends StatelessWidget {
+  const _WorkspaceHero({
+    required this.eyebrow,
+    required this.title,
+    required this.subtitle,
+    required this.ctaLabel,
+    required this.onCta,
+  });
+
+  final String eyebrow;
+  final String title;
+  final String subtitle;
+  final String ctaLabel;
+  final VoidCallback onCta;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked = constraints.maxWidth < 860;
+          final summary = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                eyebrow,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.publicMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.02,
+                    ),
+              ),
+              const SizedBox(height: 14),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.publicMuted,
+                        height: 1.45,
+                      ),
+                ),
+              ),
+            ],
+          );
+
+          final action = FilledButton(
+            onPressed: onCta,
+            child: Text(ctaLabel),
+          );
+
+          if (stacked) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                summary,
+                const SizedBox(height: 18),
+                action,
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: summary),
+              const SizedBox(width: 18),
+              action,
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SubscriptionBand extends StatelessWidget {
+  const _SubscriptionBand({
+    required this.subscription,
+    required this.onManageBilling,
+  });
+
+  final Map<String, dynamic> subscription;
+  final VoidCallback onManageBilling;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DataPanel(
+      title: 'Current subscription',
+      trailing: TextButton(
+        onPressed: onManageBilling,
+        child: const Text('Manage billing'),
+      ),
+      customChild: LayoutBuilder(
+        builder: (context, constraints) {
+          final items = [
+            _Metric(label: 'Plan', value: _read(subscription, 'plan', fallback: '—')),
+            _Metric(label: 'Status', value: _read(subscription, 'status', fallback: '—')),
+            _Metric(label: 'Amount', value: _subscriptionAmount(subscription)),
+            _Metric(label: 'Next billing', value: _subscriptionDate(subscription['currentPeriodEnd'])),
+          ];
+
+          if (constraints.maxWidth < 760) {
+            return Column(
+              children: [
+                for (var index = 0; index < items.length; index++) ...[
+                  _MetricTile(metric: items[index]),
+                  if (index != items.length - 1)
+                    const Divider(height: 1, thickness: 1, color: AppTheme.publicLine),
+                ],
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              for (var index = 0; index < items.length; index++) ...[
+                Expanded(child: _MetricTile(metric: items[index])),
+                if (index != items.length - 1)
+                  Container(width: 1, height: 72, color: AppTheme.publicLine),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MetricsGrid extends StatelessWidget {
+  const _MetricsGrid({required this.metrics});
+
+  final List<_Metric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final columns = width >= 1120 ? 4 : width >= 760 ? 2 : 1;
+        final gap = 16.0;
+        final itemWidth = columns == 1 ? width : (width - gap * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final metric in metrics)
+              SizedBox(
+                width: itemWidth,
+                child: _MetricCard(metric: metric),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({required this.metric});
+
+  final _Metric metric;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8F5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            metric.label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            metric.value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: metric.tone ?? AppTheme.publicText,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({required this.metric});
+
+  final _Metric metric;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            metric.label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            metric.value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: metric.tone ?? AppTheme.publicText,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataPanel extends StatelessWidget {
+  const _DataPanel({
+    required this.title,
+    this.rows = const [],
+    this.emptyLabel = 'Nothing is available.',
+    this.trailing,
+    this.customChild,
+  });
+
+  final String title;
+  final List<_DataRow> rows;
+  final String emptyLabel;
+  final Widget? trailing;
+  final Widget? customChild;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+              if (trailing != null) trailing!,
+            ],
+          ),
+          const SizedBox(height: 18),
+          if (customChild != null)
+            customChild!
+          else if (rows.isEmpty)
+            Text(
+              emptyLabel,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppTheme.publicMuted,
+                  ),
+            )
+          else
+            Column(
+              children: [
+                for (var index = 0; index < rows.length; index++) ...[
+                  _DataRowTile(row: rows[index]),
+                  if (index != rows.length - 1)
+                    const Divider(height: 24, thickness: 1, color: AppTheme.publicLine),
+                ],
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataRowTile extends StatelessWidget {
+  const _DataRowTile({required this.row});
+
+  final _DataRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          row.title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppTheme.publicText,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        if (row.primary.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            row.primary,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ],
+        if (row.secondary.trim().isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            row.secondary,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _InlineNotice extends StatelessWidget {
+  const _InlineNotice({
+    required this.message,
+    this.error = false,
+  });
+
+  final String message;
+  final bool error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: error ? Colors.red.shade50 : const Color(0xFFF7F8F5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: error ? Colors.red.shade100 : AppTheme.publicLine,
+        ),
+      ),
+      child: Text(
+        message,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: error ? Colors.red.shade700 : AppTheme.publicText,
+            ),
+      ),
+    );
+  }
+}
+
+class _ScreenMessage extends StatelessWidget {
+  const _ScreenMessage({
+    required this.title,
+    required this.message,
+  });
+
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ClientLoadState {
-  const _ClientLoadState({required this.view, this.errorMessage});
+  const _ClientLoadState({
+    required this.view,
+    this.errorMessage,
+  });
 
   final _ClientViewData view;
   final String? errorMessage;
@@ -631,7 +1338,7 @@ class _ClientViewData {
     required this.subtitle,
     this.notice,
     this.subscription,
-    this.stats = const [],
+    this.metrics = const [],
     required this.primaryTitle,
     this.primaryRows = const [],
     this.primaryEmpty = 'Nothing is available.',
@@ -644,599 +1351,137 @@ class _ClientViewData {
   final String subtitle;
   final String? notice;
   final Map<String, dynamic>? subscription;
-  final List<_ClientStat> stats;
+  final List<_Metric> metrics;
   final String primaryTitle;
-  final List<_ClientRow> primaryRows;
+  final List<_DataRow> primaryRows;
   final String primaryEmpty;
   final String? secondaryTitle;
-  final List<_ClientRow> secondaryRows;
+  final List<_DataRow> secondaryRows;
   final String secondaryEmpty;
 
-  factory _ClientViewData.empty(ClientSection section) => _ClientViewData(
-        title: section.name[0].toUpperCase() + section.name.substring(1),
-        subtitle: '',
-        primaryTitle: 'Overview',
-      );
+  factory _ClientViewData.empty(ClientSection section) {
+    return _ClientViewData(
+      title: section.name[0].toUpperCase() + section.name.substring(1),
+      subtitle: '',
+      primaryTitle: 'Overview',
+    );
+  }
 }
 
-class _ClientStat {
-  const _ClientStat(this.label, this.value, {this.tone});
+class _Metric {
+  const _Metric({
+    required this.label,
+    required this.value,
+    this.tone,
+  });
 
   final String label;
   final String value;
   final Color? tone;
 }
 
-class _ClientRow {
-  const _ClientRow({required this.title, required this.primary, required this.secondary});
+class _DataRow {
+  const _DataRow({
+    required this.title,
+    required this.primary,
+    required this.secondary,
+  });
 
   final String title;
   final String primary;
   final String secondary;
 }
 
-class _SubscriptionPanel extends StatelessWidget {
-  const _SubscriptionPanel({
-    required this.subscription,
-    required this.onManageBilling,
-  });
-
-  final Map<String, dynamic> subscription;
-  final VoidCallback onManageBilling;
-
-  @override
-  Widget build(BuildContext context) {
-    final plan = _read(subscription, 'plan', fallback: 'Subscription');
-    final status = _read(subscription, 'status', fallback: '—');
-    final amount = _subscriptionAmount(subscription);
-    final nextBillingDate = _subscriptionDate(subscription['currentPeriodEnd']);
-
-    return _TintedPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text('Subscription', style: Theme.of(context).textTheme.titleLarge),
-              ),
-              TextButton(
-                onPressed: onManageBilling,
-                child: const Text('Manage Billing'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 760;
-              final items = [
-                _SubscriptionMetric(label: 'Current plan', value: plan),
-                _SubscriptionMetric(label: 'Status', value: status),
-                _SubscriptionMetric(label: 'Amount', value: amount),
-                _SubscriptionMetric(label: 'Next billing date', value: nextBillingDate),
-              ];
-
-              if (compact) {
-                return Column(
-                  children: [
-                    for (var index = 0; index < items.length; index++) ...[
-                      items[index],
-                      if (index != items.length - 1)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Divider(height: 1, thickness: 1, color: AppTheme.publicLine),
-                        ),
-                    ],
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var index = 0; index < items.length; index++) ...[
-                    Expanded(child: items[index]),
-                    if (index != items.length - 1)
-                      Container(
-                        width: 1,
-                        height: 64,
-                        color: AppTheme.publicLine,
-                      ),
-                  ],
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+_DataRow _invoiceRow(dynamic item) {
+  return _DataRow(
+    title: _read(item, 'invoiceNumber', fallback: 'Invoice'),
+    primary: '${_money(_asMap(item)['amountDueCents'])} · ${_read(item, 'status', fallback: '—')}',
+    secondary: _dateRange(_asMap(item)['issuedAt'], _asMap(item)['dueAt']),
+  );
 }
 
-class _SubscriptionMetric extends StatelessWidget {
-  const _SubscriptionMetric({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.publicText,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
+_DataRow _agreementRow(dynamic item) {
+  return _DataRow(
+    title: _read(item, 'title', fallback: 'Agreement'),
+    primary: _read(item, 'status', fallback: '—'),
+    secondary: _dateRange(_asMap(item)['effectiveAt'], _asMap(item)['expiresAt']),
+  );
 }
 
-class _StatsBand extends StatelessWidget {
-  const _StatsBand({required this.stats});
-
-  final List<_ClientStat> stats;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F8F5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 860;
-          if (compact) {
-            return Column(
-              children: [
-                for (var i = 0; i < stats.length; i++) ...[
-                  _StatsBandItem(stat: stats[i]),
-                  if (i != stats.length - 1)
-                    const Divider(height: 1, thickness: 1, color: AppTheme.publicLine),
-                ],
-              ],
-            );
-          }
-
-          return Row(
-            children: [
-              for (var i = 0; i < stats.length; i++) ...[
-                Expanded(child: _StatsBandItem(stat: stats[i])),
-                if (i != stats.length - 1)
-                  Container(
-                    width: 1,
-                    height: 76,
-                    color: AppTheme.publicLine,
-                  ),
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
+_DataRow _statementRow(dynamic item) {
+  return _DataRow(
+    title: _read(item, 'title', fallback: 'Statement'),
+    primary: _read(item, 'periodLabel', fallback: _read(item, 'statementType', fallback: 'Summary')),
+    secondary: _read(item, 'createdAt', fallback: ''),
+  );
 }
 
-class _StatsBandItem extends StatelessWidget {
-  const _StatsBandItem({required this.stat});
-
-  final _ClientStat stat;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            stat.label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            stat.value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: stat.tone ?? AppTheme.publicText,
-                  fontWeight: FontWeight.w700,
-                  height: 1.05,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PanelLayout extends StatelessWidget {
-  const _PanelLayout({
-    required this.primaryTitle,
-    required this.primaryRows,
-    required this.primaryEmpty,
-    this.secondaryTitle,
-    this.secondaryRows = const [],
-    this.secondaryEmpty = 'Nothing is available.',
-  });
-
-  final String primaryTitle;
-  final List<_ClientRow> primaryRows;
-  final String primaryEmpty;
-  final String? secondaryTitle;
-  final List<_ClientRow> secondaryRows;
-  final String secondaryEmpty;
-
-  @override
-  Widget build(BuildContext context) {
-    if (secondaryTitle == null) {
-      return _Panel(
-        title: primaryTitle,
-        rows: primaryRows,
-        emptyLabel: primaryEmpty,
-      );
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 980) {
-          return Column(
-            children: [
-              _Panel(
-                title: primaryTitle,
-                rows: primaryRows,
-                emptyLabel: primaryEmpty,
-              ),
-              const SizedBox(height: 18),
-              _Panel(
-                title: secondaryTitle!,
-                rows: secondaryRows,
-                emptyLabel: secondaryEmpty,
-              ),
-            ],
-          );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 7,
-              child: _Panel(
-                title: primaryTitle,
-                rows: primaryRows,
-                emptyLabel: primaryEmpty,
-              ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              flex: 5,
-              child: _Panel(
-                title: secondaryTitle!,
-                rows: secondaryRows,
-                emptyLabel: secondaryEmpty,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _Panel extends StatelessWidget {
-  const _Panel({required this.title, required this.rows, required this.emptyLabel});
-
-  final String title;
-  final List<_ClientRow> rows;
-  final String emptyLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return _TintedPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 18),
-          if (rows.isEmpty)
-            Text(
-              emptyLabel,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
-            )
-          else
-            Column(
-              children: [
-                for (var index = 0; index < rows.length; index++) ...[
-                  _PanelRow(row: rows[index]),
-                  if (index != rows.length - 1)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 18),
-                      child: Divider(height: 1, thickness: 1, color: AppTheme.publicLine),
-                    ),
-                ],
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PanelRow extends StatelessWidget {
-  const _PanelRow({required this.row});
-
-  final _ClientRow row;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 760) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(row.title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(row.primary, style: Theme.of(context).textTheme.bodyLarge),
-              if (row.secondary.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  row.secondary,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.publicMuted,
-                      ),
-                ),
-              ],
-            ],
-          );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: Text(
-                row.title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              flex: 4,
-              child: Text(
-                row.primary,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              flex: 4,
-              child: Text(
-                row.secondary,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.publicMuted,
-                    ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _NoticeStrip extends StatelessWidget {
-  const _NoticeStrip({required this.message, required this.isPositive});
-
-  final String message;
-  final bool isPositive;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isPositive ? const Color(0xFFF6FAF6) : const Color(0xFFF9FAF9),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isPositive ? const Color(0xFFDCE8DD) : const Color(0xFFE3E6E2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isPositive ? Icons.check_circle_outline_rounded : Icons.info_outline_rounded,
-            size: 18,
-            color: isPositive ? AppTheme.emerald : AppTheme.publicMuted,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.publicText,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TintedPanel extends StatelessWidget {
-  const _TintedPanel({required this.child, this.padding = const EdgeInsets.all(24)});
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F3EF),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return _TintedPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Client workspace',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted),
-          ),
-          const SizedBox(height: 10),
-          Text('This page could not load.', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
-          Text(message, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
-        ],
-      ),
-    );
-  }
-}
-
-Map<String, dynamic> _asMap(dynamic value) => value is Map ? value.cast<String, dynamic>() : <String, dynamic>{};
-
-String _num(dynamic value) => ((value as num?) ?? 0).toString();
-
-String _money(dynamic cents) {
-  final amount = ((cents as num?) ?? 0) / 100;
-  return '\$${amount.toStringAsFixed(2)}';
+Map<String, dynamic> _asMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) return Map<String, dynamic>.from(value);
+  return <String, dynamic>{};
 }
 
 String _read(dynamic source, String key, {String fallback = ''}) {
-  if (source is Map && source[key] != null) return '${source[key]}';
+  if (source is Map<String, dynamic>) {
+    final value = source[key];
+    return value == null ? fallback : value.toString();
+  }
+  if (source is Map) {
+    final value = source[key];
+    return value == null ? fallback : value.toString();
+  }
   return fallback;
 }
 
-int _countBy(List<dynamic> items, bool Function(Map<String, dynamic>) test) {
+String _num(dynamic value) {
+  if (value == null) return '0';
+  if (value is num) return value.toInt().toString();
+  return value.toString();
+}
+
+String _money(dynamic value) {
+  if (value == null) return '\$0';
+  final cents = value is num ? value.toDouble() : double.tryParse(value.toString()) ?? 0;
+  final amount = cents / 100;
+  if (amount == amount.roundToDouble()) {
+    return '\$${amount.round()}';
+  }
+  return '\$${amount.toStringAsFixed(2)}';
+}
+
+int _countBy(List<dynamic> values, bool Function(dynamic item) predicate) {
   var count = 0;
-  for (final item in items) {
-    final map = _asMap(item);
-    if (test(map)) count += 1;
+  for (final item in values) {
+    if (predicate(item)) count += 1;
   }
   return count;
 }
 
+String _dateRange(dynamic start, dynamic end) {
+  final startText = start?.toString().trim() ?? '';
+  final endText = end?.toString().trim() ?? '';
+  if (startText.isEmpty && endText.isEmpty) return '';
+  if (startText.isNotEmpty && endText.isNotEmpty) return '$startText · $endText';
+  return startText.isNotEmpty ? startText : endText;
+}
+
 String _subscriptionAmount(Map<String, dynamic> subscription) {
-  final amount = subscription['amount'];
-  final currency = _read(subscription, 'currency', fallback: 'USD').toUpperCase();
-
-  if (amount is num) {
-    final symbol = currency == 'USD' ? '\$' : '$currency ';
-    return '$symbol${amount.toStringAsFixed(amount % 1 == 0 ? 0 : 2)}';
-  }
-
-  return '—';
+  final cents = subscription['amountCents'];
+  if (cents == null) return '—';
+  return '${_money(cents)} / month';
 }
 
-String _subscriptionDate(dynamic raw) {
-  if (raw == null) return '—';
-  final value = DateTime.tryParse('$raw');
-  if (value == null) return '$raw';
-
-  const monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ];
-
-  return '${monthNames[value.month - 1]} ${value.day}, ${value.year}';
-}
-
-_ClientRow _invoiceRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _ClientRow(
-    title: _read(item, 'invoiceNumber', fallback: 'Invoice'),
-    primary: [_read(item, 'status'), _money(item['totalCents'])].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'dueAt'),
-  );
-}
-
-_ClientRow _agreementRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _ClientRow(
-    title: _read(item, 'title', fallback: _read(item, 'agreementNumber', fallback: 'Agreement')),
-    primary: [_read(item, 'status'), _read(item, 'agreementNumber')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(item, 'effectiveStartAt'), _read(item, 'effectiveEndAt')].where((e) => e.isNotEmpty).join(' → '),
-  );
-}
-
-_ClientRow _statementRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _ClientRow(
-    title: _read(item, 'statementNumber', fallback: 'Statement'),
-    primary: [_read(item, 'status'), _money(item['balanceCents'])].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(item, 'periodStart'), _read(item, 'periodEnd')].where((e) => e.isNotEmpty).join(' → '),
-  );
-}
-
-_ClientRow _reminderRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _ClientRow(
-    title: _read(item, 'subjectLine', fallback: 'Request'),
-    primary: [_read(item, 'status'), _read(item, 'scheduledAt')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'bodyText'),
-  );
-}
-
-_ClientRow _notificationRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _ClientRow(
-    title: _read(item, 'title', fallback: 'Notification'),
-    primary: [_read(item, 'severity'), _read(item, 'status')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'bodyText'),
-  );
-}
-
-_ClientRow _dispatchRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _ClientRow(
-    title: _read(item, 'subjectLine', fallback: 'Email'),
-    primary: [_read(item, 'status'), _read(item, 'recipientEmail')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'createdAt'),
-  );
+String _subscriptionDate(dynamic value) {
+  final text = value?.toString().trim() ?? '';
+  return text.isEmpty ? '—' : text;
 }
 
 String _humanizeError(Object error) {
-  final raw = '$error';
-  if (raw.contains('401') || raw.contains('Unauthorized')) {
-    return 'This portal could not load because account access is not active for the current session.';
-  }
-  return 'This account surface could not load right now.';
+  final raw = error.toString();
+  if (raw.contains('401')) return 'Your session needs to be refreshed. Please sign in again.';
+  if (raw.contains('403')) return 'This area is not available for your current access.';
+  if (raw.contains('404')) return 'That information is not available yet.';
+  if (raw.contains('500')) return 'The workspace ran into a server issue. Please try again.';
+  return 'The workspace could not load right now.';
 }

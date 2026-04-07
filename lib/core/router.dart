@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -31,21 +32,34 @@ final router = GoRouter(
     if (!session.isReady) return null;
 
     final path = state.uri.path;
-    final planQuery = state.uri.queryParameters['plan']?.trim().toLowerCase();
+    final normalizedPlan = state.uri.queryParameters['plan']?.trim().toLowerCase();
 
-    final isClientAuth = path == '/client/login' || path == '/client/join';
-    final isOpsAuth = path == '/ops/login' || path == '/ops/join';
+    final isClientAuth = _matches(path, const [
+      '/client/login',
+      '/client/join',
+      '/login',
+      '/join',
+    ]);
+
+    final isOpsAuth = _matches(path, const [
+      '/ops/login',
+      '/ops/join',
+      '/ops-login',
+      '/ops-join',
+    ]);
+
     final isPublic = path == '/' ||
         path == '/how-it-works' ||
         path == '/pricing' ||
         path == '/contact' ||
         path.startsWith('/legal/');
+
     final isVerificationFlow = path == '/client/verify-email';
     final isResetFlow = path == '/client/reset-password';
     final isSetupFlow = path == '/client/setup';
     final isSubscribeFlow = path == '/client/subscribe';
-    final isClientWorkspacePath =
-        path.startsWith('/client/workspace') ||
+
+    final isClientSurface = path.startsWith('/client/workspace') ||
         path.startsWith('/client/billing') ||
         path.startsWith('/client/agreements') ||
         path.startsWith('/client/statements') ||
@@ -53,7 +67,7 @@ final router = GoRouter(
 
     if (!session.isAuthenticated) {
       if (path.startsWith('/app/')) return '/ops/login';
-      if (isClientWorkspacePath || isSetupFlow || isSubscribeFlow) return '/client/login';
+      if (isClientSurface || isSetupFlow || isSubscribeFlow) return '/client/login';
       return null;
     }
 
@@ -64,7 +78,7 @@ final router = GoRouter(
     }
 
     if (session.surface == 'client') {
-      final selectedPlan = session.selectedPlan ?? planQuery;
+      final selectedPlan = session.selectedPlan ?? normalizedPlan;
       final subscribeTarget = selectedPlan != null && selectedPlan.isNotEmpty
           ? Uri(path: '/client/subscribe', queryParameters: {'plan': selectedPlan}).toString()
           : '/client/subscribe';
@@ -86,19 +100,16 @@ final router = GoRouter(
       }
 
       if (session.normalizedSubscriptionStatus != 'active') {
-        final allowAccess =
-            isSubscribeFlow || path.startsWith('/client/account');
-
-        if (!allowAccess) {
-         return subscribeTarget;
-        }
-        
+        final allowAccess = isSubscribeFlow || path.startsWith('/client/account');
+        if (!allowAccess) return subscribeTarget;
         return null;
       }
 
       if (isClientAuth || path == '/' || isVerificationFlow || isSubscribeFlow || isSetupFlow) {
         return '/client/workspace';
       }
+
+      if (isOpsAuth) return '/client/workspace';
 
       return null;
     }
@@ -119,6 +130,14 @@ final router = GoRouter(
       builder: (context, state) => const OpsLoginScreen(createMode: true),
     ),
     GoRoute(
+      path: '/ops-login',
+      redirect: (context, state) => '/ops/login',
+    ),
+    GoRoute(
+      path: '/ops-join',
+      redirect: (context, state) => '/ops/join',
+    ),
+    GoRoute(
       path: '/client/login',
       builder: (context, state) => const ClientLoginScreen(),
     ),
@@ -127,9 +146,16 @@ final router = GoRouter(
       builder: (context, state) => const ClientLoginScreen(createMode: true),
     ),
     GoRoute(
+      path: '/login',
+      redirect: (context, state) => '/client/login',
+    ),
+    GoRoute(
+      path: '/join',
+      redirect: (context, state) => '/client/join',
+    ),
+    GoRoute(
       path: '/client/verify-email',
-      builder: (context, state) =>
-          const ClientLoginScreen(verificationMode: true),
+      builder: (context, state) => const ClientLoginScreen(verificationMode: true),
     ),
     GoRoute(
       path: '/client/reset-password',
@@ -356,3 +382,5 @@ final router = GoRouter(
     ),
   ),
 );
+
+bool _matches(String path, List<String> values) => values.contains(path);

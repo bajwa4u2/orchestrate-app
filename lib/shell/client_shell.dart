@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,10 +7,16 @@ import '../core/brand/brand_assets.dart';
 import '../core/theme/app_theme.dart';
 
 class ClientShell extends StatelessWidget {
-  const ClientShell({super.key, required this.currentPath, required this.child});
+  const ClientShell({
+    super.key,
+    required this.currentPath,
+    required this.child,
+  });
 
   final String currentPath;
   final Widget child;
+
+  bool _active(String route) => currentPath == route;
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +41,10 @@ class ClientShell extends StatelessWidget {
                       constraints: const BoxConstraints(maxWidth: 1280),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          final compact = constraints.maxWidth < 920;
+                          final compact = constraints.maxWidth < 980;
 
-                          final logo = InkWell(
-                            borderRadius: BorderRadius.circular(12),
+                          final brand = InkWell(
+                            borderRadius: BorderRadius.circular(14),
                             onTap: () => context.go('/client/workspace'),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -45,33 +52,35 @@ class ClientShell extends StatelessWidget {
                             ),
                           );
 
-                          final navItems = <Widget>[
-                            _NavLink(
-                              label: 'Overview',
-                              active: currentPath == '/client/workspace',
+                          final primaryNav = <Widget>[
+                            _ClientNavItem(
+                              label: 'Workspace',
+                              active: _active('/client/workspace'),
                               onTap: () => context.go('/client/workspace'),
                             ),
-                            _NavLink(
+                            _ClientNavItem(
                               label: 'Billing',
-                              active: currentPath == '/client/billing',
+                              active: _active('/client/billing'),
                               onTap: () => context.go('/client/billing'),
                             ),
-                            _NavLink(
+                            _ClientNavItem(
                               label: 'Agreements',
-                              active: currentPath == '/client/agreements',
+                              active: _active('/client/agreements'),
                               onTap: () => context.go('/client/agreements'),
                             ),
-                            _NavLink(
+                            _ClientNavItem(
                               label: 'Statements',
-                              active: currentPath == '/client/statements',
+                              active: _active('/client/statements'),
                               onTap: () => context.go('/client/statements'),
                             ),
-                            _NavLink(
-                              label: 'Account',
-                              active: currentPath == '/client/account',
-                              onTap: () => context.go('/client/account'),
-                            ),
                           ];
+
+                          final accountLink = _ClientNavItem(
+                            label: 'Account',
+                            active: _active('/client/account'),
+                            onTap: () => context.go('/client/account'),
+                            emphasized: true,
+                          );
 
                           final signOut = TextButton(
                             onPressed: () async {
@@ -90,21 +99,33 @@ class ClientShell extends StatelessWidget {
                             child: const Text('Sign out'),
                           );
 
+                          final session = AuthSessionController.instance;
+                          final identity = _WorkspaceIdentity(
+                            name: session.workspaceName.isNotEmpty
+                                ? session.workspaceName
+                                : (session.fullName.isNotEmpty ? session.fullName : 'Client workspace'),
+                            email: session.email,
+                          );
+
                           if (compact) {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                logo,
+                                Row(
+                                  children: [
+                                    Expanded(child: brand),
+                                    signOut,
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                identity,
                                 const SizedBox(height: 14),
                                 Wrap(
-                                  alignment: WrapAlignment.start,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  spacing: 4,
-                                  runSpacing: 6,
+                                  spacing: 8,
+                                  runSpacing: 8,
                                   children: [
-                                    ...navItems,
-                                    const SizedBox(width: 6),
-                                    signOut,
+                                    ...primaryNav,
+                                    accountLink,
                                   ],
                                 ),
                               ],
@@ -114,20 +135,18 @@ class ClientShell extends StatelessWidget {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              logo,
-                              const Spacer(),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                              brand,
+                              const SizedBox(width: 18),
+                              Expanded(child: identity),
+                              const SizedBox(width: 18),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  ..._withSpacing(navItems, 2),
-                                  const SizedBox(width: 12),
-                                  Container(
-                                    width: 1,
-                                    height: 22,
-                                    color: AppTheme.publicLine,
-                                  ),
-                                  const SizedBox(width: 8),
+                                  ...primaryNav,
+                                  accountLink,
+                                  const _ShellDivider(),
                                   signOut,
                                 ],
                               ),
@@ -148,35 +167,91 @@ class ClientShell extends StatelessWidget {
   }
 }
 
-List<Widget> _withSpacing(List<Widget> widgets, double spacing) {
-  final items = <Widget>[];
-  for (var i = 0; i < widgets.length; i++) {
-    if (i > 0) {
-      items.add(SizedBox(width: spacing));
-    }
-    items.add(widgets[i]);
+class _WorkspaceIdentity extends StatelessWidget {
+  const _WorkspaceIdentity({
+    required this.name,
+    required this.email,
+  });
+
+  final String name;
+  final String email;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          name,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppTheme.publicText,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        if (email.trim().isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            email,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+        ],
+      ],
+    );
   }
-  return items;
 }
 
-class _NavLink extends StatelessWidget {
-  const _NavLink({required this.label, required this.active, required this.onTap});
+class _ShellDivider extends StatelessWidget {
+  const _ShellDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 22,
+      color: AppTheme.publicLine,
+    );
+  }
+}
+
+class _ClientNavItem extends StatelessWidget {
+  const _ClientNavItem({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    this.emphasized = false,
+  });
 
   final String label;
   final bool active;
+  final bool emphasized;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final background = active
+        ? AppTheme.publicSurfaceSoft
+        : emphasized
+            ? Colors.white
+            : Colors.transparent;
+
+    final borderColor = active || emphasized ? AppTheme.publicLine : Colors.transparent;
+
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
         foregroundColor: active ? AppTheme.publicText : AppTheme.publicMuted,
-        overlayColor: AppTheme.publicSurfaceSoft,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        backgroundColor: background,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: borderColor),
+        ),
         textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: active || emphasized ? FontWeight.w600 : FontWeight.w500,
             ),
       ),
       child: Text(label),
