@@ -7,7 +7,9 @@ class AuthSessionController extends ChangeNotifier {
   AuthSessionController._();
 
   static final AuthSessionController instance = AuthSessionController._();
-  static const _storageKey = 'orchestrate_auth_session_v1';
+
+  static const _clientKey = 'orch_client_session_v1';
+  static const _operatorKey = 'orch_operator_session_v1';
 
   bool _ready = false;
   Map<String, dynamic>? _session;
@@ -24,23 +26,40 @@ class AuthSessionController extends ChangeNotifier {
   bool get emailVerified => (_session?['emailVerified'] as bool?) ?? false;
   String get workspaceName => (_session?['workspaceName'] as String?) ?? '';
   bool get hasSetupCompleted => (_session?['setupCompleted'] as bool?) ?? false;
-  String? get selectedPlan => (_session?['selectedPlan'] as String?)?.trim().isEmpty == true
-      ? null
-      : (_session?['selectedPlan'] as String?);
+
+  String? get selectedPlan {
+    final value = (_session?['selectedPlan'] as String?)?.trim();
+    if (value == null || value.isEmpty) return null;
+    return value;
+  }
+
   String get subscriptionStatus => (_session?['subscriptionStatus'] as String?) ?? 'none';
   String get normalizedSubscriptionStatus => subscriptionStatus.trim().toLowerCase();
 
+  String _resolveKey(String? surface) {
+    return surface == 'operator' ? _operatorKey : _clientKey;
+  }
+
   Future<void> init() async {
     if (_ready) return;
+
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_storageKey);
-    if (raw != null && raw.trim().isNotEmpty) {
+
+    final clientRaw = prefs.getString(_clientKey);
+    final operatorRaw = prefs.getString(_operatorKey);
+
+    if (clientRaw != null && clientRaw.isNotEmpty) {
       try {
-        _session = Map<String, dynamic>.from(jsonDecode(raw) as Map);
-      } catch (_) {
-        _session = null;
-      }
+        _session = Map<String, dynamic>.from(jsonDecode(clientRaw));
+      } catch (_) {}
     }
+
+    if (_session == null && operatorRaw != null && operatorRaw.isNotEmpty) {
+      try {
+        _session = Map<String, dynamic>.from(jsonDecode(operatorRaw));
+      } catch (_) {}
+    }
+
     _ready = true;
     notifyListeners();
   }
@@ -52,9 +71,11 @@ class AuthSessionController extends ChangeNotifier {
     final session = Map<String, dynamic>.from((payload['session'] as Map?) ?? const {});
     final setup = Map<String, dynamic>.from((payload['setup'] as Map?) ?? const {});
 
+    final newSurface = session['surface']?.toString() ?? 'client';
+
     _session = {
       'token': payload['token']?.toString() ?? '',
-      'surface': session['surface']?.toString() ?? '',
+      'surface': newSurface,
       'organizationId': workspace['organizationId']?.toString() ?? '',
       'clientId': session['clientId']?.toString() ?? '',
       'memberRole': session['memberRole']?.toString() ?? '',
@@ -88,6 +109,7 @@ class AuthSessionController extends ChangeNotifier {
         (client['subscriptionStatus']?.toString() ?? _session!['subscriptionStatus'] ?? 'none')
             .toLowerCase();
     _session!['setup'] = client['setup'];
+
     await _persist();
   }
 
@@ -108,15 +130,20 @@ class AuthSessionController extends ChangeNotifier {
   }
 
   Future<void> clear() async {
+    final key = _resolveKey(surface);
     _session = null;
+
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_storageKey);
+    await prefs.remove(key);
+
     notifyListeners();
   }
 
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(_session));
+    final key = _resolveKey(surface);
+
+    await prefs.setString(key, jsonEncode(_session));
     notifyListeners();
   }
 }

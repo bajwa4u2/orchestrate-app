@@ -86,9 +86,13 @@ final router = GoRouter(
       }
 
       if (session.normalizedSubscriptionStatus != 'active') {
-        if (!isSubscribeFlow) {
-          return subscribeTarget;
+        final allowAccess =
+            isSubscribeFlow || path.startsWith('/client/account');
+
+        if (!allowAccess) {
+         return subscribeTarget;
         }
+        
         return null;
       }
 

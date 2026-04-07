@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/auth_session.dart';
 import '../core/theme/app_theme.dart';
@@ -18,7 +19,6 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
   bool _loading = true;
   bool _subscribing = false;
   String? _error;
-  String? _info;
   String? _planCode;
   Map<String, dynamic>? _selectedPlan;
 
@@ -34,15 +34,24 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
     try {
       final uri = GoRouterState.of(context).uri;
       final queryPlan = uri.queryParameters['plan']?.trim().toLowerCase();
-      final selectedPlan = queryPlan ?? AuthSessionController.instance.selectedPlan ?? 'opportunity';
+
+      final selectedPlan =
+          queryPlan ?? AuthSessionController.instance.selectedPlan ?? 'opportunity';
+
       final pricing = await PublicRepository().fetchPricing();
       final plans = (pricing['plans'] as List? ?? const []).cast<dynamic>();
-      final planMap = plans.cast<Map>().map((item) => Map<String, dynamic>.from(item)).firstWhere(
-        (item) => item['code']?.toString().toLowerCase() == selectedPlan,
-        orElse: () => <String, dynamic>{},
-      );
+
+      final planMap = plans
+          .cast<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .firstWhere(
+            (item) =>
+                item['code']?.toString().toLowerCase() == selectedPlan,
+            orElse: () => <String, dynamic>{},
+          );
 
       if (!mounted) return;
+
       setState(() {
         _planCode = selectedPlan;
         _selectedPlan = planMap.isEmpty ? null : planMap;
@@ -50,9 +59,11 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
       });
     } catch (_) {
       if (!mounted) return;
+
       setState(() {
         _loading = false;
-        _error = 'The subscription activation screen could not load right now.';
+        _error =
+            'The subscription activation screen could not load right now.';
       });
     }
   }
@@ -64,28 +75,28 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
     setState(() {
       _subscribing = true;
       _error = null;
-      _info = null;
     });
 
     try {
-      final response = await ClientPortalRepository().createSubscription(planCode);
-      final status = response['status']?.toString().toLowerCase() ?? 'none';
-      await AuthSessionController.instance.setSubscriptionStatus(status);
+      final response =
+          await ClientPortalRepository().createSubscription(planCode);
 
-      if (!mounted) return;
+      final url = response['checkoutUrl'];
 
-      if (response['alreadyExists'] == true || status == 'active') {
-        context.go('/client/workspace');
-        return;
+      if (url == null || url.toString().isEmpty) {
+        throw Exception('Missing checkout URL');
       }
 
-      setState(() {
-        _info = 'A secure billing intent has been created for this account. Continue payment from the connected billing flow to activate service.';
-      });
+      await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
     } catch (_) {
       if (!mounted) return;
+
       setState(() {
-        _error = 'The subscription activation request could not be completed right now.';
+        _error =
+            'Could not start secure checkout. Please try again.';
       });
     } finally {
       if (mounted) {
@@ -97,10 +108,22 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
   @override
   Widget build(BuildContext context) {
     final plan = _selectedPlan;
-    final planName = plan?['name']?.toString() ?? (_planCode == 'revenue' ? 'Revenue' : 'Opportunity');
-    final amount = ((plan?['amountCents'] as num?) ?? (_planCode == 'revenue' ? 87000 : 43500)) / 100;
-    final summary = plan?['summary']?.toString() ?? 'Activate your selected service plan.';
-    final scope = GlobalSetupOptions.planScopes[_planCode ?? ''] ?? const <String>[];
+
+    final planName = plan?['name']?.toString() ??
+        (_planCode == 'revenue' ? 'Revenue' : 'Opportunity');
+
+    final amount =
+        ((plan?['amountCents'] as num?) ??
+                (_planCode == 'revenue' ? 87000 : 43500)) /
+            100;
+
+    final summary =
+        plan?['summary']?.toString() ??
+            'Activate your selected service plan.';
+
+    final scope =
+        GlobalSetupOptions.planScopes[_planCode ?? ''] ??
+            const <String>[];
 
     return Scaffold(
       backgroundColor: AppTheme.publicBackground,
@@ -115,109 +138,132 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(32),
-                  side: const BorderSide(color: AppTheme.publicLine),
+                  side: const BorderSide(
+                      color: AppTheme.publicLine),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(28),
                   child: _loading
-                      ? const Center(child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(),
-                        ))
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(40),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
                       : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               'Activate subscription',
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Your operating profile is saved. Activate the plan below to move the account into live service.',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: AppTheme.publicMuted,
-                                    height: 1.45,
+                              'Your setup is complete. Activate your plan to begin live service.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                    color:
+                                        AppTheme.publicMuted,
                                   ),
                             ),
                             const SizedBox(height: 24),
-                            if (_error != null) _SubscribeBanner(message: _error!, error: true),
-                            if (_info != null) _SubscribeBanner(message: _info!, error: false),
+
+                            if (_error != null)
+                              _SubscribeBanner(
+                                  message: _error!,
+                                  error: true),
+
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.all(22),
+                              padding:
+                                  const EdgeInsets.all(22),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF7F8F5),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: AppTheme.publicLine),
+                                borderRadius:
+                                    BorderRadius.circular(
+                                        24),
+                                border: Border.all(
+                                    color:
+                                        AppTheme.publicLine),
                               ),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     planName,
-                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                          fontWeight: FontWeight.w700,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          fontWeight:
+                                              FontWeight.w700,
                                         ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     '\$${amount.toStringAsFixed(2)} / month',
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          color: AppTheme.publicText,
-                                          fontWeight: FontWeight.w700,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight:
+                                              FontWeight.w700,
                                         ),
                                   ),
                                   const SizedBox(height: 12),
-                                  Text(
-                                    summary,
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                          color: AppTheme.publicMuted,
-                                        ),
-                                  ),
+                                  Text(summary),
                                   if (scope.isNotEmpty) ...[
-                                    const SizedBox(height: 18),
+                                    const SizedBox(
+                                        height: 18),
                                     Wrap(
                                       spacing: 8,
                                       runSpacing: 8,
                                       children: scope
-                                          .map((item) => Chip(label: Text(_humanizeScope(item))))
-                                          .toList(growable: false),
+                                          .map((item) =>
+                                              Chip(
+                                                  label: Text(
+                                                      item.replaceAll(
+                                                          '_',
+                                                          ' '))))
+                                          .toList(),
                                     ),
                                   ],
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 20),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F3EF),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppTheme.publicLine),
-                              ),
-                              child: Text(
-                                'Billing remains backend-controlled. Plan, amount, and account status stay aligned to the live billing system rather than frontend assumptions.',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppTheme.publicMuted,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
+
+                            const SizedBox(height: 24),
+
                             SizedBox(
                               width: double.infinity,
                               child: FilledButton(
-                                onPressed: _subscribing ? null : _activate,
-                                child: Text(_subscribing ? 'Preparing billing...' : 'Activate subscription'),
+                                onPressed: _subscribing
+                                    ? null
+                                    : _activate,
+                                child: Text(_subscribing
+                                    ? 'Redirecting...'
+                                    : 'Activate subscription'),
                               ),
                             ),
+
                             const SizedBox(height: 12),
+
                             TextButton(
-                              onPressed: _subscribing ? null : () => context.go('/client/account'),
-                              child: const Text('Review company profile first'),
+                              onPressed: () =>
+                                  context.go(
+                                      '/client/account'),
+                              child: const Text(
+                                  'Review company profile first'),
                             ),
                           ],
                         ),
@@ -229,25 +275,13 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
       ),
     );
   }
-
-  String _humanizeScope(String key) {
-    switch (key) {
-      case 'lead_generation':
-        return 'Lead generation';
-      case 'follow_up':
-        return 'Follow-up';
-      case 'meeting_booking':
-        return 'Meeting booking';
-      case 'billing_collections':
-        return 'Billing collections';
-      default:
-        return key.replaceAll('_', ' ');
-    }
-  }
 }
 
 class _SubscribeBanner extends StatelessWidget {
-  const _SubscribeBanner({required this.message, required this.error});
+  const _SubscribeBanner({
+    required this.message,
+    required this.error,
+  });
 
   final String message;
   final bool error;
@@ -256,19 +290,22 @@ class _SubscribeBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
+      margin:
+          const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: error ? Colors.red.shade50 : Colors.green.shade50,
-        borderRadius: BorderRadius.circular(16),
+        color: error
+            ? Colors.red.shade50
+            : Colors.green.shade50,
+        borderRadius:
+            BorderRadius.circular(16),
         border: Border.all(
-          color: error ? Colors.red.shade100 : Colors.green.shade100,
+          color: error
+              ? Colors.red.shade100
+              : Colors.green.shade100,
         ),
       ),
-      child: Text(
-        message,
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
+      child: Text(message),
     );
   }
 }
