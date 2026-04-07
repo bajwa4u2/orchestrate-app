@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config/app_config.dart';
 import '../core/theme/app_theme.dart';
@@ -60,6 +61,13 @@ class ClientWorkspaceScreen extends StatelessWidget {
                       _NoticeStrip(message: view.notice!, isPositive: AppConfig.hasClientAccess),
                       const SizedBox(height: 16),
                     ],
+                    if (view.subscription != null) ...[
+                      _SubscriptionPanel(
+                        subscription: view.subscription!,
+                        onManageBilling: () => _handleManageBilling(context, repository),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
                     if (view.stats.isNotEmpty) ...[
                       _StatsBand(stats: view.stats),
                       const SizedBox(height: 18),
@@ -80,6 +88,31 @@ class ClientWorkspaceScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _handleManageBilling(
+    BuildContext context,
+    ClientPortalRepository repository,
+  ) async {
+    try {
+      final url = await repository.createBillingPortalSession();
+      final uri = Uri.tryParse(url);
+      if (uri == null) {
+        throw Exception('Invalid billing portal URL');
+      }
+
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Billing portal could not open right now.')),
+        );
+      }
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Billing portal could not open right now.')),
+      );
+    }
   }
 
   Future<_ClientLoadState> _loadSafe(ClientPortalRepository repository) async {
@@ -143,14 +176,35 @@ class ClientWorkspaceScreen extends StatelessWidget {
         );
 
       case ClientSection.billing:
-        final invoices = await repository.fetchInvoices();
+        final results = await Future.wait([
+          repository.fetchInvoices(),
+          repository.fetchSubscription(),
+        ]);
+        final invoices = results[0] as List<dynamic>;
+        final subscription = results[1] as Map<String, dynamic>?;
+
         return _ClientViewData(
           title: 'Billing',
           subtitle: 'Invoices, receipts, and current payment standing.',
+          subscription: subscription,
           stats: [
             _ClientStat('Invoices', '${invoices.length}'),
-            _ClientStat('Paid', '${_countBy(invoices, (item) => _read(item, 'status') == 'PAID')}', tone: AppTheme.emerald),
-            _ClientStat('Open', '${_countBy(invoices, (item) => _read(item, 'status') == 'OPEN')}', tone: AppTheme.amber),
+            _ClientStat(
+              'Paid',
+              '${_countBy(invoices, (item) => _read(item, 'status') == 'PAID')}',
+              tone: AppTheme.emerald,
+            ),
+            _ClientStat(
+              'Open',
+              '${_countBy(invoices, (item) {
+                final status = _read(item, 'status');
+                return status == 'OPEN' ||
+                    status == 'ISSUED' ||
+                    status == 'OVERDUE' ||
+                    status == 'PARTIALLY_PAID';
+              })}',
+              tone: AppTheme.amber,
+            ),
           ],
           primaryTitle: 'Invoices',
           primaryRows: invoices.take(12).map(_invoiceRow).toList(),
@@ -237,6 +291,7 @@ class _ClientViewData {
     required this.title,
     required this.subtitle,
     this.notice,
+    this.subscription,
     this.stats = const [],
     required this.primaryTitle,
     this.primaryRows = const [],
@@ -249,6 +304,7 @@ class _ClientViewData {
   final String title;
   final String subtitle;
   final String? notice;
+  final Map<String, dynamic>? subscription;
   final List<_ClientStat> stats;
   final String primaryTitle;
   final List<_ClientRow> primaryRows;
@@ -278,6 +334,121 @@ class _ClientRow {
   final String title;
   final String primary;
   final String secondary;
+}
+
+class _SubscriptionPanel extends StatelessWidget {
+  const _SubscriptionPanel({
+    required this.subscription,
+    required this.onManageBilling,
+  });
+
+  final Map<String, dynamic> subscription;
+  final VoidCallback onManageBilling;
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = _read(subscription, 'plan', fallback: 'Subscription');
+    final status = _read(subscription, 'status', fallback: '—');
+    final amount = _subscriptionAmount(subscription);
+    final nextBillingDate = _subscriptionDate(subscription['currentPeriodEnd']);
+
+    return _TintedPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text('Subscription', style: Theme.of(context).textTheme.titleLarge),
+              ),
+              TextButton(
+                onPressed: onManageBilling,
+                child: const Text('Manage Billing'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 760;
+              final items = [
+                _SubscriptionMetric(label: 'Current plan', value: plan),
+                _SubscriptionMetric(label: 'Status', value: status),
+                _SubscriptionMetric(label: 'Amount', value: amount),
+                _SubscriptionMetric(label: 'Next billing date', value: nextBillingDate),
+              ];
+
+              if (compact) {
+                return Column(
+                  children: [
+                    for (var index = 0; index < items.length; index++) ...[
+                      items[index],
+                      if (index != items.length - 1)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Divider(height: 1, thickness: 1, color: AppTheme.publicLine),
+                        ),
+                    ],
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var index = 0; index < items.length; index++) ...[
+                    Expanded(child: items[index]),
+                    if (index != items.length - 1)
+                      Container(
+                        width: 1,
+                        height: 64,
+                        color: AppTheme.publicLine,
+                      ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubscriptionMetric extends StatelessWidget {
+  const _SubscriptionMetric({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.publicText,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _StatsBand extends StatelessWidget {
@@ -622,7 +793,9 @@ class _ErrorState extends StatelessWidget {
 }
 
 Map<String, dynamic> _asMap(dynamic value) => value is Map ? value.cast<String, dynamic>() : <String, dynamic>{};
+
 String _num(dynamic value) => ((value as num?) ?? 0).toString();
+
 String _money(dynamic cents) {
   final amount = ((cents as num?) ?? 0) / 100;
   return '\$${amount.toStringAsFixed(2)}';
@@ -640,6 +813,31 @@ int _countBy(List<dynamic> items, bool Function(Map<String, dynamic>) test) {
     if (test(map)) count += 1;
   }
   return count;
+}
+
+String _subscriptionAmount(Map<String, dynamic> subscription) {
+  final amount = subscription['amount'];
+  final currency = _read(subscription, 'currency', fallback: 'USD').toUpperCase();
+
+  if (amount is num) {
+    final symbol = currency == 'USD' ? '\$' : '$currency ';
+    return '$symbol${amount.toStringAsFixed(amount % 1 == 0 ? 0 : 2)}';
+  }
+
+  return '—';
+}
+
+String _subscriptionDate(dynamic raw) {
+  if (raw == null) return '—';
+  final value = DateTime.tryParse('$raw');
+  if (value == null) return '$raw';
+
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  return '${monthNames[value.month - 1]} ${value.day}, ${value.year}';
 }
 
 _ClientRow _invoiceRow(dynamic raw) {
