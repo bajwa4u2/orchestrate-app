@@ -137,41 +137,30 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     }
 
     return Scaffold(
+      backgroundColor: AppTheme.publicBackground,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 980;
+            final compact = constraints.maxWidth < 720;
+            final horizontalPadding = compact ? 20.0 : 32.0;
+            final verticalPadding = compact ? 20.0 : 32.0;
 
             return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1180),
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: wide ? 32 : 20,
-                    vertical: wide ? 28 : 20,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: verticalPadding,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildCenteredBrandHeader(context),
+                      const SizedBox(height: 20),
+                      _buildFormCard(context),
+                    ],
                   ),
-                  child: wide
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: _buildBrandPanel(context, wide: true),
-                            ),
-                            const SizedBox(width: 28),
-                            SizedBox(
-                              width: 500,
-                              child: _buildFormCard(context),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildBrandPanel(context, wide: false),
-                            const SizedBox(height: 20),
-                            _buildFormCard(context),
-                          ],
-                        ),
                 ),
               ),
             );
@@ -181,23 +170,20 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     );
   }
 
-  Widget _buildBrandPanel(BuildContext context, {required bool wide}) {
+  Widget _buildCenteredBrandHeader(BuildContext context) {
     final theme = Theme.of(context);
 
     return Container(
-      padding: EdgeInsets.all(wide ? 40 : 24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: AppTheme.publicLine),
-        color: Colors.white,
-      ),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            height: 44,
-            width: 44,
+            height: 48,
+            width: 48,
             decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppTheme.publicLine),
             ),
@@ -206,33 +192,33 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
               size: 22,
             ),
           ),
-          SizedBox(height: wide ? 36 : 24),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Text(
-              _isJoin ? 'Start your client workspace' : 'Welcome back',
-              style: theme.textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                height: 1.02,
-              ),
+          const SizedBox(height: 20),
+          Text(
+            _isJoin ? 'Start your client workspace' : 'Welcome back',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.04,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
             child: Text(
               _isJoin
                   ? 'Set up your account to define your market scope and activate service.'
                   : 'Sign in to return to your client workspace.',
+              textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: AppTheme.publicMuted,
                 height: 1.45,
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(height: 14),
           Text(
             _isJoin ? 'Orchestrate client access' : 'Orchestrate client sign in',
+            textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: AppTheme.publicMuted,
             ),
@@ -245,6 +231,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   Widget _buildFormCard(BuildContext context) {
     return Card(
       elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(32),
         side: const BorderSide(color: AppTheme.publicLine),
@@ -264,6 +251,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           'Create account',
@@ -304,7 +292,11 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           obscure: _obscurePassword,
           suffixIcon: IconButton(
             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-            icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+            icon: Icon(
+              _obscurePassword
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
           ),
         ),
         const SizedBox(height: 14),
@@ -313,9 +305,12 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           'Confirm password',
           obscure: _obscureConfirmPassword,
           suffixIcon: IconButton(
-            onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+            onPressed: () =>
+                setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
             icon: Icon(
-              _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              _obscureConfirmPassword
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
             ),
           ),
         ),
@@ -331,11 +326,14 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         Center(
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.center,
             spacing: 6,
             children: [
               Text(
                 'Already have an account?',
-                style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
               ),
               TextButton(
                 onPressed: () => context.go(_clientPath('/client/login')),
@@ -353,6 +351,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           'Client sign in',
@@ -381,7 +380,11 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
           obscure: _obscurePassword,
           suffixIcon: IconButton(
             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-            icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+            icon: Icon(
+              _obscurePassword
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -404,11 +407,14 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         Center(
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.center,
             spacing: 6,
             children: [
               Text(
                 'Need an account?',
-                style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
               ),
               TextButton(
                 onPressed: () => context.go(_clientPath('/client/join')),
@@ -427,6 +433,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     final hasEmail = _verificationEmail != null && _verificationEmail!.isNotEmpty;
 
     return Scaffold(
+      backgroundColor: AppTheme.publicBackground,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -435,6 +442,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
               constraints: const BoxConstraints(maxWidth: 620),
               child: Card(
                 elevation: 0,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(32),
                   side: const BorderSide(color: AppTheme.publicLine),
@@ -443,6 +451,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                   padding: const EdgeInsets.all(28),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         'Verify your email',
@@ -498,6 +507,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   Widget _buildResetView(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.publicBackground,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -506,6 +516,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
               constraints: const BoxConstraints(maxWidth: 620),
               child: Card(
                 elevation: 0,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(32),
                   side: const BorderSide(color: AppTheme.publicLine),
@@ -514,6 +525,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                   padding: const EdgeInsets.all(28),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         'Reset password',
@@ -565,7 +577,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
               if (value == null || value.trim().isEmpty) {
                 return '$label is required.';
               }
-              if (label == 'Work email' && value.trim().isNotEmpty && !value.contains('@')) {
+              if (label == 'Work email' &&
+                  value.trim().isNotEmpty &&
+                  !value.contains('@')) {
                 return 'Enter a valid email address.';
               }
               return null;
