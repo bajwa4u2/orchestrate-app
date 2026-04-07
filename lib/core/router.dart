@@ -37,32 +37,42 @@ final router = GoRouter(
         path == '/pricing' ||
         path == '/contact' ||
         path.startsWith('/legal/');
-    final isClientResetFlow =
-        path == '/client/verify-email' || path == '/client/reset-password';
-
-    if (session.isAuthenticated) {
-      if (session.surface == 'operator') {
-        if (isOpsAuth || path == '/') return '/app/command';
-      }
-
-      if (session.surface == 'client') {
-        if (isClientAuth || path == '/') return '/client/workspace';
-      }
-    }
+    final isVerificationFlow = path == '/client/verify-email';
+    final isResetFlow = path == '/client/reset-password';
+    final isClientWorkspacePath =
+        path.startsWith('/client/workspace') ||
+        path.startsWith('/client/billing') ||
+        path.startsWith('/client/agreements') ||
+        path.startsWith('/client/statements') ||
+        path.startsWith('/client/account');
 
     if (!session.isAuthenticated) {
       if (path.startsWith('/app/')) return '/ops/login';
-
-      if (path.startsWith('/client/workspace') ||
-          path.startsWith('/client/billing') ||
-          path.startsWith('/client/agreements') ||
-          path.startsWith('/client/statements') ||
-          path.startsWith('/client/account')) {
-        return '/client/login';
-      }
+      if (isClientWorkspacePath) return '/client/login';
+      return null;
     }
 
-    if (isPublic || isClientAuth || isOpsAuth || isClientResetFlow) {
+    if (session.surface == 'operator') {
+      if (isOpsAuth || path == '/') return '/app/command';
+      return null;
+    }
+
+    if (session.surface == 'client') {
+      if (!session.emailVerified) {
+        if (!isVerificationFlow && !isResetFlow) {
+          return '/client/verify-email';
+        }
+        return null;
+      }
+
+      if (isClientAuth || path == '/' || isVerificationFlow) {
+        return '/client/workspace';
+      }
+
+      return null;
+    }
+
+    if (isPublic || isClientAuth || isOpsAuth || isVerificationFlow || isResetFlow) {
       return null;
     }
 
