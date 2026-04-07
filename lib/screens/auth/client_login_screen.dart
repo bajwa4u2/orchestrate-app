@@ -170,46 +170,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   Widget _buildContextPanel(BuildContext context, {required bool wide}) {
     final theme = Theme.of(context);
-    final title = _isJoin ? 'Start your client workspace' : 'Welcome back';
-    final subtitle = _isJoin
-        ? 'A measured entry into outreach, meetings, and revenue visibility.'
-        : 'Sign in to continue where your client workspace left off.';
-
-    final bullets = _isJoin
-        ? const [
-            _ContextBullet(
-              title: 'Structured from day one',
-              description:
-                  'Account identity, organization details, and verification are separated cleanly so access begins on solid footing.',
-            ),
-            _ContextBullet(
-              title: 'Access after verification',
-              description:
-                  'We send a verification email before workspace access, which keeps the account path controlled and recoverable.',
-            ),
-            _ContextBullet(
-              title: 'Billing stays backend-led',
-              description:
-                  'Plans, status, and Stripe-backed billing live in the system of record, not in frontend assumptions.',
-            ),
-          ]
-        : const [
-            _ContextBullet(
-              title: 'Fast return path',
-              description:
-                  'Use your work email and password to get back into your client workspace without extra noise.',
-            ),
-            _ContextBullet(
-              title: 'Verification stays enforced',
-              description:
-                  'If your email is still unverified, the system routes you back into the verification path before access.',
-            ),
-            _ContextBullet(
-              title: 'Billing and account in one place',
-              description:
-                  'Workspace access, billing visibility, and account controls stay connected after sign-in.',
-            ),
-          ];
 
     return Container(
       padding: EdgeInsets.all(wide ? 40 : 24),
@@ -228,97 +188,63 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppTheme.publicLine),
             ),
-            child: const Icon(Icons.north_east),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              height: 1.02,
+            child: Icon(
+              _isJoin ? Icons.north_east : Icons.arrow_outward,
+              size: 22,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 28),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: Text(
-              subtitle,
+              _isJoin ? 'Start your client workspace' : 'Welcome back',
+              style: theme.textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                height: 1.02,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Text(
+              _isJoin
+                  ? 'A measured entry into outreach, meetings, and revenue visibility.'
+                  : 'Continue into your client workspace with the account already tied to your company access.',
               style: theme.textTheme.titleMedium?.copyWith(
                 color: AppTheme.publicMuted,
                 height: 1.45,
               ),
             ),
           ),
-          const SizedBox(height: 28),
+          const Spacer(),
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: AppTheme.publicLine),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: bullets
-                  .map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 18),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 10,
-                            height: 10,
-                            margin: const EdgeInsets.only(top: 7),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppTheme.publicMuted,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.title,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  item.description,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: AppTheme.publicMuted,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList()
-                ..removeLast(),
+              children: [
+                Text(
+                  _isJoin ? 'Email verification required' : 'Account access remains controlled',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _isJoin
+                      ? 'We send a verification link before workspace access so the account begins on the right footing.'
+                      : 'If your email is not yet verified, the system routes you back into verification before workspace entry.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.publicMuted,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 24),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: _isJoin
-                ? const [
-                    _TagChip(label: 'Work email'),
-                    _TagChip(label: 'Company identity'),
-                    _TagChip(label: 'Email verification'),
-                  ]
-                : const [
-                    _TagChip(label: 'Client workspace'),
-                    _TagChip(label: 'Billing visibility'),
-                    _TagChip(label: 'Account access'),
-                  ],
           ),
         ],
       ),
@@ -868,34 +794,6 @@ class _SectionLabel extends StatelessWidget {
       ],
     );
   }
-}
-
-class _TagChip extends StatelessWidget {
-  const _TagChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Text(label),
-    );
-  }
-}
-
-class _ContextBullet {
-  const _ContextBullet({
-    required this.title,
-    required this.description,
-  });
-
-  final String title;
-  final String description;
 }
 
 class _Banner extends StatelessWidget {
