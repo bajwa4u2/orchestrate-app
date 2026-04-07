@@ -22,8 +22,14 @@ class AuthRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
-  Future<Map<String, dynamic>> loginClient({required String email, required String password}) async {
-    final json = await _apiClient.postJson('/auth/client/login', body: {'email': email, 'password': password});
+  Future<Map<String, dynamic>> loginClient({
+    required String email,
+    required String password,
+  }) async {
+    final json = await _apiClient.postJson('/auth/client/login', body: {
+      'email': email,
+      'password': password,
+    });
     return Map<String, dynamic>.from(json as Map);
   }
 
@@ -37,13 +43,20 @@ class AuthRepository {
       'fullName': fullName,
       'email': email,
       'password': password,
-      if (workspaceName != null && workspaceName.trim().isNotEmpty) 'workspaceName': workspaceName.trim(),
+      if (workspaceName != null && workspaceName.trim().isNotEmpty)
+        'workspaceName': workspaceName.trim(),
     });
     return Map<String, dynamic>.from(json as Map);
   }
 
-  Future<Map<String, dynamic>> loginOperator({required String email, required String password}) async {
-    final json = await _apiClient.postJson('/auth/operator/login', body: {'email': email, 'password': password});
+  Future<Map<String, dynamic>> loginOperator({
+    required String email,
+    required String password,
+  }) async {
+    final json = await _apiClient.postJson('/auth/operator/login', body: {
+      'email': email,
+      'password': password,
+    });
     return Map<String, dynamic>.from(json as Map);
   }
 
@@ -57,10 +70,20 @@ class AuthRepository {
   }
 
   Future<void> requestPasswordReset(String email) async {
-    await _apiClient.postJson('/auth/password/request-reset', body: {'email': email});
+    await _apiClient.postJson('/auth/password/request-reset', body: {
+      'email': email,
+    });
   }
 
   Future<void> verifyEmail(String token) async {
-    await _apiClient.postJson('/auth/email/verify', body: {'token': token});
+    await _apiClient.postJson('/auth/email/verify', body: {
+      'token': token,
+    });
+  }
+
+  Future<void> requestEmailVerification(String email) async {
+    await _apiClient.postJson('/auth/email/request-verification', body: {
+      'email': email,
+    });
   }
 }
