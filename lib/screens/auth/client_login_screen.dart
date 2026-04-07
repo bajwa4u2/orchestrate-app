@@ -40,6 +40,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   String? _message;
   String? _error;
   String? _verificationEmail;
+  String? _selectedPlan;
 
   bool get _isJoin => widget.createMode;
   bool get _isVerification => widget.verificationMode;
@@ -48,9 +49,20 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   @override
   void initState() {
     super.initState();
-    if (_isVerification) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _handleVerificationScreen());
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final uri = GoRouterState.of(context).uri;
+      final plan = uri.queryParameters['plan']?.trim();
+      if (plan != null && plan.isNotEmpty) {
+        _selectedPlan = plan;
+        await AuthSessionController.instance.rememberSelectedPlan(plan);
+      } else {
+        _selectedPlan = AuthSessionController.instance.selectedPlan;
+      }
+
+      if (_isVerification) {
+        await _handleVerificationScreen();
+      }
+    });
   }
 
   @override
@@ -104,7 +116,8 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     }
 
     if (sent == '1') {
-      final emailText = (email != null && email.trim().isNotEmpty) ? email.trim() : 'your inbox';
+      final emailText =
+          (email != null && email.trim().isNotEmpty) ? email.trim() : 'your inbox';
       setState(() {
         _message =
             'Check $emailText and open the verification link to continue. Your workspace will unlock after email verification.';
@@ -209,7 +222,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
             constraints: const BoxConstraints(maxWidth: 460),
             child: Text(
               _isJoin
-                  ? 'Quiet entry for accounts, billing, and client operations.'
+                  ? 'Set up your account to define your market scope and activate service.'
                   : 'Sign in to return to your client workspace.',
               style: theme.textTheme.titleMedium?.copyWith(
                 color: AppTheme.publicMuted,
@@ -325,7 +338,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                 style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
               ),
               TextButton(
-                onPressed: () => context.go('/client/login'),
+                onPressed: () => context.go(_clientPath('/client/login')),
                 child: const Text('Sign in'),
               ),
             ],
@@ -398,7 +411,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                 style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
               ),
               TextButton(
-                onPressed: () => context.go('/client/join'),
+                onPressed: () => context.go(_clientPath('/client/join')),
                 child: const Text('Create account'),
               ),
             ],
@@ -455,7 +468,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                         runSpacing: 12,
                         children: [
                           FilledButton(
-                            onPressed: _busy ? null : () => context.go('/client/login'),
+                            onPressed: _busy ? null : () => context.go(_clientPath('/client/login')),
                             child: const Text('Go to sign in'),
                           ),
                           OutlinedButton(
@@ -467,7 +480,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _busy ? null : () => context.go('/client/join'),
+                            onPressed: _busy ? null : () => context.go(_clientPath('/client/join')),
                             child: const Text('Create another account'),
                           ),
                         ],
@@ -520,7 +533,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                       if (_message != null) _Banner(message: _message!, error: false),
                       if (_error != null) _Banner(message: _error!, error: true),
                       FilledButton(
-                        onPressed: () => context.go('/client/login'),
+                        onPressed: () => context.go(_clientPath('/client/login')),
                         child: const Text('Back to sign in'),
                       ),
                     ],
@@ -597,6 +610,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       final email = response['email']?.toString().trim();
 
       await AuthSessionController.instance.clear();
+      if (_selectedPlan != null && _selectedPlan!.isNotEmpty) {
+        await AuthSessionController.instance.rememberSelectedPlan(_selectedPlan);
+      }
 
       if (!mounted) return;
 
@@ -604,6 +620,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         final query = <String, String>{'sent': '1'};
         if (email != null && email.isNotEmpty) {
           query['email'] = email;
+        }
+        if (_selectedPlan != null && _selectedPlan!.isNotEmpty) {
+          query['plan'] = _selectedPlan!;
         }
         context.go(Uri(path: '/client/verify-email', queryParameters: query).toString());
         return;
@@ -636,7 +655,25 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         password: _password.text,
       );
       await AuthSessionController.instance.applyAuthResponse(response);
-      if (mounted) context.go('/client/workspace');
+
+      if (_selectedPlan != null && _selectedPlan!.isNotEmpty) {
+        await AuthSessionController.instance.rememberSelectedPlan(_selectedPlan);
+      }
+
+      if (!mounted) return;
+
+      final session = AuthSessionController.instance;
+      if (!session.emailVerified) {
+        context.go(_clientPath('/client/verify-email'));
+        return;
+      }
+
+      if (!session.hasSetupCompleted) {
+        context.go(_clientPath('/client/setup'));
+        return;
+      }
+
+      context.go('/client/workspace');
     } catch (error) {
       setState(() => _error = _humanize(error));
     } finally {
@@ -703,6 +740,11 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         setState(() => _resendingVerification = false);
       }
     }
+  }
+
+  String _clientPath(String path) {
+    if (_selectedPlan == null || _selectedPlan!.isEmpty) return path;
+    return Uri(path: path, queryParameters: {'plan': _selectedPlan!}).toString();
   }
 
   String _humanize(Object error) {
