@@ -18,9 +18,10 @@ class PublicShell extends StatelessWidget {
 
   bool _shouldUsePublicChrome(String path) {
     return path == '/' ||
-        path == '/how-it-works' ||
         path == '/pricing' ||
         path == '/contact' ||
+        path == '/privacy' ||
+        path == '/terms' ||
         path.startsWith('/legal/');
   }
 
@@ -45,7 +46,7 @@ class PublicShell extends StatelessWidget {
                 ),
               ),
             ),
-            _PublicFooter(),
+            const _PublicFooter(),
           ],
         ),
       ),
@@ -92,11 +93,6 @@ class _PublicHeader extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       _HeaderLink(
-                        label: 'How it works',
-                        active: currentPath == '/how-it-works',
-                        onTap: () => context.go('/how-it-works'),
-                      ),
-                      _HeaderLink(
                         label: 'Pricing',
                         active: currentPath == '/pricing',
                         onTap: () => context.go('/pricing'),
@@ -113,9 +109,9 @@ class _PublicHeader extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(
-                        onPressed: () => context.go('/client/login'),
+                        onPressed: () => context.go('/login'),
                         style: TextButton.styleFrom(
-                          foregroundColor: currentPath == '/client/login'
+                          foregroundColor: currentPath == '/login'
                               ? AppTheme.publicText
                               : AppTheme.publicMuted,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -125,7 +121,7 @@ class _PublicHeader extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       FilledButton(
-                        onPressed: () => context.go('/client/join'),
+                        onPressed: () => context.go('/join'),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppTheme.publicText,
                           foregroundColor: Colors.white,
@@ -178,6 +174,8 @@ class _PublicHeader extends StatelessWidget {
 }
 
 class _PublicFooter extends StatelessWidget {
+  const _PublicFooter();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -187,47 +185,78 @@ class _PublicFooter extends StatelessWidget {
         border: Border(top: BorderSide(color: AppTheme.publicLine)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 20, 28, 24),
+        padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final compact = constraints.maxWidth < 920;
+                final compact = constraints.maxWidth < 980;
 
-                final label = Text(
-                  'Legal',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.publicText,
+                final intro = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Orchestrate',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppTheme.publicText,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 340),
+                      child: Text(
+                        'A connected operating system for outbound work, client visibility, and revenue follow-through.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.publicMuted,
+                              height: 1.45,
+                            ),
                       ),
+                    ),
+                  ],
                 );
 
-                final links = Wrap(
-                  spacing: 18,
-                  runSpacing: 10,
-                  children: [
-                    _FooterLink(label: 'Terms of Use', onTap: () => context.go('/legal/terms')),
-                    _FooterLink(label: 'Privacy Policy', onTap: () => context.go('/legal/privacy')),
+                final legal = _FooterGroup(
+                  title: 'Legal',
+                  links: [
+                    _FooterLink(label: 'Terms of Use', onTap: () => context.go('/terms')),
+                    _FooterLink(label: 'Privacy Policy', onTap: () => context.go('/privacy')),
+                    _FooterLink(label: 'Service Agreement', onTap: () => context.go('/legal/service-agreement')),
+                  ],
+                );
+
+                final operations = _FooterGroup(
+                  title: 'Operations',
+                  links: [
                     _FooterLink(label: 'Billing Policy', onTap: () => context.go('/legal/billing')),
                     _FooterLink(label: 'Refund Policy', onTap: () => context.go('/legal/refunds')),
                     _FooterLink(label: 'Acceptable Use', onTap: () => context.go('/legal/acceptable-use')),
-                    _FooterLink(label: 'Service Agreement', onTap: () => context.go('/legal/service-agreement')),
-                    _FooterLink(label: 'Deliverability Notice', onTap: () => context.go('/legal/deliverability-notice')),
+                    _FooterLink(label: 'Deliverability Notice', onTap: () => context.go('/legal/deliverability')),
                   ],
                 );
 
                 if (compact) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [label, const SizedBox(height: 14), links],
+                    children: [
+                      intro,
+                      const SizedBox(height: 22),
+                      legal,
+                      const SizedBox(height: 18),
+                      operations,
+                    ],
                   );
                 }
 
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(width: 140, child: label),
-                    Expanded(child: links),
+                    Expanded(flex: 4, child: intro),
+                    const SizedBox(width: 28),
+                    Expanded(flex: 3, child: legal),
+                    const SizedBox(width: 28),
+                    Expanded(flex: 3, child: operations),
                   ],
                 );
               },
@@ -235,6 +264,36 @@ class _PublicFooter extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _FooterGroup extends StatelessWidget {
+  const _FooterGroup({required this.title, required this.links});
+
+  final String title;
+  final List<Widget> links;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppTheme.publicText,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 12),
+        ...[
+          for (int i = 0; i < links.length; i++) ...[
+            links[i],
+            if (i != links.length - 1) const SizedBox(height: 10),
+          ],
+        ],
+      ],
     );
   }
 }
@@ -259,9 +318,6 @@ class _HeaderLink extends StatelessWidget {
         backgroundColor: active ? AppTheme.publicSurfaceSoft : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-            ),
       ),
       child: Text(label),
     );
@@ -277,10 +333,10 @@ class _FooterLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(10),
       onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(

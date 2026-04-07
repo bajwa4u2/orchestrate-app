@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_theme.dart';
-import '../../widgets/public_overview_widget.dart';
+import '../core/theme/app_theme.dart';
+import '../widgets/public_overview_widget.dart';
 
 class PublicHomeScreen extends StatelessWidget {
   const PublicHomeScreen({super.key});
@@ -10,25 +10,23 @@ class PublicHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1180),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                _HeroSection(),
-                SizedBox(height: 24),
-                _SystemFlowSection(),
-                SizedBox(height: 24),
-                _SystemGlimpseSection(),
-                SizedBox(height: 24),
-                _TrustSection(),
-                SizedBox(height: 24),
-                _PricingSection(),
-              ],
-            ),
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 48),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1280),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              _HeroSection(),
+              SizedBox(height: 24),
+              PublicOverviewWidget(),
+              SizedBox(height: 24),
+              _ProcessSection(),
+              SizedBox(height: 24),
+              _WhyItHoldsSection(),
+              SizedBox(height: 24),
+              _TrustStrip(),
+            ],
           ),
         ),
       ),
@@ -42,21 +40,21 @@ class _HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(32, 28, 32, 32),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 1080;
+          final compact = constraints.maxWidth < 980;
 
-          final left = Column(
+          final lead = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppTheme.publicAccentSoft,
                   borderRadius: BorderRadius.circular(999),
@@ -68,65 +66,107 @@ class _HeroSection extends StatelessWidget {
                       ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 24),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
+                constraints: const BoxConstraints(maxWidth: 760),
                 child: Text(
                   'From outreach to revenue, carried in one system.',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: stacked ? 34 : 38,
-                        height: 1.10,
-                        letterSpacing: -0.6,
+                        fontSize: compact ? 44 : 52,
+                        height: 1.02,
+                        letterSpacing: -1.2,
                       ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 550),
+                constraints: const BoxConstraints(maxWidth: 760),
                 child: Text(
-                  'Orchestrate keeps lead generation, outreach, meetings, invoices, payments, reminders, and records connected in one operating flow.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.publicMuted,
-                        height: 1.5,
-                      ),
+                  'Orchestrate runs outbound work as one connected operating flow, from market coverage and outreach through meetings, billing, reminders, and records.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: AppTheme.publicMuted, height: 1.45),
                 ),
               ),
               const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => context.go('/client/join'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.publicText,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(0, 50),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  FilledButton(
+                    onPressed: () => context.go('/join'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.publicText,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text('Create account'),
                   ),
-                ),
-                child: const Text('Create account'),
+                  TextButton(
+                    onPressed: () => context.go('/pricing'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.publicText,
+                      backgroundColor: AppTheme.publicSurfaceSoft,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: AppTheme.publicLine),
+                      ),
+                    ),
+                    child: const Text('View pricing'),
+                  ),
+                ],
               ),
             ],
           );
 
-          final right = const _HeroRightColumn();
-
-          if (stacked) {
-            return Column(
+          final side = Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: AppTheme.publicSurfaceSoft,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppTheme.publicLine),
+            ),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                left,
-                const SizedBox(height: 28),
-                right,
+                Text('What stays connected', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 18),
+                const _SideMetric(
+                  label: 'Pipeline',
+                  value: 'Leads, replies, and meetings stay visible',
+                ),
+                const SizedBox(height: 14),
+                const _SideMetric(
+                  label: 'Revenue',
+                  value: 'Invoices, reminders, and statements stay attached',
+                ),
+                const SizedBox(height: 14),
+                const _SideMetric(
+                  label: 'Continuity',
+                  value: 'Nothing important gets pushed into a separate trail',
+                ),
               ],
+            ),
+          );
+
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [lead, const SizedBox(height: 20), side],
             );
           }
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 5, child: left),
-              const SizedBox(width: 40),
-              Expanded(flex: 6, child: right),
+              Expanded(flex: 8, child: lead),
+              const SizedBox(width: 24),
+              Expanded(flex: 4, child: side),
             ],
           );
         },
@@ -135,315 +175,32 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-class _HeroRightColumn extends StatelessWidget {
-  const _HeroRightColumn();
+class _ProcessSection extends StatelessWidget {
+  const _ProcessSection();
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _HeroSignalPanel(),
-        SizedBox(height: 14),
-        PublicOverviewWidget(),
-      ],
-    );
-  }
-}
-
-class _HeroSignalPanel extends StatelessWidget {
-  const _HeroSignalPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.publicLine),
+    const steps = [
+      _ProcessCard(
+        number: '01',
+        title: 'Set the market',
+        body:
+            'Choose where the work should begin so coverage, pace, and priorities are clear from the start.',
       ),
-      child: Wrap(
-        spacing: 28,
-        runSpacing: 16,
-        children: const [
-          _HeroSignalItem(
-            label: 'Pipeline',
-            value: 'Active',
-          ),
-          _HeroSignalItem(
-            label: 'Revenue',
-            value: 'Tracked',
-          ),
-          _HeroSignalItem(
-            label: 'Continuity',
-            value: 'Continuous',
-          ),
-        ],
+      _ProcessCard(
+        number: '02',
+        title: 'Run outreach',
+        body:
+            'Lead generation, contact sequencing, replies, and follow-through stay inside the same operating rhythm.',
       ),
-    );
-  }
-}
-
-class _HeroSignalItem extends StatelessWidget {
-  const _HeroSignalItem({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 130, maxWidth: 180),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.publicText,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ],
+      _ProcessCard(
+        number: '03',
+        title: 'Carry the account',
+        body:
+            'Meetings, billing, reminders, agreements, and records continue in the same system instead of scattering later.',
       ),
-    );
-  }
-}
-
-class _SystemFlowSection extends StatelessWidget {
-  const _SystemFlowSection();
-
-  @override
-  Widget build(BuildContext context) {
-    const items = [
-      ('Find leads', 'Build the target list around the business, market, and service.'),
-      ('Launch outreach', 'Send controlled sequences instead of scattered one-off messages.'),
-      ('Handle replies', 'Keep live responses visible and move qualified conversations forward.'),
-      ('Book meetings', 'Turn interest into scheduled calls without losing the thread.'),
-      ('Carry billing', 'Keep invoices, reminders, payments, and records attached to the work.'),
     ];
 
-    return _SectionFrame(
-      title: 'How it works',
-      subtitle: 'Lead generation, outreach, follow-up, meetings, and billing move in one connected operating flow.',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final columns = constraints.maxWidth > 980 ? 5 : constraints.maxWidth > 640 ? 2 : 1;
-          return GridView.builder(
-            itemCount: items.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: columns == 1 ? 3.3 : 1.15,
-            ),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _InfoCard(title: item.$1, body: item.$2);
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _SystemGlimpseSection extends StatelessWidget {
-  const _SystemGlimpseSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionFrame(
-      title: 'Where outreach turns into revenue',
-      subtitle: 'The same system that runs outbound work can also carry the billing, payment, and records that come after the meeting is booked.',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 940;
-          final left = Column(
-            children: const [
-              _GlimpsePanel(
-                title: 'Command',
-                rows: [
-                  'Today in view',
-                  'Priority items visible',
-                  'Jobs and mailboxes in one place',
-                ],
-              ),
-              SizedBox(height: 14),
-              _GlimpsePanel(
-                title: 'Execution',
-                rows: [
-                  'Campaigns moving',
-                  'Replies being handled',
-                  'Meetings scheduled',
-                ],
-              ),
-            ],
-          );
-          final right = Column(
-            children: const [
-              _GlimpsePanel(
-                title: 'Revenue',
-                rows: [
-                  'Invoices issued',
-                  'Payments received',
-                  'Reminders scheduled',
-                  'Agreements active',
-                  'Statements generated',
-                ],
-              ),
-              SizedBox(height: 14),
-              _GlimpsePanel(
-                title: 'Deliverability',
-                rows: [
-                  'Domain verified',
-                  'Mailboxes active',
-                  'Sending posture stable',
-                ],
-              ),
-            ],
-          );
-
-          if (stacked) {
-            return Column(
-              children: [left, const SizedBox(height: 14), right],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: left),
-              const SizedBox(width: 14),
-              Expanded(child: right),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _TrustSection extends StatelessWidget {
-  const _TrustSection();
-
-  @override
-  Widget build(BuildContext context) {
-    const trustItems = [
-      ('Agreements stay attached', 'Scope and service terms do not need to disappear into side emails and memory.'),
-      ('Billing stays traceable', 'Invoices, reminders, payments, and statements remain reviewable.'),
-      ('Communication stays visible', 'Follow-up does not drift across disconnected tools and inbox habits.'),
-      ('Deliverability stays monitored', 'Domain posture and mailbox condition stay part of the operating picture.'),
-    ];
-
-    return _SectionFrame(
-      title: 'Built for work that has to hold up',
-      subtitle: 'This is not just a sending surface. It is built to carry the business trail around the work.',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final columns = constraints.maxWidth > 980 ? 4 : constraints.maxWidth > 640 ? 2 : 1;
-          return GridView.builder(
-            itemCount: trustItems.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: columns == 1 ? 3.1 : 1.24,
-            ),
-            itemBuilder: (context, index) {
-              final item = trustItems[index];
-              return _InfoCard(title: item.$1, body: item.$2);
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _PricingSection extends StatelessWidget {
-  const _PricingSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionFrame(
-      title: 'Pricing',
-      subtitle: 'The service is structured in two clear lanes so the scope stays easy to understand.',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 900;
-          final cards = [
-            const _PricingCard(
-              title: 'Opportunity',
-              subtitle: 'For businesses that want lead generation, outreach, follow-up, and meeting booking.',
-              points: [
-                'Lead sourcing and targeting',
-                'Outbound outreach',
-                'Follow-up and reply handling',
-                'Meeting booking',
-              ],
-            ),
-            const _PricingCard(
-              title: 'Revenue',
-              subtitle: 'For businesses that want outbound work plus billing, payment tracking, and records support.',
-              points: [
-                'Everything in Opportunity',
-                'Invoices and payment tracking',
-                'Agreements and reminders',
-                'Statements and records',
-                'Billing support tied to service delivery',
-              ],
-              emphasized: true,
-            ),
-          ];
-
-          if (stacked) {
-            return Column(
-              children: [cards[0], const SizedBox(height: 14), cards[1]],
-            );
-          }
-
-          return Row(
-            children: [
-              Expanded(child: cards[0]),
-              const SizedBox(width: 14),
-              Expanded(child: cards[1]),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _SectionFrame extends StatelessWidget {
-  const _SectionFrame({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
-
-  final String title;
-  final String subtitle;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
@@ -454,27 +211,199 @@ class _SectionFrame extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
-            ),
+          Text('How Orchestrate works', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 12),
+          Text(
+            'The work moves in one direction and stays accountable as it does.',
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(color: AppTheme.publicMuted),
           ),
           const SizedBox(height: 22),
-          child,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 980;
+              if (compact) {
+                return Column(
+                  children: [
+                    for (int i = 0; i < steps.length; i++) ...[
+                      steps[i],
+                      if (i != steps.length - 1) const SizedBox(height: 14),
+                    ],
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (int i = 0; i < steps.length; i++) ...[
+                    Expanded(child: steps[i]),
+                    if (i != steps.length - 1) const SizedBox(width: 14),
+                  ],
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.title, required this.body});
+class _WhyItHoldsSection extends StatelessWidget {
+  const _WhyItHoldsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      _PointCard(
+        title: 'Built for continuity',
+        body:
+            'The work that begins the relationship should not vanish when billing, follow-up, or records begin.',
+      ),
+      _PointCard(
+        title: 'Clear client visibility',
+        body:
+            'Clients can see standing, documents, account detail, and operating status without stepping into operator space.',
+      ),
+      _PointCard(
+        title: 'Structured expansion',
+        body:
+            'Market coverage can widen over time without forcing teams to rebuild how the system is used.',
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 1040;
+        if (compact) {
+          return Column(
+            children: [
+              for (int i = 0; i < items.length; i++) ...[
+                items[i],
+                if (i != items.length - 1) const SizedBox(height: 16),
+              ],
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (int i = 0; i < items.length; i++) ...[
+              Expanded(child: items[i]),
+              if (i != items.length - 1) const SizedBox(width: 16),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TrustStrip extends StatelessWidget {
+  const _TrustStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Text(
+        'Built for teams running outbound work across markets with continuity, visibility, and billing discipline.',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppTheme.publicText,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+class _SideMetric extends StatelessWidget {
+  const _SideMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppTheme.publicMuted,
+              ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppTheme.publicText,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProcessCard extends StatelessWidget {
+  const _ProcessCard({
+    required this.number,
+    required this.title,
+    required this.body,
+  });
+
+  final String number;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            number,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.publicAccent,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 10),
+          Text(
+            body,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicMuted,
+                  height: 1.45,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PointCard extends StatelessWidget {
+  const _PointCard({required this.title, required this.body});
 
   final String title;
   final String body;
@@ -482,131 +411,24 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 10),
-          Text(
-            body,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GlimpsePanel extends StatelessWidget {
-  const _GlimpsePanel({required this.title, required this.rows});
-
-  final String title;
-  final List<String> rows;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 14),
-          for (final row in rows) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(top: 8),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.publicAccent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    row,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppTheme.publicText,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _PricingCard extends StatelessWidget {
-  const _PricingCard({
-    required this.title,
-    required this.subtitle,
-    required this.points,
-    this.emphasized = false,
-  });
-
-  final String title;
-  final String subtitle;
-  final List<String> points;
-  final bool emphasized;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: emphasized ? AppTheme.publicSurfaceSoft : AppTheme.publicSurface,
+        color: AppTheme.publicSurface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           Text(
-            subtitle,
+            body,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
+                  height: 1.45,
                 ),
           ),
-          const SizedBox(height: 18),
-          for (final point in points) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Icon(Icons.circle, size: 8, color: AppTheme.publicAccent),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(point, style: Theme.of(context).textTheme.bodyLarge),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
         ],
       ),
     );

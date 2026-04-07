@@ -64,7 +64,7 @@ class PublicContentScreen extends StatelessWidget {
                             child: Text(
                               title,
                               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                    fontSize: stacked ? 52 : 44,
+                                    fontSize: stacked ? 40 : 46,
                                     height: 1.04,
                                     letterSpacing: -1.1,
                                   ),
@@ -72,11 +72,12 @@ class PublicContentScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 720),
+                            constraints: const BoxConstraints(maxWidth: 760),
                             child: Text(
                               subtitle,
                               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     color: AppTheme.publicMuted,
+                                    height: 1.45,
                                   ),
                             ),
                           ),
@@ -175,7 +176,7 @@ class _SectionCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             section.body,
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.48),
           ),
           if (section.highlight != null) ...[
             const SizedBox(height: 18),
@@ -190,6 +191,7 @@ class _SectionCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppTheme.publicText,
                       fontWeight: FontWeight.w600,
+                      height: 1.45,
                     ),
               ),
             ),
@@ -212,7 +214,7 @@ class _SectionCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       point,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.45),
                     ),
                   ),
                 ],
@@ -234,8 +236,6 @@ class _SidePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryAction = actions.isNotEmpty ? actions.first : null;
-
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -251,23 +251,40 @@ class _SidePanel extends StatelessWidget {
               note!,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.publicMuted,
+                    height: 1.45,
                   ),
             ),
-            if (primaryAction != null) const SizedBox(height: 18),
+            if (actions.isNotEmpty) const SizedBox(height: 18),
           ],
-          if (primaryAction != null)
-            FilledButton(
-              onPressed: () => context.go(primaryAction.path),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-                backgroundColor: AppTheme.publicText,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Text(primaryAction.label),
-            ),
+          for (int i = 0; i < actions.length; i++) ...[
+            actions[i].filled
+                ? FilledButton(
+                    onPressed: () => context.go(actions[i].path),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      backgroundColor: AppTheme.publicText,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(actions[i].label),
+                  )
+                : TextButton(
+                    onPressed: () => context.go(actions[i].path),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      foregroundColor: AppTheme.publicText,
+                      backgroundColor: AppTheme.publicSurface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: AppTheme.publicLine),
+                      ),
+                    ),
+                    child: Text(actions[i].label),
+                  ),
+            if (i != actions.length - 1) const SizedBox(height: 12),
+          ],
         ],
       ),
     );
@@ -276,135 +293,67 @@ class _SidePanel extends StatelessWidget {
 
 PublicContentScreen buildHowItWorksScreen() => const PublicContentScreen(
       eyebrow: 'How it works',
-      title: 'One system from first outreach to paid work',
+      title: 'One operating flow from first contact to collected revenue',
       subtitle:
-          'Orchestrate keeps lead generation, outreach, follow-up, meetings, billing, and records connected instead of splitting them across separate tools and habits.',
+          'Orchestrate keeps lead generation, outreach, follow-through, meetings, billing, and records close enough that the work stays continuous.',
       sideNote:
-          'The point is simple: the work that starts the conversation should stay connected to the work that closes it.',
+          'This is built for businesses that want outbound work carried as an operating discipline, not scattered across separate tools and loose follow-up.',
       sideActions: [
-        ContentAction(label: 'Create account', path: '/client/create-account', filled: true),
+        ContentAction(label: 'Create account', path: '/join', filled: true),
+        ContentAction(label: 'View pricing', path: '/pricing'),
       ],
       sections: [
         ContentSection(
-          title: 'Lead generation starts the pipeline',
+          title: 'Start with market direction',
           body:
-              'Businesses define the target, the market, and the kind of accounts they want to reach. From there, lead sourcing stays attached to the rest of the work instead of being treated as a separate spreadsheet exercise.',
+              'The work begins by defining where Orchestrate should operate and how broad the initial market should be. Coverage, sequence, and pace all become clearer when the direction is set first.',
           points: [
-            'Target lists are built around the service and market.',
-            'Leads move with visible status instead of disappearing into loose notes.',
-            'The same record can continue through outreach, meetings, and billing.',
+            'Market scope stays attached to the account from the beginning.',
+            'The same operating trail can widen later without rebuilding the flow.',
+            'Client setup is framed around decisions, not technical configuration.',
           ],
         ),
         ContentSection(
-          title: 'Outreach and follow-up stay controlled',
+          title: 'Carry outreach with control',
           body:
-              'Campaigns, replies, and meeting booking stay inside the same operating system. The point is not just to send messages. It is to keep momentum visible until real conversations turn into meetings.',
+              'Lead sourcing, outreach execution, replies, and meeting movement stay inside the same operating rhythm. The point is not just sending messages. It is carrying momentum until the work becomes real conversation.',
           highlight:
-              'Outreach is not finished when the first message is sent. The follow-through is part of the product.',
+              'Outreach is not complete when the first message goes out. The follow-through is part of the service.',
         ),
         ContentSection(
-          title: 'Billing does not get pushed off to the side',
+          title: 'Keep revenue operations attached',
           body:
-              'When the work moves forward, invoices, reminders, payment tracking, statements, and records can stay tied to the same client relationship. That keeps the business trail intact after meetings are booked.',
+              'When conversations turn into real business, invoices, agreements, reminders, statements, and records can stay connected to the same account trail. That is where continuity starts to matter most.',
           points: [
-            'Client access stays separate from operator access.',
-            'Deliverability stays visible as an operating responsibility.',
-            'Statements, receipts, agreements, and history remain attached to the account.',
+            'Client visibility stays separate from operator execution.',
+            'Billing posture remains visible instead of drifting later.',
+            'Records stay attached to the account rather than being rebuilt elsewhere.',
           ],
-        ),
-      ],
-    );
-
-PublicContentScreen buildPricingScreen() => const PublicContentScreen(
-      eyebrow: 'Pricing',
-      title: 'Two plans, clear scope',
-      subtitle:
-          'Orchestrate is structured around two service levels so businesses can choose whether they need outbound execution only or outbound execution plus billing support.',
-      sideNote:
-          'Revenue includes Opportunity by design. Billing is part of the operating system, not an extra add-on.',
-      sideActions: [
-        ContentAction(label: 'Create account', path: '/client/create-account', filled: true),
-      ],
-      sections: [
-        ContentSection(
-          title: 'Opportunity',
-          body: 'For businesses that want leads, outreach, follow-up, and meetings handled with structure.',
-          points: [
-            'Lead sourcing and targeting',
-            'Outbound outreach execution',
-            'Follow-up handling',
-            'Reply management',
-            'Meeting booking',
-          ],
-        ),
-        ContentSection(
-          title: 'Revenue',
-          body:
-              'For businesses that want the outbound work plus the billing, reminder, payment, and record layer that follows service delivery.',
-          points: [
-            'Everything included in Opportunity',
-            'Invoice generation and payment tracking',
-            'Reminder scheduling and follow-through',
-            'Statements and account records',
-            'Agreements and billing support tied to service delivery',
-          ],
-          highlight:
-              'Revenue is the fuller operating model because it carries the work from outreach into actual money movement and accountability.',
-        ),
-      ],
-    );
-
-PublicContentScreen buildContactScreen() => const PublicContentScreen(
-      eyebrow: 'Contact',
-      title: 'Talk through fit, scope, and next steps',
-      subtitle:
-          'Use this page to talk through service fit, scope, pricing, or onboarding before you move forward.',
-      sideNote: 'Ready to move forward? Create your account and continue from there.',
-      sideActions: [
-        ContentAction(label: 'Create account', path: '/client/create-account', filled: true),
-      ],
-      sections: [
-        ContentSection(
-          title: 'When to use this page',
-          body:
-              'Use contact when you want a direct business conversation before onboarding. This page is for clarifying fit, scope, pricing, and next steps.',
-          points: [
-            'You want to confirm whether the service fits your business.',
-            'You want to understand Opportunity versus Revenue.',
-            'You want to talk through billing cadence, reminders, or statements.',
-            'You want to understand how onboarding and activation will work.',
-          ],
-        ),
-        ContentSection(
-          title: 'Client entry stays open',
-          body:
-              'Businesses can create a client account directly. Registration starts a controlled progression into verification, onboarding, qualification, and activation.',
-          highlight:
-              'Account creation is the beginning of the pipeline, not unrestricted access to the whole system.',
-        ),
-        ContentSection(
-          title: 'Operator access stays controlled',
-          body:
-              'Operator access is not part of public self-serve sign-up. It is provisioned deliberately because the operator side carries execution responsibility across outreach, billing, deliverability, and records.',
         ),
       ],
     );
 
 PublicContentScreen buildTermsScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
+      eyebrow: 'Legal',
       title: 'Terms of use',
       subtitle:
-          'These terms govern access to the public site, operator workspace, client access surfaces, and related services provided through Orchestrate.',
+          'These terms govern access to the public site, client surfaces, operator surfaces, and services provided through Orchestrate.',
+      sideNote:
+          'This page sets the general service boundaries. For billing, privacy, and deliverability posture, use the related pages in the legal section.',
+      sideActions: [
+        ContentAction(label: 'Privacy policy', path: '/privacy'),
+        ContentAction(label: 'Service agreement', path: '/legal/service-agreement'),
+      ],
       sections: [
         ContentSection(
           title: 'Use of the service',
           body:
-              'Use of Orchestrate is conditioned on lawful use, truthful account information, payment of agreed fees, and compliance with the service boundaries presented publicly or contractually.',
+              'Use of Orchestrate depends on lawful use, truthful account information, payment of agreed fees, and compliance with public and contractual service boundaries.',
         ),
         ContentSection(
           title: 'Account posture',
           body:
-              'Operator access may be provisioned directly and may be limited, suspended, or revoked where misuse, non-payment, risk, or policy breaches create operational or legal concern. Client access may be limited to review functions appropriate to the service relationship.',
+              'Operator access may be provisioned directly and may be limited, suspended, or revoked where misuse, non-payment, legal risk, or policy breaches create operational concern. Client access may be limited to the visibility and control surfaces appropriate to the service relationship.',
         ),
         ContentSection(
           title: 'Service boundaries',
@@ -416,21 +365,27 @@ PublicContentScreen buildTermsScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Suspension and termination',
           body:
-              'Service may be suspended or ended where use creates abuse risk, legal exposure, security issues, payment failure, misuse of sender identity, harassment, fraud, or other misuse inconsistent with the purpose of the system.',
+              'Service may be suspended or ended where use creates abuse risk, legal exposure, payment failure, harassment, fraud, sender-identity misuse, or other conduct inconsistent with the purpose of the system.',
         ),
       ],
     );
 
 PublicContentScreen buildPrivacyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
+      eyebrow: 'Legal',
       title: 'Privacy policy',
       subtitle:
-          'Orchestrate handles business contact information, communication records, billing records, and service metadata in order to operate the service responsibly.',
+          'Orchestrate handles business contact information, communication records, billing records, and service metadata in order to operate responsibly.',
+      sideNote:
+          'Privacy here is part of the operating model, not a detached afterthought. The service depends on handling records with discipline.',
+      sideActions: [
+        ContentAction(label: 'Terms of use', path: '/terms'),
+        ContentAction(label: 'Deliverability notice', path: '/legal/deliverability'),
+      ],
       sections: [
         ContentSection(
           title: 'Information handled',
           body:
-              'The system may handle business names, contact details, lead and customer records, communication history, payment status information, agreements, statements, and basic usage logs needed for account security and service continuity.',
+              'The system may handle business names, contact details, lead and customer records, communication history, payment status information, agreements, statements, and basic usage logs needed for service continuity and account security.',
         ),
         ContentSection(
           title: 'Purpose of collection and use',
@@ -440,26 +395,26 @@ PublicContentScreen buildPrivacyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Sharing posture',
           body:
-              'Information is not shared casually. It may be shared with service providers, infrastructure vendors, payment providers, deliverability vendors, or legal authorities where necessary to operate the system, enforce agreements, process payments, or meet legal obligations.',
+              'Information is not shared casually. It may be shared with service providers, infrastructure vendors, payment providers, deliverability vendors, or legal authorities where reasonably necessary to operate the service, enforce agreements, process payments, or meet legal obligations.',
         ),
         ContentSection(
           title: 'Retention and control',
           body:
-              'Records may be retained for operational continuity, legal compliance, financial accountability, dispute handling, and service history. Deletion requests may be limited where retention is reasonably required for these purposes.',
+              'Records may be retained for operational continuity, legal compliance, financial accountability, dispute handling, and service history. Deletion requests may be limited where retention is reasonably required for those purposes.',
         ),
       ],
     );
 
 PublicContentScreen buildBillingPolicyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Billing and subscription policy',
+      eyebrow: 'Legal',
+      title: 'Billing policy',
       subtitle:
-          'This policy explains how service tiers, invoicing, subscriptions, reminders, and payment responsibilities are handled through Orchestrate.',
+          'This page explains how service charges, invoicing, reminders, subscriptions, and payment responsibility are handled through Orchestrate.',
       sections: [
         ContentSection(
-          title: 'Service tiers',
+          title: 'Service plans',
           body:
-              'Orchestrate is structured around Opportunity and Revenue. Revenue includes Opportunity and extends the service into billing administration, reminders, statements, agreements, and payment accountability surfaces.',
+              'Orchestrate is structured around Opportunity and Revenue. Revenue includes Opportunity and extends the service into billing administration, reminders, statements, agreements, and payment-accountability surfaces.',
         ),
         ContentSection(
           title: 'Billing cycle and charges',
@@ -469,23 +424,23 @@ PublicContentScreen buildBillingPolicyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Late payment posture',
           body:
-              'Late payment may result in reminder escalation, service pause, restricted access, or withholding of certain operating functions until account status is brought current.',
+              'Late payment may result in reminder escalation, service pause, restricted access, or withholding of operating functions until the account is brought current.',
           highlight:
-              'Billing administration support does not erase the client’s own responsibility for payment obligations owed to Orchestrate.',
+              'Billing support does not erase the client’s own responsibility for payment obligations owed to Orchestrate.',
         ),
         ContentSection(
           title: 'Client billing support',
           body:
-              'Where the Revenue tier includes billing support for the client’s customers, Orchestrate acts as a structured operating intermediary. It does not become the underlying contractual counterparty between the client and the customer unless expressly agreed in writing.',
+              'Where the Revenue plan includes billing support for the client’s customers, Orchestrate acts as a structured operating intermediary. It does not become the underlying contractual counterparty between the client and the customer unless expressly agreed in writing.',
         ),
       ],
     );
 
 PublicContentScreen buildRefundPolicyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
+      eyebrow: 'Legal',
       title: 'Refund policy',
       subtitle:
-          'Refund posture should remain clear, restrained, and tied to actual service conditions rather than vague promises.',
+          'Refund posture remains tied to actual service conditions rather than vague promises or unsupported expectations.',
       sections: [
         ContentSection(
           title: 'General rule',
@@ -500,14 +455,14 @@ PublicContentScreen buildRefundPolicyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'What is not a refund trigger by itself',
           body:
-              'Low reply rates, low meeting conversion, customer non-payment, spam filtering, slow internal client response, or recipient silence are not by themselves grounds for refund because they depend on variables outside direct platform control.',
+              'Low reply rates, low meeting conversion, customer non-payment, spam filtering, slow internal client response, or recipient silence are not by themselves grounds for refund because they depend on variables outside direct control.',
         ),
       ],
     );
 
 PublicContentScreen buildAcceptableUseScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Acceptable use policy',
+      eyebrow: 'Legal',
+      title: 'Acceptable use',
       subtitle:
           'Orchestrate is meant for legitimate business communication, billing administration, records, and accountable client service operations.',
       sections: [
@@ -519,59 +474,60 @@ PublicContentScreen buildAcceptableUseScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Sender and deliverability discipline',
           body:
-              'Users may not deliberately degrade sender reputation, rotate identities deceptively, conceal origin, or use the platform in a manner likely to create systemic abuse or blacklisting risk.',
+              'Users must not use Orchestrate in ways that create spam risk, impersonation exposure, reputation abuse, or harmful message patterns that threaten sender standing or recipient trust.',
         ),
         ContentSection(
-          title: 'Operational protection',
+          title: 'Data and access discipline',
           body:
-              'Access may be restricted where behavior threatens infrastructure stability, payment integrity, legal compliance, account security, or the integrity of other clients using the system.',
+              'Account access, customer information, and communication trails must be handled with care. Attempts to bypass account boundaries, misuse records, or exploit the system for unauthorized activity are prohibited.',
         ),
       ],
     );
 
 PublicContentScreen buildServiceAgreementScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
+      eyebrow: 'Legal',
       title: 'Service agreement',
       subtitle:
-          'The service agreement defines the actual operating relationship between Orchestrate and the client once scope is accepted.',
+          'The service agreement governs the practical business relationship between Orchestrate and the client where work is being carried under paid service terms.',
       sections: [
         ContentSection(
-          title: 'What the agreement should establish',
+          title: 'Scope and delivery',
           body:
-              'The agreement should state service scope, tier, billing cadence, deliverables, account visibility, communication posture, reminder handling, records responsibility, and any limits or exclusions that shape the working relationship.',
+              'The agreement should identify the service plan, market scope, billing cadence, responsibilities, and any custom operating terms attached to the engagement.',
         ),
         ContentSection(
-          title: 'Why it matters here',
+          title: 'Client responsibility',
           body:
-              'Because Orchestrate can carry both opportunity creation and billing administration, the service agreement is the place where responsibilities stop being implied and become explicit.',
-          highlight:
-              'This page does not replace a signed agreement. It marks that the signed agreement is structurally required.',
+              'The client remains responsible for accurate information, lawful use, timely approvals where needed, and payment of agreed charges.',
+        ),
+        ContentSection(
+          title: 'Operating responsibility',
+          body:
+              'Orchestrate is responsible for carrying the agreed operating work with reasonable discipline, maintaining records, and preserving service continuity within the boundaries of the service relationship.',
         ),
       ],
     );
 
 PublicContentScreen buildDeliverabilityScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
+      eyebrow: 'Legal',
       title: 'Deliverability notice',
       subtitle:
-          'Deliverability is treated as a working responsibility, but no honest system can promise universal inbox placement, responses, or conversions.',
+          'Email delivery and sender reputation depend on factors that include infrastructure, message quality, sending behavior, and recipient-side filtering outside direct control.',
       sections: [
         ContentSection(
-          title: 'What deliverability depends on',
+          title: 'No guarantee of inbox placement',
           body:
-              'Inbox placement and outbound performance depend on sender domain condition, mailbox health, recipient filtering systems, message quality, targeting discipline, list quality, complaint behavior, and broader third-party infrastructure conditions.',
+              'Orchestrate does not guarantee inbox placement, open rate, reply rate, meeting conversion, or continued access to any third-party email infrastructure.',
         ),
         ContentSection(
-          title: 'What Orchestrate does',
+          title: 'Shared responsibility',
           body:
-              'The service may support sender setup, visibility into mailbox condition, sending posture, and operational monitoring intended to improve stability and accountability.',
+              'Deliverability depends partly on client domain posture, sender reputation, message discipline, list quality, and recipient systems. Those variables remain shared operational responsibilities even when Orchestrate is executing the work.',
         ),
         ContentSection(
-          title: 'What cannot be promised',
+          title: 'Why this matters',
           body:
-              'No representation is made that a message will reach the inbox, receive a reply, convert to a meeting, or result in customer payment in every case.',
-          highlight:
-              'Deliverability work improves posture. It does not remove the reality of external systems and recipient choice.',
+              'Outbound work only stays effective when sender reputation and message discipline are treated seriously. Deliverability is not a decorative metric. It is part of responsible execution.',
         ),
       ],
     );
