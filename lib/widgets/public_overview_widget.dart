@@ -2,7 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
+import '../core/theme/app_theme.dart';
 
 class PublicOverviewWidget extends StatefulWidget {
   const PublicOverviewWidget({super.key});

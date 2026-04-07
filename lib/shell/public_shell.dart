@@ -18,10 +18,11 @@ class PublicShell extends StatelessWidget {
 
   bool _shouldUsePublicChrome(String path) {
     return path == '/' ||
+        path == '/how-it-works' ||
         path == '/pricing' ||
         path == '/contact' ||
-        path == '/privacy' ||
         path == '/terms' ||
+        path == '/privacy' ||
         path.startsWith('/legal/');
   }
 
@@ -59,6 +60,8 @@ class _PublicHeader extends StatelessWidget {
 
   final String currentPath;
 
+  bool _isActive(List<String> paths) => paths.contains(currentPath);
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -76,58 +79,66 @@ class _PublicHeader extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 1024;
+                  final compact = constraints.maxWidth < 980;
 
                   final brand = InkWell(
                     borderRadius: BorderRadius.circular(14),
                     onTap: () => context.go('/'),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: BrandAssets.logo(context, height: 28),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          BrandAssets.symbol(context, size: 26),
+                          const SizedBox(width: 12),
+                          BrandAssets.logo(context, height: 24),
+                        ],
+                      ),
                     ),
                   );
 
                   final nav = Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       _HeaderLink(
                         label: 'Pricing',
-                        active: currentPath == '/pricing',
+                        active: _isActive(const ['/pricing']),
                         onTap: () => context.go('/pricing'),
                       ),
                       _HeaderLink(
                         label: 'Contact',
-                        active: currentPath == '/contact',
+                        active: _isActive(const ['/contact']),
                         onTap: () => context.go('/contact'),
                       ),
                     ],
                   );
 
-                  final actions = Row(
-                    mainAxisSize: MainAxisSize.min,
+                  final actions = Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
-                      TextButton(
+                      OutlinedButton(
                         onPressed: () => context.go('/login'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: currentPath == '/login'
-                              ? AppTheme.publicText
-                              : AppTheme.publicMuted,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.publicText,
+                          side: const BorderSide(color: AppTheme.publicLine),
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         child: const Text('Sign in'),
                       ),
-                      const SizedBox(width: 12),
                       FilledButton(
                         onPressed: () => context.go('/join'),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppTheme.publicText,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         child: const Text('Join'),
                       ),
@@ -139,16 +150,13 @@ class _PublicHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         brand,
-                        const SizedBox(height: 12),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              nav,
-                              const SizedBox(width: 20),
-                              actions,
-                            ],
-                          ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(child: nav),
+                            const SizedBox(width: 16),
+                            actions,
+                          ],
                         ),
                       ],
                     );
@@ -193,33 +201,31 @@ class _PublicFooter extends StatelessWidget {
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 980;
 
-                final intro = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Orchestrate',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: AppTheme.publicText,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 340),
-                      child: Text(
-                        'A connected operating system for outbound work, client visibility, and revenue follow-through.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.publicMuted,
-                              height: 1.45,
+                final intro = ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Built for teams running outbound across markets.',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppTheme.publicText,
                             ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 10),
+                      Text(
+                        'Orchestrate keeps outreach, meetings, billing, and records connected in one operating system.',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppTheme.publicMuted,
+                            ),
+                      ),
+                    ],
+                  ),
                 );
 
                 final legal = _FooterGroup(
                   title: 'Legal',
-                  links: [
+                  children: [
                     _FooterLink(label: 'Terms of Use', onTap: () => context.go('/terms')),
                     _FooterLink(label: 'Privacy Policy', onTap: () => context.go('/privacy')),
                     _FooterLink(label: 'Service Agreement', onTap: () => context.go('/legal/service-agreement')),
@@ -228,7 +234,7 @@ class _PublicFooter extends StatelessWidget {
 
                 final operations = _FooterGroup(
                   title: 'Operations',
-                  links: [
+                  children: [
                     _FooterLink(label: 'Billing Policy', onTap: () => context.go('/legal/billing')),
                     _FooterLink(label: 'Refund Policy', onTap: () => context.go('/legal/refunds')),
                     _FooterLink(label: 'Acceptable Use', onTap: () => context.go('/legal/acceptable-use')),
@@ -241,9 +247,9 @@ class _PublicFooter extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       intro,
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 24),
                       legal,
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 22),
                       operations,
                     ],
                   );
@@ -252,11 +258,11 @@ class _PublicFooter extends StatelessWidget {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 4, child: intro),
-                    const SizedBox(width: 28),
+                    Expanded(flex: 5, child: intro),
+                    const SizedBox(width: 40),
                     Expanded(flex: 3, child: legal),
                     const SizedBox(width: 28),
-                    Expanded(flex: 3, child: operations),
+                    Expanded(flex: 4, child: operations),
                   ],
                 );
               },
@@ -269,10 +275,13 @@ class _PublicFooter extends StatelessWidget {
 }
 
 class _FooterGroup extends StatelessWidget {
-  const _FooterGroup({required this.title, required this.links});
+  const _FooterGroup({
+    required this.title,
+    required this.children,
+  });
 
   final String title;
-  final List<Widget> links;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
@@ -287,12 +296,11 @@ class _FooterGroup extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 12),
-        ...[
-          for (int i = 0; i < links.length; i++) ...[
-            links[i],
-            if (i != links.length - 1) const SizedBox(height: 10),
-          ],
-        ],
+        Wrap(
+          direction: Axis.vertical,
+          spacing: 10,
+          children: children,
+        ),
       ],
     );
   }
@@ -318,6 +326,9 @@ class _HeaderLink extends StatelessWidget {
         backgroundColor: active ? AppTheme.publicSurfaceSoft : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+            ),
       ),
       child: Text(label),
     );
@@ -333,10 +344,10 @@ class _FooterLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
       borderRadius: BorderRadius.circular(10),
+      onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(

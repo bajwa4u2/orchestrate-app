@@ -49,10 +49,11 @@ final router = GoRouter(
     ]);
 
     final isPublic = path == '/' ||
+        path == '/how-it-works' ||
         path == '/pricing' ||
         path == '/contact' ||
-        path == '/privacy' ||
         path == '/terms' ||
+        path == '/privacy' ||
         path.startsWith('/legal/');
 
     final isVerificationFlow = path == '/client/verify-email';
@@ -176,6 +177,15 @@ final router = GoRouter(
         child: PublicShell(
           currentPath: state.uri.path,
           child: const PublicHomeScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/how-it-works',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: buildHowItWorksScreen(),
         ),
       ),
     ),
