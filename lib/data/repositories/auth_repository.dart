@@ -110,6 +110,16 @@ class AuthRepository {
     });
   }
 
+  Future<void> resetPassword({
+    required String token,
+    required String password,
+  }) async {
+    await _apiClient.postJson('/auth/password/reset', body: {
+      'token': token,
+      'password': password,
+    });
+  }
+
   Future<void> verifyEmail(String token) async {
     await _apiClient.postJson('/auth/email/verify', body: {
       'token': token,

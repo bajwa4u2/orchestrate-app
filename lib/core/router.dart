@@ -31,37 +31,26 @@ final router = GoRouter(
     if (!session.isReady) return null;
 
     final path = state.uri.path;
-    final normalizedPlan = state.uri.queryParameters['plan']?.trim().toLowerCase();
-    final normalizedTier = state.uri.queryParameters['tier']?.trim().toLowerCase();
+    final plan = _normalized(state.uri.queryParameters['plan']) ?? session.selectedPlan;
+    final tier = _normalized(state.uri.queryParameters['tier']) ?? session.selectedTier;
+    final trial = _normalized(state.uri.queryParameters['trial']);
 
-    final isClientAuth = _matches(path, const [
-      '/client/login',
-      '/client/join',
-      '/login',
-      '/join',
-    ]);
+    final isPublic = <String>{
+      '/',
+      '/pricing',
+      '/contact',
+      '/how-it-works',
+      '/terms',
+      '/privacy',
+    }.contains(path) || path.startsWith('/legal/');
 
-    final isOpsAuth = _matches(path, const [
-      '/ops/login',
-      '/ops/join',
-      '/ops-login',
-      '/ops-join',
-    ]);
-
-    final isPublic = path == '/' ||
-        path == '/how-it-works' ||
-        path == '/pricing' ||
-        path == '/contact' ||
-        path == '/terms' ||
-        path == '/privacy' ||
-        path.startsWith('/legal/');
-
-    final isVerificationFlow = path == '/client/verify-email';
-    final isResetFlow = path == '/client/reset-password';
-    final isSetupFlow = path == '/client/setup';
-    final isSubscribeFlow = path == '/client/subscribe';
-
-    final isClientSurface = path.startsWith('/client/workspace') ||
+    final isClientAuth = <String>{'/client/login', '/client/join', '/login', '/join'}.contains(path);
+    final isOpsAuth = <String>{'/ops/login', '/ops/join', '/ops-login', '/ops-join'}.contains(path);
+    final isVerification = path == '/client/verify-email';
+    final isReset = path == '/client/reset-password';
+    final isSetup = path == '/client/setup';
+    final isSubscribe = path == '/client/subscribe';
+    final isClientArea = path.startsWith('/client/workspace') ||
         path.startsWith('/client/billing') ||
         path.startsWith('/client/agreements') ||
         path.startsWith('/client/statements') ||
@@ -69,7 +58,9 @@ final router = GoRouter(
 
     if (!session.isAuthenticated) {
       if (path.startsWith('/app/')) return '/ops/login';
-      if (isClientSurface || isSetupFlow || isSubscribeFlow) return '/client/login';
+      if (isClientArea || isSetup || isSubscribe) {
+        return _clientRoute('/client/login', plan: plan, tier: tier, trial: trial);
+      }
       return null;
     }
 
@@ -80,95 +71,38 @@ final router = GoRouter(
     }
 
     if (session.surface == 'client') {
-      final selectedPlan = session.selectedPlan ?? normalizedPlan;
-      final selectedTier = session.selectedTier ?? normalizedTier;
-
-      final subscribeTarget = selectedPlan != null && selectedPlan.isNotEmpty
-          ? Uri(
-              path: '/client/subscribe',
-              queryParameters: {
-                'plan': selectedPlan,
-                if (selectedTier != null && selectedTier.isNotEmpty) 'tier': selectedTier,
-              },
-            ).toString()
-          : '/client/subscribe';
-
       if (!session.emailVerified) {
-        if (!isVerificationFlow && !isResetFlow) {
-          return '/client/verify-email';
-        }
-        return null;
+        if (isVerification || isReset) return null;
+        return _clientRoute('/client/verify-email', plan: plan, tier: tier, trial: trial);
       }
 
       if (!session.hasSetupCompleted) {
-        if (!isSetupFlow) {
-          return selectedPlan != null && selectedPlan.isNotEmpty
-              ? Uri(
-                  path: '/client/setup',
-                  queryParameters: {
-                    'plan': selectedPlan,
-                    if (selectedTier != null && selectedTier.isNotEmpty) 'tier': selectedTier,
-                  },
-                ).toString()
-              : '/client/setup';
-        }
-        return null;
+        if (isSetup) return null;
+        return _clientRoute('/client/setup', plan: plan, tier: tier, trial: trial);
       }
 
       if (session.normalizedSubscriptionStatus != 'active') {
-        final allowAccess = isSubscribeFlow || path.startsWith('/client/account');
-        if (!allowAccess) return subscribeTarget;
-        return null;
+        if (isSubscribe || path.startsWith('/client/account')) return null;
+        return _clientRoute('/client/subscribe', plan: plan, tier: tier, trial: trial);
       }
 
-      if (isClientAuth || path == '/' || isVerificationFlow || isSubscribeFlow || isSetupFlow) {
+      if (isClientAuth || isVerification || isReset || isSetup || isSubscribe || path == '/') {
         return '/client/workspace';
       }
-
       if (isOpsAuth) return '/client/workspace';
-
-      return null;
-    }
-
-    if (isPublic || isClientAuth || isOpsAuth || isVerificationFlow || isResetFlow) {
-      return null;
     }
 
     return null;
   },
   routes: [
-    GoRoute(
-      path: '/ops/login',
-      builder: (context, state) => const OpsLoginScreen(),
-    ),
-    GoRoute(
-      path: '/ops/join',
-      builder: (context, state) => const OpsLoginScreen(createMode: true),
-    ),
-    GoRoute(
-      path: '/ops-login',
-      redirect: (context, state) => '/ops/login',
-    ),
-    GoRoute(
-      path: '/ops-join',
-      redirect: (context, state) => '/ops/join',
-    ),
-    GoRoute(
-      path: '/client/login',
-      builder: (context, state) => const ClientLoginScreen(),
-    ),
-    GoRoute(
-      path: '/client/join',
-      builder: (context, state) => const ClientLoginScreen(createMode: true),
-    ),
-    GoRoute(
-      path: '/login',
-      redirect: (context, state) => '/client/login',
-    ),
-    GoRoute(
-      path: '/join',
-      redirect: (context, state) => '/client/join',
-    ),
+    GoRoute(path: '/ops/login', builder: (context, state) => const OpsLoginScreen()),
+    GoRoute(path: '/ops/join', builder: (context, state) => const OpsLoginScreen(createMode: true)),
+    GoRoute(path: '/ops-login', redirect: (context, state) => '/ops/login'),
+    GoRoute(path: '/ops-join', redirect: (context, state) => '/ops/join'),
+    GoRoute(path: '/client/login', builder: (context, state) => const ClientLoginScreen()),
+    GoRoute(path: '/client/join', builder: (context, state) => const ClientLoginScreen(createMode: true)),
+    GoRoute(path: '/login', redirect: (context, state) => '/client/login'),
+    GoRoute(path: '/join', redirect: (context, state) => '/client/join'),
     GoRoute(
       path: '/client/verify-email',
       builder: (context, state) => const ClientLoginScreen(verificationMode: true),
@@ -177,234 +111,176 @@ final router = GoRouter(
       path: '/client/reset-password',
       builder: (context, state) => const ClientLoginScreen(resetMode: true),
     ),
-    GoRoute(
-      path: '/client/setup',
-      builder: (context, state) => const ClientSetupScreen(),
-    ),
-    GoRoute(
-      path: '/client/subscribe',
-      builder: (context, state) => const ClientSubscribeScreen(),
-    ),
+    GoRoute(path: '/client/setup', builder: (context, state) => const ClientSetupScreen()),
+    GoRoute(path: '/client/subscribe', builder: (context, state) => const ClientSubscribeScreen()),
     GoRoute(
       path: '/',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const PublicHomeScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: const PublicHomeScreen()),
       ),
     ),
     GoRoute(
       path: '/how-it-works',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: buildHowItWorksScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: buildHowItWorksScreen()),
       ),
     ),
     GoRoute(
       path: '/pricing',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const PricingScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: const PricingScreen()),
       ),
     ),
     GoRoute(
       path: '/contact',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const ContactScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: const ContactScreen()),
       ),
     ),
-    GoRoute(
-      path: '/terms',
-      redirect: (context, state) => '/legal/terms',
-    ),
-    GoRoute(
-      path: '/privacy',
-      redirect: (context, state) => '/legal/privacy',
-    ),
+    GoRoute(path: '/terms', redirect: (context, state) => '/legal/terms'),
+    GoRoute(path: '/privacy', redirect: (context, state) => '/legal/privacy'),
     GoRoute(
       path: '/legal/terms',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: buildTermsScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: buildTermsScreen()),
       ),
     ),
     GoRoute(
       path: '/legal/privacy',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: buildPrivacyScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: buildPrivacyScreen()),
       ),
     ),
     GoRoute(
       path: '/legal/billing',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: buildBillingPolicyScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: buildBillingPolicyScreen()),
       ),
     ),
     GoRoute(
       path: '/legal/refunds',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: buildRefundPolicyScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: buildRefundPolicyScreen()),
       ),
     ),
     GoRoute(
       path: '/legal/acceptable-use',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: buildAcceptableUseScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: buildAcceptableUseScreen()),
       ),
     ),
     GoRoute(
       path: '/legal/service-agreement',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: buildServiceAgreementScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: buildServiceAgreementScreen()),
       ),
     ),
     GoRoute(
       path: '/legal/deliverability',
       pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: buildDeliverabilityScreen(),
-        ),
+        child: PublicShell(currentPath: state.uri.path, child: buildDeliverabilityScreen()),
       ),
     ),
     ShellRoute(
       navigatorKey: _clientShellNavigatorKey,
-      builder: (context, state, child) =>
-          ClientShell(currentPath: state.uri.path, child: child),
+      builder: (context, state, child) => ClientShell(currentPath: state.uri.path, child: child),
       routes: [
         GoRoute(
           path: '/client/workspace',
-          builder: (context, state) =>
-              const ClientWorkspaceScreen(section: ClientSection.overview),
+          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.overview),
         ),
         GoRoute(
           path: '/client/billing',
-          builder: (context, state) =>
-              const ClientWorkspaceScreen(section: ClientSection.billing),
+          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.billing),
         ),
         GoRoute(
           path: '/client/agreements',
-          builder: (context, state) =>
-              const ClientWorkspaceScreen(section: ClientSection.agreements),
+          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.agreements),
         ),
         GoRoute(
           path: '/client/statements',
-          builder: (context, state) =>
-              const ClientWorkspaceScreen(section: ClientSection.statements),
+          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.statements),
         ),
         GoRoute(
           path: '/client/account',
-          builder: (context, state) =>
-              const ClientWorkspaceScreen(section: ClientSection.account),
+          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.account),
         ),
       ],
     ),
     ShellRoute(
       navigatorKey: _appShellNavigatorKey,
-      builder: (context, state, child) =>
-          AppShell(currentPath: state.uri.path, child: child),
+      builder: (context, state, child) => AppShell(currentPath: state.uri.path, child: child),
       routes: [
         GoRoute(
           path: '/app/command',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.command),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.command),
         ),
         GoRoute(
           path: '/app/pipeline',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.pipeline),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.pipeline),
         ),
-        GoRoute(
-          path: '/app/inquiries',
-          builder: (context, state) => const InquiriesListScreen(),
-        ),
+        GoRoute(path: '/app/inquiries', builder: (context, state) => const InquiriesListScreen()),
         GoRoute(
           path: '/app/inquiries/:id',
-          builder: (context, state) => InquiryDetailScreen(
-            inquiryId: state.pathParameters['id'] ?? '',
-          ),
+          builder: (context, state) => InquiryDetailScreen(inquiryId: state.pathParameters['id'] ?? ''),
         ),
         GoRoute(
           path: '/app/execution/campaigns',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.execution),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/execution/replies',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.execution),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/execution/meetings',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.execution),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/clients',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.clients),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.clients),
         ),
         GoRoute(
           path: '/app/revenue',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.revenue),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.revenue),
         ),
         GoRoute(
           path: '/app/deliverability',
-          builder: (context, state) => const OperatorWorkspaceScreen(
-            section: OperatorSection.deliverability,
-          ),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.deliverability),
         ),
         GoRoute(
           path: '/app/communications',
-          builder: (context, state) => const OperatorWorkspaceScreen(
-            section: OperatorSection.communications,
-          ),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.communications),
         ),
         GoRoute(
           path: '/app/records',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.records),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.records),
         ),
         GoRoute(
           path: '/app/settings',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.settings),
+          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.settings),
         ),
       ],
     ),
   ],
   errorBuilder: (context, state) => Theme(
     data: ThemeData.light(useMaterial3: true),
-    child: const Scaffold(
-      body: Center(child: Text('This surface is unavailable.')),
-    ),
+    child: const Scaffold(body: Center(child: Text('This surface is unavailable.'))),
   ),
 );
 
-bool _matches(String path, List<String> values) => values.contains(path);
+String? _normalized(String? value) {
+  final text = value?.trim().toLowerCase();
+  if (text == null || text.isEmpty) return null;
+  return text;
+}
+
+String _clientRoute(String path, {String? plan, String? tier, String? trial}) {
+  final query = <String, String>{
+    if (plan != null && plan.isNotEmpty) 'plan': plan,
+    if (tier != null && tier.isNotEmpty) 'tier': tier,
+    if (trial != null && trial.isNotEmpty) 'trial': trial,
+  };
+  if (query.isEmpty) return path;
+  return Uri(path: path, queryParameters: query).toString();
+}

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../../widgets/public_overview_widget.dart';
 
 class PublicHomeScreen extends StatelessWidget {
   const PublicHomeScreen({super.key});
@@ -10,51 +9,44 @@ class PublicHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1180),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                _HeroSection(),
-                SizedBox(height: 24),
-                _SystemFlowSection(),
-                SizedBox(height: 24),
-                _LiveSystemSection(),
-                SizedBox(height: 24),
-                _OperatingLanesSection(),
-                SizedBox(height: 24),
-                _TrustSection(),
-                SizedBox(height: 24),
-                _ClosingSection(),
-              ],
-            ),
-          ),
-        ),
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 44),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          _Hero(),
+          SizedBox(height: 24),
+          _SystemStrip(),
+          SizedBox(height: 24),
+          _JourneySection(),
+          SizedBox(height: 24),
+          _TruthSection(),
+          SizedBox(height: 24),
+          _PlansSection(),
+          SizedBox(height: 24),
+          _ClosingSection(),
+        ],
       ),
     );
   }
 }
 
-class _HeroSection extends StatelessWidget {
-  const _HeroSection();
+class _Hero extends StatelessWidget {
+  const _Hero();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(32, 28, 32, 32),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(30, 30, 30, 32),
       decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 1040;
-
-          final lead = Column(
+          final stacked = constraints.maxWidth < 980;
+          final left = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
@@ -64,93 +56,65 @@ class _HeroSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'Outbound execution and revenue continuity',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.publicAccent,
-                      ),
+                  'Lead generation, outreach, follow-up, meetings, billing, and records in one line',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicAccent),
                 ),
               ),
               const SizedBox(height: 18),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
+                constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
-                  'Outbound execution and revenue, carried in one system.',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: stacked ? 36 : 44,
-                        height: 1.04,
-                        letterSpacing: -1.15,
-                      ),
+                  'A real operating system for outbound work, not a stack of disconnected tools.',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontSize: stacked ? 38 : 52),
                 ),
               ),
               const SizedBox(height: 16),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
+                constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
-                  'Orchestrate keeps sourcing, outreach, follow-up, meetings, invoices, payments, and records attached to the same operating line instead of splitting the work across disconnected tools.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.publicMuted,
-                        height: 1.55,
-                      ),
+                  'Orchestrate moves from account setup to service profile, workflow execution, message generation, meetings, invoices, and payment continuity inside one controlled system. The product promise is execution, not dashboard theater.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
                 ),
               ),
-              const SizedBox(height: 22),
-              const _SignalStrip(),
               const SizedBox(height: 24),
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: [
                   FilledButton(
-                    onPressed: () => context.go('/join'),
+                    onPressed: () => context.go('/pricing?trial=15d'),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.publicText,
                       foregroundColor: Colors.white,
-                      minimumSize: const Size(0, 52),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('Create account'),
+                    child: const Text('Review plans'),
                   ),
                   OutlinedButton(
-                    onPressed: () => context.go('/pricing'),
+                    onPressed: () => context.go('/contact'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.publicText,
                       side: const BorderSide(color: AppTheme.publicLine),
-                      minimumSize: const Size(0, 52),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('View pricing'),
+                    child: const Text('Talk through fit'),
                   ),
                 ],
               ),
             ],
           );
 
-          final right = const _HeroSystemSurface();
+          final right = const _HeroPanel();
 
           if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                lead,
-                const SizedBox(height: 26),
-                right,
-              ],
-            );
+            return Column(children: [left, const SizedBox(height: 18), right]);
           }
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 5, child: lead),
-              const SizedBox(width: 28),
-              Expanded(flex: 6, child: right),
-            ],
+            children: [Expanded(flex: 6, child: left), const SizedBox(width: 20), Expanded(flex: 5, child: right)],
           );
         },
       ),
@@ -158,102 +122,13 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-class _SignalStrip extends StatelessWidget {
-  const _SignalStrip();
+class _HeroPanel extends StatelessWidget {
+  const _HeroPanel();
 
   @override
   Widget build(BuildContext context) {
-    const items = [
-      _SignalItem(label: 'Leads', value: 'Qualified'),
-      _SignalItem(label: 'Replies', value: 'Handled'),
-      _SignalItem(label: 'Meetings', value: 'Booked'),
-      _SignalItem(label: 'Revenue', value: 'Carried through'),
-    ];
-
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Wrap(
-        spacing: 24,
-        runSpacing: 14,
-        children: items,
-      ),
-    );
-  }
-}
-
-class _SignalItem extends StatelessWidget {
-  const _SignalItem({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 120),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.publicText,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroSystemSurface extends StatelessWidget {
-  const _HeroSystemSurface();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: const [
-        _TimelineSurface(),
-        SizedBox(height: 14),
-        PublicOverviewWidget(),
-      ],
-    );
-  }
-}
-
-class _TimelineSurface extends StatelessWidget {
-  const _TimelineSurface();
-
-  @override
-  Widget build(BuildContext context) {
-    const stages = [
-      _TimelineStage(title: 'Lead', detail: 'target list ready'),
-      _TimelineStage(title: 'Outreach', detail: 'sequence active'),
-      _TimelineStage(title: 'Reply', detail: 'interest detected'),
-      _TimelineStage(title: 'Meeting', detail: 'scheduled'),
-      _TimelineStage(title: 'Revenue', detail: 'invoice and payment trail'),
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
         borderRadius: BorderRadius.circular(24),
@@ -261,53 +136,135 @@ class _TimelineSurface extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          _Signal(title: 'Activation', body: 'Account, verification, setup, subscription, and readiness kept separate so service state stays clear.'),
+          SizedBox(height: 14),
+          _Signal(title: 'Execution', body: 'Workflows carry targeting, message generation, delivery movement, replies, and meetings inside one spine.'),
+          SizedBox(height: 14),
+          _Signal(title: 'Revenue continuity', body: 'Invoices, statements, receipts, reminders, and payment truth stay attached to the same operational record.'),
+        ],
+      ),
+    );
+  }
+}
+
+class _Signal extends StatelessWidget {
+  const _Signal({required this.title, required this.body});
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Text(body, style: Theme.of(context).textTheme.bodyMedium),
+      ],
+    );
+  }
+}
+
+class _SystemStrip extends StatelessWidget {
+  const _SystemStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final items = const [
+      _StripItem('Public truth', 'Plans, capability, and readiness states are visible before sign-up.'),
+      _StripItem('Access', 'Verification, reset, and client routing stay tied to real account state.'),
+      _StripItem('Activation', 'Service profile defines market, industry, and operating direction before live work begins.'),
+      _StripItem('Operations', 'Operator oversight, inquiries, and records stay inside the same product language.'),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = constraints.maxWidth < 980;
+        if (stacked) {
+          return Column(children: [for (int i = 0; i < items.length; i++) ...[
+            _StripCard(item: items[i]),
+            if (i != items.length - 1) const SizedBox(height: 12),
+          ]]);
+        }
+        return Row(children: [for (int i = 0; i < items.length; i++) ...[
+          Expanded(child: _StripCard(item: items[i])),
+          if (i != items.length - 1) const SizedBox(width: 12),
+        ]]);
+      },
+    );
+  }
+}
+
+class _StripItem {
+  const _StripItem(this.title, this.body);
+  final String title;
+  final String body;
+}
+
+class _StripCard extends StatelessWidget {
+  const _StripCard({required this.item});
+  final _StripItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(item.title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Text(item.body, style: Theme.of(context).textTheme.bodyMedium),
+      ]),
+    );
+  }
+}
+
+class _JourneySection extends StatelessWidget {
+  const _JourneySection();
+
+  @override
+  Widget build(BuildContext context) {
+    final stages = const [
+      _JourneyStage('1', 'Choose operating model', 'Opportunity or Revenue, then the market depth you want active.'),
+      _JourneyStage('2', 'Create access', 'Client sign-up, verification, and password recovery are part of the product entry, not side flows.'),
+      _JourneyStage('3', 'Define service profile', 'Country, region, industry, and operating context become execution input.'),
+      _JourneyStage('4', 'Activate subscription', 'Secure checkout follows readiness, not guesswork.'),
+      _JourneyStage('5', 'Operate from workspace', 'Client and operator surfaces stay aligned to the same record of work.'),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'System in motion',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 14),
+          Text('How the product moves', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 12),
+          Text('The system is built as one chain from public truth to live operations.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+          const SizedBox(height: 20),
           LayoutBuilder(
             builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 620;
-
+              final stacked = constraints.maxWidth < 820;
               if (stacked) {
-                return Column(
-                  children: [
-                    for (int i = 0; i < stages.length; i++) ...[
-                      _TimelineStageCard(stage: stages[i], compact: true),
-                      if (i != stages.length - 1)
-                        Container(
-                          margin: const EdgeInsets.only(left: 11),
-                          width: 2,
-                          height: 16,
-                          color: AppTheme.publicLine,
-                        ),
-                    ],
-                  ],
-                );
+                return Column(children: [for (int i = 0; i < stages.length; i++) ...[
+                  _JourneyCard(stage: stages[i]),
+                  if (i != stages.length - 1) const SizedBox(height: 12),
+                ]]);
               }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (int i = 0; i < stages.length; i++) ...[
-                    Expanded(
-                      child: _TimelineStageCard(stage: stages[i]),
-                    ),
-                    if (i != stages.length - 1)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Container(
-                            height: 2,
-                            color: AppTheme.publicLine,
-                          ),
-                        ),
-                      ),
-                  ],
-                ],
-              );
+              return Row(children: [for (int i = 0; i < stages.length; i++) ...[
+                Expanded(child: _JourneyCard(stage: stages[i])),
+                if (i != stages.length - 1) const SizedBox(width: 12),
+              ]]);
             },
           ),
         ],
@@ -316,608 +273,124 @@ class _TimelineSurface extends StatelessWidget {
   }
 }
 
-class _TimelineStage {
-  const _TimelineStage({
-    required this.title,
-    required this.detail,
-  });
-
+class _JourneyStage {
+  const _JourneyStage(this.step, this.title, this.body);
+  final String step;
   final String title;
-  final String detail;
+  final String body;
 }
 
-class _TimelineStageCard extends StatelessWidget {
-  const _TimelineStageCard({
-    required this.stage,
-    this.compact = false,
-  });
-
-  final _TimelineStage stage;
-  final bool compact;
+class _JourneyCard extends StatelessWidget {
+  const _JourneyCard({required this.stage});
+  final _JourneyStage stage;
 
   @override
   Widget build(BuildContext context) {
-    if (compact) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: AppTheme.publicAccentSoft,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppTheme.publicAccent),
-            ),
-            child: const Center(
-              child: SizedBox(
-                width: 6,
-                height: 6,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: AppTheme.publicAccent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 1),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(stage.title, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    stage.detail,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.publicMuted,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 22,
-          height: 22,
-          decoration: BoxDecoration(
-            color: AppTheme.publicAccentSoft,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppTheme.publicAccent),
-          ),
-          child: const Center(
-            child: SizedBox(
-              width: 6,
-              height: 6,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppTheme.publicAccent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ),
-        ),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(stage.step, style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.publicAccent)),
         const SizedBox(height: 10),
-        Text(stage.title, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        Text(
-          stage.detail,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.publicMuted,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SystemFlowSection extends StatelessWidget {
-  const _SystemFlowSection();
-
-  @override
-  Widget build(BuildContext context) {
-    const steps = [
-      _FlowStep(
-        title: 'Define your market',
-        body: 'Set target geography, business scope, and who you need to reach before work starts.',
-      ),
-      _FlowStep(
-        title: 'Run outreach',
-        body: 'Move sequences, follow-ups, and qualification as one operating line instead of one-off sending.',
-      ),
-      _FlowStep(
-        title: 'Carry replies forward',
-        body: 'Keep live responses visible and move serious conversations toward booked meetings.',
-      ),
-      _FlowStep(
-        title: 'Close the revenue trail',
-        body: 'Attach invoices, reminders, payments, and records to the same client relationship.',
-      ),
-    ];
-
-    return _SectionSurface(
-      title: 'One operating flow, not stacked tools',
-      subtitle:
-          'The point is not simply sending more messages. The point is carrying work through the full sequence without losing continuity.',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 920;
-
-          if (stacked) {
-            return Column(
-              children: [
-                for (int i = 0; i < steps.length; i++) ...[
-                  _FlowRailItem(step: steps[i], index: i + 1, stacked: true),
-                  if (i != steps.length - 1)
-                    Container(
-                      margin: const EdgeInsets.only(left: 16),
-                      width: 2,
-                      height: 18,
-                      color: AppTheme.publicLine,
-                    ),
-                ],
-              ],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (int i = 0; i < steps.length; i++) ...[
-                Expanded(
-                  child: _FlowRailItem(step: steps[i], index: i + 1),
-                ),
-                if (i != steps.length - 1)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 18),
-                      child: Container(
-                        height: 2,
-                        color: AppTheme.publicLine,
-                      ),
-                    ),
-                  ),
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _FlowStep {
-  const _FlowStep({
-    required this.title,
-    required this.body,
-  });
-
-  final String title;
-  final String body;
-}
-
-class _FlowRailItem extends StatelessWidget {
-  const _FlowRailItem({
-    required this.step,
-    required this.index,
-    this.stacked = false,
-  });
-
-  final _FlowStep step;
-  final int index;
-  final bool stacked;
-
-  @override
-  Widget build(BuildContext context) {
-    final marker = Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: AppTheme.publicText,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Center(
-        child: Text(
-          '$index',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-      ),
-    );
-
-    if (stacked) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          marker,
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(step.title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(
-                  step.body,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.publicMuted,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        marker,
-        const SizedBox(height: 14),
-        Text(step.title, style: Theme.of(context).textTheme.titleLarge),
+        Text(stage.title, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
-        Text(
-          step.body,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.publicMuted,
-              ),
-        ),
-      ],
+        Text(stage.body, style: Theme.of(context).textTheme.bodyMedium),
+      ]),
     );
   }
 }
 
-class _LiveSystemSection extends StatelessWidget {
-  const _LiveSystemSection();
+class _TruthSection extends StatelessWidget {
+  const _TruthSection();
 
   @override
   Widget build(BuildContext context) {
-    return _SectionSurface(
-      title: 'What the system carries',
-      subtitle:
-          'Orchestrate should feel like work is already moving, not like a brochure explaining what work might happen later.',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 980;
-
-          final left = Column(
-            children: const [
-              _MessageSurface(
-                eyebrow: 'Outreach',
-                subject: 'Subject: Steady outbound for regional service teams',
-                body:
-                    'We help teams carry lead sourcing, outbound follow-up, and booked meetings in one operating line instead of splitting execution across separate tools and inbox habits.',
-                footer: 'Sequence ready · follow-up logic active',
-              ),
-              SizedBox(height: 14),
-              _MessageSurface(
-                eyebrow: 'Reply handling',
-                subject: 'Reply: This looks relevant. Can we talk next week?',
-                body:
-                    'The point is not just sending. Serious replies remain visible, are qualified quickly, and move toward scheduled meetings without losing continuity.',
-                footer: 'Reply visible · meeting path open',
-              ),
-            ],
-          );
-
-          final right = Column(
-            children: const [
-              _CapabilitySurface(
-                title: 'Revenue continuity',
-                items: [
-                  'Invoices stay attached to the account',
-                  'Payment reminders remain visible',
-                  'Statements and records stay reviewable',
-                ],
-              ),
-              SizedBox(height: 14),
-              _CapabilitySurface(
-                title: 'Deliverability posture',
-                items: [
-                  'Mailboxes remain part of the operating picture',
-                  'Domain condition stays visible',
-                  'Sending posture is treated as a responsibility',
-                ],
-              ),
-            ],
-          );
-
-          if (stacked) {
-            return Column(
-              children: [
-                left,
-                const SizedBox(height: 14),
-                right,
-              ],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 6, child: left),
-              const SizedBox(width: 14),
-              Expanded(flex: 5, child: right),
-            ],
-          );
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = constraints.maxWidth < 980;
+        final left = _TruthCard(
+          title: 'What this product is',
+          body: 'A managed execution system for outreach and revenue continuity. It organizes targeting, messages, follow-up, meetings, invoices, statements, and records through one operating structure.',
+        );
+        final right = _TruthCard(
+          title: 'What this product is not',
+          body: 'Not a generic CRM, not a loose AI wrapper, and not a dashboard that leaves delivery fragmented across other tools.',
+        );
+        if (stacked) {
+          return Column(children: [left, const SizedBox(height: 12), right]);
+        }
+        return Row(children: [Expanded(child: left), const SizedBox(width: 12), Expanded(child: right)]);
+      },
     );
   }
 }
 
-class _MessageSurface extends StatelessWidget {
-  const _MessageSurface({
-    required this.eyebrow,
-    required this.subject,
-    required this.body,
-    required this.footer,
-  });
-
-  final String eyebrow;
-  final String subject;
+class _TruthCard extends StatelessWidget {
+  const _TruthCard({required this.title, required this.body});
+  final String title;
   final String body;
-  final String footer;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            eyebrow,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            subject,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            body,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  height: 1.5,
-                ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppTheme.publicLine),
-            ),
-            child: Text(
-              footer,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CapabilitySurface extends StatelessWidget {
-  const _CapabilitySurface({
-    required this.title,
-    required this.items,
-  });
-
-  final String title;
-  final List<String> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 14),
-          for (int i = 0; i < items.length; i++) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(top: 8),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.publicAccent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    items[i],
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ),
-              ],
-            ),
-            if (i != items.length - 1) const SizedBox(height: 10),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _OperatingLanesSection extends StatelessWidget {
-  const _OperatingLanesSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionSurface(
-      title: 'Operating lanes',
-      subtitle:
-          'Choose the lane that fits the work now. Both can expand through Focused, Multi-Market, and Precision coverage.',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 900;
-
-          final cards = [
-            _LaneCard(
-              title: 'Opportunity',
-              subtitle: 'Outbound execution from lead to meeting.',
-              points: const [
-                'Lead sourcing and targeting',
-                'Outbound execution',
-                'Follow-up and reply handling',
-                'Meeting booking',
-              ],
-              ctaLabel: 'View Opportunity pricing',
-              onTap: () => context.go('/pricing'),
-            ),
-            _LaneCard(
-              title: 'Revenue',
-              subtitle: 'Outbound plus billing, reminders, payments, and records.',
-              points: const [
-                'Everything in Opportunity',
-                'Invoices and payment tracking',
-                'Agreements and reminders',
-                'Statements and records',
-              ],
-              emphasized: true,
-              ctaLabel: 'View Revenue pricing',
-              onTap: () => context.go('/pricing'),
-            ),
-          ];
-
-          if (stacked) {
-            return Column(
-              children: [
-                cards[0],
-                const SizedBox(height: 14),
-                cards[1],
-              ],
-            );
-          }
-
-          return Row(
-            children: [
-              Expanded(child: cards[0]),
-              const SizedBox(width: 14),
-              Expanded(child: cards[1]),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _LaneCard extends StatelessWidget {
-  const _LaneCard({
-    required this.title,
-    required this.subtitle,
-    required this.points,
-    required this.ctaLabel,
-    required this.onTap,
-    this.emphasized = false,
-  });
-
-  final String title;
-  final String subtitle;
-  final List<String> points;
-  final String ctaLabel;
-  final VoidCallback onTap;
-  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: emphasized ? AppTheme.publicSurfaceSoft : AppTheme.publicSurface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 12),
+        Text(body, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+      ]),
+    );
+  }
+}
+
+class _PlansSection extends StatelessWidget {
+  const _PlansSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = const [
+      _PlanPeek(title: 'Opportunity', body: 'Lead generation, message creation, follow-up, replies, and meetings.', route: '/pricing?plan=opportunity&trial=15d'),
+      _PlanPeek(title: 'Revenue', body: 'Everything in Opportunity plus billing continuity, statements, and customer-facing financial movement.', route: '/pricing?plan=revenue&trial=15d'),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 18),
-          for (int i = 0; i < points.length; i++) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Icon(Icons.circle, size: 8, color: AppTheme.publicAccent),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    points[i],
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ),
-              ],
-            ),
-            if (i != points.length - 1) const SizedBox(height: 12),
-          ],
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onTap,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.publicText,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(0, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: Text(ctaLabel),
-            ),
+          Text('Choose the operating lane', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 12),
+          Text('Each lane can be started with a 15-day trial request during activation review.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+          const SizedBox(height: 20),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 860;
+              if (stacked) {
+                return Column(children: [for (int i = 0; i < cards.length; i++) ...[
+                  _PlanPeekCard(plan: cards[i]),
+                  if (i != cards.length - 1) const SizedBox(height: 12),
+                ]]);
+              }
+              return Row(children: [for (int i = 0; i < cards.length; i++) ...[
+                Expanded(child: _PlanPeekCard(plan: cards[i])),
+                if (i != cards.length - 1) const SizedBox(width: 12),
+              ]]);
+            },
           ),
         ],
       ),
@@ -925,117 +398,33 @@ class _LaneCard extends StatelessWidget {
   }
 }
 
-class _TrustSection extends StatelessWidget {
-  const _TrustSection();
-
-  @override
-  Widget build(BuildContext context) {
-    const items = [
-      _TrustLine(
-        title: 'Agreements stay attached',
-        body: 'Scope and service terms do not disappear into side emails and memory.',
-      ),
-      _TrustLine(
-        title: 'Billing stays traceable',
-        body: 'Invoices, reminders, payments, and statements remain reviewable.',
-      ),
-      _TrustLine(
-        title: 'Communication stays visible',
-        body: 'Follow-up does not drift across disconnected tools and inbox habits.',
-      ),
-      _TrustLine(
-        title: 'Deliverability stays monitored',
-        body: 'Mailbox and domain posture remain part of the operating picture.',
-      ),
-    ];
-
-    return _SectionSurface(
-      title: 'Built for work that has to hold up',
-      subtitle:
-          'This is not just a sending surface. It is designed to carry the business trail around the work.',
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.publicSurfaceSoft,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppTheme.publicLine),
-        ),
-        child: Column(
-          children: [
-            for (int i = 0; i < items.length; i++) ...[
-              _TrustRow(item: items[i]),
-              if (i != items.length - 1)
-                const Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: AppTheme.publicLine,
-                ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TrustLine {
-  const _TrustLine({
-    required this.title,
-    required this.body,
-  });
-
+class _PlanPeek {
+  const _PlanPeek({required this.title, required this.body, required this.route});
   final String title;
   final String body;
+  final String route;
 }
 
-class _TrustRow extends StatelessWidget {
-  const _TrustRow({required this.item});
-
-  final _TrustLine item;
+class _PlanPeekCard extends StatelessWidget {
+  const _PlanPeekCard({required this.plan});
+  final _PlanPeek plan;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 760;
-
-          final title = Text(
-            item.title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          );
-
-          final body = Text(
-            item.body,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                  height: 1.5,
-                ),
-          );
-
-          if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                title,
-                const SizedBox(height: 8),
-                body,
-              ],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(width: 260, child: title),
-              const SizedBox(width: 20),
-              Expanded(child: body),
-            ],
-          );
-        },
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.publicLine),
       ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(plan.title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 10),
+        Text(plan.body, style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 16),
+        TextButton(onPressed: () => context.go(plan.route), child: const Text('Open pricing')),
+      ]),
     );
   }
 }
@@ -1047,135 +436,41 @@ class _ClosingSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(28, 28, 28, 30),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: AppTheme.publicText,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.publicLine),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stacked = constraints.maxWidth < 860;
-
-          final lead = Column(
+          final left = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Start with the lane that fits now.',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
+              Text('Ready to define scope properly?', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 680),
-                child: Text(
-                  'Move into Opportunity or Revenue, then expand across Focused, Multi-Market, or Precision coverage as the work grows.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.82),
-                        height: 1.5,
-                      ),
-                ),
+              Text(
+                'Start with the pricing surface, carry plan choice into account access, then define service profile before secure checkout. That is the intended path.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
               ),
             ],
           );
 
-          final actions = Wrap(
+          final right = Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
-              FilledButton(
-                onPressed: () => context.go('/pricing'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppTheme.publicText,
-                  minimumSize: const Size(0, 50),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text('View pricing'),
-              ),
-              OutlinedButton(
-                onPressed: () => context.go('/contact'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withOpacity(0.28)),
-                  minimumSize: const Size(0, 50),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text('Talk through fit'),
-              ),
+              FilledButton(onPressed: () => context.go('/pricing?trial=15d'), child: const Text('Review pricing')),
+              OutlinedButton(onPressed: () => context.go('/contact'), child: const Text('Contact Orchestrate')),
             ],
           );
 
           if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                lead,
-                const SizedBox(height: 20),
-                actions,
-              ],
-            );
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [left, const SizedBox(height: 16), right]);
           }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(child: lead),
-              const SizedBox(width: 24),
-              actions,
-            ],
-          );
+          return Row(children: [Expanded(child: left), const SizedBox(width: 16), right]);
         },
-      ),
-    );
-  }
-}
-
-class _SectionSurface extends StatelessWidget {
-  const _SectionSurface({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
-
-  final String title;
-  final String subtitle;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.publicMuted,
-                    height: 1.5,
-                  ),
-            ),
-          ),
-          const SizedBox(height: 22),
-          child,
-        ],
       ),
     );
   }

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
-import '../core/widgets/async_surface.dart';
 import '../data/repositories/operator_repository.dart';
 
 class InquiryDetailScreen extends StatefulWidget {
   const InquiryDetailScreen({super.key, required this.inquiryId});
-
   final String inquiryId;
 
   @override
@@ -14,20 +12,23 @@ class InquiryDetailScreen extends StatefulWidget {
 }
 
 class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
-  late Future<_InquiryDetailData> _future;
-  final OperatorRepository _repo = OperatorRepository();
+  final _replyController = TextEditingController();
+  final _noteController = TextEditingController();
 
-  final TextEditingController _replyController = TextEditingController();
-  final TextEditingController _noteController = TextEditingController();
-
+  bool _loading = true;
   bool _sendingReply = false;
   bool _savingNote = false;
   bool _updatingStatus = false;
+  String? _error;
+
+  Map<String, dynamic> _inquiry = const {};
+  List<Map<String, dynamic>> _thread = const [];
+  List<Map<String, dynamic>> _notes = const [];
 
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _load();
   }
 
   @override
@@ -37,65 +38,61 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
     super.dispose();
   }
 
-  Future<_InquiryDetailData> _load() async {
-    final inquiry = await _repo.fetchInquiryById(widget.inquiryId);
-    final messages = await _repo.fetchInquiryThread(widget.inquiryId);
-    final notes = await _repo.fetchInquiryNotes(widget.inquiryId);
-
-    return _InquiryDetailData(
-      inquiry: inquiry,
-      messages: messages,
-      notes: notes,
-    );
-  }
-
-  Future<void> _refresh() async {
-    setState(() => _future = _load());
-    await _future;
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final repo = OperatorRepository();
+      final inquiry = await repo.fetchInquiryById(widget.inquiryId);
+      final thread = await repo.fetchInquiryThread(widget.inquiryId);
+      final notes = await repo.fetchInquiryNotes(widget.inquiryId);
+      if (!mounted) return;
+      setState(() {
+        _inquiry = inquiry;
+        _thread = thread;
+        _notes = notes;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'This inquiry could not load right now.';
+      });
+    }
   }
 
   Future<void> _updateStatus(String status) async {
     setState(() => _updatingStatus = true);
     try {
-      await _repo.updateInquiryStatus(
-        inquiryId: widget.inquiryId,
-        status: status,
-      );
-      await _refresh();
+      await OperatorRepository().updateInquiryStatus(inquiryId: widget.inquiryId, status: status);
+      await _load();
     } finally {
       if (mounted) setState(() => _updatingStatus = false);
     }
   }
 
   Future<void> _sendReply() async {
-    final content = _replyController.text.trim();
-    if (content.isEmpty) return;
-
+    if (_replyController.text.trim().isEmpty) return;
     setState(() => _sendingReply = true);
     try {
-      await _repo.sendInquiryReply(
-        inquiryId: widget.inquiryId,
-        content: content,
-      );
+      await OperatorRepository().sendInquiryReply(inquiryId: widget.inquiryId, content: _replyController.text.trim());
       _replyController.clear();
-      await _refresh();
+      await _load();
     } finally {
       if (mounted) setState(() => _sendingReply = false);
     }
   }
 
   Future<void> _addNote() async {
-    final content = _noteController.text.trim();
-    if (content.isEmpty) return;
-
+    if (_noteController.text.trim().isEmpty) return;
     setState(() => _savingNote = true);
     try {
-      await _repo.addInquiryNote(
-        inquiryId: widget.inquiryId,
-        content: content,
-      );
+      await OperatorRepository().addInquiryNote(inquiryId: widget.inquiryId, content: _noteController.text.trim());
       _noteController.clear();
-      await _refresh();
+      await _load();
     } finally {
       if (mounted) setState(() => _savingNote = false);
     }
@@ -103,461 +100,176 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AsyncSurface<_InquiryDetailData>(
-      future: _future,
-      builder: (context, data) {
-        if (data == null) return const SizedBox.shrink();
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_error != null) return Center(child: Text(_error!));
 
-        final inquiry = data.inquiry;
-        final name = _read(inquiry, 'name', fallback: 'Unknown');
-        final company = _read(inquiry, 'company');
-        final email = _read(inquiry, 'email');
-        final type = _read(inquiry, 'type', fallback: 'General');
-        final status = _read(inquiry, 'status', fallback: 'RECEIVED');
-        final message = _read(inquiry, 'message');
-        final createdAt = _formatDate(_read(inquiry, 'createdAt'));
-
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(color: AppTheme.panel, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.line)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(_read(_inquiry, 'name', fallback: 'Inquiry'), style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 10),
+              Text(_read(_inquiry, 'message'), style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 16),
+              Wrap(spacing: 10, runSpacing: 10, children: [
+                _Pill(label: _read(_inquiry, 'status', fallback: 'NEW')),
+                _Pill(label: _read(_inquiry, 'email', fallback: 'No email')),
+                if (_read(_inquiry, 'company').isNotEmpty) _Pill(label: _read(_inquiry, 'company')),
+                if (_read(_inquiry, 'type').isNotEmpty) _Pill(label: _read(_inquiry, 'type')),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 18),
+          Row(children: [
+            Expanded(child: _ActionButton(label: _updatingStatus ? 'Working...' : 'Acknowledge', onTap: _updatingStatus ? null : () => _updateStatus('ACKNOWLEDGED'))),
+            const SizedBox(width: 12),
+            Expanded(child: _ActionButton(label: 'Start work', onTap: _updatingStatus ? null : () => _updateStatus('IN_PROGRESS'))),
+            const SizedBox(width: 12),
+            Expanded(child: _ActionButton(label: 'Close', onTap: _updatingStatus ? null : () => _updateStatus('CLOSED'))),
+          ]),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 980;
+              final left = _Card(
+                title: 'Conversation',
+                child: _thread.isEmpty
+                    ? Text('No thread messages are available yet.', style: Theme.of(context).textTheme.bodyMedium)
+                    : Column(
                         children: [
-                          Text(
-                            name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            [
-                              if (company.isNotEmpty) company,
-                              if (email.isNotEmpty) email,
-                              type,
-                              if (createdAt.isNotEmpty) createdAt,
-                            ].join('  ·  '),
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: AppTheme.slate,
-                                ),
-                          ),
+                          for (int i = 0; i < _thread.length; i++) ...[
+                            _ThreadMessage(item: _thread[i]),
+                            if (i != _thread.length - 1) const Divider(height: 22, color: AppTheme.line),
+                          ],
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    _StatusPill(status: status),
-                  ],
+              );
+              final right = Column(children: [
+                _Card(
+                  title: 'Reply',
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    TextField(controller: _replyController, minLines: 4, maxLines: 8, decoration: const InputDecoration(hintText: 'Write a direct reply')), 
+                    const SizedBox(height: 12),
+                    FilledButton(onPressed: _sendingReply ? null : _sendReply, child: Text(_sendingReply ? 'Sending...' : 'Send reply')),
+                  ]),
                 ),
-                const SizedBox(height: 24),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final stacked = constraints.maxWidth < 1080;
-
-                    final conversation = _buildConversationCard(
-                      context,
-                      message,
-                      data.messages,
-                    );
-                    final side = _buildSidePanel(context, inquiry, data.notes, status);
-
-                    if (stacked) {
-                      return Column(
-                        children: [
-                          conversation,
-                          const SizedBox(height: 20),
-                          side,
+                const SizedBox(height: 18),
+                _Card(
+                  title: 'Notes',
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    if (_notes.isEmpty)
+                      Text('No internal notes are available yet.', style: Theme.of(context).textTheme.bodyMedium)
+                    else
+                      ...[
+                        for (int i = 0; i < _notes.length; i++) ...[
+                          _NoteRow(item: _notes[i]),
+                          if (i != _notes.length - 1) const Divider(height: 22, color: AppTheme.line),
                         ],
-                      );
-                    }
-
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 8, child: conversation),
-                        const SizedBox(width: 20),
-                        Expanded(flex: 4, child: side),
+                        const SizedBox(height: 14),
                       ],
-                    );
-                  },
+                    TextField(controller: _noteController, minLines: 3, maxLines: 6, decoration: const InputDecoration(hintText: 'Add an internal note')),
+                    const SizedBox(height: 12),
+                    FilledButton(onPressed: _savingNote ? null : _addNote, child: Text(_savingNote ? 'Saving...' : 'Add note')),
+                  ]),
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+              ]);
 
-  Widget _buildConversationCard(
-    BuildContext context,
-    String initialMessage,
-    List<Map<String, dynamic>> messages,
-  ) {
-    final timeline = <Map<String, dynamic>>[
-      if (initialMessage.isNotEmpty)
-        {
-          'type': 'USER',
-          'content': initialMessage,
-          'createdAt': null,
-        },
-      ...messages,
-    ];
-
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Conversation',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+              if (stacked) {
+                return Column(children: [left, const SizedBox(height: 18), right]);
+              }
+              return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 6, child: left), const SizedBox(width: 18), Expanded(flex: 5, child: right)]);
+            },
           ),
-          const SizedBox(height: 16),
-          if (timeline.isEmpty)
-            const Text('No messages yet.')
-          else
-            ...timeline.map(
-              (msg) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _MessageBubble(message: msg),
-              ),
-            ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _replyController,
-            maxLines: 5,
-            decoration: const InputDecoration(
-              hintText: 'Write a reply',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton(
-              onPressed: _sendingReply ? null : _sendReply,
-              child: Text(_sendingReply ? 'Sending...' : 'Send reply'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidePanel(
-    BuildContext context,
-    Map<String, dynamic> inquiry,
-    List<Map<String, dynamic>> notes,
-    String status,
-  ) {
-    final normalizedStatus = status.toUpperCase();
-
-    return Column(
-      children: [
-        _card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Control',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  OutlinedButton(
-                    onPressed: _updatingStatus ? null : () => _updateStatus('ACKNOWLEDGED'),
-                    child: Text(_updatingStatus ? 'Working...' : 'Acknowledge'),
-                  ),
-                  OutlinedButton(
-                    onPressed: _updatingStatus || normalizedStatus == 'IN_PROGRESS'
-                        ? null
-                        : () => _updateStatus('IN_PROGRESS'),
-                    child: const Text('Start work'),
-                  ),
-                  OutlinedButton(
-                    onPressed: _updatingStatus ? null : () => _updateStatus('CLOSED'),
-                    child: const Text('Close'),
-                  ),
-                  OutlinedButton(
-                    onPressed: _updatingStatus ? null : () => _updateStatus('SPAM'),
-                    child: const Text('Mark spam'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              _metaRow('Email', _read(inquiry, 'email')),
-              _metaRow('Company', _read(inquiry, 'company')),
-              _metaRow('Type', _read(inquiry, 'type')),
-              _metaRow(
-                'Assigned',
-                _read(inquiry, 'assignedToName', fallback: 'Unassigned'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        _card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Notes',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _noteController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  hintText: 'Add an internal note',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.tonal(
-                  onPressed: _savingNote ? null : _addNote,
-                  child: Text(_savingNote ? 'Saving...' : 'Save note'),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (notes.isEmpty)
-                const Text('No notes yet.')
-              else
-                ...notes.map(
-                  (note) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppTheme.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _read(note, 'content'),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _formatDate(_read(note, 'createdAt')),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppTheme.slate,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _card({required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _metaRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(value.isEmpty ? '—' : value),
         ],
       ),
     );
   }
 }
 
-class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
-
-  final Map<String, dynamic> message;
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({required this.label, this.onTap});
+  final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final type = _read(message, 'type', fallback: 'USER').toUpperCase();
-    final content = _read(message, 'content');
-    final timestamp = _formatDate(_read(message, 'createdAt'));
-
-    final background = switch (type) {
-      'OPERATOR' => const Color(0xFFEFF4FF),
-      'SYSTEM' => const Color(0xFFF3F4F6),
-      _ => const Color(0xFFFAFAFA),
-    };
-
-    final title = switch (type) {
-      'OPERATOR' => 'Operator',
-      'SYSTEM' => 'System',
-      _ => 'Inquiry',
-    };
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const Spacer(),
-              if (timestamp.isNotEmpty)
-                Text(
-                  timestamp,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.slate,
-                      ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(content),
-        ],
-      ),
-    );
+    return FilledButton(onPressed: onTap, child: Text(label));
   }
 }
 
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.status});
-
-  final String status;
+class _Card extends StatelessWidget {
+  const _Card({required this.title, required this.child});
+  final String title;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final normalized = status.toUpperCase();
-
-    final background = switch (normalized) {
-      'RECEIVED' => const Color(0xFFFFF4DB),
-      'NOTIFIED' => const Color(0xFFEFF4FF),
-      'ACKNOWLEDGED' => const Color(0xFFE8F8F0),
-      'IN_PROGRESS' => const Color(0xFFEFF4FF),
-      'CLOSED' => const Color(0xFFF3F4F6),
-      'SPAM' => const Color(0xFFFDECEC),
-      _ => const Color(0xFFF3F4F6),
-    };
-
-    final foreground = switch (normalized) {
-      'RECEIVED' => const Color(0xFF8A5A00),
-      'NOTIFIED' => const Color(0xFF1D4ED8),
-      'ACKNOWLEDGED' => const Color(0xFF0F766E),
-      'IN_PROGRESS' => const Color(0xFF1D4ED8),
-      'CLOSED' => const Color(0xFF4B5563),
-      'SPAM' => const Color(0xFF991B1B),
-      _ => const Color(0xFF4B5563),
-    };
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        normalized.replaceAll('_', ' '),
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: foreground,
-            ),
-      ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: AppTheme.panel, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        child,
+      ]),
     );
   }
 }
 
-String _read(Map<String, dynamic> map, String key, {String fallback = ''}) {
-  final value = map[key]?.toString().trim() ?? '';
-  return value.isEmpty ? fallback : value;
+class _Pill extends StatelessWidget {
+  const _Pill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(color: AppTheme.panelRaised, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.line)),
+      child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+    );
+  }
 }
 
-String _formatDate(String raw) {
-  if (raw.isEmpty) return '';
-  final parsed = DateTime.tryParse(raw)?.toLocal();
-  if (parsed == null) return raw;
+class _ThreadMessage extends StatelessWidget {
+  const _ThreadMessage({required this.item});
+  final Map<String, dynamic> item;
 
-  final month = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ][parsed.month - 1];
-
-  final hour = parsed.hour == 0
-      ? 12
-      : (parsed.hour > 12 ? parsed.hour - 12 : parsed.hour);
-
-  final minute = parsed.minute.toString().padLeft(2, '0');
-  final meridiem = parsed.hour >= 12 ? 'PM' : 'AM';
-
-  return '$month ${parsed.day}, $hour:$minute $meridiem';
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(_read(item, 'senderName', fallback: _read(item, 'senderEmail', fallback: 'Message')), style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 6),
+      Text(_read(item, 'content'), style: Theme.of(context).textTheme.bodyMedium),
+      const SizedBox(height: 6),
+      Text(_read(item, 'createdAt'), style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.subdued)),
+    ]);
+  }
 }
 
-class _InquiryDetailData {
-  const _InquiryDetailData({
-    required this.inquiry,
-    required this.messages,
-    required this.notes,
-  });
+class _NoteRow extends StatelessWidget {
+  const _NoteRow({required this.item});
+  final Map<String, dynamic> item;
 
-  final Map<String, dynamic> inquiry;
-  final List<Map<String, dynamic>> messages;
-  final List<Map<String, dynamic>> notes;
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(_read(item, 'content'), style: Theme.of(context).textTheme.bodyMedium),
+      const SizedBox(height: 6),
+      Text(_read(item, 'createdAt'), style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.subdued)),
+    ]);
+  }
+}
+
+String _read(dynamic source, String key, {String fallback = ''}) {
+  if (source is! Map) return fallback;
+  final value = source[key];
+  if (value == null) return fallback;
+  return value.toString();
 }

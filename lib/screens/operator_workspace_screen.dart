@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/config/app_config.dart';
 import '../core/theme/app_theme.dart';
-import '../core/widgets/async_surface.dart';
-import '../core/widgets/section_header.dart';
-import '../core/widgets/surface.dart';
 import '../data/repositories/operator_repository.dart';
 
 enum OperatorSection {
@@ -26,787 +22,381 @@ class OperatorWorkspaceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repository = OperatorRepository();
+    return FutureBuilder<_OperatorData>(
+      future: _load(section),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final data = snapshot.data;
+        if (data == null) {
+          return const Center(child: Text('This area could not load right now.'));
+        }
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 6, bottom: 16),
-        child: AsyncSurface<_OperatorViewData>(
-          future: _load(repository),
-          builder: (context, data) {
-            final view = data ?? _OperatorViewData.empty(section);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SectionHeader(
-                  title: view.title,
-                  subtitle: view.subtitle,
-                  trailing: view.trailingLabel == null ? null : _Badge(label: view.trailingLabel!),
-                ),
-                const SizedBox(height: 24),
-                if (view.notice != null) ...[
-                  _InfoPanel(message: view.notice!),
-                  const SizedBox(height: 20),
-                ],
-                if (view.heroStats.isNotEmpty) ...[
-                  _StatsGrid(stats: view.heroStats),
-                  const SizedBox(height: 20),
-                ],
-                if (view.primaryRows.isNotEmpty || view.primaryTitle != null) ...[
-                  _DataPanel(
-                    title: view.primaryTitle ?? 'Overview',
-                    subtitle: view.primarySubtitle,
-                    rows: view.primaryRows,
-                    emptyLabel: view.primaryEmptyLabel,
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                if (view.secondaryRows.isNotEmpty || view.secondaryTitle != null) ...[
-                  _DataPanel(
-                    title: view.secondaryTitle ?? 'Records',
-                    subtitle: view.secondarySubtitle,
-                    rows: view.secondaryRows,
-                    emptyLabel: view.secondaryEmptyLabel,
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                if (view.tertiaryRows.isNotEmpty || view.tertiaryTitle != null) ...[
-                  _DataPanel(
-                    title: view.tertiaryTitle ?? 'Activity',
-                    subtitle: view.tertiarySubtitle,
-                    rows: view.tertiaryRows,
-                    emptyLabel: view.tertiaryEmptyLabel,
-                  ),
-                ],
-              ],
-            );
-          },
-        ),
-      ),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Header(data: data),
+              const SizedBox(height: 18),
+              _Metrics(metrics: data.metrics),
+              const SizedBox(height: 18),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final stacked = constraints.maxWidth < 980;
+                  final left = _Panel(title: data.primaryTitle, rows: data.primaryRows, empty: data.primaryEmpty);
+                  final right = _Panel(title: data.secondaryTitle, rows: data.secondaryRows, empty: data.secondaryEmpty);
+                  if (stacked) {
+                    return Column(children: [left, const SizedBox(height: 18), right]);
+                  }
+                  return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 6, child: left), const SizedBox(width: 18), Expanded(flex: 5, child: right)]);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Future<_OperatorViewData> _load(OperatorRepository repository) async {
+  Future<_OperatorData> _load(OperatorSection section) async {
+    final repo = OperatorRepository();
     switch (section) {
       case OperatorSection.command:
-        final results = await Future.wait([
-          repository.fetchCommandOverview(),
-          repository.fetchInquiries(limit: 8),
-        ]);
-        final overview = Map<String, dynamic>.from(results[0] as Map);
-        final inquiriesResponse = Map<String, dynamic>.from(results[1] as Map);
-        final totals = _asMap(overview['totals']);
+        final overview = await repo.fetchCommandOverview();
         final today = _asMap(overview['today']);
         final execution = _asMap(overview['execution']);
         final deliverability = _asMap(overview['deliverability']);
         final alerts = _asMap(overview['alerts']);
-        final inquirySummary = _asMap(inquiriesResponse['summary']);
-        final inquiryItems = _list(inquiriesResponse['items']);
-        final openInquiries = _inquiryCount(inquirySummary, 'NEW');
-        return _OperatorViewData(
-          title: 'Command',
-          subtitle: 'Today, pressure, delivery, and unresolved work in one frame.',
-          trailingLabel: _stringPath(overview, ['system', 'phase']),
-          heroStats: [
-            _Stat('Sent today', _num(today['sent'])),
-            _Stat('Replies', _num(today['replies'])),
-            _Stat('Booked', _num(today['booked'])),
-            _Stat('Open inquiries', openInquiries, tone: openInquiries == 0 ? null : AppTheme.accent),
-            _Stat('Open alerts', _num(alerts['open']), tone: AppTheme.rose),
-            _Stat('Degraded mailboxes', _num(deliverability['degradedMailboxes']), tone: AppTheme.amber),
+        return _OperatorData(
+          eyebrow: 'Command',
+          title: 'System posture and immediate pressure',
+          subtitle: 'See what needs attention across execution, deliverability, and alerts.',
+          metrics: [
+            _Metric('Sent today', _read(today, 'sent', fallback: '0')),
+            _Metric('Replies', _read(today, 'replies', fallback: '0')),
+            _Metric('Booked', _read(today, 'booked', fallback: '0')),
+            _Metric('Failed jobs', _read(execution, 'failedJobs', fallback: '0')),
           ],
-          primaryTitle: 'System posture',
+          primaryTitle: 'Operational posture',
           primaryRows: [
-            _RowData(
-              title: _stringPath(overview, ['system', 'posture'], fallback: 'Live'),
-              primary: '${_num(totals['clients'])} clients · ${_num(totals['campaigns'])} campaigns · ${_num(totals['leads'])} leads',
-              secondary: '${_num(totals['messages'])} messages · ${_num(totals['replies'])} replies · ${_num(totals['meetings'])} meetings',
-            ),
+            _Row(title: 'System posture', primary: _read(overview, 'systemPosture', fallback: 'Live'), secondary: _read(overview, 'systemPhase')),
+            _Row(title: 'Deliverability', primary: '${_read(deliverability, 'healthyMailboxes', fallback: '0')} healthy', secondary: '${_read(deliverability, 'degradedMailboxes', fallback: '0')} degraded'),
+            _Row(title: 'Alerts', primary: '${_read(alerts, 'open', fallback: '0')} open', secondary: '${_read(alerts, 'critical', fallback: '0')} critical'),
           ],
-          secondaryTitle: 'Pressure',
+          primaryEmpty: 'No command detail is available.',
+          secondaryTitle: 'Today',
           secondaryRows: [
-            _RowData(
-              title: 'Execution queue',
-              primary: '${_num(execution['queuedJobs'])} queued',
-              secondary: '${_num(execution['failedJobs'])} failed',
-            ),
-            _RowData(
-              title: 'Inquiries',
-              primary: '$openInquiries open',
-              secondary: '${_inquiryCount(inquirySummary, 'ACKNOWLEDGED')} acknowledged · ${_inquiryCount(inquirySummary, 'CLOSED')} closed',
-            ),
-            _RowData(
-              title: 'Alerts',
-              primary: '${_num(alerts['open'])} open',
-              secondary: _num(alerts['open']) == '0' ? 'No unresolved alert pressure' : 'Review required',
-            ),
+            _Row(title: 'Outbound movement', primary: '${_read(today, 'sent', fallback: '0')} sent', secondary: '${_read(today, 'replies', fallback: '0')} replies'),
+            _Row(title: 'Meeting conversion', primary: '${_read(today, 'booked', fallback: '0')} booked', secondary: '${_read(today, 'followUps', fallback: '0')} follow-ups'),
           ],
-          tertiaryTitle: 'Recent inquiries',
-          tertiarySubtitle: 'Latest contact intake reaching the operating side.',
-          tertiaryRows: inquiryItems.take(8).map(_inquiryRow).toList(),
-          tertiaryEmptyLabel: 'No inquiries are available yet.',
+          secondaryEmpty: 'No daily movement is available.',
         );
-
       case OperatorSection.pipeline:
-        final leads = await repository.fetchLeads();
-        return _OperatorViewData(
-          title: 'Pipeline',
-          subtitle: 'Lead readiness, qualification, and routing into live work.',
-          heroStats: [
-            _Stat('Leads', leads.length),
-            _Stat('Ready', _countBy(leads, (item) => _read(item, 'status') == 'READY')),
-            _Stat('Queued', _countBy(leads, (item) => _read(item, 'status') == 'QUEUED')),
-            _Stat('Booked', _countBy(leads, (item) => _read(item, 'status') == 'BOOKED'), tone: AppTheme.emerald),
-          ],
+        final leads = await repo.fetchLeads();
+        final campaigns = await repo.fetchCampaigns();
+        return _OperatorData(
+          eyebrow: 'Pipeline',
+          title: 'Lead and campaign movement',
+          subtitle: 'View the raw prospecting flow that feeds execution.',
+          metrics: [_Metric('Leads', '${leads.length}'), _Metric('Campaigns', '${campaigns.length}')],
           primaryTitle: 'Leads',
-          primaryRows: leads.take(12).map(_leadRow).toList(),
-          primaryEmptyLabel: 'No leads are available.',
+          primaryRows: leads.take(8).map((item) => _mapRow(item, titleKey: 'fullName', primaryKeys: const ['companyName', 'status'], secondaryKeys: const ['email'])).toList(),
+          primaryEmpty: 'No leads are available.',
+          secondaryTitle: 'Campaigns',
+          secondaryRows: campaigns.take(8).map((item) => _mapRow(item, titleKey: 'name', primaryKeys: const ['status'], secondaryKeys: const ['channel'])).toList(),
+          secondaryEmpty: 'No campaigns are available.',
         );
-
       case OperatorSection.execution:
-        final results = await Future.wait([
-          repository.fetchCampaigns(),
-          repository.fetchReplies(),
-          repository.fetchMeetings(),
-        ]);
-        final campaigns = results[0];
-        final replies = results[1];
-        final meetings = results[2];
-        return _OperatorViewData(
-          title: 'Execution',
-          subtitle: 'Campaign movement, reply handling, and meeting conversion.',
-          heroStats: [
-            _Stat('Campaigns', campaigns.length),
-            _Stat('Replies', replies.length),
-            _Stat('Meetings', meetings.length),
-            _Stat('Booked', _countBy(meetings, (item) => _read(item, 'status') == 'BOOKED'), tone: AppTheme.emerald),
-          ],
-          primaryTitle: 'Campaigns',
-          primaryRows: campaigns.take(8).map(_campaignRow).toList(),
-          primaryEmptyLabel: 'No campaigns are available.',
-          secondaryTitle: 'Replies',
-          secondaryRows: replies.take(8).map(_replyRow).toList(),
-          secondaryEmptyLabel: 'No replies are available.',
-          tertiaryTitle: 'Meetings',
-          tertiaryRows: meetings.take(8).map(_meetingRow).toList(),
-          tertiaryEmptyLabel: 'No meetings are available.',
+        final replies = await repo.fetchReplies();
+        final meetings = await repo.fetchMeetings();
+        return _OperatorData(
+          eyebrow: 'Execution',
+          title: 'Replies and meetings',
+          subtitle: 'Keep response movement and meeting conversion visible together.',
+          metrics: [_Metric('Replies', '${replies.length}'), _Metric('Meetings', '${meetings.length}')],
+          primaryTitle: 'Replies',
+          primaryRows: replies.take(8).map((item) => _mapRow(item, titleKey: 'subject', primaryKeys: const ['status'], secondaryKeys: const ['fromEmail'])).toList(),
+          primaryEmpty: 'No replies are available.',
+          secondaryTitle: 'Meetings',
+          secondaryRows: meetings.take(8).map((item) => _mapRow(item, titleKey: 'title', primaryKeys: const ['status'], secondaryKeys: const ['scheduledAt'])).toList(),
+          secondaryEmpty: 'No meetings are available.',
         );
-
       case OperatorSection.clients:
-        final clients = await repository.fetchClients();
-        return _OperatorViewData(
-          title: 'Clients',
-          subtitle: 'Account standing, service scope, and current commercial posture.',
-          heroStats: [
-            _Stat('Accounts', clients.length),
-            _Stat('Active', _countBy(clients, (item) => _read(item, 'status') == 'ACTIVE'), tone: AppTheme.emerald),
-            _Stat('Draft', _countBy(clients, (item) => _read(item, 'status') == 'DRAFT')),
-            _Stat('Paused', _countBy(clients, (item) => _read(item, 'status') == 'PAUSED'), tone: AppTheme.amber),
-          ],
-          primaryTitle: 'Client accounts',
-          primaryRows: clients.take(12).map(_clientRow).toList(),
-          primaryEmptyLabel: 'No client accounts are available.',
+        final clients = await repo.fetchClients();
+        return _OperatorData(
+          eyebrow: 'Clients',
+          title: 'Client accounts and standing',
+          subtitle: 'The commercial side and the live side should remain visible together.',
+          metrics: [_Metric('Clients', '${clients.length}')],
+          primaryTitle: 'Accounts',
+          primaryRows: clients.take(10).map((item) => _mapRow(item, titleKey: 'displayName', primaryKeys: const ['status', 'selectedPlan'], secondaryKeys: const ['websiteUrl'])).toList(),
+          primaryEmpty: 'No clients are available.',
+          secondaryTitle: 'Readiness cues',
+          secondaryRows: clients.take(6).map((item) => _mapRow(item, titleKey: 'displayName', primaryKeys: const ['subscriptionStatus'], secondaryKeys: const ['primaryTimezone'])).toList(),
+          secondaryEmpty: 'No readiness cues are available.',
         );
-
       case OperatorSection.revenue:
-        final results = await Future.wait<dynamic>([
-          repository.fetchRevenueOverview(),
-          repository.fetchInvoices(),
-          repository.fetchAgreements(),
-          repository.fetchStatements(),
-          repository.fetchSubscriptions(),
-        ]);
-        final overview = _asMap(results[0]);
-        final invoices = _list(results[1]);
-        final agreements = _list(results[2]);
-        final statements = _list(results[3]);
-        final subscriptions = _list(results[4]);
-        return _OperatorViewData(
-          title: 'Revenue',
-          subtitle: 'Invoices, payment standing, agreements, and recurring service footing.',
-          heroStats: [
-            _Stat('Outstanding', _money(overview['outstandingCents']), tone: AppTheme.amber),
-            _Stat('Overdue', _money(overview['overdueCents']), tone: AppTheme.rose),
-            _Stat('Collected', _money(overview['collectedCents']), tone: AppTheme.emerald),
-            _Stat('Invoices', _num(overview['invoiceCount'])),
+        final overview = await repo.fetchRevenueOverview();
+        final invoices = await repo.fetchInvoices();
+        final subscriptions = await repo.fetchSubscriptions();
+        return _OperatorData(
+          eyebrow: 'Revenue',
+          title: 'Billing continuity and subscription view',
+          subtitle: 'Financial movement remains visible without leaving the operator surface.',
+          metrics: [
+            _Metric('Invoices', '${invoices.length}'),
+            _Metric('Subscriptions', '${subscriptions.length}'),
+            _Metric('Outstanding', _money(_asMap(overview['totals'])['outstandingCents'])),
           ],
           primaryTitle: 'Invoices',
-          primaryRows: invoices.take(10).map(_invoiceRow).toList(),
-          primaryEmptyLabel: 'No invoices are available.',
-          secondaryTitle: 'Agreements',
-          secondaryRows: agreements.take(8).map(_agreementRow).toList(),
-          secondaryEmptyLabel: 'No agreements are available.',
-          tertiaryTitle: 'Statements and subscriptions',
-          tertiaryRows: [
-            ...statements.take(4).map(_statementRow),
-            ...subscriptions.take(4).map(_subscriptionRow),
-          ],
-          tertiaryEmptyLabel: 'No statements or subscriptions are available.',
+          primaryRows: invoices.take(8).map((item) => _mapRow(item, titleKey: 'invoiceNumber', primaryKeys: const ['status'], secondaryKeys: const ['dueDate'])).toList(),
+          primaryEmpty: 'No invoices are available.',
+          secondaryTitle: 'Subscriptions',
+          secondaryRows: subscriptions.take(8).map((item) => _mapRow(item, titleKey: 'externalRef', primaryKeys: const ['status'], secondaryKeys: const ['createdAt'])).toList(),
+          secondaryEmpty: 'No subscriptions are available.',
         );
-
       case OperatorSection.deliverability:
-        final overview = await repository.fetchDeliverabilityOverview();
-        final domains = _list(overview['domains']);
-        final mailboxes = _list(overview['mailboxes']);
-        final suppressions = _list(overview['suppressions']);
-        return _OperatorViewData(
-          title: 'Deliverability',
-          subtitle: 'Sending condition, mailbox health, and suppression pressure.',
-          heroStats: [
-            _Stat('Domains', domains.length),
-            _Stat('Mailboxes', mailboxes.length),
-            _Stat('Active', _countBy(mailboxes, (item) => _read(item, 'status') == 'ACTIVE'), tone: AppTheme.emerald),
-            _Stat('Suppressed', suppressions.length, tone: AppTheme.amber),
+        final overview = await repo.fetchDeliverabilityOverview();
+        return _OperatorData(
+          eyebrow: 'Deliverability',
+          title: 'Mailboxes and sending posture',
+          subtitle: 'Healthy sending posture protects the rest of the execution chain.',
+          metrics: [
+            _Metric('Healthy', _read(overview, 'healthyMailboxes', fallback: '0')),
+            _Metric('Degraded', _read(overview, 'degradedMailboxes', fallback: '0')),
           ],
-          primaryTitle: 'Sending domains',
-          primaryRows: domains.take(8).map(_domainRow).toList(),
-          primaryEmptyLabel: 'No sending domains are available.',
-          secondaryTitle: 'Mailboxes',
-          secondaryRows: mailboxes.take(10).map(_mailboxRow).toList(),
-          secondaryEmptyLabel: 'No mailboxes are available.',
-          tertiaryTitle: 'Suppression list',
-          tertiaryRows: suppressions.take(6).map(_suppressionRow).toList(),
-          tertiaryEmptyLabel: 'No suppression entries are available.',
-        );
-
-      case OperatorSection.communications:
-        final results = await Future.wait<dynamic>([
-          repository.fetchTemplates(),
-          repository.fetchEmailDispatches(),
-          repository.fetchAlerts(),
-          repository.fetchReminders(),
-        ]);
-        final templates = _list(results[0]);
-        final dispatches = _list(results[1]);
-        final alerts = _list(results[2]);
-        final reminders = _list(results[3]);
-        return _OperatorViewData(
-          title: 'Communications',
-          subtitle: 'Templates, email dispatches, reminders, and account alerts.',
-          heroStats: [
-            _Stat('Templates', templates.length),
-            _Stat('Dispatches', dispatches.length),
-            _Stat('Alerts', alerts.length, tone: AppTheme.rose),
-            _Stat('Reminders', reminders.length),
-          ],
-          primaryTitle: 'Templates',
-          primaryRows: templates.take(8).map(_templateRow).toList(),
-          primaryEmptyLabel: 'No templates are available.',
-          secondaryTitle: 'Email dispatches',
-          secondaryRows: dispatches.take(8).map(_dispatchRow).toList(),
-          secondaryEmptyLabel: 'No email dispatches are available.',
-          tertiaryTitle: 'Alerts and reminders',
-          tertiaryRows: [
-            ...alerts.take(4).map(_alertRow),
-            ...reminders.take(4).map(_reminderRow),
-          ],
-          tertiaryEmptyLabel: 'No alerts or reminders are available.',
-        );
-
-      case OperatorSection.records:
-        final results = await Future.wait<dynamic>([
-          repository.fetchRecordsOverview(),
-          repository.fetchStatements(),
-          repository.fetchAgreements(),
-        ]);
-        final overview = _asMap(results[0]);
-        final statements = _list(results[1]);
-        final agreements = _list(results[2]);
-        return _OperatorViewData(
-          title: 'Records',
-          subtitle: 'Documented service history, financial records, and carry-forward artifacts.',
-          heroStats: [
-            _Stat('Statements', _num(overview['statements'])),
-            _Stat('Agreements', _num(overview['agreements'])),
-            _Stat('Reminders', _num(overview['reminders'])),
-            _Stat('Dispatches', _num(overview['emailDispatches'])),
-          ],
-          primaryTitle: 'Record volumes',
+          primaryTitle: 'Mailbox status',
           primaryRows: [
-            _RowData(
-              title: 'Core objects',
-              primary: '${_num(overview['clients'])} clients · ${_num(overview['campaigns'])} campaigns · ${_num(overview['leads'])} leads',
-              secondary: '${_num(overview['replies'])} replies · ${_num(overview['meetings'])} meetings',
-            ),
-            _RowData(
-              title: 'Document layer',
-              primary: '${_num(overview['agreements'])} agreements · ${_num(overview['statements'])} statements',
-              secondary: '${_num(overview['reminders'])} reminders · ${_num(overview['templates'])} templates',
-            ),
+            _Row(title: 'Healthy mailboxes', primary: _read(overview, 'healthyMailboxes', fallback: '0')),
+            _Row(title: 'Degraded mailboxes', primary: _read(overview, 'degradedMailboxes', fallback: '0')),
           ],
-          secondaryTitle: 'Statements',
-          secondaryRows: statements.take(8).map(_statementRow).toList(),
-          secondaryEmptyLabel: 'No statements are available.',
-          tertiaryTitle: 'Agreements',
-          tertiaryRows: agreements.take(8).map(_agreementRow).toList(),
-          tertiaryEmptyLabel: 'No agreements are available.',
+          primaryEmpty: 'No deliverability data is available.',
+          secondaryTitle: 'Posture',
+          secondaryRows: [
+            _Row(title: 'Note', primary: 'Review degraded mailboxes before scaling send volume.'),
+          ],
+          secondaryEmpty: 'No posture note is available.',
         );
-
-      case OperatorSection.settings:
-        final context = await repository.fetchAuthContext();
-        final memberRole = _read(context, 'memberRole', fallback: 'Unassigned');
-        final organizationId = _read(context, 'organizationId', fallback: 'Unavailable');
-        final email = _read(context, 'email', fallback: 'Unavailable');
-        return _OperatorViewData(
-          title: 'Settings',
-          subtitle: 'Workspace identity, access footing, and runtime context.',
-          notice: AppConfig.hasOperatorAccess
-              ? 'Operator access is active for this session.'
-              : 'Operator access headers have not been provided for this session.',
-          heroStats: [
-            _Stat('Role', memberRole),
-            _Stat('Surface', _read(context, 'surface', fallback: 'system')),
-            _Stat('Organization', organizationId.isEmpty ? 'Unavailable' : 'Linked'),
+      case OperatorSection.communications:
+        final emails = await repo.fetchEmailDispatches();
+        final inquiries = await repo.fetchInquiries(limit: 6);
+        final inquiryItems = (inquiries['items'] as List? ?? const []).cast<dynamic>();
+        return _OperatorData(
+          eyebrow: 'Communications',
+          title: 'Outbound dispatch and inbound intake',
+          subtitle: 'Keep the communication record tied to operational handling.',
+          metrics: [_Metric('Dispatches', '${emails.length}'), _Metric('Inquiries', '${inquiryItems.length}')],
+          primaryTitle: 'Dispatch history',
+          primaryRows: emails.take(8).map((item) => _mapRow(item, titleKey: 'subject', primaryKeys: const ['status'], secondaryKeys: const ['sentAt'])).toList(),
+          primaryEmpty: 'No dispatches are available.',
+          secondaryTitle: 'Recent inquiries',
+          secondaryRows: inquiryItems.take(8).map((item) => _mapRow(item, titleKey: 'name', primaryKeys: const ['status'], secondaryKeys: const ['email'])).toList(),
+          secondaryEmpty: 'No inquiries are available.',
+        );
+      case OperatorSection.records:
+        final overview = await repo.fetchRecordsOverview();
+        final agreements = await repo.fetchAgreements();
+        final statements = await repo.fetchStatements();
+        return _OperatorData(
+          eyebrow: 'Records',
+          title: 'Agreements, statements, and formal record flow',
+          subtitle: 'Documents remain first-class operational records, not detached files.',
+          metrics: [_Metric('Agreements', '${agreements.length}'), _Metric('Statements', '${statements.length}')],
+          primaryTitle: 'Record summary',
+          primaryRows: [
+            _Row(title: 'Stored agreements', primary: '${agreements.length}'),
+            _Row(title: 'Stored statements', primary: '${statements.length}'),
+            _Row(title: 'Overview note', primary: _read(overview, 'summary', fallback: 'Record overview available')),
           ],
+          primaryEmpty: 'No record summary is available.',
+          secondaryTitle: 'Recent artifacts',
+          secondaryRows: [
+            ...agreements.take(4).map((item) => _mapRow(item, titleKey: 'title', primaryKeys: const ['status'], secondaryKeys: const ['updatedAt'])),
+            ...statements.take(4).map((item) => _mapRow(item, titleKey: 'statementNumber', primaryKeys: const ['status'], secondaryKeys: const ['periodEnd'])),
+          ],
+          secondaryEmpty: 'No artifacts are available.',
+        );
+      case OperatorSection.settings:
+      default:
+        final auth = await repo.fetchAuthContext();
+        return _OperatorData(
+          eyebrow: 'Settings',
+          title: 'Workspace context and access',
+          subtitle: 'Basic operator context and surface resolution.',
+          metrics: [_Metric('Surface', _read(auth, 'surface', fallback: 'operator'))],
           primaryTitle: 'Access context',
           primaryRows: [
-            _RowData(title: 'Organization', primary: organizationId, secondary: 'Active workspace'),
-            _RowData(title: 'Member role', primary: memberRole, secondary: email),
-            _RowData(
-              title: 'Runtime',
-              primary: AppConfig.apiBaseUrl,
-              secondary: 'API base URL',
-            ),
+            _Row(title: 'Surface', primary: _read(auth, 'surface', fallback: 'operator')),
+            _Row(title: 'Organization', primary: _read(auth, 'organizationId')),
           ],
+          primaryEmpty: 'No access context is available.',
+          secondaryTitle: 'Notes',
+          secondaryRows: const [
+            _Row(title: 'Posture', primary: 'Keep operator changes controlled and visible.'),
+          ],
+          secondaryEmpty: 'No notes are available.',
         );
     }
   }
 }
 
-class _OperatorViewData {
-  const _OperatorViewData({
-    required this.title,
-    required this.subtitle,
-    this.trailingLabel,
-    this.notice,
-    this.heroStats = const [],
-    this.primaryTitle,
-    this.primarySubtitle,
-    this.primaryRows = const [],
-    this.primaryEmptyLabel = 'Nothing is available.',
-    this.secondaryTitle,
-    this.secondarySubtitle,
-    this.secondaryRows = const [],
-    this.secondaryEmptyLabel = 'Nothing is available.',
-    this.tertiaryTitle,
-    this.tertiarySubtitle,
-    this.tertiaryRows = const [],
-    this.tertiaryEmptyLabel = 'Nothing is available.',
-  });
+class _Header extends StatelessWidget {
+  const _Header({required this.data});
+  final _OperatorData data;
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: AppTheme.panel, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(data.eyebrow, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.subdued)),
+        const SizedBox(height: 8),
+        Text(data.title, style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 10),
+        Text(data.subtitle, style: Theme.of(context).textTheme.bodyMedium),
+      ]),
+    );
+  }
+}
+
+class _Metrics extends StatelessWidget {
+  const _Metrics({required this.metrics});
+  final List<_Metric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 880;
+        if (compact) {
+          return Column(children: [for (int i = 0; i < metrics.length; i++) ...[
+            _MetricCard(metric: metrics[i]),
+            if (i != metrics.length - 1) const SizedBox(height: 12),
+          ]]);
+        }
+        return Row(children: [for (int i = 0; i < metrics.length; i++) ...[
+          Expanded(child: _MetricCard(metric: metrics[i])),
+          if (i != metrics.length - 1) const SizedBox(width: 12),
+        ]]);
+      },
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({required this.metric});
+  final _Metric metric;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: AppTheme.panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(metric.label, style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 10),
+        Text(metric.value, style: Theme.of(context).textTheme.headlineMedium),
+      ]),
+    );
+  }
+}
+
+class _Panel extends StatelessWidget {
+  const _Panel({required this.title, required this.rows, required this.empty});
+  final String title;
+  final List<_Row> rows;
+  final String empty;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: AppTheme.panel, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppTheme.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        if (rows.isEmpty)
+          Text(empty, style: Theme.of(context).textTheme.bodyMedium)
+        else
+          for (int i = 0; i < rows.length; i++) ...[
+            _RowTile(row: rows[i]),
+            if (i != rows.length - 1) const Divider(height: 22, color: AppTheme.line),
+          ],
+      ]),
+    );
+  }
+}
+
+class _RowTile extends StatelessWidget {
+  const _RowTile({required this.row});
+  final _Row row;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(row.title, style: Theme.of(context).textTheme.titleMedium),
+      if (row.primary.isNotEmpty) ...[
+        const SizedBox(height: 6),
+        Text(row.primary, style: Theme.of(context).textTheme.bodyLarge),
+      ],
+      if (row.secondary.isNotEmpty) ...[
+        const SizedBox(height: 4),
+        Text(row.secondary, style: Theme.of(context).textTheme.bodyMedium),
+      ],
+    ]);
+  }
+}
+
+class _OperatorData {
+  const _OperatorData({required this.eyebrow, required this.title, required this.subtitle, required this.metrics, required this.primaryTitle, required this.primaryRows, required this.primaryEmpty, required this.secondaryTitle, required this.secondaryRows, required this.secondaryEmpty});
+  final String eyebrow;
   final String title;
   final String subtitle;
-  final String? trailingLabel;
-  final String? notice;
-  final List<_Stat> heroStats;
-  final String? primaryTitle;
-  final String? primarySubtitle;
-  final List<_RowData> primaryRows;
-  final String primaryEmptyLabel;
-  final String? secondaryTitle;
-  final String? secondarySubtitle;
-  final List<_RowData> secondaryRows;
-  final String secondaryEmptyLabel;
-  final String? tertiaryTitle;
-  final String? tertiarySubtitle;
-  final List<_RowData> tertiaryRows;
-  final String tertiaryEmptyLabel;
-
-  factory _OperatorViewData.empty(OperatorSection section) => _OperatorViewData(
-        title: section.name[0].toUpperCase() + section.name.substring(1),
-        subtitle: '',
-      );
+  final List<_Metric> metrics;
+  final String primaryTitle;
+  final List<_Row> primaryRows;
+  final String primaryEmpty;
+  final String secondaryTitle;
+  final List<_Row> secondaryRows;
+  final String secondaryEmpty;
 }
 
-class _Stat {
-  const _Stat(this.label, this.value, {this.tone});
-
+class _Metric {
+  const _Metric(this.label, this.value);
   final String label;
-  final Object value;
-  final Color? tone;
+  final String value;
 }
 
-class _RowData {
-  const _RowData({
-    required this.title,
-    required this.primary,
-    required this.secondary,
-  });
-
+class _Row {
+  const _Row({required this.title, this.primary = '', this.secondary = ''});
   final String title;
   final String primary;
   final String secondary;
 }
 
-class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.stats});
-
-  final List<_Stat> stats;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: [
-        for (final stat in stats)
-          SizedBox(
-            width: 220,
-            child: Surface(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    stat.label,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    '${stat.value}',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: stat.tone ?? AppTheme.text,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _DataPanel extends StatelessWidget {
-  const _DataPanel({
-    required this.title,
-    this.subtitle,
-    required this.rows,
-    required this.emptyLabel,
-  });
-
-  final String title;
-  final String? subtitle;
-  final List<_RowData> rows;
-  final String emptyLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Surface(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          if (subtitle != null && subtitle!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(subtitle!, style: Theme.of(context).textTheme.bodyMedium),
-          ],
-          const SizedBox(height: 18),
-          if (rows.isEmpty)
-            Text(emptyLabel, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.muted))
-          else
-            Column(
-              children: [
-                for (var index = 0; index < rows.length; index++) ...[
-                  _DataRow(row: rows[index]),
-                  if (index != rows.length - 1) const Divider(height: 26),
-                ],
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DataRow extends StatelessWidget {
-  const _DataRow({required this.row});
-
-  final _RowData row;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 3,
-          child: Text(row.title, style: Theme.of(context).textTheme.titleMedium),
-        ),
-        Expanded(
-          flex: 3,
-          child: Text(row.primary, style: Theme.of(context).textTheme.bodyLarge),
-        ),
-        Expanded(
-          flex: 4,
-          child: Text(
-            row.secondary.isEmpty ? '—' : row.secondary,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.line),
-      ),
-      child: Text(label, style: Theme.of(context).textTheme.titleMedium),
-    );
-  }
-}
-
-class _InfoPanel extends StatelessWidget {
-  const _InfoPanel({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Surface(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline_rounded, color: AppTheme.accent, size: 18),
-          const SizedBox(width: 12),
-          Expanded(child: Text(message, style: Theme.of(context).textTheme.bodyMedium)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorPanel extends StatelessWidget {
-  const _ErrorPanel({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Surface(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Row(
-          children: [
-            const Icon(Icons.error_outline_rounded, color: AppTheme.rose, size: 18),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message, style: Theme.of(context).textTheme.bodyMedium)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-Map<String, dynamic> _asMap(dynamic value) => value is Map ? value.cast<String, dynamic>() : <String, dynamic>{};
-List<dynamic> _list(dynamic value) => value is List ? value : const [];
-String _num(dynamic value) => ((value as num?) ?? 0).toString();
-String _money(dynamic cents) {
-  final amount = ((cents as num?) ?? 0) / 100;
-  return '\$${amount.toStringAsFixed(2)}';
-}
-int _inquiryCount(Map<String, dynamic> summary, String key) {
-  final value = summary[key];
-  if (value is num) return value.toInt();
-  return 0;
-}
+Map<String, dynamic> _asMap(dynamic value) => value is Map ? Map<String, dynamic>.from(value) : const {};
 String _read(dynamic source, String key, {String fallback = ''}) {
-  if (source is Map && source[key] != null) return '${source[key]}';
-  return fallback;
+  final map = _asMap(source);
+  final value = map[key];
+  if (value == null) return fallback;
+  return value.toString();
 }
-String _stringPath(Map<String, dynamic> source, List<String> path, {String fallback = ''}) {
-  dynamic current = source;
-  for (final segment in path) {
-    if (current is Map && current.containsKey(segment)) {
-      current = current[segment];
-    } else {
-      return fallback;
-    }
-  }
-  return current == null ? fallback : '$current';
-}
-int _countBy(List<dynamic> items, bool Function(Map<String, dynamic> item) test) {
-  var count = 0;
-  for (final item in items) {
-    final map = _asMap(item);
-    if (test(map)) count += 1;
-  }
-  return count;
-}
-_RowData _clientRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'displayName', fallback: _read(item, 'legalName', fallback: 'Client')),
-    primary: [_read(item, 'status'), _read(item, 'industry')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(item, 'websiteUrl'), _read(item, 'primaryTimezone')].where((e) => e.isNotEmpty).join(' · '),
-  );
-}
-_RowData _campaignRow(dynamic raw) {
-  final item = _asMap(raw);
-  final client = _asMap(item['client']);
-  return _RowData(
-    title: _read(item, 'name', fallback: 'Campaign'),
-    primary: [_read(item, 'status'), _read(item, 'channel')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(client, 'displayName'), _read(item, 'objective')].where((e) => e.isNotEmpty).join(' · '),
-  );
-}
-_RowData _leadRow(dynamic raw) {
-  final item = _asMap(raw);
-  final contact = _asMap(item['contact']);
-  final account = _asMap(item['account']);
-  return _RowData(
-    title: _read(contact, 'fullName', fallback: _read(account, 'companyName', fallback: 'Lead')),
-    primary: [_read(item, 'status'), _read(contact, 'email')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(account, 'companyName'), _read(contact, 'title')].where((e) => e.isNotEmpty).join(' · '),
-  );
-}
-_RowData _replyRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'subjectLine', fallback: 'Reply'),
-    primary: [_read(item, 'intent'), _read(item, 'fromEmail')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'bodyText'),
-  );
-}
-_RowData _meetingRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'title', fallback: 'Meeting'),
-    primary: [_read(item, 'status'), _read(item, 'scheduledAt')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'bookingUrl'),
-  );
-}
-_RowData _invoiceRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'invoiceNumber', fallback: 'Invoice'),
-    primary: [_read(item, 'status'), _money(item['totalCents'])].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(item, 'dueAt'), _read(_asMap(item['client']), 'displayName')].where((e) => e.isNotEmpty).join(' · '),
-  );
-}
-_RowData _agreementRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'title', fallback: _read(item, 'agreementNumber', fallback: 'Agreement')),
-    primary: [_read(item, 'status'), _read(item, 'agreementNumber')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(item, 'effectiveStartAt'), _read(item, 'effectiveEndAt')].where((e) => e.isNotEmpty).join(' · '),
-  );
-}
-_RowData _statementRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'statementNumber', fallback: _read(item, 'label', fallback: 'Statement')),
-    primary: [_read(item, 'status'), _money(item['balanceCents'])].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(item, 'periodStart'), _read(item, 'periodEnd')].where((e) => e.isNotEmpty).join(' → '),
-  );
-}
-_RowData _subscriptionRow(dynamic raw) {
-  final item = _asMap(raw);
-  final plan = _asMap(item['plan']);
-  return _RowData(
-    title: _read(plan, 'name', fallback: 'Subscription'),
-    primary: [_read(item, 'status'), _read(_asMap(item['client']), 'displayName')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'currentPeriodEnd'),
-  );
-}
-_RowData _domainRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'domain', fallback: 'Domain'),
-    primary: [_read(item, 'status'), _read(item, 'provider')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(item, 'spfStatus'), _read(item, 'dkimStatus'), _read(item, 'dmarcStatus')].where((e) => e.isNotEmpty).join(' · '),
-  );
-}
-_RowData _mailboxRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'emailAddress', fallback: 'Mailbox'),
-    primary: [_read(item, 'status'), _read(item, 'healthStatus')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: [_read(item, 'dailySendCap'), _read(item, 'warmupStatus')].where((e) => e.isNotEmpty).join(' · '),
-  );
-}
-_RowData _suppressionRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'value', fallback: 'Suppression entry'),
-    primary: [_read(item, 'type'), _read(item, 'status')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'reasonText'),
-  );
-}
-_RowData _templateRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'name', fallback: 'Template'),
-    primary: [_read(item, 'type'), _read(item, 'isActive') == 'true' ? 'Active' : 'Inactive'].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'subjectTemplate'),
-  );
-}
-_RowData _dispatchRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'subjectLine', fallback: 'Dispatch'),
-    primary: [_read(item, 'status'), _read(item, 'recipientEmail')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'createdAt'),
-  );
-}
-_RowData _alertRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'title', fallback: 'Alert'),
-    primary: [_read(item, 'severity'), _read(item, 'status')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'bodyText'),
-  );
-}
-_RowData _reminderRow(dynamic raw) {
-  final item = _asMap(raw);
-  return _RowData(
-    title: _read(item, 'subjectLine', fallback: 'Reminder'),
-    primary: [_read(item, 'status'), _read(item, 'scheduledAt')].where((e) => e.isNotEmpty).join(' · '),
-    secondary: _read(item, 'bodyText'),
+
+_Row _mapRow(dynamic raw, {required String titleKey, List<String> primaryKeys = const [], List<String> secondaryKeys = const []}) {
+  final map = _asMap(raw);
+  return _Row(
+    title: _read(map, titleKey, fallback: 'Record'),
+    primary: primaryKeys.map((key) => _read(map, key)).where((value) => value.isNotEmpty).join(' · '),
+    secondary: secondaryKeys.map((key) => _read(map, key)).where((value) => value.isNotEmpty).join(' · '),
   );
 }
 
-_RowData _inquiryRow(dynamic item) {
-  final source = _asMap(item);
-  final company = _read(source, 'company');
-  final email = _read(source, 'email');
-  final status = _read(source, 'status', fallback: 'NEW');
-  final submittedAt = _read(source, 'createdAt');
-  final message = _read(source, 'message').replaceAll('\n', ' ').trim();
-  final preview = message.length > 88 ? '${message.substring(0, 88)}…' : message;
-  final primaryParts = <String>[
-    _read(source, 'inquiryType'),
-    if (company.isNotEmpty) company,
-    email,
-  ].where((e) => e.isNotEmpty).toList();
-  final secondaryParts = <String>[
-    status,
-    if (submittedAt.isNotEmpty) submittedAt,
-    if (preview.isNotEmpty) preview,
-  ];
-  return _RowData(
-    title: _read(source, 'name', fallback: 'Inquiry'),
-    primary: primaryParts.join(' · '),
-    secondary: secondaryParts.where((e) => e.isNotEmpty).join(' · '),
-  );
-}
-
-String _humanizeError(Object error) {
-  final raw = '$error';
-  if (raw.contains('401') || raw.contains('Unauthorized')) {
-    return 'This workspace could not load because access headers are missing or not accepted by the API.';
-  }
-  return 'This surface could not load right now.';
+String _money(dynamic cents) {
+  final amount = cents is num ? cents / 100 : 0;
+  return '\$${amount.toStringAsFixed(2)}';
 }
