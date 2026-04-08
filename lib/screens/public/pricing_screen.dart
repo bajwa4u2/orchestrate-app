@@ -405,8 +405,8 @@ const _tiers = [
     code: 'multi',
     name: 'Multi-Market',
     summary: 'For operators expanding across countries while keeping one system posture.',
-    opportunityPrice: '\$685',
-    revenuePrice: '\$1120',
+    opportunityPrice: '\$645',
+    revenuePrice: '\$1290',
     items: [
       'Multiple countries and multiple regions',
       'Broader market scope across one operating model',
@@ -418,8 +418,8 @@ const _tiers = [
     code: 'precision',
     name: 'Precision',
     summary: 'For controlled targeting with city, metro, include or exclude logic, and market priority.',
-    opportunityPrice: '\$985',
-    revenuePrice: '\$1450',
+    opportunityPrice: '\$975',
+    revenuePrice: '\$1950',
     items: [
       'City and metro targeting plus include or exclude logic',
       'Priority market ordering and tighter operational control',
