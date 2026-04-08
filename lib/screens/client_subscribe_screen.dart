@@ -368,7 +368,7 @@ _Selection _selection(String planCode, String tierCode) {
       return _Selection(
         planLabel: revenue ? 'Revenue' : 'Opportunity',
         tierLabel: 'Precision',
-        priceLabel: revenue ? '\$1450 / month' : '\$985 / month',
+        priceLabel: revenue ? '\$1950 / month' : '\$975 / month',
         points: [
           'City and metro targeting with include or exclude logic',
           'Priority market ordering for sharper execution control',
@@ -379,7 +379,7 @@ _Selection _selection(String planCode, String tierCode) {
       return _Selection(
         planLabel: revenue ? 'Revenue' : 'Opportunity',
         tierLabel: 'Multi-Market',
-        priceLabel: revenue ? '\$1120 / month' : '\$685 / month',
+        priceLabel: revenue ? '\$1290 / month' : '\$645 / month',
         points: [
           'Multiple countries and multiple regions',
           'Broader execution coverage without leaving one system',
