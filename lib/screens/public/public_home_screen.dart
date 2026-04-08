@@ -931,19 +931,19 @@ class _TrustSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      _TrustItem(
+      _TrustLine(
         title: 'Agreements stay attached',
         body: 'Scope and service terms do not disappear into side emails and memory.',
       ),
-      _TrustItem(
+      _TrustLine(
         title: 'Billing stays traceable',
         body: 'Invoices, reminders, payments, and statements remain reviewable.',
       ),
-      _TrustItem(
+      _TrustLine(
         title: 'Communication stays visible',
         body: 'Follow-up does not drift across disconnected tools and inbox habits.',
       ),
-      _TrustItem(
+      _TrustLine(
         title: 'Deliverability stays monitored',
         body: 'Mailbox and domain posture remain part of the operating picture.',
       ),
@@ -953,30 +953,32 @@ class _TrustSection extends StatelessWidget {
       title: 'Built for work that has to hold up',
       subtitle:
           'This is not just a sending surface. It is designed to carry the business trail around the work.',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final columns = constraints.maxWidth > 980 ? 4 : constraints.maxWidth > 640 ? 2 : 1;
-
-          return GridView.builder(
-            itemCount: items.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
-              childAspectRatio: columns == 1 ? 3.0 : 1.15,
-            ),
-            itemBuilder: (context, index) => _TrustCard(item: items[index]),
-          );
-        },
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.publicSurfaceSoft,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.publicLine),
+        ),
+        child: Column(
+          children: [
+            for (int i = 0; i < items.length; i++) ...[
+              _TrustRow(item: items[i]),
+              if (i != items.length - 1)
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: AppTheme.publicLine,
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _TrustItem {
-  const _TrustItem({
+class _TrustLine {
+  const _TrustLine({
     required this.title,
     required this.body,
   });
@@ -985,31 +987,54 @@ class _TrustItem {
   final String body;
 }
 
-class _TrustCard extends StatelessWidget {
-  const _TrustCard({required this.item});
+class _TrustRow extends StatelessWidget {
+  const _TrustRow({required this.item});
 
-  final _TrustItem item;
+  final _TrustLine item;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(item.title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 10),
-          Text(
-            item.body,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.publicMuted,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked = constraints.maxWidth < 760;
+
+          final title = Text(
+            item.title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
-          ),
-        ],
+          );
+
+          final body = Text(
+            item.body,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicMuted,
+                  height: 1.5,
+                ),
+          );
+
+          if (stacked) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                title,
+                const SizedBox(height: 8),
+                body,
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 260, child: title),
+              const SizedBox(width: 20),
+              Expanded(child: body),
+            ],
+          );
+        },
       ),
     );
   }
