@@ -186,6 +186,25 @@ class _PublicFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final links = [
+      _FooterLink(label: 'Terms', onTap: () => context.go('/terms')),
+      _FooterLink(label: 'Privacy', onTap: () => context.go('/privacy')),
+      _FooterLink(
+        label: 'Service Agreement',
+        onTap: () => context.go('/legal/service-agreement'),
+      ),
+      _FooterLink(label: 'Billing', onTap: () => context.go('/legal/billing')),
+      _FooterLink(label: 'Refund', onTap: () => context.go('/legal/refunds')),
+      _FooterLink(
+        label: 'Acceptable Use',
+        onTap: () => context.go('/legal/acceptable-use'),
+      ),
+      _FooterLink(
+        label: 'Deliverability',
+        onTap: () => context.go('/legal/deliverability'),
+      ),
+    ];
+
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -193,121 +212,19 @@ class _PublicFooter extends StatelessWidget {
         border: Border(top: BorderSide(color: AppTheme.publicLine)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 22, 28, 26),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 980;
-
-                final intro = ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 320),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Built for teams running outbound across markets.',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppTheme.publicText,
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Orchestrate keeps outreach, meetings, billing, and records connected in one operating flow.',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppTheme.publicMuted,
-                              height: 1.45,
-                            ),
-                      ),
-                    ],
-                  ),
-                );
-
-                final legal = _FooterGroup(
-                  title: 'Legal',
-                  children: [
-                    _FooterLink(label: 'Terms of Use', onTap: () => context.go('/terms')),
-                    _FooterLink(label: 'Privacy Policy', onTap: () => context.go('/privacy')),
-                    _FooterLink(label: 'Service Agreement', onTap: () => context.go('/legal/service-agreement')),
-                  ],
-                );
-
-                final operations = _FooterGroup(
-                  title: 'Operations',
-                  children: [
-                    _FooterLink(label: 'Billing Policy', onTap: () => context.go('/legal/billing')),
-                    _FooterLink(label: 'Refund Policy', onTap: () => context.go('/legal/refunds')),
-                    _FooterLink(label: 'Acceptable Use', onTap: () => context.go('/legal/acceptable-use')),
-                    _FooterLink(label: 'Deliverability Notice', onTap: () => context.go('/legal/deliverability')),
-                  ],
-                );
-
-                if (compact) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      intro,
-                      const SizedBox(height: 24),
-                      legal,
-                      const SizedBox(height: 22),
-                      operations,
-                    ],
-                  );
-                }
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 4, child: intro),
-                    const SizedBox(width: 40),
-                    Expanded(flex: 2, child: legal),
-                    const SizedBox(width: 28),
-                    Expanded(flex: 3, child: operations),
-                  ],
-                );
-              },
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 18,
+              runSpacing: 8,
+              children: links,
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _FooterGroup extends StatelessWidget {
-  const _FooterGroup({
-    required this.title,
-    required this.children,
-  });
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppTheme.publicText,
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children
-              .map((child) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: child,
-                  ))
-              .toList(),
-        ),
-      ],
     );
   }
 }
@@ -350,13 +267,13 @@ class _FooterLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(8),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.publicMuted,
               ),
         ),
