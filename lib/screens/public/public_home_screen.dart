@@ -70,21 +70,21 @@ class _HeroSection extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
+                constraints: const BoxConstraints(maxWidth: 560),
                 child: Text(
                   'From outreach to revenue, carried in one system.',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: stacked ? 34 : 38,
-                        height: 1.10,
+                        fontSize: stacked ? 34 : 40,
+                        height: 1.08,
                         letterSpacing: -0.6,
                       ),
                 ),
               ),
               const SizedBox(height: 16),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 550),
+                constraints: const BoxConstraints(maxWidth: 560),
                 child: Text(
-                  'Orchestrate runs lead generation, outreach, meetings, invoices, payments, reminders, and records as one continuous operating flow.',
+                  'Orchestrate runs outbound work as one continuous system, from first contact to collected revenue.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.publicMuted,
                         height: 1.5,
@@ -92,18 +92,37 @@ class _HeroSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => context.go('/client/join'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.publicText,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(0, 50),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  FilledButton(
+                    onPressed: () => context.go('/join'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.publicText,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 50),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text('Create account'),
                   ),
-                ),
-                child: const Text('Create account'),
+                  OutlinedButton(
+                    onPressed: () => context.go('/pricing'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.publicText,
+                      side: const BorderSide(color: AppTheme.publicLine),
+                      minimumSize: const Size(0, 50),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text('View pricing'),
+                  ),
+                ],
               ),
             ],
           );
@@ -228,11 +247,11 @@ class _SystemFlowSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      ('Find leads', 'Build the target list around the business, market, and service.'),
-      ('Launch outreach', 'Send controlled sequences instead of scattered one-off messages.'),
-      ('Handle replies', 'Keep live responses visible and move qualified conversations forward.'),
-      ('Book meetings', 'Turn interest into scheduled calls without losing the thread.'),
-      ('Carry billing', 'Keep invoices, reminders, payments, and records attached to the work.'),
+      ('Define your market', 'Set the business, market, and service scope before work begins.'),
+      ('Run outreach', 'Launch controlled sequences instead of scattered one-off sending.'),
+      ('Move replies forward', 'Keep live responses visible and qualify serious conversations.'),
+      ('Book meetings', 'Turn interest into scheduled calls without losing continuity.'),
+      ('Carry revenue through', 'Keep invoices, reminders, payments, and records attached to the work.'),
     ];
 
     return _SectionFrame(
@@ -343,7 +362,7 @@ class _TrustSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const trustItems = [
-      ('Agreements stay attached', 'Scope and service terms do not need to disappear into side emails and memory.'),
+      ('Agreements stay attached', 'Scope and service terms do not disappear into side emails and memory.'),
       ('Billing stays traceable', 'Invoices, reminders, payments, and statements remain reviewable.'),
       ('Communication stays visible', 'Follow-up does not drift across disconnected tools and inbox habits.'),
       ('Deliverability stays monitored', 'Domain posture and mailbox condition stay part of the operating picture.'),
@@ -383,25 +402,27 @@ class _PricingSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return _SectionFrame(
       title: 'Pricing',
-      subtitle: 'The service is structured in two clear lanes so the scope stays easy to understand.',
+      subtitle: 'Choose the operating lane that fits the work now, then expand later if needed.',
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stacked = constraints.maxWidth < 900;
           final cards = [
-            const _PricingCard(
+            _PricingCard(
               title: 'Opportunity',
-              subtitle: 'For businesses that want lead generation, outreach, follow-up, and meeting booking.',
-              points: [
+              subtitle: 'Outbound execution from lead to meeting.',
+              points: const [
                 'Lead sourcing and targeting',
                 'Outbound outreach',
                 'Follow-up and reply handling',
                 'Meeting booking',
               ],
+              ctaLabel: 'Start Opportunity',
+              onTap: () => context.go('/pricing'),
             ),
-            const _PricingCard(
+            _PricingCard(
               title: 'Revenue',
-              subtitle: 'For businesses that want outbound work plus billing, payment tracking, and records support.',
-              points: [
+              subtitle: 'Outbound plus billing, payment tracking, and records.',
+              points: const [
                 'Everything in Opportunity',
                 'Invoices and payment tracking',
                 'Agreements and reminders',
@@ -409,6 +430,8 @@ class _PricingSection extends StatelessWidget {
                 'Billing support tied to service delivery',
               ],
               emphasized: true,
+              ctaLabel: 'Start Revenue',
+              onTap: () => context.go('/pricing'),
             ),
           ];
 
@@ -525,7 +548,7 @@ class _GlimpsePanel extends StatelessWidget {
         children: [
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 14),
-          for (final row in rows) ...[
+          for (var i = 0; i < rows.length; i++) ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -541,7 +564,7 @@ class _GlimpsePanel extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    row,
+                    rows[i],
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: AppTheme.publicText,
                         ),
@@ -549,7 +572,7 @@ class _GlimpsePanel extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            if (i != rows.length - 1) const SizedBox(height: 10),
           ],
         ],
       ),
@@ -562,12 +585,16 @@ class _PricingCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.points,
+    required this.ctaLabel,
+    required this.onTap,
     this.emphasized = false,
   });
 
   final String title;
   final String subtitle;
   final List<String> points;
+  final String ctaLabel;
+  final VoidCallback onTap;
   final bool emphasized;
 
   @override
@@ -591,7 +618,7 @@ class _PricingCard extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 18),
-          for (final point in points) ...[
+          for (var i = 0; i < points.length; i++) ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -601,12 +628,28 @@ class _PricingCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(point, style: Theme.of(context).textTheme.bodyLarge),
+                  child: Text(points[i], style: Theme.of(context).textTheme.bodyLarge),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            if (i != points.length - 1) const SizedBox(height: 12),
           ],
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onTap,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.publicText,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(0, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(ctaLabel),
+            ),
+          ),
         ],
       ),
     );
