@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,6 +32,7 @@ final router = GoRouter(
 
     final path = state.uri.path;
     final normalizedPlan = state.uri.queryParameters['plan']?.trim().toLowerCase();
+    final normalizedTier = state.uri.queryParameters['tier']?.trim().toLowerCase();
 
     final isClientAuth = _matches(path, const [
       '/client/login',
@@ -81,8 +81,16 @@ final router = GoRouter(
 
     if (session.surface == 'client') {
       final selectedPlan = session.selectedPlan ?? normalizedPlan;
+      final selectedTier = session.selectedTier ?? normalizedTier;
+
       final subscribeTarget = selectedPlan != null && selectedPlan.isNotEmpty
-          ? Uri(path: '/client/subscribe', queryParameters: {'plan': selectedPlan}).toString()
+          ? Uri(
+              path: '/client/subscribe',
+              queryParameters: {
+                'plan': selectedPlan,
+                if (selectedTier != null && selectedTier.isNotEmpty) 'tier': selectedTier,
+              },
+            ).toString()
           : '/client/subscribe';
 
       if (!session.emailVerified) {
@@ -95,7 +103,13 @@ final router = GoRouter(
       if (!session.hasSetupCompleted) {
         if (!isSetupFlow) {
           return selectedPlan != null && selectedPlan.isNotEmpty
-              ? Uri(path: '/client/setup', queryParameters: {'plan': selectedPlan}).toString()
+              ? Uri(
+                  path: '/client/setup',
+                  queryParameters: {
+                    'plan': selectedPlan,
+                    if (selectedTier != null && selectedTier.isNotEmpty) 'tier': selectedTier,
+                  },
+                ).toString()
               : '/client/setup';
         }
         return null;

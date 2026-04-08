@@ -59,12 +59,23 @@ class ClientPortalRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
-  Future<Map<String, dynamic>> createSubscription(String plan) async {
-    final normalized = plan.trim().toLowerCase();
-    final apiPlan = normalized == 'revenue' ? 'REVENUE' : 'OPPORTUNITY';
+  Future<Map<String, dynamic>> createSubscription(String plan, String tier) async {
+    final normalizedPlan = plan.trim().toLowerCase();
+    final normalizedTier = tier.trim().toLowerCase();
+
+    final apiPlan = normalizedPlan == 'revenue' ? 'REVENUE' : 'OPPORTUNITY';
+    final apiTier = switch (normalizedTier) {
+      'precision' => 'PRECISION',
+      'multi' || 'multi-market' || 'multi_market' => 'MULTI',
+      _ => 'FOCUSED',
+    };
+
     final json = await _apiClient.postJson(
       '/billing/subscribe',
-      body: {'plan': apiPlan},
+      body: {
+        'plan': apiPlan,
+        'tier': apiTier,
+      },
       surface: ApiSurface.client,
     );
     return Map<String, dynamic>.from(json as Map);

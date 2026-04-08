@@ -33,6 +33,12 @@ class AuthSessionController extends ChangeNotifier {
     return value;
   }
 
+  String? get selectedTier {
+    final value = (_session?['selectedTier'] as String?)?.trim();
+    if (value == null || value.isEmpty) return null;
+    return value;
+  }
+
   String get subscriptionStatus => (_session?['subscriptionStatus'] as String?) ?? 'none';
   String get normalizedSubscriptionStatus => subscriptionStatus.trim().toLowerCase();
 
@@ -89,6 +95,10 @@ class AuthSessionController extends ChangeNotifier {
       'selectedPlan': user['selectedPlan']?.toString() ??
           setup['selectedPlan']?.toString() ??
           previous['selectedPlan']?.toString(),
+      'selectedTier': user['selectedTier']?.toString() ??
+          setup['selectedTier']?.toString() ??
+          previous['selectedTier']?.toString() ??
+          'focused',
       'subscriptionStatus': (user['subscriptionStatus']?.toString() ??
               setup['subscriptionStatus']?.toString() ??
               previous['subscriptionStatus']?.toString() ??
@@ -105,6 +115,7 @@ class AuthSessionController extends ChangeNotifier {
     final client = Map<String, dynamic>.from((payload['client'] as Map?) ?? const {});
     _session!['setupCompleted'] = client['setupCompleted'] == true;
     _session!['selectedPlan'] = client['selectedPlan']?.toString() ?? _session!['selectedPlan'];
+    _session!['selectedTier'] = client['selectedTier']?.toString() ?? _session!['selectedTier'] ?? 'focused';
     _session!['subscriptionStatus'] =
         (client['subscriptionStatus']?.toString() ?? _session!['subscriptionStatus'] ?? 'none')
             .toLowerCase();
@@ -119,14 +130,27 @@ class AuthSessionController extends ChangeNotifier {
     await _persist();
   }
 
-  Future<void> rememberSelectedPlan(String? plan) async {
-    final normalized = plan?.trim().toLowerCase();
-    if (normalized == null || normalized.isEmpty) return;
+  Future<void> rememberSelection({String? plan, String? tier}) async {
+    final normalizedPlan = plan?.trim().toLowerCase();
+    final normalizedTier = tier?.trim().toLowerCase();
 
     _session ??= {};
-    _session!['selectedPlan'] = normalized;
+    if (normalizedPlan != null && normalizedPlan.isNotEmpty) {
+      _session!['selectedPlan'] = normalizedPlan;
+    }
+    if (normalizedTier != null && normalizedTier.isNotEmpty) {
+      _session!['selectedTier'] = normalizedTier;
+    }
 
     await _persist();
+  }
+
+  Future<void> rememberSelectedPlan(String? plan) async {
+    await rememberSelection(plan: plan);
+  }
+
+  Future<void> rememberSelectedTier(String? tier) async {
+    await rememberSelection(tier: tier);
   }
 
   Future<void> clear() async {
