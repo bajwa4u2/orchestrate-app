@@ -177,7 +177,7 @@ class _PlanCards extends StatelessWidget {
             description: 'Outbound plus billing, payments, and records.',
             button: 'Start Revenue',
             onTap: onRevenue,
-            highlighted: True,
+            highlighted: true,
           ),
         ];
 
