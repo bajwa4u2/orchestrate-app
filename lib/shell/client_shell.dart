@@ -47,8 +47,6 @@ class ClientShell extends StatelessWidget {
     ),
   ];
 
-  bool _isSelected(_ClientNavItem item) => currentPath == item.path;
-
   bool _matchesBillingGroup() {
     return currentPath == '/client/billing' ||
         currentPath == '/client/agreements' ||
@@ -78,15 +76,19 @@ class ClientShell extends StatelessWidget {
   }
 
   String _scopeLabel(AuthSessionController session) {
-    final parts = <String>[];
-    final country = session.countryName.trim();
-    final region = session.regionName.trim();
+    final tier = (session.selectedTier ?? '').trim();
+    if (tier.isNotEmpty) return _title(tier);
+    return session.hasSetupCompleted ? 'Scope set' : 'Scope incomplete';
+  }
 
-    if (country.isNotEmpty) parts.add(country);
-    if (region.isNotEmpty) parts.add(region);
+  String _planLabel(AuthSessionController session) {
+    final tier = (session.selectedTier ?? '').trim();
+    if (tier.isNotEmpty) return _title(tier);
 
-    if (parts.isEmpty) return session.hasSetupCompleted ? 'Scope set' : 'Scope incomplete';
-    return parts.join(' • ');
+    final plan = (session.selectedPlan ?? '').trim();
+    if (plan.isNotEmpty) return _title(plan);
+
+    return 'Not set';
   }
 
   String _supportLabel() {
@@ -214,7 +216,7 @@ class ClientShell extends StatelessWidget {
                                   children: [
                                     _StatusPill(
                                       label: 'Plan',
-                                      value: _title(session.selectedTier ?? 'Focused'),
+                                      value: _planLabel(session),
                                     ),
                                     _StatusPill(
                                       label: 'Billing',
