@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -72,6 +71,11 @@ class ClientShell extends StatelessWidget {
                               label: 'Statements',
                               active: _active('/client/statements'),
                               onTap: () => context.go('/client/statements'),
+                            ),
+                            _ClientNavItem(
+                              label: 'Help & Support',
+                              active: _active('/client/help'),
+                              onTap: () => context.go('/client/help'),
                             ),
                           ];
 

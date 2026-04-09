@@ -5,6 +5,7 @@ import '../screens/auth/client_login_screen.dart';
 import '../screens/auth/ops_login_screen.dart';
 import '../screens/client_setup_screen.dart';
 import '../screens/client_subscribe_screen.dart';
+import '../screens/client_support_screen.dart';
 import '../screens/client_workspace_screen.dart';
 import '../screens/inquiries_list_screen.dart';
 import '../screens/inquiry_detail_screen.dart';
@@ -54,6 +55,7 @@ final router = GoRouter(
         path.startsWith('/client/billing') ||
         path.startsWith('/client/agreements') ||
         path.startsWith('/client/statements') ||
+        path.startsWith('/client/help') ||
         path.startsWith('/client/account');
 
     if (!session.isAuthenticated) {
@@ -200,6 +202,10 @@ final router = GoRouter(
         GoRoute(
           path: '/client/statements',
           builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.statements),
+        ),
+        GoRoute(
+          path: '/client/help',
+          builder: (context, state) => const ClientSupportScreen(),
         ),
         GoRoute(
           path: '/client/account',

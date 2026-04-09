@@ -1,7 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/theme/app_theme.dart';
+import '../../features/support/screens/support_drawer.dart';
+
+Future<void> _openPublicSupportDrawer(BuildContext context) async {
+  await showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Support',
+    barrierColor: Colors.black54,
+    transitionDuration: const Duration(milliseconds: 220),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: const ColoredBox(color: Colors.transparent),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: SupportDrawer(
+              publicMode: true,
+              baseUrl: AppConfig.apiBaseUrl,
+            ),
+          ),
+        ],
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return SlideTransition(
+        position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(curved),
+        child: FadeTransition(opacity: curved, child: child),
+      );
+    },
+  );
+}
 
 class PublicHomeScreen extends StatelessWidget {
   const PublicHomeScreen({super.key});
@@ -12,8 +50,8 @@ class PublicHomeScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(28, 28, 28, 44),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          _Hero(),
+        children: [
+          _Hero(onSupportTap: () => _openPublicSupportDrawer(context)),
           SizedBox(height: 24),
           _SystemStrip(),
           SizedBox(height: 24),
@@ -23,7 +61,7 @@ class PublicHomeScreen extends StatelessWidget {
           SizedBox(height: 24),
           _PlansSection(),
           SizedBox(height: 24),
-          _ClosingSection(),
+          _ClosingSection(onSupportTap: () => _openPublicSupportDrawer(context)),
         ],
       ),
     );
@@ -31,7 +69,9 @@ class PublicHomeScreen extends StatelessWidget {
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero();
+  const _Hero({required this.onSupportTap});
+
+  final VoidCallback onSupportTap;
 
   @override
   Widget build(BuildContext context) {
@@ -92,14 +132,14 @@ class _Hero extends StatelessWidget {
                     child: const Text('Review plans'),
                   ),
                   OutlinedButton(
-                    onPressed: () => context.go('/contact'),
+                    onPressed: onSupportTap,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.publicText,
                       side: const BorderSide(color: AppTheme.publicLine),
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('Talk through fit'),
+                    child: const Text('Get guidance'),
                   ),
                 ],
               ),
@@ -430,7 +470,9 @@ class _PlanPeekCard extends StatelessWidget {
 }
 
 class _ClosingSection extends StatelessWidget {
-  const _ClosingSection();
+  const _ClosingSection({required this.onSupportTap});
+
+  final VoidCallback onSupportTap;
 
   @override
   Widget build(BuildContext context) {
@@ -462,7 +504,8 @@ class _ClosingSection extends StatelessWidget {
             runSpacing: 12,
             children: [
               FilledButton(onPressed: () => context.go('/pricing?trial=15d'), child: const Text('Review pricing')),
-              OutlinedButton(onPressed: () => context.go('/contact'), child: const Text('Contact Orchestrate')),
+              OutlinedButton(onPressed: onSupportTap, child: const Text('Open support drawer')),
+              TextButton(onPressed: () => context.go('/contact'), child: const Text('Open full support')),
             ],
           );
 

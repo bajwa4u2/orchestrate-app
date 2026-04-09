@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_session.dart';
+import '../../core/config/app_config.dart';
 import '../../core/config/pricing_config.dart';
 import '../../core/theme/app_theme.dart';
+import '../../features/support/screens/support_drawer.dart';
 import '../../data/repositories/public_repository.dart';
 
 class PricingScreen extends StatefulWidget {
@@ -122,10 +124,49 @@ class _PricingScreenState extends State<PricingScreen> {
             const SizedBox(height: 20),
             const _CapabilityMatrix(),
             const SizedBox(height: 20),
+            _SupportAssistCard(onPressed: _openSupportDrawer),
+            const SizedBox(height: 20),
             _Footnote(trialDays: catalog.trialDays),
           ],
         ],
       ),
+    );
+  }
+
+
+  Future<void> _openSupportDrawer() async {
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Support',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: const ColoredBox(color: Colors.transparent),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: SupportDrawer(
+                publicMode: true,
+                baseUrl: AppConfig.apiBaseUrl,
+              ),
+            ),
+          ],
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        return SlideTransition(
+          position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(curved),
+          child: FadeTransition(opacity: curved, child: child),
+        );
+      },
     );
   }
 
@@ -415,6 +456,86 @@ class _CapabilityMatrix extends StatelessWidget {
           ),
         ),
       ]),
+    );
+  }
+}
+
+
+class _SupportAssistCard extends StatelessWidget {
+  const _SupportAssistCard({required this.onPressed});
+
+  final Future<void> Function() onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked = constraints.maxWidth < 760;
+          final left = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Need help choosing the right operating scope?', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 10),
+              Text(
+                'Describe your market, service line, or billing need and Orchestrate will guide you forward before you commit to a tier.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Powered by OpenAI',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+              ),
+            ],
+          );
+
+          final right = Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              OutlinedButton(
+                onPressed: () => onPressed(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.publicText,
+                  side: const BorderSide(color: AppTheme.publicLine),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Get guidance'),
+              ),
+              FilledButton(
+                onPressed: () => GoRouter.of(context).go('/contact'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.publicText,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Open full support'),
+              ),
+            ],
+          );
+
+          if (stacked) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [left, const SizedBox(height: 16), right],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [Expanded(flex: 7, child: left), const SizedBox(width: 20), Expanded(flex: 5, child: Align(alignment: Alignment.centerRight, child: right))],
+          );
+        },
+      ),
     );
   }
 }
