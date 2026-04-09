@@ -6,9 +6,11 @@ import '../../../core/auth/auth_session.dart';
 
 class SupportService {
   final String baseUrl;
+  final Future<Map<String, String>> Function()? authHeadersBuilder;
 
   const SupportService({
     required this.baseUrl,
+    this.authHeadersBuilder,
   });
 
   Future<Map<String, dynamic>> createSession({
@@ -23,7 +25,7 @@ class SupportService {
 
     final response = await http.post(
       Uri.parse(endpoint),
-      headers: _headers(publicMode: publicMode),
+      headers: await _headers(publicMode: publicMode),
       body: jsonEncode({
         'message': message,
         if (publicMode && name != null && name.trim().isNotEmpty) 'name': name.trim(),
@@ -48,29 +50,34 @@ class SupportService {
 
     final response = await http.post(
       Uri.parse(endpoint),
-      headers: _headers(publicMode: publicMode),
+      headers: await _headers(publicMode: publicMode),
       body: jsonEncode({'message': message}),
     );
 
     return _decode(response);
   }
 
-  Map<String, String> _headers({required bool publicMode}) {
+  Future<Map<String, String>> _headers({required bool publicMode}) async {
     final headers = <String, String>{'content-type': 'application/json'};
-    if (!publicMode) {
-      final session = AuthSessionController.instance;
-      if (session.token.isNotEmpty) {
-        headers['authorization'] = 'Bearer ${session.token}';
-        headers['x-user-email'] = session.email;
-        if (session.organizationId.isNotEmpty) {
-          headers['x-organization-id'] = session.organizationId;
-        }
-        if (session.clientId.isNotEmpty) {
-          headers['x-client-id'] = session.clientId;
-        }
-        if (session.memberRole.isNotEmpty) {
-          headers['x-member-role'] = session.memberRole;
-        }
+    if (publicMode) return headers;
+
+    if (authHeadersBuilder != null) {
+      headers.addAll(await authHeadersBuilder!.call());
+      return headers;
+    }
+
+    final session = AuthSessionController.instance;
+    if (session.token.isNotEmpty) {
+      headers['authorization'] = 'Bearer ${session.token}';
+      headers['x-user-email'] = session.email;
+      if (session.organizationId.isNotEmpty) {
+        headers['x-organization-id'] = session.organizationId;
+      }
+      if (session.clientId.isNotEmpty) {
+        headers['x-client-id'] = session.clientId;
+      }
+      if (session.memberRole.isNotEmpty) {
+        headers['x-member-role'] = session.memberRole;
       }
     }
     return headers;
