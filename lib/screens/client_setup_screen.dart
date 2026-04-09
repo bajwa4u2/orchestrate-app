@@ -154,9 +154,9 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(28),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text('Define service profile', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                              Text('Define your operating profile', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                               const SizedBox(height: 10),
-                              Text('This information becomes the operating context later used by workflows, targeting, and AI generation.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+                              Text('This sets the market, region, and industry context your workspace will use from the start.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
                               const SizedBox(height: 20),
                               if (_error != null) _SetupBanner(message: _error!, error: true),
                               DropdownButtonFormField<String>(
@@ -230,20 +230,20 @@ class _SetupIntro extends StatelessWidget {
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Setup before subscription', style: Theme.of(context).textTheme.headlineMedium),
+        Text('Set up before billing begins', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
-        Text('Orchestrate separates access, setup, and billing so operational readiness stays clear.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+        Text('Confirm your service lane, market, and industry before moving into billing.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
         const SizedBox(height: 18),
         Wrap(spacing: 10, runSpacing: 10, children: [
           _Pill(label: 'Lane: ${_title(planCode)}'),
-          if (trial == '15d') const _Pill(label: '15-day trial request carried forward'),
+          if (trial == '15d') const _Pill(label: '15-day start period selected'),
         ]),
         const SizedBox(height: 22),
-        const _SetupPoint(title: 'Country and region', body: 'This defines the basic operating field for delivery and targeting.'),
+        const _SetupPoint(title: 'Country and region', body: 'This defines the market you want to start in.'),
         const SizedBox(height: 12),
-        const _SetupPoint(title: 'Industry context', body: 'This gives message generation and strategy the correct commercial frame.'),
+        const _SetupPoint(title: 'Industry context', body: 'This keeps outreach and service direction grounded in the right commercial context.'),
         const SizedBox(height: 12),
-        const _SetupPoint(title: 'Locality focus', body: 'Optional city or metro detail sharpens where work starts without overcomplicating the base profile.'),
+        const _SetupPoint(title: 'Locality focus', body: 'Optional city or metro detail helps you begin with a tighter local focus.'),
       ]),
     );
   }

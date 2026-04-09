@@ -227,15 +227,15 @@ class _SubscribeHero extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Subscription readiness', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted)),
+        Text('Billing readiness', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted)),
         const SizedBox(height: 10),
-        Text('Activate your operating model', style: Theme.of(context).textTheme.headlineMedium),
+        Text('Activate your plan', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
-        Text('Your setup is in place. Confirm plan and market depth before secure checkout opens.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+        Text('Your setup is in place. Confirm lane and market coverage before billing begins.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
         const SizedBox(height: 16),
         Wrap(spacing: 10, runSpacing: 10, children: [
           _Pill(label: 'Lane: ${_title(planCode)}'),
-          if (trialRequested) _Pill(label: '${trialDays}-day trial request active'),
+          if (trialRequested) _Pill(label: '${trialDays}-day start period selected'),
         ]),
       ]),
     );
@@ -299,8 +299,8 @@ class _SelectionCard extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
           value: trialRequested,
           onChanged: onTrialChanged,
-          title: Text('Carry a ${trialDays}-day trial request into activation'),
-          subtitle: const Text('This request is preserved on the frontend. Recurring billing still proceeds through secure checkout.'),
+          title: Text('Begin with a ${trialDays}-day start period'),
+          subtitle: const Text('Billing still begins through secure checkout after you confirm this selection.'),
         ),
       ]),
     );
@@ -320,7 +320,7 @@ class _SummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: AppTheme.publicSurfaceSoft, borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('What this selection unlocks', style: Theme.of(context).textTheme.titleLarge),
+        Text('What this selection includes', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 14),
         for (final item in points) ...[
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -339,7 +339,7 @@ class _SummaryCard extends StatelessWidget {
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppTheme.publicLine)),
-            child: const Text('Trial request note: this preference will remain visible during activation review.'),
+            child: const Text('Start period selected for this activation.'),
           ),
       ]),
     );
@@ -372,19 +372,24 @@ class _ReadinessCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Ready to activate', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+        Text('Ready to continue', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         Text('${_title(selection.lane)} • ${selection.label}', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Text(selection.monthlyLabel, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
-        Text('Secure checkout opens after this confirmation step. Account and setup can still be reviewed before paying.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+        Text('Secure checkout opens after this confirmation step. You can still review your account and workspace before paying.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
         if (trialRequested) ...[
           const SizedBox(height: 12),
-          Text('The ${trialDays}-day trial request is noted here as a frontend preference. Actual subscription billing still follows the Stripe checkout flow.'),
+          Text('The ${trialDays}-day start period will be included when you continue into billing.'),
         ],
         const SizedBox(height: 18),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: onActivate, child: Text(activating ? 'Opening secure checkout...' : 'Open secure checkout'))),
+        SizedBox(width: double.infinity, child: FilledButton(onPressed: onActivate, child: Text(activating ? 'Opening secure checkout...' : 'Continue to secure checkout'))),
+        const SizedBox(height: 12),
+        Text(
+          'Secure billing powered by Stripe',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+        ),
         const SizedBox(height: 12),
         Wrap(spacing: 10, runSpacing: 10, children: [
           OutlinedButton(onPressed: onReviewWorkspace, child: const Text('Review workspace')),

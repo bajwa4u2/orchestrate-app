@@ -150,16 +150,16 @@ class _ContactIntro extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Use this page when you want to talk through fit, pricing, onboarding, billing, or an operational question before moving ahead.',
+            'Use this page for fit, pricing, onboarding, billing, or any operational question before you move ahead.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
           ),
           const SizedBox(height: 28),
           const _DetailCard(
-            title: 'What this does',
+            title: 'How to begin',
             body:
-                'This is not a traditional contact form. Start with the message itself and the system will respond immediately or move the request into follow-up.',
+                'Start with the message itself. We will respond directly or guide the next step from there.',
           ),
           const SizedBox(height: 14),
           const _DetailCard(
@@ -171,7 +171,7 @@ class _ContactIntro extends StatelessWidget {
           const _DetailCard(
             title: 'When to open the side panel',
             body:
-                'Use the side panel when you want to keep the conversation available while browsing pricing or reviewing another public page.',
+                'Use the side panel if you want support to stay open while you review pricing or another public page.',
           ),
           const SizedBox(height: 22),
           OutlinedButton(

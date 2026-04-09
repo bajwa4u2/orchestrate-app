@@ -112,7 +112,7 @@ class _Hero extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
-                  'Orchestrate moves from account setup to service profile, workflow execution, message generation, meetings, invoices, and payment continuity inside one controlled system. The product promise is execution, not dashboard theater.',
+                  'Orchestrate moves from account setup to service profile, workflow execution, message generation, meetings, invoices, and payment continuity inside one controlled system.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
                 ),
               ),
@@ -415,7 +415,7 @@ class _PlansSection extends StatelessWidget {
         children: [
           Text('Choose the operating lane', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
-          Text('Each lane can be started with a 15-day trial request during activation review.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+          Text('Each lane can begin with a 15-day start period before monthly billing begins.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
           const SizedBox(height: 20),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -493,8 +493,13 @@ class _ClosingSection extends StatelessWidget {
               Text('Ready to define scope properly?', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 12),
               Text(
-                'Start with the pricing surface, carry plan choice into account access, then define service profile before secure checkout. That is the intended path.',
+                'Start with pricing, carry plan choice into account access, then define service profile before secure checkout.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Secure billing powered by Stripe',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
               ),
             ],
           );

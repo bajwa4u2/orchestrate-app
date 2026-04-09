@@ -221,7 +221,7 @@ class _Hero extends StatelessWidget {
           Text('Pricing tied to operating scope', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'Choose the lane first, then the market coverage. Capability limits follow the tier. The ${trialDays}-day option below is carried into activation as a trial request, not a hidden upsell.',
+            'Choose the lane first, then the market coverage. Pricing follows the scope you want active from the start.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
           ),
           if (trialRequested) ...[
@@ -234,7 +234,7 @@ class _Hero extends StatelessWidget {
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
-                '${trialDays}-day trial request selected. This preference will carry into client activation.',
+                '${trialDays}-day start period selected. This stays with your plan as you continue.',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicAccent),
               ),
             ),
@@ -319,9 +319,9 @@ class _TrialToggle extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${trialDays}-day trial request', style: Theme.of(context).textTheme.titleLarge),
+                Text('${trialDays}-day start period', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
-                Text('Use this when you want the activation conversation to begin with a ${trialDays}-day trial request before recurring service begins.', style: Theme.of(context).textTheme.bodyMedium),
+                Text('Choose this when you want to begin with a ${trialDays}-day start period before monthly billing begins.', style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
@@ -398,7 +398,7 @@ class _TierCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppTheme.publicLine),
             ),
-            child: Text('${trialDays}-day trial request will be carried into activation for this tier.', style: Theme.of(context).textTheme.bodyMedium),
+            child: Text('${trialDays}-day start period selected for this tier.', style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
         const SizedBox(height: 16),
@@ -412,7 +412,7 @@ class _TierCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: Text(trialRequested ? 'Continue with trial request' : 'Continue with ${plan.label}'),
+            child: Text(trialRequested ? 'Continue with start period' : 'Continue with ${plan.label}'),
           ),
         ),
       ]),
@@ -489,9 +489,19 @@ class _SupportAssistCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
               ),
               const SizedBox(height: 12),
-              Text(
-                'Powered by OpenAI',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+              Wrap(
+                spacing: 10,
+                runSpacing: 6,
+                children: [
+                  Text(
+                    'Powered by OpenAI',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                  ),
+                  Text(
+                    'Secure billing powered by Stripe',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                  ),
+                ],
               ),
             ],
           );
@@ -554,9 +564,19 @@ class _Footnote extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.publicLine),
       ),
-      child: Text(
-        'Recurring billing still proceeds through secure checkout. The ${trialDays}-day option on this page is recorded as a frontend trial request and carried into activation flow.',
-        style: Theme.of(context).textTheme.bodyMedium,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Monthly billing begins through secure checkout. The ${trialDays}-day option on this page continues with your selected plan into activation.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Secure billing powered by Stripe',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+          ),
+        ],
       ),
     );
   }
