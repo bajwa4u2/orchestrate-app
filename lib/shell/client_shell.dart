@@ -64,44 +64,66 @@ class ClientShell extends StatelessWidget {
 
   String _billingStatus(AuthSessionController session) {
     final normalized = session.normalizedSubscriptionStatus;
-    if (normalized == 'active') return 'Billing active';
+    if (normalized == 'active') return 'Active';
     if (normalized == 'trialing') return 'In start period';
     if (normalized == 'past_due' || normalized == 'unpaid') {
-      return 'Billing needs attention';
+      return 'Attention needed';
     }
     if (normalized == 'canceled' || normalized == 'cancelled') {
-      return 'Billing inactive';
+      return 'Inactive';
     }
-    return 'Billing not active';
+    return 'Not active';
   }
 
   String _scopeLabel(AuthSessionController session) {
     final tier = (session.selectedTier ?? '').trim();
     if (tier.isNotEmpty) return _title(tier);
-    return session.hasSetupCompleted ? 'Scope set' : 'Scope incomplete';
-  }
-
-  String _planLabel(AuthSessionController session) {
-    final tier = (session.selectedTier ?? '').trim();
-    if (tier.isNotEmpty) return _title(tier);
-
-    final plan = (session.selectedPlan ?? '').trim();
-    if (plan.isNotEmpty) return _title(plan);
-
-    return 'Not set';
+    return session.hasSetupCompleted ? 'Set' : 'Incomplete';
   }
 
   String _supportLabel() {
-    if (currentPath == '/client/help') return 'Support open';
-    return 'Support available';
+    if (currentPath == '/client/help') return 'Open';
+    return 'Available';
+  }
+
+  String _workspaceName(AuthSessionController session) {
+    final candidates = <String>[
+      session.workspaceName.trim(),
+      session.fullName.trim(),
+    ];
+
+    for (final value in candidates) {
+      if (value.isEmpty) continue;
+      final lower = value.toLowerCase();
+      if (lower.contains('aura platform')) continue;
+      if (lower == 'aura') continue;
+      if (lower == 'orchestrate') continue;
+      return value;
+    }
+
+    return 'Client workspace';
+  }
+
+  String _workspaceEmail(AuthSessionController session) {
+    final email = session.email.trim();
+    if (email.toLowerCase() == 'support@auraplatform.org') return '';
+    return email;
+  }
+
+  String _topStateLine(AuthSessionController session) {
+    if (!session.hasSetupCompleted) return 'Setup still needs attention.';
+    if (session.normalizedSubscriptionStatus != 'active') {
+      return 'Billing needs attention.';
+    }
+    if (currentPath == '/client/help') return 'Support is open.';
+    return 'Workspace is ready.';
   }
 
   @override
   Widget build(BuildContext context) {
     final session = AuthSessionController.instance;
-    final workspaceName = session.workspaceName.trim().isNotEmpty
-        ? session.workspaceName.trim()
-        : (session.fullName.trim().isNotEmpty ? session.fullName.trim() : 'Client workspace');
+    final workspaceName = _workspaceName(session);
+    final workspaceEmail = _workspaceEmail(session);
 
     return Theme(
       data: AppTheme.lightTheme,
@@ -122,7 +144,7 @@ class ClientShell extends StatelessWidget {
                       _ClientBrand(
                         currentPath: currentPath,
                         workspaceName: workspaceName,
-                        email: session.email,
+                        email: workspaceEmail,
                       ),
                       const SizedBox(height: 18),
                       _WorkspaceStateCard(
@@ -155,11 +177,15 @@ class ClientShell extends StatelessWidget {
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: AppTheme.publicMuted,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
+                            ),
                             alignment: Alignment.centerLeft,
-                            textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            textStyle: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           child: const Text('Sign out'),
                         ),
@@ -176,7 +202,9 @@ class ClientShell extends StatelessWidget {
                     width: double.infinity,
                     decoration: const BoxDecoration(
                       color: AppTheme.publicBackground,
-                      border: Border(bottom: BorderSide(color: AppTheme.publicLine)),
+                      border: Border(
+                        bottom: BorderSide(color: AppTheme.publicLine),
+                      ),
                     ),
                     child: SafeArea(
                       bottom: false,
@@ -185,24 +213,33 @@ class ClientShell extends StatelessWidget {
                         padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
                         child: Center(
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+                            constraints: const BoxConstraints(
+                              maxWidth: _maxContentWidth,
+                            ),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
                                 final compact = constraints.maxWidth < 980;
+
                                 final titleBlock = Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       _topTitle(),
-                                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(
                                             fontWeight: FontWeight.w700,
                                             color: AppTheme.publicText,
                                           ),
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      'Plan, billing, scope, and support stay visible while you work.',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      _topStateLine(session),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
                                             color: AppTheme.publicMuted,
                                           ),
                                     ),
@@ -216,7 +253,11 @@ class ClientShell extends StatelessWidget {
                                   children: [
                                     _StatusPill(
                                       label: 'Plan',
-                                      value: _planLabel(session),
+                                      value: _title(
+                                        session.selectedTier ??
+                                            session.selectedPlan ??
+                                            'Not set',
+                                      ),
                                     ),
                                     _StatusPill(
                                       label: 'Billing',
@@ -235,7 +276,8 @@ class ClientShell extends StatelessWidget {
 
                                 if (compact) {
                                   return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       titleBlock,
                                       const SizedBox(height: 16),
@@ -264,7 +306,9 @@ class ClientShell extends StatelessWidget {
                       padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
                       child: Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+                          constraints: const BoxConstraints(
+                            maxWidth: _maxContentWidth,
+                          ),
                           child: SizedBox.expand(child: child),
                         ),
                       ),
@@ -370,14 +414,18 @@ class _WorkspaceStateCard extends StatelessWidget {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: setupComplete ? AppTheme.publicAccent : AppTheme.publicMuted,
+                  color: setupComplete
+                      ? AppTheme.publicAccent
+                      : AppTheme.publicMuted,
                   shape: BoxShape.circle,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  setupComplete ? 'Workspace ready' : 'Setup still needs attention',
+                  setupComplete
+                      ? 'Workspace ready'
+                      : 'Setup still needs attention',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppTheme.publicText,
@@ -500,7 +548,9 @@ class _ClientShellButton extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontSize: 15,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppTheme.publicText : AppTheme.publicMuted,
+                  color: selected
+                      ? AppTheme.publicText
+                      : AppTheme.publicMuted,
                 ),
           ),
         ),
