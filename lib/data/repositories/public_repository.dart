@@ -1,13 +1,14 @@
 import '../../core/network/api_client.dart';
+import '../../core/config/pricing_config.dart';
 
 class PublicRepository {
   PublicRepository({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
-  Future<Map<String, dynamic>> fetchPricing() async {
+  Future<PricingCatalog> fetchPricing() async {
     final json = await _apiClient.getJson('/public/pricing');
-    return Map<String, dynamic>.from(json as Map);
+    return PricingConfig.fromApi(Map<String, dynamic>.from(json as Map));
   }
 
   Future<Map<String, dynamic>> submitContact({

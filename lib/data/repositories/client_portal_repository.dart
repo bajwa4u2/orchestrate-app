@@ -1,3 +1,4 @@
+import '../../core/config/pricing_config.dart';
 import '../../core/network/api_client.dart';
 
 class ClientPortalRepository {
@@ -57,6 +58,11 @@ class ClientPortalRepository {
     if (json == null) return null;
 
     return Map<String, dynamic>.from(json as Map);
+  }
+
+  Future<PricingCatalog> fetchPricingCatalog() async {
+    final json = await _apiClient.getJson('/public/pricing');
+    return PricingConfig.fromApi(Map<String, dynamic>.from(json as Map));
   }
 
   Future<Map<String, dynamic>> createSubscription(String plan, String tier) async {

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_session.dart';
+import '../../core/config/pricing_config.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/repositories/public_repository.dart';
 
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
@@ -14,63 +16,114 @@ class PricingScreen extends StatefulWidget {
 class _PricingScreenState extends State<PricingScreen> {
   String _selectedPlan = 'opportunity';
   bool _trialRequested = false;
+  bool _loading = true;
+  String? _error;
+  PricingCatalog? _catalog;
+  bool _queryInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final uri = GoRouterState.of(context).uri;
-    final plan = uri.queryParameters['plan']?.trim().toLowerCase();
-    final trial = uri.queryParameters['trial']?.trim().toLowerCase();
-    if (plan == 'revenue' || plan == 'opportunity') {
-      _selectedPlan = plan!;
+    if (!_queryInitialized) {
+      final uri = GoRouterState.of(context).uri;
+      final plan = uri.queryParameters['plan']?.trim().toLowerCase();
+      final trial = uri.queryParameters['trial']?.trim().toLowerCase();
+      if (plan == 'revenue' || plan == 'opportunity') {
+        _selectedPlan = plan!;
+      }
+      _trialRequested = trial == '15d';
+      _queryInitialized = true;
+      _loadPricing();
     }
-    _trialRequested = trial == '15d';
+  }
+
+  Future<void> _loadPricing() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final catalog = await PublicRepository().fetchPricing();
+      if (!mounted) return;
+      setState(() {
+        _catalog = catalog;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Pricing could not be loaded right now.';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final catalog = _catalog;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Hero(trialRequested: _trialRequested),
+          _Hero(trialRequested: _trialRequested, trialDays: catalog?.trialDays ?? 15),
           const SizedBox(height: 20),
           _PlanSwitch(selectedPlan: _selectedPlan, onChanged: (value) => setState(() => _selectedPlan = value)),
           const SizedBox(height: 16),
-          _TrialToggle(selected: _trialRequested, onChanged: (value) => setState(() => _trialRequested = value)),
-          const SizedBox(height: 20),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 980;
-              if (stacked) {
-                return Column(children: [for (int i = 0; i < _tiers.length; i++) ...[
-                  _TierCard(
-                    tier: _tiers[i],
-                    selectedPlan: _selectedPlan,
-                    trialRequested: _trialRequested,
-                    onSelect: (tierCode) => _goForward(context, tierCode),
-                  ),
-                  if (i != _tiers.length - 1) const SizedBox(height: 16),
-                ]]);
-              }
-              return Row(children: [for (int i = 0; i < _tiers.length; i++) ...[
-                Expanded(
-                  child: _TierCard(
-                    tier: _tiers[i],
-                    selectedPlan: _selectedPlan,
-                    trialRequested: _trialRequested,
-                    onSelect: (tierCode) => _goForward(context, tierCode),
-                  ),
-                ),
-                if (i != _tiers.length - 1) const SizedBox(width: 16),
-              ]]);
-            },
+          _TrialToggle(
+            selected: _trialRequested,
+            trialDays: catalog?.trialDays ?? 15,
+            onChanged: (value) => setState(() => _trialRequested = value),
           ),
           const SizedBox(height: 20),
-          const _CapabilityMatrix(),
-          const SizedBox(height: 20),
-          const _Footnote(),
+          if (_loading)
+            const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+          else if (_error != null)
+            _ErrorCard(message: _error!, onRetry: _loadPricing)
+          else if (catalog != null) ...[
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final stacked = constraints.maxWidth < 980;
+                final plans = catalog.plansForLane(_selectedPlan);
+                if (stacked) {
+                  return Column(
+                    children: [
+                      for (int i = 0; i < plans.length; i++) ...[
+                        _TierCard(
+                          plan: plans[i],
+                          trialRequested: _trialRequested,
+                          trialDays: catalog.trialDays,
+                          onSelect: (tierCode) => _goForward(context, tierCode),
+                        ),
+                        if (i != plans.length - 1) const SizedBox(height: 16),
+                      ]
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    for (int i = 0; i < plans.length; i++) ...[
+                      Expanded(
+                        child: _TierCard(
+                          plan: plans[i],
+                          trialRequested: _trialRequested,
+                          trialDays: catalog.trialDays,
+                          onSelect: (tierCode) => _goForward(context, tierCode),
+                        ),
+                      ),
+                      if (i != plans.length - 1) const SizedBox(width: 16),
+                    ]
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            const _CapabilityMatrix(),
+            const SizedBox(height: 20),
+            _Footnote(trialDays: catalog.trialDays),
+          ],
         ],
       ),
     );
@@ -107,8 +160,9 @@ class _PricingScreenState extends State<PricingScreen> {
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.trialRequested});
+  const _Hero({required this.trialRequested, required this.trialDays});
   final bool trialRequested;
+  final int trialDays;
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +180,7 @@ class _Hero extends StatelessWidget {
           Text('Pricing tied to operating scope', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'Choose the lane first, then the market coverage. Capability limits follow the tier. The 15-day option below is carried into activation as a trial request, not a hidden upsell.',
+            'Choose the lane first, then the market coverage. Capability limits follow the tier. The ${trialDays}-day option below is carried into activation as a trial request, not a hidden upsell.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
           ),
           if (trialRequested) ...[
@@ -138,7 +192,10 @@ class _Hero extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppTheme.publicLine),
               ),
-              child: Text('15-day trial request selected. This preference will carry into client activation.', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicAccent)),
+              child: Text(
+                '${trialDays}-day trial request selected. This preference will carry into client activation.',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicAccent),
+              ),
             ),
           ],
         ],
@@ -201,8 +258,9 @@ class _PlanButton extends StatelessWidget {
 }
 
 class _TrialToggle extends StatelessWidget {
-  const _TrialToggle({required this.selected, required this.onChanged});
+  const _TrialToggle({required this.selected, required this.trialDays, required this.onChanged});
   final bool selected;
+  final int trialDays;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -220,9 +278,9 @@ class _TrialToggle extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('15-day trial request', style: Theme.of(context).textTheme.titleLarge),
+                Text('${trialDays}-day trial request', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
-                Text('Use this when you want the activation conversation to begin with a 15-day trial request before recurring service begins.', style: Theme.of(context).textTheme.bodyMedium),
+                Text('Use this when you want the activation conversation to begin with a ${trialDays}-day trial request before recurring service begins.', style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
@@ -235,45 +293,50 @@ class _TrialToggle extends StatelessWidget {
 }
 
 class _TierCard extends StatelessWidget {
-  const _TierCard({required this.tier, required this.selectedPlan, required this.trialRequested, required this.onSelect});
-  final _Tier tier;
-  final String selectedPlan;
+  const _TierCard({required this.plan, required this.trialRequested, required this.trialDays, required this.onSelect});
+  final PricingPlanOption plan;
   final bool trialRequested;
+  final int trialDays;
   final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final price = selectedPlan == 'revenue' ? tier.revenuePrice : tier.opportunityPrice;
+    final content = _tierContent(plan.tier);
+    final highlight = plan.tier == 'multi';
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: tier.highlight ? AppTheme.publicText : AppTheme.publicLine),
+        border: Border.all(color: highlight ? AppTheme.publicText : AppTheme.publicLine),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (tier.highlight)
+        if (highlight)
           Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(color: AppTheme.publicAccentSoft, borderRadius: BorderRadius.circular(999)),
             child: Text('Best balance', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicAccent)),
           ),
-        Text(tier.name, style: Theme.of(context).textTheme.headlineMedium),
+        Text(plan.label, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 10),
-        Text(tier.summary, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+        Text(
+          plan.description?.isNotEmpty == true ? plan.description! : content.summary,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
+        ),
         const SizedBox(height: 16),
         RichText(
           text: TextSpan(
             style: Theme.of(context).textTheme.bodyMedium,
             children: [
-              TextSpan(text: price, style: Theme.of(context).textTheme.headlineMedium),
+              TextSpan(text: plan.priceLabel, style: Theme.of(context).textTheme.headlineMedium),
               const TextSpan(text: ' / month'),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        for (final item in tier.items) ...[
+        for (final item in content.items) ...[
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Padding(
               padding: EdgeInsets.only(top: 5),
@@ -294,21 +357,21 @@ class _TierCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppTheme.publicLine),
             ),
-            child: Text('15-day trial request will be carried into activation for this tier.', style: Theme.of(context).textTheme.bodyMedium),
+            child: Text('${trialDays}-day trial request will be carried into activation for this tier.', style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: FilledButton(
-            onPressed: () => onSelect(tier.code),
+            onPressed: () => onSelect(plan.tier),
             style: FilledButton.styleFrom(
               backgroundColor: AppTheme.publicText,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: Text(trialRequested ? 'Continue with trial request' : 'Continue with ${tier.name}'),
+            child: Text(trialRequested ? 'Continue with trial request' : 'Continue with ${plan.label}'),
           ),
         ),
       ]),
@@ -357,7 +420,8 @@ class _CapabilityMatrix extends StatelessWidget {
 }
 
 class _Footnote extends StatelessWidget {
-  const _Footnote();
+  const _Footnote({required this.trialDays});
+  final int trialDays;
 
   @override
   Widget build(BuildContext context) {
@@ -370,63 +434,78 @@ class _Footnote extends StatelessWidget {
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Text(
-        'Recurring billing still proceeds through secure checkout. The 15-day option on this page is recorded as a frontend trial request and carried into activation flow.',
+        'Recurring billing still proceeds through secure checkout. The ${trialDays}-day option on this page is recorded as a frontend trial request and carried into activation flow.',
         style: Theme.of(context).textTheme.bodyMedium,
       ),
     );
   }
 }
 
-class _Tier {
-  const _Tier({required this.code, required this.name, required this.summary, required this.opportunityPrice, required this.revenuePrice, required this.items, this.highlight = false});
-  final String code;
-  final String name;
-  final String summary;
-  final String opportunityPrice;
-  final String revenuePrice;
-  final List<String> items;
-  final bool highlight;
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(message, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
 }
 
-const _tiers = [
-  _Tier(
-    code: 'focused',
-    name: 'Focused',
-    summary: 'For a disciplined launch inside one country with room to work across regions.',
-    opportunityPrice: '\$435',
-    revenuePrice: '\$870',
-    items: [
-      'One country with multiple regions',
-      'Lead generation, writing, follow-up, and meeting movement',
-      'Strong fit for contained market testing and steady outreach',
-    ],
-  ),
-  _Tier(
-    code: 'multi',
-    name: 'Multi-Market',
-    summary: 'For operators expanding across countries while keeping one system posture.',
-    opportunityPrice: '\$645',
-    revenuePrice: '\$1290',
-    items: [
-      'Multiple countries and multiple regions',
-      'Broader market scope across one operating model',
-      'Good fit for distributed teams and cross-market coverage',
-    ],
-    highlight: true,
-  ),
-  _Tier(
-    code: 'precision',
-    name: 'Precision',
-    summary: 'For controlled targeting with city, metro, include or exclude logic, and market priority.',
-    opportunityPrice: '\$975',
-    revenuePrice: '\$1950',
-    items: [
-      'City and metro targeting plus include or exclude logic',
-      'Priority market ordering and tighter operational control',
-      'Built for complex market maps and sharper targeting demands',
-    ],
-  ),
-];
+class _TierContent {
+  const _TierContent({required this.summary, required this.items});
+  final String summary;
+  final List<String> items;
+}
+
+_TierContent _tierContent(String tier) {
+  switch (tier) {
+    case 'precision':
+      return const _TierContent(
+        summary: 'For controlled targeting with city, metro, include or exclude logic, and market priority.',
+        items: [
+          'City and metro targeting plus include or exclude logic',
+          'Priority market ordering and tighter operational control',
+          'Built for complex market maps and sharper targeting demands',
+        ],
+      );
+    case 'multi':
+      return const _TierContent(
+        summary: 'For operators expanding across countries while keeping one system posture.',
+        items: [
+          'Multiple countries and multiple regions',
+          'Broader market scope across one operating model',
+          'Good fit for distributed teams and cross-market coverage',
+        ],
+      );
+    default:
+      return const _TierContent(
+        summary: 'For a disciplined launch inside one country with room to work across regions.',
+        items: [
+          'One country with multiple regions',
+          'Lead generation, writing, follow-up, and meeting movement',
+          'Strong fit for contained market testing and steady outreach',
+        ],
+      );
+  }
+}
 
 String _route(String path, {required String plan, required String tier, required bool trialRequested}) {
   return Uri(

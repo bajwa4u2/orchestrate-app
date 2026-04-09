@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/auth_session.dart';
+import '../core/config/pricing_config.dart';
 import '../core/theme/app_theme.dart';
 import '../data/repositories/client_portal_repository.dart';
 
@@ -21,6 +22,7 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
   String _planCode = 'opportunity';
   String _tierCode = 'focused';
   bool _trialRequested = false;
+  PricingCatalog? _catalog;
 
   @override
   void initState() {
@@ -36,13 +38,26 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
     final trial = uri.queryParameters['trial']?.trim().toLowerCase() == '15d';
     await session.rememberSelection(plan: plan, tier: tier);
 
-    if (!mounted) return;
-    setState(() {
-      _planCode = plan;
-      _tierCode = tier;
-      _trialRequested = trial;
-      _loading = false;
-    });
+    try {
+      final catalog = await ClientPortalRepository().fetchPricingCatalog();
+      if (!mounted) return;
+      setState(() {
+        _planCode = plan;
+        _tierCode = tier;
+        _trialRequested = trial;
+        _catalog = catalog;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _planCode = plan;
+        _tierCode = tier;
+        _trialRequested = trial;
+        _loading = false;
+        _error = 'Pricing details could not be loaded right now.';
+      });
+    }
   }
 
   Future<void> _applySelection({String? plan, String? tier}) async {
@@ -81,7 +96,8 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final selection = _selection(_planCode, _tierCode);
+    final catalog = _catalog;
+    final selection = catalog == null ? null : catalog.find(_planCode, _tierCode);
 
     return Scaffold(
       backgroundColor: AppTheme.publicBackground,
@@ -99,42 +115,51 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _SubscribeHero(planCode: _planCode, trialRequested: _trialRequested),
+                        _SubscribeHero(
+                          planCode: _planCode,
+                          trialRequested: _trialRequested,
+                          trialDays: catalog?.trialDays ?? 15,
+                        ),
                         const SizedBox(height: 18),
                         if (_error != null) _Banner(message: _error!, error: true),
                         if (_error != null) const SizedBox(height: 18),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final stacked = constraints.maxWidth < 940;
-                            final left = Column(
-                              children: [
-                                _SelectionCard(
-                                  planCode: _planCode,
-                                  tierCode: _tierCode,
-                                  trialRequested: _trialRequested,
-                                  onPlanChanged: (value) => _applySelection(plan: value),
-                                  onTierChanged: (value) => _applySelection(tier: value),
-                                  onTrialChanged: (value) => setState(() => _trialRequested = value),
-                                ),
-                                const SizedBox(height: 18),
-                                _SummaryCard(selection: selection, trialRequested: _trialRequested),
-                              ],
-                            );
-                            final right = _ReadinessCard(
-                              selection: selection,
-                              trialRequested: _trialRequested,
-                              activating: _subscribing,
-                              onActivate: _subscribing ? null : _activate,
-                              onReviewAccount: () => context.go('/client/account'),
-                              onReviewWorkspace: () => context.go('/client/workspace'),
-                            );
+                        if (selection == null)
+                          _MissingPricingCard(onRetry: _load)
+                        else
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final stacked = constraints.maxWidth < 940;
+                              final left = Column(
+                                children: [
+                                  _SelectionCard(
+                                    planCode: _planCode,
+                                    tierCode: _tierCode,
+                                    trialRequested: _trialRequested,
+                                    trialDays: catalog?.trialDays ?? 15,
+                                    onPlanChanged: (value) => _applySelection(plan: value),
+                                    onTierChanged: (value) => _applySelection(tier: value),
+                                    onTrialChanged: (value) => setState(() => _trialRequested = value),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _SummaryCard(selection: selection, trialRequested: _trialRequested),
+                                ],
+                              );
+                              final right = _ReadinessCard(
+                                selection: selection,
+                                trialRequested: _trialRequested,
+                                trialDays: catalog?.trialDays ?? 15,
+                                activating: _subscribing,
+                                onActivate: _subscribing ? null : _activate,
+                                onReviewAccount: () => context.go('/client/account'),
+                                onReviewWorkspace: () => context.go('/client/workspace'),
+                              );
 
-                            if (stacked) {
-                              return Column(children: [left, const SizedBox(height: 18), right]);
-                            }
-                            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 6, child: left), const SizedBox(width: 18), Expanded(flex: 5, child: right)]);
-                          },
-                        ),
+                              if (stacked) {
+                                return Column(children: [left, const SizedBox(height: 18), right]);
+                              }
+                              return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 6, child: left), const SizedBox(width: 18), Expanded(flex: 5, child: right)]);
+                            },
+                          ),
                       ],
                     ),
             ),
@@ -146,9 +171,10 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
 }
 
 class _SubscribeHero extends StatelessWidget {
-  const _SubscribeHero({required this.planCode, required this.trialRequested});
+  const _SubscribeHero({required this.planCode, required this.trialRequested, required this.trialDays});
   final String planCode;
   final bool trialRequested;
+  final int trialDays;
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +191,7 @@ class _SubscribeHero extends StatelessWidget {
         const SizedBox(height: 16),
         Wrap(spacing: 10, runSpacing: 10, children: [
           _Pill(label: 'Lane: ${_title(planCode)}'),
-          if (trialRequested) const _Pill(label: '15-day trial request active'),
+          if (trialRequested) _Pill(label: '${trialDays}-day trial request active'),
         ]),
       ]),
     );
@@ -177,6 +203,7 @@ class _SelectionCard extends StatelessWidget {
     required this.planCode,
     required this.tierCode,
     required this.trialRequested,
+    required this.trialDays,
     required this.onPlanChanged,
     required this.onTierChanged,
     required this.onTrialChanged,
@@ -185,6 +212,7 @@ class _SelectionCard extends StatelessWidget {
   final String planCode;
   final String tierCode;
   final bool trialRequested;
+  final int trialDays;
   final ValueChanged<String> onPlanChanged;
   final ValueChanged<String> onTierChanged;
   final ValueChanged<bool> onTrialChanged;
@@ -227,7 +255,7 @@ class _SelectionCard extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
           value: trialRequested,
           onChanged: onTrialChanged,
-          title: const Text('Carry a 15-day trial request into activation'),
+          title: Text('Carry a ${trialDays}-day trial request into activation'),
           subtitle: const Text('This request is preserved on the frontend. Recurring billing still proceeds through secure checkout.'),
         ),
       ]),
@@ -237,11 +265,12 @@ class _SelectionCard extends StatelessWidget {
 
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.selection, required this.trialRequested});
-  final _Selection selection;
+  final PricingPlanOption selection;
   final bool trialRequested;
 
   @override
   Widget build(BuildContext context) {
+    final points = _selectionPoints(selection.lane, selection.tier);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -249,7 +278,7 @@ class _SummaryCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('What this selection unlocks', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 14),
-        for (final item in selection.points) ...[
+        for (final item in points) ...[
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Padding(
               padding: EdgeInsets.only(top: 5),
@@ -277,14 +306,16 @@ class _ReadinessCard extends StatelessWidget {
   const _ReadinessCard({
     required this.selection,
     required this.trialRequested,
+    required this.trialDays,
     required this.activating,
     required this.onActivate,
     required this.onReviewAccount,
     required this.onReviewWorkspace,
   });
 
-  final _Selection selection;
+  final PricingPlanOption selection;
   final bool trialRequested;
+  final int trialDays;
   final bool activating;
   final VoidCallback? onActivate;
   final VoidCallback onReviewAccount;
@@ -299,14 +330,14 @@ class _ReadinessCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Ready to activate', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
-        Text('${selection.planLabel} • ${selection.tierLabel}', style: Theme.of(context).textTheme.titleLarge),
+        Text('${_title(selection.lane)} • ${selection.label}', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
-        Text(selection.priceLabel, style: Theme.of(context).textTheme.headlineMedium),
+        Text(selection.monthlyLabel, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
         Text('Secure checkout opens after this confirmation step. Account and setup can still be reviewed before paying.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
         if (trialRequested) ...[
           const SizedBox(height: 12),
-          const Text('The 15-day trial request is noted here as a frontend preference. Actual subscription billing still follows the Stripe checkout flow.'),
+          Text('The ${trialDays}-day trial request is noted here as a frontend preference. Actual subscription billing still follows the Stripe checkout flow.'),
         ],
         const SizedBox(height: 18),
         SizedBox(width: double.infinity, child: FilledButton(onPressed: onActivate, child: Text(activating ? 'Opening secure checkout...' : 'Open secure checkout'))),
@@ -353,51 +384,59 @@ class _Pill extends StatelessWidget {
   }
 }
 
-class _Selection {
-  const _Selection({required this.planLabel, required this.tierLabel, required this.priceLabel, required this.points});
-  final String planLabel;
-  final String tierLabel;
-  final String priceLabel;
-  final List<String> points;
-}
+class _MissingPricingCard extends StatelessWidget {
+  const _MissingPricingCard({required this.onRetry});
 
-_Selection _selection(String planCode, String tierCode) {
-  final revenue = planCode == 'revenue';
-  switch (tierCode) {
-    case 'precision':
-      return _Selection(
-        planLabel: revenue ? 'Revenue' : 'Opportunity',
-        tierLabel: 'Precision',
-        priceLabel: revenue ? '\$1950 / month' : '\$975 / month',
-        points: [
-          'City and metro targeting with include or exclude logic',
-          'Priority market ordering for sharper execution control',
-          revenue ? 'Billing continuity and document movement included' : 'Lead-to-meeting execution included',
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Pricing details are temporarily unavailable.', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
         ],
-      );
-    case 'multi':
-      return _Selection(
-        planLabel: revenue ? 'Revenue' : 'Opportunity',
-        tierLabel: 'Multi-Market',
-        priceLabel: revenue ? '\$1290 / month' : '\$645 / month',
-        points: [
-          'Multiple countries and multiple regions',
-          'Broader execution coverage without leaving one system',
-          revenue ? 'Revenue-side continuity stays attached across markets' : 'Cross-market outreach and follow-up coverage included',
-        ],
-      );
-    default:
-      return _Selection(
-        planLabel: revenue ? 'Revenue' : 'Opportunity',
-        tierLabel: 'Focused',
-        priceLabel: revenue ? '\$870 / month' : '\$435 / month',
-        points: [
-          'One country with multiple regions',
-          'A disciplined operating start for one contained market',
-          revenue ? 'Billing continuity begins from the same operating lane' : 'Lead generation, writing, and meetings stay aligned',
-        ],
-      );
+      ),
+    );
   }
 }
 
-String _title(String text) => text.split(RegExp(r'[-_]')).where((part) => part.isNotEmpty).map((word) => '${word[0].toUpperCase()}${word.substring(1)}').join(' ');
+List<String> _selectionPoints(String lane, String tier) {
+  final revenue = lane == 'revenue';
+  switch (tier) {
+    case 'precision':
+      return [
+        'City and metro targeting with include or exclude logic',
+        'Priority market ordering for sharper execution control',
+        revenue ? 'Billing continuity and document movement included' : 'Lead-to-meeting execution included',
+      ];
+    case 'multi':
+      return [
+        'Multiple countries and multiple regions',
+        'Broader execution coverage without leaving one system',
+        revenue ? 'Revenue-side continuity stays attached across markets' : 'Cross-market outreach and follow-up coverage included',
+      ];
+    default:
+      return [
+        'One country with multiple regions',
+        'A disciplined operating start for one contained market',
+        revenue ? 'Billing continuity begins from the same operating lane' : 'Lead generation, writing, and meetings stay aligned',
+      ];
+  }
+}
+
+String _title(String text) => text
+    .split(RegExp(r'[-_]'))
+    .where((part) => part.isNotEmpty)
+    .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+    .join(' ');
