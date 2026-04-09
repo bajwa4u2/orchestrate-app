@@ -23,53 +23,90 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
   String _tierCode = 'focused';
   bool _trialRequested = false;
   PricingCatalog? _catalog;
+  String? _lastAppliedRouteKey;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCatalogAndSyncRoute());
   }
 
-  Future<void> _load() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     final uri = GoRouterState.of(context).uri;
+    final routeKey = uri.toString();
+    if (_lastAppliedRouteKey == routeKey) return;
+
+    _lastAppliedRouteKey = routeKey;
+    _syncSelectionFromUri(uri);
+  }
+
+  void _syncSelectionFromUri(Uri uri) {
     final session = AuthSessionController.instance;
-    final plan = uri.queryParameters['plan']?.trim().toLowerCase() ?? session.selectedPlan ?? 'opportunity';
-    final tier = uri.queryParameters['tier']?.trim().toLowerCase() ?? session.selectedTier ?? 'focused';
-    final trial = uri.queryParameters['trial']?.trim().toLowerCase() == '15d';
-    await session.rememberSelection(plan: plan, tier: tier);
+    final nextPlan = uri.queryParameters['plan']?.trim().toLowerCase() ?? session.selectedPlan ?? 'opportunity';
+    final nextTier = uri.queryParameters['tier']?.trim().toLowerCase() ?? session.selectedTier ?? 'focused';
+    final nextTrial = uri.queryParameters['trial']?.trim().toLowerCase() == '15d';
+
+    session.rememberSelection(plan: nextPlan, tier: nextTier);
+
+    if (!mounted) return;
+    setState(() {
+      _planCode = nextPlan;
+      _tierCode = nextTier;
+      _trialRequested = nextTrial;
+    });
+  }
+
+  Future<void> _loadCatalogAndSyncRoute() async {
+    final uri = GoRouterState.of(context).uri;
+    _lastAppliedRouteKey = uri.toString();
+    _syncSelectionFromUri(uri);
 
     try {
       final catalog = await ClientPortalRepository().fetchPricingCatalog();
       if (!mounted) return;
       setState(() {
-        _planCode = plan;
-        _tierCode = tier;
-        _trialRequested = trial;
         _catalog = catalog;
         _loading = false;
+        _error = null;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _planCode = plan;
-        _tierCode = tier;
-        _trialRequested = trial;
         _loading = false;
         _error = 'Pricing details could not be loaded right now.';
       });
     }
   }
 
-  Future<void> _applySelection({String? plan, String? tier}) async {
+  Future<void> _applySelection({String? plan, String? tier, bool? trialRequested}) async {
     final nextPlan = (plan ?? _planCode).trim().toLowerCase();
     final nextTier = (tier ?? _tierCode).trim().toLowerCase();
+    final nextTrial = trialRequested ?? _trialRequested;
+
     await AuthSessionController.instance.rememberSelection(plan: nextPlan, tier: nextTier);
     if (!mounted) return;
-    context.go(Uri(path: '/client/subscribe', queryParameters: {
-      'plan': nextPlan,
-      'tier': nextTier,
-      if (_trialRequested) 'trial': '15d',
-    }).toString());
+
+    setState(() {
+      _planCode = nextPlan;
+      _tierCode = nextTier;
+      _trialRequested = nextTrial;
+    });
+
+    final nextUri = Uri(
+      path: '/client/subscribe',
+      queryParameters: {
+        'plan': nextPlan,
+        'tier': nextTier,
+        if (nextTrial) 'trial': '15d',
+      },
+    );
+
+    final routeKey = nextUri.toString();
+    if (_lastAppliedRouteKey == routeKey) return;
+    _lastAppliedRouteKey = routeKey;
+    context.go(routeKey);
   }
 
   Future<void> _activate() async {
@@ -124,7 +161,7 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                         if (_error != null) _Banner(message: _error!, error: true),
                         if (_error != null) const SizedBox(height: 18),
                         if (selection == null)
-                          _MissingPricingCard(onRetry: _load)
+                          _MissingPricingCard(onRetry: _loadCatalogAndSyncRoute)
                         else
                           LayoutBuilder(
                             builder: (context, constraints) {
@@ -138,7 +175,7 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                                     trialDays: catalog?.trialDays ?? 15,
                                     onPlanChanged: (value) => _applySelection(plan: value),
                                     onTierChanged: (value) => _applySelection(tier: value),
-                                    onTrialChanged: (value) => setState(() => _trialRequested = value),
+                                    onTrialChanged: (value) => _applySelection(trialRequested: value),
                                   ),
                                   const SizedBox(height: 18),
                                   _SummaryCard(selection: selection, trialRequested: _trialRequested),
@@ -157,7 +194,14 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                               if (stacked) {
                                 return Column(children: [left, const SizedBox(height: 18), right]);
                               }
-                              return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 6, child: left), const SizedBox(width: 18), Expanded(flex: 5, child: right)]);
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(flex: 6, child: left),
+                                  const SizedBox(width: 18),
+                                  Expanded(flex: 5, child: right),
+                                ],
+                              );
                             },
                           ),
                       ],
