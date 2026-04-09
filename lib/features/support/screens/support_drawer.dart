@@ -48,15 +48,26 @@ class _SupportDrawerState extends State<SupportDrawer> {
     super.dispose();
   }
 
+  Future<void> _submit(String message, String? name, String? email) async {
+    setState(() => _draft = '');
+    await controller.sendMessage(
+      message: message,
+      name: name,
+      email: email,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final availableWidth = MediaQuery.of(context).size.width;
     final drawerWidth = availableWidth < 560 ? availableWidth : 460.0;
+    final session = controller.session;
+    final scheme = Theme.of(context).colorScheme;
 
     return Align(
       alignment: Alignment.centerRight,
       child: Material(
-        color: Theme.of(context).colorScheme.surface,
+        color: scheme.surface,
         child: SafeArea(
           child: SizedBox(
             width: drawerWidth,
@@ -82,38 +93,34 @@ class _SupportDrawerState extends State<SupportDrawer> {
                   const SizedBox(height: 6),
                   Text(
                     widget.publicMode
-                        ? 'Describe your need and we’ll guide you forward.'
-                        : 'Describe what you need and we’ll guide you forward using your current workspace context where it helps.',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                        ? 'Start with what you need. We will answer immediately where possible and guide the rest into review only when needed.'
+                        : 'Describe the question, issue, or setup need. We will use your current workspace context where it helps.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.72),
+                        ),
                   ),
                   const SizedBox(height: 16),
                   IntakeCard(
                     publicMode: widget.publicMode,
-                    isLoading: controller.session.isLoading,
+                    isLoading: session.isLoading,
                     initialValue: _draft,
                     onChanged: (value) => _draft = value,
-                    onSubmit: (message, name, email) async {
-                      _draft = '';
-                      await controller.sendMessage(
-                        message: message,
-                        name: name,
-                        email: email,
-                      );
-                    },
+                    onSubmit: _submit,
                   ),
                   const SizedBox(height: 16),
                   Expanded(
                     child: SingleChildScrollView(
                       child: ResponseStream(
-                        messages: controller.session.messages,
-                        isLoading: controller.session.isLoading,
+                        messages: session.messages,
+                        isLoading: session.isLoading,
                         onFollowUpTap: (value) async {
                           await controller.sendMessage(message: value);
                         },
                       ),
                     ),
                   ),
-                  SupportFooter(showStripe: false),
+                  const SizedBox(height: 4),
+                  const SupportFooter(showStripe: false),
                 ],
               ),
             ),

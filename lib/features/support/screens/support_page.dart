@@ -48,58 +48,106 @@ class _SupportPageState extends State<SupportPage> {
     super.dispose();
   }
 
+  Future<void> _submit(String message, String? name, String? email) async {
+    setState(() => _draft = '');
+    await controller.sendMessage(
+      message: message,
+      name: name,
+      email: email,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final session = controller.session;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 820),
+              constraints: const BoxConstraints(maxWidth: 900),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.publicMode ? 'Tell us what you need' : 'Help & Support',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.publicMode
-                        ? 'We’ll respond immediately or guide you forward.'
-                        : 'Describe what you need and we’ll guide you forward using your current workspace context where it helps.',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
+                  _SupportPageHeader(publicMode: widget.publicMode),
                   const SizedBox(height: 24),
                   IntakeCard(
                     publicMode: widget.publicMode,
-                    isLoading: controller.session.isLoading,
+                    isLoading: session.isLoading,
                     initialValue: _draft,
                     onChanged: (value) => _draft = value,
-                    onSubmit: (message, name, email) async {
-                      _draft = '';
-                      await controller.sendMessage(
-                        message: message,
-                        name: name,
-                        email: email,
-                      );
-                    },
+                    onSubmit: _submit,
                   ),
                   const SizedBox(height: 20),
                   ResponseStream(
-                    messages: controller.session.messages,
-                    isLoading: controller.session.isLoading,
+                    messages: session.messages,
+                    isLoading: session.isLoading,
                     onFollowUpTap: (value) async {
                       await controller.sendMessage(message: value);
                     },
                   ),
-                  SupportFooter(showStripe: false),
+                  const SizedBox(height: 4),
+                  const SupportFooter(showStripe: false),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SupportPageHeader extends StatelessWidget {
+  const _SupportPageHeader({required this.publicMode});
+
+  final bool publicMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              'Help & Support',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            publicMode ? 'Start with what you need' : 'Get help without losing context',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            publicMode
+                ? 'Describe the question, issue, or setup need. We will answer immediately where possible and move it into review only when needed.'
+                : 'Describe the question, issue, or setup need. We will answer immediately where possible and use your existing workspace context where it helps.',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurface.withValues(alpha: 0.72),
+                ),
+          ),
+        ],
       ),
     );
   }
