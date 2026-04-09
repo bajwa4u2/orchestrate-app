@@ -26,8 +26,8 @@ class ResponseStream extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: message.role == 'user'
-                ? _UserMessageCard(message: message)
-                : _SystemMessageCard(
+                ? _UserMessageBlock(message: message)
+                : _SystemMessageBlock(
                     message: message,
                     onFollowUpTap: onFollowUpTap,
                   ),
@@ -35,22 +35,15 @@ class ResponseStream extends StatelessWidget {
         if (isLoading)
           const Padding(
             padding: EdgeInsets.only(top: 14),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
+            child: _LoadingBlock(),
           ),
       ],
     );
   }
 }
 
-class _UserMessageCard extends StatelessWidget {
-  const _UserMessageCard({required this.message});
+class _UserMessageBlock extends StatelessWidget {
+  const _UserMessageBlock({required this.message});
 
   final SupportMessage message;
 
@@ -66,8 +59,8 @@ class _UserMessageCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: scheme.outlineVariant.withOpacity(0.5)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,7 +68,7 @@ class _UserMessageCard extends StatelessWidget {
               Text(
                 'You',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.65),
+                      color: scheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -89,8 +82,8 @@ class _UserMessageCard extends StatelessWidget {
   }
 }
 
-class _SystemMessageCard extends StatelessWidget {
-  const _SystemMessageCard({
+class _SystemMessageBlock extends StatelessWidget {
+  const _SystemMessageBlock({
     required this.message,
     required this.onFollowUpTap,
   });
@@ -101,12 +94,10 @@ class _SystemMessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final normalizedStatus = (message.status ?? '').trim().toLowerCase();
-    final isReviewState = message.isEscalated ||
-        message.caseCreated ||
-        normalizedStatus == 'escalated' ||
-        normalizedStatus == 'review' ||
-        normalizedStatus == 'needs_review';
+    final statusKey = _normalizeStatus(message.status);
+    final isReviewState = message.isEscalated || message.caseCreated || statusKey == 'escalated';
+    final isFollowUpState = message.followUps.isNotEmpty || statusKey == 'follow_up';
+    final isResolvedState = statusKey == 'resolved' || statusKey == 'answered';
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -116,19 +107,22 @@ class _SystemMessageCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isReviewState
-                  ? scheme.primary.withValues(alpha: 0.30)
-                  : scheme.outlineVariant.withValues(alpha: 0.45),
+                  ? scheme.outline.withOpacity(0.8)
+                  : scheme.outlineVariant.withOpacity(0.55),
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _StateHeader(
-                status: message.status,
-                isReviewState: isReviewState,
+                label: _stateLabel(
+                  isReviewState: isReviewState,
+                  isFollowUpState: isFollowUpState,
+                  isResolvedState: isResolvedState,
+                ),
               ),
               const SizedBox(height: 12),
               Text(message.content),
@@ -139,23 +133,20 @@ class _SystemMessageCard extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     if (message.category != null && message.category!.isNotEmpty)
-                      _MetaPill(label: _formatCategory(message.category!)),
+                      _MetaPill(label: message.category!),
                     if (message.priority != null && message.priority!.isNotEmpty)
-                      _MetaPill(label: 'Priority: ${_formatLabel(message.priority!)}'),
+                      _MetaPill(label: 'Priority: ${message.priority}'),
                   ],
                 ),
               ],
               if (isReviewState) ...[
                 const SizedBox(height: 14),
-                _ReviewStateCard(
-                  caseCreated: message.caseCreated,
-                  caseId: message.caseId,
-                ),
+                _ReviewStateBlock(message: message),
               ],
               if (message.followUps.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 Text(
-                  'Continue with one of these',
+                  'Next details',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -166,89 +157,95 @@ class _SystemMessageCard extends StatelessWidget {
                   onTap: onFollowUpTap,
                 ),
               ],
+              if (isResolvedState && !isReviewState) ...[
+                const SizedBox(height: 14),
+                _ResolvedStateBlock(),
+              ],
             ],
           ),
         ),
       ),
     );
   }
+
+  static String _normalizeStatus(String? value) {
+    if (value == null) return '';
+    final normalized = value.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    if (normalized == 'needs_follow_up') return 'follow_up';
+    return normalized;
+  }
+
+  static String _stateLabel({
+    required bool isReviewState,
+    required bool isFollowUpState,
+    required bool isResolvedState,
+  }) {
+    if (isReviewState) return 'Under review';
+    if (isFollowUpState) return 'Follow-up';
+    if (isResolvedState) return 'Response';
+    return 'Support';
+  }
 }
 
 class _StateHeader extends StatelessWidget {
-  const _StateHeader({
-    required this.status,
-    required this.isReviewState,
-  });
+  const _StateHeader({required this.label});
 
-  final String? status;
-  final bool isReviewState;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final label = _statusTitle(status, isReviewState);
 
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: isReviewState ? scheme.primary : scheme.secondary,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface.withValues(alpha: 0.85),
-              ),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
     );
   }
 }
 
-class _ReviewStateCard extends StatelessWidget {
-  const _ReviewStateCard({
-    required this.caseCreated,
-    required this.caseId,
-  });
+class _ReviewStateBlock extends StatelessWidget {
+  const _ReviewStateBlock({required this.message});
 
-  final bool caseCreated;
-  final String? caseId;
+  final SupportMessage message;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final hasCaseId = caseId != null && caseId!.trim().isNotEmpty;
+    final caseId = message.caseId?.trim() ?? '';
+    final hasCaseId = caseId.isNotEmpty;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(0.6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            caseCreated ? 'Under review' : 'Review state',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
+            hasCaseId ? 'Case created' : 'Review in progress',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            caseCreated
-                ? hasCaseId
-                    ? 'A support case has been created for this issue. Reference: $caseId.'
-                    : 'A support case has been created for this issue.'
-                : 'This issue needs follow-up review.',
+            hasCaseId
+                ? 'Reference: $caseId'
+                : 'We captured this for follow-up and will continue from the same thread.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -257,10 +254,67 @@ class _ReviewStateCard extends StatelessWidget {
   }
 }
 
-class _MetaPill extends StatelessWidget {
-  const _MetaPill({required this.label});
+class _ResolvedStateBlock extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
 
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(0.45)),
+      ),
+      child: Text(
+        'You can continue here if you need anything else.',
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+    );
+  }
+}
+
+class _LoadingBlock extends StatelessWidget {
+  const _LoadingBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.outlineVariant.withOpacity(0.45)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Working on it',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaPill extends StatelessWidget {
   final String label;
+
+  const _MetaPill({required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -276,32 +330,4 @@ class _MetaPill extends StatelessWidget {
       ),
     );
   }
-}
-
-String _statusTitle(String? status, bool isReviewState) {
-  final normalized = (status ?? '').trim().toLowerCase();
-  if (isReviewState) return 'Needs review';
-  if (normalized == 'resolved' || normalized == 'answered') return 'Answered';
-  if (normalized == 'follow_up' || normalized == 'follow-up') {
-    return 'Follow-up';
-  }
-  if (normalized == 'needs_follow_up' || normalized == 'needs-follow-up') {
-    return 'Follow-up';
-  }
-  return 'Response';
-}
-
-String _formatCategory(String value) {
-  return _formatLabel(value).replaceFirstMapped(
-    RegExp(r'^[a-z]'),
-    (match) => match.group(0)!.toUpperCase(),
-  );
-}
-
-String _formatLabel(String value) {
-  return value
-      .trim()
-      .replaceAll('_', ' ')
-      .replaceAll('-', ' ')
-      .replaceAll(RegExp(r'\s+'), ' ');
 }

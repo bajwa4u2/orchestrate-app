@@ -70,7 +70,9 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return const _ClientSupportDrawer();
+        return _ClientSupportDrawer(
+          controller: _controller,
+        );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         final offset = Tween<Offset>(
@@ -138,7 +140,8 @@ class _SupportOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = AuthSessionController.instance;
-    final workspaceName = session.workspaceName.isNotEmpty ? session.workspaceName : 'Client workspace';
+    final workspaceName =
+        session.workspaceName.isNotEmpty ? session.workspaceName : 'Client workspace';
 
     return Container(
       padding: const EdgeInsets.all(28),
@@ -189,7 +192,8 @@ class _SupportOverview extends StatelessWidget {
           const SizedBox(height: 12),
           const _WorkspaceCard(
             label: 'Use this space for',
-            value: 'Setup guidance, plan questions, billing support, workflow issues, and execution clarity.',
+            value:
+                'Setup guidance, plan questions, billing support, workflow issues, and execution clarity.',
           ),
           const SizedBox(height: 22),
           OutlinedButton(
@@ -234,12 +238,12 @@ class _SupportWorkspace extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tell us what you need',
+            'Start with what you need',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 10),
           Text(
-            'Based on your current setup, we’ll respond immediately or guide the issue into follow-up.',
+            'We’ll respond immediately or guide it into follow-up if needed.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -306,47 +310,31 @@ class _WorkspaceCard extends StatelessWidget {
   }
 }
 
-
 class _ClientSupportDrawer extends StatefulWidget {
-  const _ClientSupportDrawer();
+  const _ClientSupportDrawer({required this.controller});
+
+  final SupportController controller;
 
   @override
   State<_ClientSupportDrawer> createState() => _ClientSupportDrawerState();
 }
 
 class _ClientSupportDrawerState extends State<_ClientSupportDrawer> {
-  late final SupportController _controller;
   String _draft = '';
 
   @override
   void initState() {
     super.initState();
-    _controller = SupportController(
-      publicMode: false,
-      service: SupportService(
-        baseUrl: AppConfig.apiBaseUrl,
-        authHeadersBuilder: _authHeaders,
-      ),
-    )..addListener(_refresh);
+    widget.controller.addListener(_refresh);
   }
 
-  Future<Map<String, String>> _authHeaders() async {
-    final session = AuthSessionController.instance;
-    final headers = <String, String>{};
-    if (session.token.isNotEmpty) {
-      headers['authorization'] = 'Bearer ${session.token}';
-      headers['x-user-email'] = session.email;
-      if (session.organizationId.isNotEmpty) {
-        headers['x-organization-id'] = session.organizationId;
-      }
-      if (session.clientId.isNotEmpty) {
-        headers['x-client-id'] = session.clientId;
-      }
-      if (session.memberRole.isNotEmpty) {
-        headers['x-member-role'] = session.memberRole;
-      }
+  @override
+  void didUpdateWidget(covariant _ClientSupportDrawer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller.removeListener(_refresh);
+      widget.controller.addListener(_refresh);
     }
-    return headers;
   }
 
   void _refresh() {
@@ -355,8 +343,7 @@ class _ClientSupportDrawerState extends State<_ClientSupportDrawer> {
 
   @override
   void dispose() {
-    _controller.removeListener(_refresh);
-    _controller.dispose();
+    widget.controller.removeListener(_refresh);
     super.dispose();
   }
 
@@ -390,27 +377,28 @@ class _ClientSupportDrawerState extends State<_ClientSupportDrawer> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Describe your need and we’ll guide you forward.',
+                    'Continue from the same support thread without leaving your workspace.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
                   IntakeCard(
                     publicMode: false,
-                    isLoading: _controller.session.isLoading,
+                    isLoading: widget.controller.session.isLoading,
                     initialValue: _draft,
                     onChanged: (value) => setState(() => _draft = value),
                     onSubmit: (message, name, email) async {
                       setState(() => _draft = '');
-                      await _controller.sendMessage(message: message);
+                      await widget.controller.sendMessage(message: message);
                     },
                   ),
                   const SizedBox(height: 16),
                   Expanded(
                     child: SingleChildScrollView(
                       child: ResponseStream(
-                        messages: _controller.session.messages,
-                        isLoading: _controller.session.isLoading,
-                        onFollowUpTap: (value) => _controller.sendMessage(message: value),
+                        messages: widget.controller.session.messages,
+                        isLoading: widget.controller.session.isLoading,
+                        onFollowUpTap: (value) =>
+                            widget.controller.sendMessage(message: value),
                       ),
                     ),
                   ),

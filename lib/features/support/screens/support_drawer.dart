@@ -11,6 +11,8 @@ class SupportDrawer extends StatefulWidget {
   final String baseUrl;
   final String? sourcePage;
   final String? inquiryTypeHint;
+  final SupportController? controllerOverride;
+  final Future<Map<String, String>> Function()? authHeadersBuilder;
 
   const SupportDrawer({
     super.key,
@@ -18,6 +20,8 @@ class SupportDrawer extends StatefulWidget {
     required this.baseUrl,
     this.sourcePage,
     this.inquiryTypeHint,
+    this.controllerOverride,
+    this.authHeadersBuilder,
   });
 
   @override
@@ -25,49 +29,78 @@ class SupportDrawer extends StatefulWidget {
 }
 
 class _SupportDrawerState extends State<SupportDrawer> {
-  late final SupportController controller;
+  SupportController? _ownedController;
   String _draft = '';
+
+  SupportController get _controller => widget.controllerOverride ?? _ownedController!;
+  bool get _ownsController => widget.controllerOverride == null;
 
   @override
   void initState() {
     super.initState();
-    controller = SupportController(
-      publicMode: widget.publicMode,
-      sourcePage: widget.sourcePage,
-      inquiryTypeHint: widget.inquiryTypeHint,
-      service: SupportService(baseUrl: widget.baseUrl),
-    )..addListener(_refresh);
+    _ensureController();
+    _controller.addListener(_refresh);
   }
 
-  void _refresh() => setState(() {});
+  @override
+  void didUpdateWidget(covariant SupportDrawer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final oldController = oldWidget.controllerOverride ?? _ownedController;
+
+    if (oldWidget.controllerOverride != widget.controllerOverride) {
+      oldController?.removeListener(_refresh);
+      if (_ownsController && _ownedController == null) {
+        _ensureController();
+      }
+      _controller.addListener(_refresh);
+      return;
+    }
+
+    if (_ownsController &&
+        oldWidget.baseUrl != widget.baseUrl) {
+      _controller.removeListener(_refresh);
+      _ownedController?.dispose();
+      _ownedController = null;
+      _ensureController();
+      _controller.addListener(_refresh);
+    }
+  }
+
+  void _ensureController() {
+    if (_ownsController && _ownedController == null) {
+      _ownedController = SupportController(
+        publicMode: widget.publicMode,
+        sourcePage: widget.sourcePage,
+        inquiryTypeHint: widget.inquiryTypeHint,
+        service: SupportService(
+          baseUrl: widget.baseUrl,
+          authHeadersBuilder: widget.authHeadersBuilder,
+        ),
+      );
+    }
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
-    controller.removeListener(_refresh);
-    controller.dispose();
+    _controller.removeListener(_refresh);
+    _ownedController?.dispose();
     super.dispose();
-  }
-
-  Future<void> _submit(String message, String? name, String? email) async {
-    setState(() => _draft = '');
-    await controller.sendMessage(
-      message: message,
-      name: name,
-      email: email,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final availableWidth = MediaQuery.of(context).size.width;
     final drawerWidth = availableWidth < 560 ? availableWidth : 460.0;
-    final session = controller.session;
-    final scheme = Theme.of(context).colorScheme;
 
     return Align(
       alignment: Alignment.centerRight,
       child: Material(
-        color: scheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         child: SafeArea(
           child: SizedBox(
             width: drawerWidth,
@@ -93,34 +126,38 @@ class _SupportDrawerState extends State<SupportDrawer> {
                   const SizedBox(height: 6),
                   Text(
                     widget.publicMode
-                        ? 'Start with what you need. We will answer immediately where possible and guide the rest into review only when needed.'
-                        : 'Describe the question, issue, or setup need. We will use your current workspace context where it helps.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.72),
-                        ),
+                        ? 'Describe what you need and we’ll guide you forward.'
+                        : 'Continue from the same support thread without leaving your workspace.',
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
                   IntakeCard(
                     publicMode: widget.publicMode,
-                    isLoading: session.isLoading,
+                    isLoading: _controller.session.isLoading,
                     initialValue: _draft,
-                    onChanged: (value) => _draft = value,
-                    onSubmit: _submit,
+                    onChanged: (value) => setState(() => _draft = value),
+                    onSubmit: (message, name, email) async {
+                      setState(() => _draft = '');
+                      await _controller.sendMessage(
+                        message: message,
+                        name: name,
+                        email: email,
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   Expanded(
                     child: SingleChildScrollView(
                       child: ResponseStream(
-                        messages: session.messages,
-                        isLoading: session.isLoading,
+                        messages: _controller.session.messages,
+                        isLoading: _controller.session.isLoading,
                         onFollowUpTap: (value) async {
-                          await controller.sendMessage(message: value);
+                          await _controller.sendMessage(message: value);
                         },
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  const SupportFooter(showStripe: false),
+                  SupportFooter(showStripe: false),
                 ],
               ),
             ),
