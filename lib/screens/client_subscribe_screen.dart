@@ -135,6 +135,7 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
   Widget build(BuildContext context) {
     final catalog = _catalog;
     final selection = catalog == null ? null : catalog.find(_planCode, _tierCode);
+    final setupDraft = AuthSessionController.instance.setupDraft;
 
     return Scaffold(
       backgroundColor: AppTheme.publicBackground,
@@ -179,6 +180,10 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                                   ),
                                   const SizedBox(height: 18),
                                   _SummaryCard(selection: selection, trialRequested: _trialRequested),
+                                  if (setupDraft != null) ...[
+                                    const SizedBox(height: 18),
+                                    _ScopeSnapshotCard(draft: setupDraft),
+                                  ],
                                 ],
                               );
                               final right = _ReadinessCard(
@@ -227,14 +232,14 @@ class _SubscribeHero extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Billing readiness', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted)),
+        Text('Checkout readiness', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted)),
         const SizedBox(height: 10),
-        Text('Activate your plan', style: Theme.of(context).textTheme.headlineMedium),
+        Text('Choose your plan', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
-        Text('Your setup is in place. Confirm lane and market coverage before billing begins.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+        Text('Your setup is in place. Confirm the plan that matches your selected scope before checkout begins.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
         const SizedBox(height: 16),
         Wrap(spacing: 10, runSpacing: 10, children: [
-          _Pill(label: 'Lane: ${_title(planCode)}'),
+          _Pill(label: 'Service: ${_title(planCode)}'),
           if (trialRequested) _Pill(label: '${trialDays}-day start period selected'),
         ]),
       ]),
@@ -268,7 +273,7 @@ class _SelectionCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Confirm scope', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+        Text('Confirm plan fit', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 18),
         DropdownButtonFormField<String>(
           value: planCode,
@@ -279,7 +284,7 @@ class _SelectionCard extends StatelessWidget {
           onChanged: (value) {
             if (value != null) onPlanChanged(value);
           },
-          decoration: const InputDecoration(labelText: 'Service lane'),
+          decoration: const InputDecoration(labelText: 'Service'),
         ),
         const SizedBox(height: 14),
         DropdownButtonFormField<String>(
@@ -292,7 +297,7 @@ class _SelectionCard extends StatelessWidget {
           onChanged: (value) {
             if (value != null) onTierChanged(value);
           },
-          decoration: const InputDecoration(labelText: 'Market coverage tier'),
+          decoration: const InputDecoration(labelText: 'Coverage'),
         ),
         const SizedBox(height: 18),
         SwitchListTile.adaptive(
@@ -300,7 +305,7 @@ class _SelectionCard extends StatelessWidget {
           value: trialRequested,
           onChanged: onTrialChanged,
           title: Text('Begin with a ${trialDays}-day start period'),
-          subtitle: const Text('Billing still begins through secure checkout after you confirm this selection.'),
+          subtitle: const Text('Checkout still runs through Stripe after you confirm this selection.'),
         ),
       ]),
     );
@@ -320,7 +325,7 @@ class _SummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: AppTheme.publicSurfaceSoft, borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('What this selection includes', style: Theme.of(context).textTheme.titleLarge),
+        Text('What this plan includes', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 14),
         for (final item in points) ...[
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -339,9 +344,72 @@ class _SummaryCard extends StatelessWidget {
             margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppTheme.publicLine)),
-            child: const Text('Start period selected for this activation.'),
+            child: const Text('Start period selected for this plan.'),
           ),
       ]),
+    );
+  }
+}
+
+
+
+class _ScopeSnapshotCard extends StatelessWidget {
+  const _ScopeSnapshotCard({required this.draft});
+
+  final Map<String, dynamic> draft;
+
+  @override
+  Widget build(BuildContext context) {
+    final service = draft['serviceType']?.toString() == 'revenue' ? 'Revenue' : 'Opportunity';
+    final mode = _title(draft['scopeMode']?.toString() ?? 'focused');
+    final countries = _stringList(draft['countries']);
+    final regions = _stringList(draft['regions']);
+    final metros = _stringList(draft['metros']);
+    final industry = draft['industryLabel']?.toString() ?? '';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Your setup summary', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 14),
+          _SnapshotRow(label: 'Service', value: service),
+          _SnapshotRow(label: 'Coverage', value: mode),
+          if (countries.isNotEmpty) _SnapshotRow(label: 'Countries', value: countries.join(', ')),
+          if (regions.isNotEmpty) _SnapshotRow(label: 'Regions', value: regions.join(', ')),
+          if (metros.isNotEmpty) _SnapshotRow(label: 'Cities or metros', value: metros.join(', ')),
+          if (industry.isNotEmpty) _SnapshotRow(label: 'Industry', value: industry),
+        ],
+      ),
+    );
+  }
+}
+
+class _SnapshotRow extends StatelessWidget {
+  const _SnapshotRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+          const SizedBox(height: 4),
+          Text(value, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
     );
   }
 }
@@ -372,13 +440,13 @@ class _ReadinessCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Ready to continue', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+        Text('Ready for secure checkout', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         Text('${_title(selection.lane)} • ${selection.label}', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Text(selection.monthlyLabel, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
-        Text('Secure checkout opens after this confirmation step. You can still review your account and workspace before paying.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+        Text('Secure checkout opens after this step. You can still review your workspace and account before payment is completed.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
         if (trialRequested) ...[
           const SizedBox(height: 12),
           Text('The ${trialDays}-day start period will be included when you continue into billing.'),
@@ -392,8 +460,8 @@ class _ReadinessCard extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Wrap(spacing: 10, runSpacing: 10, children: [
-          OutlinedButton(onPressed: onReviewWorkspace, child: const Text('Review workspace')),
-          OutlinedButton(onPressed: onReviewAccount, child: const Text('Review account')),
+          OutlinedButton(onPressed: onReviewWorkspace, child: const Text('Open workspace')),
+          OutlinedButton(onPressed: onReviewAccount, child: const Text('Open account')),
         ]),
       ]),
     );
@@ -489,3 +557,11 @@ String _title(String text) => text
     .where((part) => part.isNotEmpty)
     .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
     .join(' ');
+
+
+List<String> _stringList(dynamic value) {
+  if (value is List) {
+    return value.whereType<String>().where((item) => item.trim().isNotEmpty).toList();
+  }
+  return const <String>[];
+}

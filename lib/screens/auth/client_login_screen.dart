@@ -94,7 +94,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       setState(() {
         _busy = true;
         _error = null;
-        _message = 'Verifying your email now.';
+        _message = 'Checking your confirmation link now.';
       });
       try {
         await AuthRepository().verifyEmail(token);
@@ -117,7 +117,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
     if (sent == '1') {
       setState(() {
-        _message = 'Check your inbox and open the verification link to continue.';
+        _message = 'Check your inbox and confirm your email to continue.';
         _error = null;
       });
     }
@@ -255,7 +255,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       await AuthRepository().requestPasswordReset(_email.text.trim());
       if (!mounted) return;
       setState(() {
-        _message = 'A reset link has been sent if the account exists.';
+        _message = 'If this email is in the system, a password reset link is on the way.';
       });
     } catch (error) {
       if (!mounted) return;
@@ -277,7 +277,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     }
     if (_resetPassword.text.trim().length < 8) {
       setState(() {
-        _error = 'Use at least 8 characters for the new password.';
+        _error = 'Use at least 8 characters for your new password.';
         _message = null;
       });
       return;
@@ -294,7 +294,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _message = 'Your password has been updated. Sign in with the new password.';
+        _message = 'Your password has been updated. Sign in with your new password.';
       });
     } catch (error) {
       if (!mounted) return;
@@ -341,7 +341,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   String _humanize(Object error) {
     final text = error.toString().toLowerCase();
-    if (text.contains('incorrect')) return 'That email or password did not work.';
+    if (text.contains('incorrect')) return 'That email or password did not match our records.';
     if (text.contains('already exists')) return 'An account with this email already exists.';
     if (text.contains('expired')) return 'That link has expired. Request a fresh one and try again.';
     if (text.contains('invalid')) return 'That link is not valid anymore.';
@@ -376,12 +376,12 @@ class _AuthIntro extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         BrandAssets.logo(context, height: 28),
         const SizedBox(height: 24),
-        Text(isJoin ? 'Client access starts the real activation path.' : 'Return to your client workspace.', style: Theme.of(context).textTheme.headlineMedium),
+        Text(isJoin ? 'Create your workspace and move straight into setup.' : 'Return to your client workspace.', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
         Text(
           isJoin
-              ? 'Create account, verify email, define service profile, then continue to subscription readiness.'
-              : 'Sign in to review readiness, billing standing, agreements, statements, and account details in one place.',
+              ? 'Create your workspace, confirm your email, define your operating scope, and continue to checkout.'
+              : 'Sign in to continue where you left off, review your account, and get back to work.',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
         ),
         if (details.isNotEmpty) ...[
@@ -401,11 +401,11 @@ class _AuthIntro extends StatelessWidget {
             border: Border.all(color: AppTheme.publicLine),
           ),
           child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _IntroPoint(title: 'Verification', body: 'Email verification is treated as part of account readiness, not a hidden side step.'),
+            _IntroPoint(title: 'Verification', body: 'Email confirmation stays in the main flow so setup does not get lost.'),
             SizedBox(height: 12),
             _IntroPoint(title: 'Setup continuity', body: 'Plan and tier choices can carry directly into setup and subscription flow.'),
             SizedBox(height: 12),
-            _IntroPoint(title: 'Reset and recovery', body: 'Password reset and resend verification stay available from the same client access surface.'),
+            _IntroPoint(title: 'Reset and recovery', body: 'Password reset and email confirmation are available from the same access screen.'),
           ]),
         ),
       ]),
@@ -446,12 +446,12 @@ class _AuthCard extends StatelessWidget {
         child: Form(
           key: state._formKey,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(state._isJoin ? 'Create client account' : 'Client sign in', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+            Text(state._isJoin ? 'Create your workspace' : 'Sign in to your workspace', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             Text(
               state._isJoin
                   ? 'Use your work details so setup can continue cleanly after verification.'
-                  : 'Use your work email and password to continue.',
+                  : 'Use your work email to continue.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
             ),
             const SizedBox(height: 20),
@@ -486,9 +486,9 @@ class _AuthCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              SizedBox(width: double.infinity, child: FilledButton(onPressed: state._busy ? null : state.register, child: Text(state._busy ? 'Creating account...' : 'Create account'))),
+              SizedBox(width: double.infinity, child: FilledButton(onPressed: state._busy ? null : state.register, child: Text(state._busy ? 'Creating workspace...' : 'Continue'))),
               const SizedBox(height: 14),
-              Center(child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [Text('Already have an account?', style: Theme.of(context).textTheme.bodyMedium), TextButton(onPressed: () => context.go(state._route('/client/login')), child: const Text('Sign in'))])),
+              Center(child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [Text('Already have access?', style: Theme.of(context).textTheme.bodyMedium), TextButton(onPressed: () => context.go(state._route('/client/login')), child: const Text('Sign in'))])),
             ] else ...[
               _Field(controller: state._email, label: 'Work email', keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 14),
@@ -502,11 +502,11 @@ class _AuthCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: state._requestingReset ? null : state.requestPasswordReset, child: Text(state._requestingReset ? 'Sending reset email...' : 'Forgot password?'))),
+              Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: state._requestingReset ? null : state.requestPasswordReset, child: Text(state._requestingReset ? 'Sending reset email...' : 'Send reset link'))),
               const SizedBox(height: 10),
-              SizedBox(width: double.infinity, child: FilledButton(onPressed: state._busy ? null : state.login, child: Text(state._busy ? 'Signing in...' : 'Sign in'))),
+              SizedBox(width: double.infinity, child: FilledButton(onPressed: state._busy ? null : state.login, child: Text(state._busy ? 'Opening workspace...' : 'Sign in'))),
               const SizedBox(height: 14),
-              Center(child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [Text('Need an account?', style: Theme.of(context).textTheme.bodyMedium), TextButton(onPressed: () => context.go(state._route('/client/join')), child: const Text('Create account'))])),
+              Center(child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [Text('New here?', style: Theme.of(context).textTheme.bodyMedium), TextButton(onPressed: () => context.go(state._route('/client/join')), child: const Text('Create workspace'))])),
             ],
           ]),
         ),
@@ -538,12 +538,12 @@ class _VerificationView extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     BrandAssets.logo(context, height: 28),
                     const SizedBox(height: 20),
-                    Text('Verify your email', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    Text('Confirm your email', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 10),
                     Text(
                       state._verificationComplete
-                          ? 'Verification is complete. Continue to sign in and enter the activation path.'
-                          : 'Open the verification email we sent and confirm the address tied to your account.',
+                          ? 'Your email is confirmed. Sign in to continue.'
+                          : 'Open the email we sent and confirm the address tied to this workspace.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
                     ),
                     const SizedBox(height: 20),
@@ -558,7 +558,7 @@ class _VerificationView extends StatelessWidget {
                           onPressed: state._verificationEmail == null || state._resendingVerification || state._busy ? null : state.resendVerification,
                           child: Text(state._resendingVerification ? 'Sending...' : 'Resend verification'),
                         ),
-                        TextButton(onPressed: () => context.go(state._route('/client/join')), child: const Text('Create another account')),
+                        TextButton(onPressed: () => context.go(state._route('/client/join')), child: const Text('Use another email')),
                       ],
                     ),
                   ]),
@@ -595,9 +595,9 @@ class _ResetView extends StatelessWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     BrandAssets.logo(context, height: 28),
                     const SizedBox(height: 20),
-                    Text('Reset password', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    Text('Create a new password', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 10),
-                    Text('Use the secure link from your email to set a new password for this client account.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
+                    Text('Use the secure link from your email to set a new password for this workspace.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
                     const SizedBox(height: 20),
                     if (state._message != null) _Banner(message: state._message!, error: false),
                     if (state._error != null) _Banner(message: state._error!, error: true),
@@ -615,7 +615,7 @@ class _ResetView extends StatelessWidget {
                       spacing: 12,
                       runSpacing: 12,
                       children: [
-                        FilledButton(onPressed: state._busy ? null : state.submitReset, child: Text(state._busy ? 'Updating...' : 'Update password')),
+                        FilledButton(onPressed: state._busy ? null : state.submitReset, child: Text(state._busy ? 'Updating password...' : 'Update password')),
                         OutlinedButton(onPressed: () => context.go(state._route('/client/login')), child: const Text('Back to sign in')),
                       ],
                     ),

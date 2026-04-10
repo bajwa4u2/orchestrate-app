@@ -218,10 +218,10 @@ class _Hero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Pricing tied to operating scope', style: Theme.of(context).textTheme.headlineMedium),
+          Text('Pricing built around your operating scope', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'Choose the lane first, then the market coverage. Pricing follows the scope you want active from the start.',
+            'Choose the service first, then the coverage you need. Pricing follows the scope you want active from day one.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
           ),
           if (trialRequested) ...[
@@ -262,7 +262,7 @@ class _PlanSwitch extends StatelessWidget {
       child: Row(children: [
         Expanded(child: _PlanButton(title: 'Opportunity', subtitle: 'Lead generation to meetings', selected: selectedPlan == 'opportunity', onTap: () => onChanged('opportunity'))),
         const SizedBox(width: 8),
-        Expanded(child: _PlanButton(title: 'Revenue', subtitle: 'Execution plus billing continuity', selected: selectedPlan == 'revenue', onTap: () => onChanged('revenue'))),
+        Expanded(child: _PlanButton(title: 'Revenue', subtitle: 'Billing and payment operations', selected: selectedPlan == 'revenue', onTap: () => onChanged('revenue'))),
       ]),
     );
   }
@@ -321,7 +321,7 @@ class _TrialToggle extends StatelessWidget {
               children: [
                 Text('${trialDays}-day start period', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
-                Text('Choose this when you want to begin with a ${trialDays}-day start period before monthly billing begins.', style: Theme.of(context).textTheme.bodyMedium),
+                Text('Use this when you want a ${trialDays}-day start period before monthly billing begins.', style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
@@ -412,7 +412,7 @@ class _TierCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: Text(trialRequested ? 'Continue with start period' : 'Continue with ${plan.label}'),
+            child: Text(trialRequested ? 'Continue' : 'Choose ${plan.label}'),
           ),
         ),
       ]),
@@ -440,7 +440,7 @@ class _CapabilityMatrix extends StatelessWidget {
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Tier capability map', style: Theme.of(context).textTheme.headlineMedium),
+        Text('Coverage guide', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 16),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -482,10 +482,10 @@ class _SupportAssistCard extends StatelessWidget {
           final left = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Need help choosing the right operating scope?', style: Theme.of(context).textTheme.headlineSmall),
+              Text('Need help choosing the right setup?', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 10),
               Text(
-                'Describe your market, service line, or billing need and Orchestrate will guide you forward before you commit to a tier.',
+                'Describe your market, service need, or billing requirement and Orchestrate will guide you before you choose a plan.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
               ),
               const SizedBox(height: 12),

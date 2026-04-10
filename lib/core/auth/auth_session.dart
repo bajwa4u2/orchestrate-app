@@ -42,6 +42,14 @@ class AuthSessionController extends ChangeNotifier {
   String get subscriptionStatus => (_session?['subscriptionStatus'] as String?) ?? 'none';
   String get normalizedSubscriptionStatus => subscriptionStatus.trim().toLowerCase();
 
+  Map<String, dynamic>? get setupDraft {
+    final raw = _session?['setupDraft'];
+    if (raw is Map) {
+      return raw.map((key, value) => MapEntry(key.toString(), value));
+    }
+    return null;
+  }
+
   String _resolveKey(String? surface) {
     return surface == 'operator' ? _operatorKey : _clientKey;
   }
@@ -105,6 +113,7 @@ class AuthSessionController extends ChangeNotifier {
               'none')
           .toLowerCase(),
       'setup': setup,
+      'setupDraft': previous['setupDraft'],
     };
 
     await _persist();
@@ -151,6 +160,18 @@ class AuthSessionController extends ChangeNotifier {
 
   Future<void> rememberSelectedTier(String? tier) async {
     await rememberSelection(tier: tier);
+  }
+
+  Future<void> saveSetupDraft(Map<String, dynamic> draft) async {
+    _session ??= {};
+    _session!['setupDraft'] = draft;
+    await _persist();
+  }
+
+  Future<void> clearSetupDraft() async {
+    if (_session == null) return;
+    _session!.remove('setupDraft');
+    await _persist();
   }
 
   Future<void> clear() async {
