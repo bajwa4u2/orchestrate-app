@@ -6,7 +6,12 @@ import '../core/auth/auth_session.dart';
 import '../core/theme/app_theme.dart';
 import '../data/repositories/client_portal_repository.dart';
 
-enum ClientSection { overview, billing, agreements, statements, account }
+enum ClientSection {
+  workspace,
+  outreach, 
+  billing,
+  account
+}
 
 class ClientWorkspaceScreen extends StatelessWidget {
   const ClientWorkspaceScreen({super.key, required this.section});
