@@ -238,7 +238,7 @@ final router = GoRouter(
         GoRoute(
           path: '/client/workspace',
           builder: (context, state) =>
-              const ClientWorkspaceScreen(section: ClientSection.overview),
+              const ClientWorkspaceScreen(section: ClientSection.workspace),
         ),
         GoRoute(
           path: '/client/outreach',

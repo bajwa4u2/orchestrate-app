@@ -49,6 +49,12 @@ class ClientPortalRepository {
     return (json as List? ?? const []).cast<dynamic>();
   }
 
+  Future<List<dynamic>> fetchMeetings() async {
+    final json =
+        await _apiClient.getJson('/meetings', surface: ApiSurface.client);
+    return (json as List? ?? const []).cast<dynamic>();
+  }
+
   Future<Map<String, dynamic>?> fetchSubscription() async {
     final json = await _apiClient.getJson(
       '/billing/subscription',
@@ -98,7 +104,10 @@ class ClientPortalRepository {
   }
 
   Future<Map<String, dynamic>> fetchClientProfile() async {
-    final json = await _apiClient.getJson('/clients/me/profile', surface: ApiSurface.client);
+    final json = await _apiClient.getJson(
+      '/clients/me/profile',
+      surface: ApiSurface.client,
+    );
     return Map<String, dynamic>.from(json as Map);
   }
 
@@ -121,20 +130,28 @@ class ClientPortalRepository {
       body: {
         'displayName': displayName,
         'legalName': legalName,
-        if (websiteUrl != null && websiteUrl.trim().isNotEmpty) 'websiteUrl': websiteUrl.trim(),
-        if (bookingUrl != null && bookingUrl.trim().isNotEmpty) 'bookingUrl': bookingUrl.trim(),
-        if (primaryTimezone != null && primaryTimezone.trim().isNotEmpty) 'primaryTimezone': primaryTimezone.trim(),
-        if (currencyCode != null && currencyCode.trim().isNotEmpty) 'currencyCode': currencyCode.trim().toUpperCase(),
-        if (brandName != null && brandName.trim().isNotEmpty) 'brandName': brandName.trim(),
-        if (logoUrl != null && logoUrl.trim().isNotEmpty) 'logoUrl': logoUrl.trim(),
-        if (primaryColor != null && primaryColor.trim().isNotEmpty) 'primaryColor': primaryColor.trim(),
-        if (accentColor != null && accentColor.trim().isNotEmpty) 'accentColor': accentColor.trim(),
-        if (welcomeHeadline != null && welcomeHeadline.trim().isNotEmpty) 'welcomeHeadline': welcomeHeadline.trim(),
+        if (websiteUrl != null && websiteUrl.trim().isNotEmpty)
+          'websiteUrl': websiteUrl.trim(),
+        if (bookingUrl != null && bookingUrl.trim().isNotEmpty)
+          'bookingUrl': bookingUrl.trim(),
+        if (primaryTimezone != null && primaryTimezone.trim().isNotEmpty)
+          'primaryTimezone': primaryTimezone.trim(),
+        if (currencyCode != null && currencyCode.trim().isNotEmpty)
+          'currencyCode': currencyCode.trim().toUpperCase(),
+        if (brandName != null && brandName.trim().isNotEmpty)
+          'brandName': brandName.trim(),
+        if (logoUrl != null && logoUrl.trim().isNotEmpty)
+          'logoUrl': logoUrl.trim(),
+        if (primaryColor != null && primaryColor.trim().isNotEmpty)
+          'primaryColor': primaryColor.trim(),
+        if (accentColor != null && accentColor.trim().isNotEmpty)
+          'accentColor': accentColor.trim(),
+        if (welcomeHeadline != null && welcomeHeadline.trim().isNotEmpty)
+          'welcomeHeadline': welcomeHeadline.trim(),
       },
     );
     return Map<String, dynamic>.from(json as Map);
   }
-
 
   Future<Map<String, dynamic>?> deactivateClientAccount({
     String? reason,
@@ -153,5 +170,4 @@ class ClientPortalRepository {
     if (json == null) return null;
     return Map<String, dynamic>.from(json as Map);
   }
-
 }
