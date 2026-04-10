@@ -431,97 +431,91 @@ class ClientWorkspaceScreen extends StatelessWidget {
 
         final setupComplete = session.hasSetupCompleted;
         final billingActive = session.normalizedSubscriptionStatus == 'active';
-        final notices = _countValue(communications['openNotifications']);
+        final accountState = _accountState(session);
+        final subscriptionState = _title(
+          _read(billing, 'status', fallback: session.subscriptionStatus),
+        );
+        final planName = _title(
+          _read(billing, 'planName', fallback: session.selectedPlan ?? 'Not set'),
+        );
+        final repliesCount = _countValue(activity['replies']);
+        final meetingsCount = _countValue(activity['meetings']);
+        final noticesCount = _countValue(communications['openNotifications']);
+        final dispatchCount = _countValue(communications['emailDispatches']);
+        final outstandingValue = _countValue(billing['outstandingCents']);
+        final portalUrl = _read(communications, 'portalUrl');
 
         return _ClientViewData(
-          eyebrow: _accountState(session),
+          eyebrow: 'Workspace',
           title: _displayIdentity(client),
-          subtitle: 'The client workspace keeps service visibility, outcomes, billing, and account control in one calm surface.',
+          subtitle: 'Service visibility, outcomes, billing, and account control stay visible here without guessing beyond real data.',
           notice: !setupComplete
-              ? 'Setup still needs attention before the workspace can reflect the full scope cleanly.'
-              : (!billingActive
-                  ? 'Billing is not active yet, but visibility and control remain available.'
-                  : null),
+              ? 'Setup is still incomplete.'
+              : (!billingActive ? 'Plan is not active yet.' : null),
           metrics: [
-            _MetricData(label: 'Replies', value: _countLabel(activity['replies'])),
-            _MetricData(label: 'Meetings', value: _countLabel(activity['meetings'])),
-            _MetricData(
-              label: 'Open notices',
-              value: _countLabel(communications['openNotifications']),
-            ),
-            _MetricData(
-              label: 'Outstanding',
-              value: _money(billing['outstandingCents']),
-            ),
+            _MetricData(label: 'Account', value: accountState),
+            _MetricData(label: 'Plan', value: subscriptionState),
+            _MetricData(label: 'Replies', value: '$repliesCount'),
+            _MetricData(label: 'Meetings', value: '$meetingsCount'),
           ],
-          cards: [
-            _InsightCardData(
-              title: 'Billing standing',
-              body: _joinNonEmpty([
-                _title(_read(billing, 'status', fallback: session.subscriptionStatus)),
-                '${_countValue(billing['invoiceCount'])} invoices',
-              ]),
-            ),
-            _InsightCardData(
-              title: 'Communications',
-              body: _joinNonEmpty([
-                '${_countValue(communications['emailDispatches'])} email dispatches',
-                notices == 0 ? 'no open notices' : '$notices open notices',
-              ]),
-            ),
-            _InsightCardData(
-              title: 'Account',
-              body: _joinNonEmpty([
-                _title(session.selectedPlan ?? 'not set'),
-                _title(session.selectedTier ?? 'focused'),
-                _accountState(session),
-              ]),
-            ),
-          ],
-          primaryTitle: 'What needs attention',
+          cards: const [],
+          primaryTitle: 'Status',
           primaryRows: [
             _RowData(
-              title: 'Setup',
-              primary: setupComplete ? 'Setup completed' : 'Setup still incomplete',
-              secondary: setupComplete
-                  ? 'Scope and identity are available to the workspace.'
-                  : 'Complete setup so scope, profile, and workspace control line up properly.',
+              title: 'Account state',
+              primary: accountState,
+              secondary: setupComplete ? 'Setup completed.' : 'Setup incomplete.',
             ),
             _RowData(
-              title: 'Billing',
-              primary: billingActive ? 'Active' : 'Not active',
-              secondary: billingActive
-                  ? 'Service activation is in good standing.'
-                  : 'Billing activation can happen later without blocking account control.',
+              title: 'Plan state',
+              primary: subscriptionState,
+              secondary: planName == 'Not Set' ? '' : planName,
             ),
             _RowData(
-              title: 'Support visibility',
-              primary: notices == 0 ? 'No open notices' : '$notices open notices',
-              secondary: _read(communications, 'portalUrl'),
-              actionLabel: _linkLabel(_read(communications, 'portalUrl')),
-              onTap: _openLinkAction(_read(communications, 'portalUrl')),
+              title: 'Outstanding balance',
+              primary: outstandingValue == 0 ? 'No outstanding balance' : _money(outstandingValue),
+              secondary: _countValue(billing['invoiceCount']) == 0
+                  ? ''
+                  : '${_countValue(billing['invoiceCount'])} invoices on record',
+            ),
+            _RowData(
+              title: 'Support portal',
+              primary: portalUrl.isEmpty ? 'Not available' : 'Available',
+              secondary: portalUrl,
+              actionLabel: _linkLabel(portalUrl),
+              onTap: _openLinkAction(portalUrl),
             ),
           ],
-          primaryEmpty: 'Nothing needs attention right now.',
-          secondaryTitle: 'Current movement',
+          primaryEmpty: 'No status data is available yet.',
+          secondaryTitle: 'Current visibility',
           secondaryRows: [
             _RowData(
-              title: 'Replies',
-              primary: _countLabel(activity['replies']),
-              secondary: 'Visible from the outreach side of the workspace.',
+              title: 'Outreach snapshot',
+              primary: repliesCount == 0 ? 'No reply activity yet' : '$repliesCount replies visible',
+              secondary: '',
             ),
             _RowData(
-              title: 'Meetings',
-              primary: _countLabel(activity['meetings']),
-              secondary: 'Booked outcomes stay visible in the meetings surface.',
+              title: 'Meetings snapshot',
+              primary: meetingsCount == 0 ? 'No meetings visible yet' : '$meetingsCount meetings visible',
+              secondary: '',
             ),
             _RowData(
-              title: 'Email dispatches',
-              primary: _countLabel(communications['emailDispatches']),
-              secondary: 'Communication records are available without leaving the client workspace.',
+              title: 'Billing snapshot',
+              primary: planName == 'Not Set' ? subscriptionState : '$planName · $subscriptionState',
+              secondary: outstandingValue == 0 ? '' : 'Outstanding balance is visible above.',
+            ),
+            _RowData(
+              title: 'Communications',
+              primary: noticesCount == 0 && dispatchCount == 0
+                  ? 'No communication activity yet'
+                  : _joinNonEmpty([
+                      noticesCount == 0 ? '' : '$noticesCount open notices',
+                      dispatchCount == 0 ? '' : '$dispatchCount email dispatches',
+                    ]),
+              secondary: '',
             ),
           ],
-          secondaryEmpty: 'No live movement is visible yet.',
+          secondaryEmpty: 'No workspace activity is visible yet.',
         );
     }
   }
