@@ -1,3 +1,4 @@
+import '../../core/auth/auth_session.dart';
 import '../../core/config/pricing_config.dart';
 import '../../core/network/api_client.dart';
 
@@ -13,6 +14,14 @@ class ClientPortalRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<Map<String, dynamic>> fetchBillingOverview() async {
+    final json = await _apiClient.getJson(
+      '/client/billing/overview',
+      surface: ApiSurface.client,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<List<dynamic>> fetchInvoices() async {
     final json =
         await _apiClient.getJson('/client/invoices', surface: ApiSurface.client);
@@ -20,33 +29,78 @@ class ClientPortalRepository {
   }
 
   Future<List<dynamic>> fetchAgreements() async {
-    final json = await _apiClient.getJson('/client/agreements',
-        surface: ApiSurface.client);
+    final json = await _apiClient.getJson(
+      '/client/agreements',
+      surface: ApiSurface.client,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchStatements() async {
-    final json = await _apiClient.getJson('/client/statements',
-        surface: ApiSurface.client);
+    final json = await _apiClient.getJson(
+      '/client/statements',
+      surface: ApiSurface.client,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchReminders() async {
-    final json = await _apiClient.getJson('/client/reminders',
-        surface: ApiSurface.client);
+    final json = await _apiClient.getJson(
+      '/client/reminders',
+      surface: ApiSurface.client,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchNotifications() async {
-    final json = await _apiClient.getJson('/client/notifications',
-        surface: ApiSurface.client);
+    final json = await _apiClient.getJson(
+      '/client/notifications',
+      surface: ApiSurface.client,
+    );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
   Future<List<dynamic>> fetchEmailDispatches() async {
-    final json = await _apiClient.getJson('/client/email-dispatches',
-        surface: ApiSurface.client);
+    final json = await _apiClient.getJson(
+      '/client/email-dispatches',
+      surface: ApiSurface.client,
+    );
     return (json as List? ?? const []).cast<dynamic>();
+  }
+
+  Future<List<dynamic>> fetchReplies({int limit = 20}) async {
+    final session = AuthSessionController.instance;
+    final json = await _apiClient.getJson(
+      '/replies',
+      surface: ApiSurface.client,
+      query: {
+        if (session.organizationId.isNotEmpty)
+          'organizationId': session.organizationId,
+        if (session.clientId.isNotEmpty) 'clientId': session.clientId,
+        'limit': '$limit',
+      },
+    );
+
+    final map = Map<String, dynamic>.from(json as Map);
+    return (map['items'] as List? ?? const []).cast<dynamic>();
+  }
+
+  Future<List<dynamic>> fetchMeetings({String? status, int limit = 50}) async {
+    final session = AuthSessionController.instance;
+    final json = await _apiClient.getJson(
+      '/meetings',
+      surface: ApiSurface.client,
+      query: {
+        if (session.organizationId.isNotEmpty)
+          'organizationId': session.organizationId,
+        if (session.clientId.isNotEmpty) 'clientId': session.clientId,
+        if (status != null && status.trim().isNotEmpty) 'status': status.trim(),
+        'limit': '$limit',
+      },
+    );
+
+    final map = Map<String, dynamic>.from(json as Map);
+    return (map['items'] as List? ?? const []).cast<dynamic>();
   }
 
   Future<Map<String, dynamic>?> fetchSubscription() async {
@@ -98,7 +152,8 @@ class ClientPortalRepository {
   }
 
   Future<Map<String, dynamic>> fetchClientProfile() async {
-    final json = await _apiClient.getJson('/clients/me/profile', surface: ApiSurface.client);
+    final json =
+        await _apiClient.getJson('/clients/me/profile', surface: ApiSurface.client);
     return Map<String, dynamic>.from(json as Map);
   }
 
@@ -121,15 +176,24 @@ class ClientPortalRepository {
       body: {
         'displayName': displayName,
         'legalName': legalName,
-        if (websiteUrl != null && websiteUrl.trim().isNotEmpty) 'websiteUrl': websiteUrl.trim(),
-        if (bookingUrl != null && bookingUrl.trim().isNotEmpty) 'bookingUrl': bookingUrl.trim(),
-        if (primaryTimezone != null && primaryTimezone.trim().isNotEmpty) 'primaryTimezone': primaryTimezone.trim(),
-        if (currencyCode != null && currencyCode.trim().isNotEmpty) 'currencyCode': currencyCode.trim().toUpperCase(),
-        if (brandName != null && brandName.trim().isNotEmpty) 'brandName': brandName.trim(),
-        if (logoUrl != null && logoUrl.trim().isNotEmpty) 'logoUrl': logoUrl.trim(),
-        if (primaryColor != null && primaryColor.trim().isNotEmpty) 'primaryColor': primaryColor.trim(),
-        if (accentColor != null && accentColor.trim().isNotEmpty) 'accentColor': accentColor.trim(),
-        if (welcomeHeadline != null && welcomeHeadline.trim().isNotEmpty) 'welcomeHeadline': welcomeHeadline.trim(),
+        if (websiteUrl != null && websiteUrl.trim().isNotEmpty)
+          'websiteUrl': websiteUrl.trim(),
+        if (bookingUrl != null && bookingUrl.trim().isNotEmpty)
+          'bookingUrl': bookingUrl.trim(),
+        if (primaryTimezone != null && primaryTimezone.trim().isNotEmpty)
+          'primaryTimezone': primaryTimezone.trim(),
+        if (currencyCode != null && currencyCode.trim().isNotEmpty)
+          'currencyCode': currencyCode.trim().toUpperCase(),
+        if (brandName != null && brandName.trim().isNotEmpty)
+          'brandName': brandName.trim(),
+        if (logoUrl != null && logoUrl.trim().isNotEmpty)
+          'logoUrl': logoUrl.trim(),
+        if (primaryColor != null && primaryColor.trim().isNotEmpty)
+          'primaryColor': primaryColor.trim(),
+        if (accentColor != null && accentColor.trim().isNotEmpty)
+          'accentColor': accentColor.trim(),
+        if (welcomeHeadline != null && welcomeHeadline.trim().isNotEmpty)
+          'welcomeHeadline': welcomeHeadline.trim(),
       },
     );
     return Map<String, dynamic>.from(json as Map);

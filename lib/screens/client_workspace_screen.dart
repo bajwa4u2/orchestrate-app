@@ -5,7 +5,7 @@ import '../core/auth/auth_session.dart';
 import '../core/theme/app_theme.dart';
 import '../data/repositories/client_portal_repository.dart';
 
-enum ClientSection { overview, billing, agreements, statements, account }
+enum ClientSection { overview, outreach, billing, account }
 
 class ClientWorkspaceScreen extends StatelessWidget {
   const ClientWorkspaceScreen({super.key, required this.section});
@@ -14,20 +14,23 @@ class ClientWorkspaceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<_ClientSectionData>(
-      future: _load(section),
+    return FutureBuilder<_ClientViewData>(
+      future: _load(context),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final data = snapshot.data;
-        if (data == null) {
-          return const Center(child: Text('This area could not load right now.'));
+        if (snapshot.hasError || snapshot.data == null) {
+          return const Center(
+            child: Text('This area could not load right now.'),
+          );
         }
 
+        final data = snapshot.data!;
+
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -37,16 +40,12 @@ class ClientWorkspaceScreen extends StatelessWidget {
                 _Notice(message: data.notice!),
                 const SizedBox(height: 18),
               ],
-              if (data.statusCards.isNotEmpty) ...[
-                _StatusStrip(cards: data.statusCards),
+              if (data.metrics.isNotEmpty) ...[
+                _MetricStrip(metrics: data.metrics),
                 const SizedBox(height: 18),
               ],
-              if (data.primaryAction != null) ...[
-                _PrimaryActionCard(action: data.primaryAction!),
-                const SizedBox(height: 18),
-              ],
-              if (data.summaryCards.isNotEmpty) ...[
-                _SummaryGrid(cards: data.summaryCards),
+              if (data.cards.isNotEmpty) ...[
+                _InsightGrid(cards: data.cards),
                 const SizedBox(height: 18),
               ],
               LayoutBuilder(
@@ -55,12 +54,12 @@ class ClientWorkspaceScreen extends StatelessWidget {
                   final left = _Panel(
                     title: data.primaryTitle,
                     rows: data.primaryRows,
-                    empty: data.primaryEmpty,
+                    emptyLabel: data.primaryEmpty,
                   );
                   final right = _Panel(
                     title: data.secondaryTitle,
                     rows: data.secondaryRows,
-                    empty: data.secondaryEmpty,
+                    emptyLabel: data.secondaryEmpty,
                   );
 
                   if (stacked) {
@@ -90,378 +89,449 @@ class ClientWorkspaceScreen extends StatelessWidget {
     );
   }
 
-  Future<_ClientSectionData> _load(ClientSection section) async {
+  Future<_ClientViewData> _load(BuildContext context) async {
     final repo = ClientPortalRepository();
     final session = AuthSessionController.instance;
 
     switch (section) {
-      case ClientSection.billing:
-        final invoices = await repo.fetchInvoices();
-        final subscription = await repo.fetchSubscription();
-        final reminders = await repo.fetchReminders();
-        final subscriptionMap = _asMap(subscription);
-        final billingActive =
-            _read(subscriptionMap, 'status', fallback: session.subscriptionStatus)
-                    .toLowerCase() ==
-                'active';
-
-        return _ClientSectionData(
-          eyebrow: 'Billing',
-          title: billingActive
-              ? 'Billing is in good standing'
-              : 'Billing needs attention',
-          subtitle: billingActive
-              ? 'Plan, invoices, and reminders are available below.'
-              : 'Review subscription and billing records before service is interrupted.',
-          notice: subscription == null
-              ? 'Billing details will appear here after activation.'
-              : null,
-          statusCards: [
-            _StatusCard(
-              'Plan',
-              _read(
-                subscriptionMap,
-                'planName',
-                fallback: _labelize(session.selectedPlan ?? 'Not set'),
-              ),
-            ),
-            _StatusCard(
-              'Status',
-              _labelize(
-                _read(
-                  subscriptionMap,
-                  'status',
-                  fallback: session.subscriptionStatus,
-                ),
-              ),
-            ),
-            _StatusCard('Invoices', '${invoices.length}'),
-            _StatusCard('Reminders', '${reminders.length}'),
-          ],
-          primaryAction: _PrimaryAction(
-            title: billingActive ? 'Billing is clear' : 'Review billing now',
-            body: billingActive
-                ? 'You can review invoices, reminders, or plan details whenever needed.'
-                : 'Subscription or billing state needs review before work can remain fully active.',
-          ),
-          summaryCards: [
-            _SummaryCardData(
-              title: 'Subscription',
-              body: subscription == null
-                  ? 'No active subscription record yet.'
-                  : [
-                      _read(subscriptionMap, 'planName'),
-                      _labelize(_read(subscriptionMap, 'interval')),
-                      _labelize(_read(subscriptionMap, 'status')),
-                    ].where((e) => e.isNotEmpty).join(' · '),
-            ),
-            const _SummaryCardData(
-              title: 'Secure billing',
-              body: 'Secure billing powered by Stripe',
-            ),
-          ],
-          primaryTitle: 'Invoices',
-          primaryRows: invoices
-              .map(
-                (item) => _rowFromMap(
-                  item,
-                  titleKey: 'invoiceNumber',
-                  primaryKeys: const ['status'],
-                  secondaryKeys: const ['dueDate', 'currencyCode'],
-                ),
-              )
-              .toList(),
-          primaryEmpty: 'No invoices are available yet.',
-          secondaryTitle: 'Subscription and reminders',
-          secondaryRows: [
-            if (subscription != null)
-              _rowFromMap(
-                subscription,
-                titleKey: 'planName',
-                primaryKeys: const ['status', 'interval'],
-                secondaryKeys: const ['currentPeriodEnd'],
-              ),
-            ...reminders.map(
-              (item) => _rowFromMap(
-                item,
-                titleKey: 'title',
-                primaryKeys: const ['status'],
-                secondaryKeys: const ['sendAt'],
-              ),
-            ),
-          ],
-          secondaryEmpty:
-              'Subscription details and reminders will appear here after activation.',
-        );
-
-      case ClientSection.agreements:
-        final agreements = await repo.fetchAgreements();
+      case ClientSection.outreach:
+        final overview = await repo.fetchOverview();
+        final replies = await repo.fetchReplies(limit: 12);
+        final dispatches = await repo.fetchEmailDispatches();
         final notifications = await repo.fetchNotifications();
 
-        return _ClientSectionData(
-          eyebrow: 'Agreements',
-          title: 'Service record and notices',
-          subtitle: 'Keep formal service records visible and easy to review.',
-          statusCards: [
-            _StatusCard('Agreements', '${agreements.length}'),
-            _StatusCard('Notices', '${notifications.length}'),
+        final activity = _asMap(overview['activity']);
+        final communications = _asMap(overview['communications']);
+        final billing = _asMap(overview['billing']);
+        final hasActivePlan = session.normalizedSubscriptionStatus == 'active';
+
+        return _ClientViewData(
+          eyebrow: 'Activity',
+          title: hasActivePlan
+              ? 'Outreach remains visible from the client side'
+              : 'Outreach view is open before activation',
+          subtitle: hasActivePlan
+              ? 'Replies, delivery activity, and communication records stay in view here.'
+              : 'You can still review visible activity and records before service execution is active.',
+          notice: !session.hasSetupCompleted
+              ? 'Finish setup so outreach configuration is grounded in the right scope.'
+              : null,
+          metrics: [
+            _MetricData(label: 'Replies', value: _countLabel(activity['replies'])),
+            _MetricData(
+              label: 'Dispatches',
+              value: _countLabel(communications['emailDispatches']),
+            ),
+            _MetricData(
+              label: 'Open notices',
+              value: _countLabel(communications['openNotifications']),
+            ),
+            _MetricData(
+              label: 'Billing standing',
+              value: _title(_read(billing, 'status', fallback: session.subscriptionStatus)),
+            ),
           ],
-          primaryAction: const _PrimaryAction(
-            title: 'Keep the formal record current',
-            body:
-                'Review agreements and notices from one place so service footing stays clear.',
-          ),
-          primaryTitle: 'Agreements',
-          primaryRows: agreements
+          cards: const [
+            _InsightCardData(
+              title: 'Client-side outreach view',
+              body: 'This area should show movement and communication truth without drifting into operator controls.',
+            ),
+            _InsightCardData(
+              title: 'Execution gating',
+              body: 'Execution can remain plan-gated while visibility, setup, and account control stay open.',
+            ),
+          ],
+          primaryTitle: 'Recent replies',
+          primaryRows: replies
               .map(
-                (item) => _rowFromMap(
-                  item,
-                  titleKey: 'title',
-                  primaryKeys: const ['status'],
-                  secondaryKeys: const ['updatedAt'],
+                (item) => _RowData(
+                  title: _firstNonEmpty([
+                    _read(_asMap(item), 'subjectLine'),
+                    _read(_asMap(item), 'fromEmail'),
+                    'Reply',
+                  ]),
+                  primary: _joinNonEmpty([
+                    _title(_read(_asMap(item), 'intent')),
+                    _title(_read(_asMap(item), 'status')),
+                  ]),
+                  secondary: _joinNonEmpty([
+                    _read(_asMap(item), 'receivedAt'),
+                    _read(_asMap(_asMap(item)['lead']), 'companyName'),
+                  ]),
                 ),
               )
               .toList(),
-          primaryEmpty: 'No agreements are available yet.',
-          secondaryTitle: 'Notices',
-          secondaryRows: notifications
-              .map(
-                (item) => _rowFromMap(
-                  item,
-                  titleKey: 'title',
-                  primaryKeys: const ['kind'],
-                  secondaryKeys: const ['createdAt'],
+          primaryEmpty: 'No reply activity is visible yet.',
+          secondaryTitle: 'Communication record',
+          secondaryRows: [
+            ...dispatches.take(8).map(
+                  (item) => _RowData(
+                    title: _firstNonEmpty([
+                      _read(_asMap(item), 'subject'),
+                      'Email dispatch',
+                    ]),
+                    primary: _joinNonEmpty([
+                      _title(_read(_asMap(item), 'status')),
+                      _read(_asMap(item), 'deliveryChannel'),
+                    ]),
+                    secondary: _joinNonEmpty([
+                      _read(_asMap(item), 'sentAt'),
+                      _read(_asMap(item), 'createdAt'),
+                    ]),
+                  ),
                 ),
-              )
-              .toList(),
-          secondaryEmpty: 'No notices are available right now.',
+            ...notifications.take(4).map(
+                  (item) => _RowData(
+                    title: _firstNonEmpty([
+                      _read(_asMap(item), 'title'),
+                      'Notice',
+                    ]),
+                    primary: _joinNonEmpty([
+                      _title(_read(_asMap(item), 'status')),
+                      _title(_read(_asMap(item), 'severity')),
+                    ]),
+                    secondary: _read(_asMap(item), 'createdAt'),
+                  ),
+                ),
+          ],
+          secondaryEmpty: 'No outreach record is visible yet.',
         );
 
-      case ClientSection.statements:
+      case ClientSection.billing:
+        final subscription = await repo.fetchSubscription();
+        final invoices = await repo.fetchInvoices();
         final statements = await repo.fetchStatements();
-        final emails = await repo.fetchEmailDispatches();
+        final agreements = await repo.fetchAgreements();
+        final reminders = await repo.fetchReminders();
 
-        return _ClientSectionData(
-          eyebrow: 'Statements',
-          title: 'Statements and dispatch history',
-          subtitle: 'Review what has been summarized and what has already been sent.',
-          statusCards: [
-            _StatusCard('Statements', '${statements.length}'),
-            _StatusCard('Dispatches', '${emails.length}'),
+        final subscriptionMap = _asMap(subscription);
+        final subscriptionState = _title(
+          _read(subscriptionMap, 'status', fallback: session.subscriptionStatus),
+        );
+
+        return _ClientViewData(
+          eyebrow: 'Commercial relationship',
+          title: subscription == null
+              ? 'Billing record is not active yet'
+              : 'Billing, records, and reminders stay together',
+          subtitle: subscription == null
+              ? 'You can still see the billing section before activation.'
+              : 'Invoices, statements, agreements, and reminders are organized here under one billing surface.',
+          notice: subscription == null
+              ? 'Subscription details will appear here after activation.'
+              : null,
+          metrics: [
+            _MetricData(
+              label: 'Plan',
+              value: _title(
+                _read(subscriptionMap, 'planName', fallback: session.selectedPlan ?? 'Not set'),
+              ),
+            ),
+            _MetricData(label: 'Status', value: subscriptionState),
+            _MetricData(label: 'Invoices', value: '${invoices.length}'),
+            _MetricData(label: 'Statements', value: '${statements.length}'),
           ],
-          primaryAction: const _PrimaryAction(
-            title: 'Keep recorded summaries within reach',
-            body:
-                'Statements and dispatch history stay here so the formal record remains easy to follow.',
-          ),
-          primaryTitle: 'Statements',
-          primaryRows: statements
-              .map(
-                (item) => _rowFromMap(
-                  item,
-                  titleKey: 'statementNumber',
-                  primaryKeys: const ['status'],
-                  secondaryKeys: const ['periodEnd'],
+          cards: const [
+            _InsightCardData(
+              title: 'One billing destination',
+              body: 'Billing should hold the full commercial record rather than scatter documents across the shell.',
+            ),
+            _InsightCardData(
+              title: 'Powered by Stripe',
+              body: 'Subscription actions and portal access stay under the billing layer, not as floating routes.',
+            ),
+          ],
+          primaryTitle: 'Financial records',
+          primaryRows: [
+            ...invoices.take(8).map(
+                  (item) => _RowData(
+                    title: _firstNonEmpty([
+                      _read(_asMap(item), 'invoiceNumber'),
+                      'Invoice',
+                    ]),
+                    primary: _joinNonEmpty([
+                      _title(_read(_asMap(item), 'status')),
+                      _read(_asMap(item), 'currencyCode'),
+                    ]),
+                    secondary: _joinNonEmpty([
+                      _read(_asMap(item), 'dueDate'),
+                      _read(_asMap(item), 'createdAt'),
+                    ]),
+                  ),
                 ),
-              )
-              .toList(),
-          primaryEmpty: 'No statements are available yet.',
-          secondaryTitle: 'Dispatch history',
-          secondaryRows: emails
-              .map(
-                (item) => _rowFromMap(
-                  item,
-                  titleKey: 'subject',
-                  primaryKeys: const ['status'],
-                  secondaryKeys: const ['sentAt'],
+            ...statements.take(4).map(
+                  (item) => _RowData(
+                    title: _firstNonEmpty([
+                      _read(_asMap(item), 'statementNumber'),
+                      'Statement',
+                    ]),
+                    primary: _title(_read(_asMap(item), 'status')),
+                    secondary: _joinNonEmpty([
+                      _read(_asMap(item), 'periodEnd'),
+                      _read(_asMap(item), 'createdAt'),
+                    ]),
+                  ),
                 ),
-              )
-              .toList(),
-          secondaryEmpty: 'No dispatches are available yet.',
+          ],
+          primaryEmpty: 'No billing records are available yet.',
+          secondaryTitle: 'Agreements and reminders',
+          secondaryRows: [
+            ...agreements.take(6).map(
+                  (item) => _RowData(
+                    title: _firstNonEmpty([
+                      _read(_asMap(item), 'title'),
+                      'Agreement',
+                    ]),
+                    primary: _title(_read(_asMap(item), 'status')),
+                    secondary: _read(_asMap(item), 'updatedAt'),
+                  ),
+                ),
+            ...reminders.take(6).map(
+                  (item) => _RowData(
+                    title: _firstNonEmpty([
+                      _read(_asMap(item), 'title'),
+                      'Reminder',
+                    ]),
+                    primary: _joinNonEmpty([
+                      _title(_read(_asMap(item), 'status')),
+                      _title(_read(_asMap(item), 'kind')),
+                    ]),
+                    secondary: _joinNonEmpty([
+                      _read(_asMap(item), 'scheduledAt'),
+                      _read(_asMap(item), 'createdAt'),
+                    ]),
+                  ),
+                ),
+          ],
+          secondaryEmpty: 'No agreements or reminders are available yet.',
         );
 
       case ClientSection.account:
         final profile = await repo.fetchClientProfile();
+        final subscription = await repo.fetchSubscription();
         final client = _asMap(profile['client']);
-        final currentPlan = _labelize(
+        final planName = _title(
           _read(client, 'selectedPlan', fallback: session.selectedPlan ?? 'Not set'),
         );
-        final currentTier = _labelize(session.selectedTier ?? 'focused');
-        final profileName = _displayIdentity(client);
+        final tierName = _title(session.selectedTier ?? 'focused');
+        final subscriptionMap = _asMap(subscription);
+        final portalAction = _read(subscriptionMap, 'status').isNotEmpty
+            ? () {
+                _openBillingPortal();
+              }
+            : null;
 
-        return _ClientSectionData(
-          eyebrow: 'Account',
-          title: profileName,
-          subtitle: 'Profile, subscription, and security all stay within reach from here.',
-          statusCards: [
-            _StatusCard('Plan', currentPlan),
-            _StatusCard('Tier', currentTier),
-            _StatusCard('Verification', session.emailVerified ? 'Verified' : 'Pending'),
-            _StatusCard('Currency', _read(client, 'currencyCode', fallback: 'USD')),
-          ],
-          primaryAction: _PrimaryAction(
-            title: session.emailVerified
-                ? 'Account is ready'
-                : 'Complete account verification',
-            body: session.emailVerified
-                ? 'Update profile, review subscription, or manage security from this page.'
-                : 'Finish verification so access and service continuity stay clear.',
-          ),
-          summaryCards: const [
-            _SummaryCardData(
-              title: 'Profile',
-              body: 'Richer profile editing and presentation templates should live here next.',
+        return _ClientViewData(
+          eyebrow: 'Control',
+          title: _displayIdentity(client),
+          subtitle: 'Profile, scope, plan visibility, and account actions belong together here.',
+          metrics: [
+            _MetricData(label: 'Account state', value: _accountState(session)),
+            _MetricData(label: 'Plan', value: '$planName · $tierName'),
+            _MetricData(
+              label: 'Verification',
+              value: session.emailVerified ? 'Verified' : 'Pending',
             ),
-            _SummaryCardData(
-              title: 'Subscription',
-              body: 'Plan switch options belong here, not only passive billing status.',
-            ),
-            _SummaryCardData(
-              title: 'Security',
-              body: 'Password reset and account deletion should be available here.',
+            _MetricData(
+              label: 'Currency',
+              value: _read(client, 'currencyCode', fallback: 'USD'),
             ),
           ],
-          primaryTitle: 'Profile',
+          cards: [
+            _InsightCardData(
+              title: 'Identity and business setup',
+              body: _joinNonEmpty([
+                _read(client, 'displayName'),
+                _read(client, 'legalName'),
+                _read(client, 'brandName'),
+              ]),
+            ),
+            _InsightCardData(
+              title: 'Profile links',
+              body: _joinNonEmpty([
+                _read(client, 'websiteUrl'),
+                _read(client, 'bookingUrl'),
+              ]).isEmpty
+                  ? 'Website and booking links can live here without waiting for activation.'
+                  : _joinNonEmpty([
+                      _read(client, 'websiteUrl'),
+                      _read(client, 'bookingUrl'),
+                    ]),
+            ),
+          ],
+          primaryTitle: 'Profile and setup',
           primaryRows: [
-            _DataRow(
-              title: profileName,
+            _RowData(
+              title: _displayIdentity(client),
               primary: _read(client, 'legalName'),
-              secondary: _read(client, 'websiteUrl'),
+              secondary: _joinNonEmpty([
+                _read(client, 'primaryEmail', fallback: session.email),
+                _read(client, 'primaryTimezone'),
+              ]),
               actionLabel: _linkLabel(_read(client, 'websiteUrl')),
               onTap: _openLinkAction(_read(client, 'websiteUrl')),
             ),
-            _DataRow(
-              title: 'Contact and routing',
-              primary: _read(client, 'primaryEmail', fallback: session.email),
-              secondary: _read(client, 'bookingUrl'),
+            _RowData(
+              title: 'Business profile',
+              primary: _joinNonEmpty([
+                _read(client, 'brandName'),
+                _read(client, 'industry'),
+              ]),
+              secondary: _joinNonEmpty([
+                _read(client, 'websiteUrl'),
+                _read(client, 'bookingUrl'),
+              ]),
               actionLabel: _linkLabel(_read(client, 'bookingUrl')),
               onTap: _openLinkAction(_read(client, 'bookingUrl')),
             ),
-            const _DataRow(
-              title: 'Profile presentation',
-              primary: 'Visual editing and template controls should be added here next.',
-              secondary: 'This area should carry the client identity, not a flat account form.',
+            _RowData(
+              title: 'Scope and readiness',
+              primary: session.hasSetupCompleted ? 'Setup completed' : 'Setup still in draft',
+              secondary: _joinNonEmpty([
+                _title(session.selectedPlan ?? 'not set'),
+                _title(session.selectedTier ?? 'focused'),
+              ]),
             ),
           ],
-          primaryEmpty: 'No profile details are available.',
-          secondaryTitle: 'Subscription and security',
+          primaryEmpty: 'No profile details are available yet.',
+          secondaryTitle: 'Plan and account actions',
           secondaryRows: [
-            _DataRow(
-              title: 'Current subscription',
-              primary: '$currentPlan · $currentTier',
-              secondary: _labelize(session.subscriptionStatus),
+            _RowData(
+              title: 'Subscription standing',
+              primary: _title(
+                _read(_asMap(subscription), 'status', fallback: session.subscriptionStatus),
+              ),
+              secondary: _joinNonEmpty([
+                _read(_asMap(subscription), 'interval'),
+                _read(_asMap(subscription), 'currentPeriodEnd'),
+              ]),
+              actionLabel: portalAction == null ? null : 'Open billing portal',
+              onTap: portalAction,
             ),
-            const _DataRow(
-              title: 'Plan change',
-              primary: 'Plan switch options should be available here.',
-              secondary:
-                  'Clients should be able to move between plans without leaving the account area.',
-            ),
-            _DataRow(
-              title: 'Email verification',
-              primary: session.emailVerified ? 'Verified' : 'Pending',
-              secondary: session.email,
-            ),
-            const _DataRow(
+            _RowData(
               title: 'Security',
-              primary: 'Password reset and account deletion should live here.',
-              secondary: 'These should be direct actions under the security section.',
+              primary: session.emailVerified ? 'Email verified' : 'Email verification pending',
+              secondary: 'Password reset and account closure should live here as direct actions.',
+            ),
+            _RowData(
+              title: 'Account status',
+              primary: _accountState(session),
+              secondary: 'Control should remain accessible before activation. Execution can remain gated separately.',
             ),
           ],
-          secondaryEmpty: 'No account state is available.',
+          secondaryEmpty: 'No account state is available yet.',
         );
 
       case ClientSection.overview:
-      default:
         final overview = await repo.fetchOverview();
         final billing = _asMap(overview['billing']);
         final activity = _asMap(overview['activity']);
         final communications = _asMap(overview['communications']);
         final client = _asMap(overview['client']);
 
-        final billingActive = session.normalizedSubscriptionStatus == 'active';
         final setupComplete = session.hasSetupCompleted;
-        final openNotices = _numberValue(communications['openNotifications']);
-        final outstanding = _money(billing['outstandingCents']);
-        final replies = _numberValue(activity['replies']);
-        final meetings = _numberValue(activity['meetings']);
-        final campaigns = _numberValue(activity['campaigns']);
-        final identity = _displayIdentity(client);
+        final billingActive = session.normalizedSubscriptionStatus == 'active';
+        final notices = _countValue(communications['openNotifications']);
 
-        return _ClientSectionData(
-          eyebrow: setupComplete ? 'Workspace ready' : 'Setup still needs attention',
-          title: identity,
-          subtitle: _overviewSubtitle(
-            setupComplete: setupComplete,
-            billingActive: billingActive,
-            replies: replies,
-            meetings: meetings,
-            campaigns: campaigns,
-            openNotices: openNotices,
-          ),
+        return _ClientViewData(
+          eyebrow: _accountState(session),
+          title: _displayIdentity(client),
+          subtitle: 'The client workspace keeps service visibility, outcomes, billing, and account control in one calm surface.',
           notice: !setupComplete
-              ? 'Finish setup to prepare the workspace for live service.'
+              ? 'Setup still needs attention before the workspace can reflect the full scope cleanly.'
               : (!billingActive
-                  ? 'Billing needs attention before service can stay fully active.'
+                  ? 'Billing is not active yet, but visibility and control remain available.'
                   : null),
-          statusCards: [
-            _StatusCard(
-              'Plan',
-              _labelize(
-                session.selectedPlan ??
-                    _read(client, 'selectedPlan', fallback: 'Not set'),
-              ),
+          metrics: [
+            _MetricData(label: 'Replies', value: _countLabel(activity['replies'])),
+            _MetricData(label: 'Meetings', value: _countLabel(activity['meetings'])),
+            _MetricData(
+              label: 'Open notices',
+              value: _countLabel(communications['openNotifications']),
             ),
-            _StatusCard('Billing', billingActive ? 'Active' : 'Attention needed'),
-            _StatusCard('Scope', _scopeLabel(client)),
-            _StatusCard('Support', openNotices > 0 ? '$openNotices open' : 'None'),
+            _MetricData(
+              label: 'Outstanding',
+              value: _money(billing['outstandingCents']),
+            ),
           ],
-          primaryAction: _overviewAction(
-            setupComplete: setupComplete,
-            billingActive: billingActive,
-            replies: replies,
-            meetings: meetings,
-            campaigns: campaigns,
-            openNotices: openNotices,
-          ),
-          summaryCards: [
-            _SummaryCardData(
-              title: 'Current standing',
-              body: [
-                if (identity.isNotEmpty) identity,
-                if (_read(client, 'industry').isNotEmpty) _read(client, 'industry'),
-                if (_read(client, 'status').isNotEmpty)
-                  _labelize(_read(client, 'status')),
-              ].join(' · '),
+          cards: [
+            _InsightCardData(
+              title: 'Billing standing',
+              body: _joinNonEmpty([
+                _title(_read(billing, 'status', fallback: session.subscriptionStatus)),
+                '${_countValue(billing['invoiceCount'])} invoices',
+              ]),
             ),
-            _SummaryCardData(
-              title: 'Billing snapshot',
-              body:
-                  '$outstanding outstanding · ${_numberValue(billing['invoiceCount'])} invoices',
+            _InsightCardData(
+              title: 'Communications',
+              body: _joinNonEmpty([
+                '${_countValue(communications['emailDispatches'])} email dispatches',
+                notices == 0 ? 'no open notices' : '$notices open notices',
+              ]),
             ),
-            _SummaryCardData(
-              title: 'Movement',
-              body: '$replies replies · $meetings meetings · $campaigns campaigns',
+            _InsightCardData(
+              title: 'Account',
+              body: _joinNonEmpty([
+                _title(session.selectedPlan ?? 'not set'),
+                _title(session.selectedTier ?? 'focused'),
+                _accountState(session),
+              ]),
             ),
           ],
           primaryTitle: 'What needs attention',
-          primaryRows: _overviewAttentionRows(
-            client: client,
-            session: session,
-            billing: billing,
-            communications: communications,
-            activity: activity,
-          ),
+          primaryRows: [
+            _RowData(
+              title: 'Setup',
+              primary: setupComplete ? 'Setup completed' : 'Setup still incomplete',
+              secondary: setupComplete
+                  ? 'Scope and identity are available to the workspace.'
+                  : 'Complete setup so scope, profile, and workspace control line up properly.',
+            ),
+            _RowData(
+              title: 'Billing',
+              primary: billingActive ? 'Active' : 'Not active',
+              secondary: billingActive
+                  ? 'Service activation is in good standing.'
+                  : 'Billing activation can happen later without blocking account control.',
+            ),
+            _RowData(
+              title: 'Support visibility',
+              primary: notices == 0 ? 'No open notices' : '$notices open notices',
+              secondary: _read(communications, 'portalUrl'),
+              actionLabel: _linkLabel(_read(communications, 'portalUrl')),
+              onTap: _openLinkAction(_read(communications, 'portalUrl')),
+            ),
+          ],
           primaryEmpty: 'Nothing needs attention right now.',
-          secondaryTitle: 'Current activity',
-          secondaryRows: _overviewActivityRows(
-            client: client,
-            billing: billing,
-            communications: communications,
-            activity: activity,
-          ),
-          secondaryEmpty: 'No live movement is available yet.',
+          secondaryTitle: 'Current movement',
+          secondaryRows: [
+            _RowData(
+              title: 'Replies',
+              primary: _countLabel(activity['replies']),
+              secondary: 'Visible from the outreach side of the workspace.',
+            ),
+            _RowData(
+              title: 'Meetings',
+              primary: _countLabel(activity['meetings']),
+              secondary: 'Booked outcomes stay visible in the meetings surface.',
+            ),
+            _RowData(
+              title: 'Email dispatches',
+              primary: _countLabel(communications['emailDispatches']),
+              secondary: 'Communication records are available without leaving the client workspace.',
+            ),
+          ],
+          secondaryEmpty: 'No live movement is visible yet.',
         );
+    }
+  }
+
+  Future<void> _openBillingPortal() async {
+    final repo = ClientPortalRepository();
+    final url = await repo.createBillingPortalSession();
+    final uri = Uri.tryParse(url);
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }
@@ -469,7 +539,7 @@ class ClientWorkspaceScreen extends StatelessWidget {
 class _Hero extends StatelessWidget {
   const _Hero({required this.data});
 
-  final _ClientSectionData data;
+  final _ClientViewData data;
 
   @override
   Widget build(BuildContext context) {
@@ -519,33 +589,37 @@ class _Notice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppTheme.publicLine),
       ),
-      child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
+      child: Text(
+        message,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppTheme.publicText,
+            ),
+      ),
     );
   }
 }
 
-class _StatusStrip extends StatelessWidget {
-  const _StatusStrip({required this.cards});
+class _MetricStrip extends StatelessWidget {
+  const _MetricStrip({required this.metrics});
 
-  final List<_StatusCard> cards;
+  final List<_MetricData> metrics;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 900;
-        if (compact) {
+        if (constraints.maxWidth < 920) {
           return Column(
             children: [
-              for (int i = 0; i < cards.length; i++) ...[
-                _StatusCardTile(card: cards[i]),
-                if (i != cards.length - 1) const SizedBox(height: 12),
+              for (int i = 0; i < metrics.length; i++) ...[
+                _MetricTile(metric: metrics[i]),
+                if (i != metrics.length - 1) const SizedBox(height: 12),
               ],
             ],
           );
@@ -553,9 +627,9 @@ class _StatusStrip extends StatelessWidget {
 
         return Row(
           children: [
-            for (int i = 0; i < cards.length; i++) ...[
-              Expanded(child: _StatusCardTile(card: cards[i])),
-              if (i != cards.length - 1) const SizedBox(width: 12),
+            for (int i = 0; i < metrics.length; i++) ...[
+              Expanded(child: _MetricTile(metric: metrics[i])),
+              if (i != metrics.length - 1) const SizedBox(width: 12),
             ],
           ],
         );
@@ -564,10 +638,10 @@ class _StatusStrip extends StatelessWidget {
   }
 }
 
-class _StatusCardTile extends StatelessWidget {
-  const _StatusCardTile({required this.card});
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({required this.metric});
 
-  final _StatusCard card;
+  final _MetricData metric;
 
   @override
   Widget build(BuildContext context) {
@@ -581,122 +655,29 @@ class _StatusCardTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(card.label, style: Theme.of(context).textTheme.bodyMedium),
+          Text(metric.label, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 10),
-          Text(card.value, style: Theme.of(context).textTheme.titleLarge),
+          Text(metric.value, style: Theme.of(context).textTheme.titleLarge),
         ],
       ),
     );
   }
 }
 
-class _PrimaryActionCard extends StatelessWidget {
-  const _PrimaryActionCard({required this.action});
+class _InsightGrid extends StatelessWidget {
+  const _InsightGrid({required this.cards});
 
-  final _PrimaryAction action;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.publicText,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppTheme.publicText),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 860;
-
-          final text = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                action.title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                action.body,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withOpacity(0.88),
-                    ),
-              ),
-            ],
-          );
-
-          final button = action.actionLabel != null && action.onTap != null
-              ? FilledButton(
-                  onPressed: action.onTap,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.publicText,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(action.actionLabel!),
-                )
-              : const SizedBox.shrink();
-
-          if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                text,
-                if (action.actionLabel != null && action.onTap != null) ...[
-                  const SizedBox(height: 16),
-                  button,
-                ],
-              ],
-            );
-          }
-
-          return Row(
-            children: [
-              Expanded(child: text),
-              if (action.actionLabel != null && action.onTap != null) ...[
-                const SizedBox(width: 18),
-                button,
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _SummaryGrid extends StatelessWidget {
-  const _SummaryGrid({required this.cards});
-
-  final List<_SummaryCardData> cards;
+  final List<_InsightCardData> cards;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 980;
-        if (compact) {
+        if (constraints.maxWidth < 980) {
           return Column(
             children: [
               for (int i = 0; i < cards.length; i++) ...[
-                _SummaryCard(card: cards[i]),
+                _InsightCard(card: cards[i]),
                 if (i != cards.length - 1) const SizedBox(height: 12),
               ],
             ],
@@ -706,7 +687,7 @@ class _SummaryGrid extends StatelessWidget {
         return Row(
           children: [
             for (int i = 0; i < cards.length; i++) ...[
-              Expanded(child: _SummaryCard(card: cards[i])),
+              Expanded(child: _InsightCard(card: cards[i])),
               if (i != cards.length - 1) const SizedBox(width: 12),
             ],
           ],
@@ -716,10 +697,10 @@ class _SummaryGrid extends StatelessWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.card});
+class _InsightCard extends StatelessWidget {
+  const _InsightCard({required this.card});
 
-  final _SummaryCardData card;
+  final _InsightCardData card;
 
   @override
   Widget build(BuildContext context) {
@@ -743,11 +724,15 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _Panel extends StatelessWidget {
-  const _Panel({required this.title, required this.rows, required this.empty});
+  const _Panel({
+    required this.title,
+    required this.rows,
+    required this.emptyLabel,
+  });
 
   final String title;
-  final List<_DataRow> rows;
-  final String empty;
+  final List<_RowData> rows;
+  final String emptyLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -770,7 +755,7 @@ class _Panel extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (rows.isEmpty)
-            Text(empty, style: Theme.of(context).textTheme.bodyMedium)
+            Text(emptyLabel, style: Theme.of(context).textTheme.bodyMedium)
           else
             for (int i = 0; i < rows.length; i++) ...[
               _RowTile(row: rows[i]),
@@ -785,7 +770,7 @@ class _Panel extends StatelessWidget {
 class _RowTile extends StatelessWidget {
   const _RowTile({required this.row});
 
-  final _DataRow row;
+  final _RowData row;
 
   @override
   Widget build(BuildContext context) {
@@ -804,7 +789,12 @@ class _RowTile extends StatelessWidget {
         ],
         if (row.secondary.isNotEmpty) ...[
           const SizedBox(height: 4),
-          Text(row.secondary, style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            row.secondary,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
         ],
         if (row.actionLabel != null && row.onTap != null) ...[
           const SizedBox(height: 10),
@@ -815,15 +805,14 @@ class _RowTile extends StatelessWidget {
   }
 }
 
-class _ClientSectionData {
-  const _ClientSectionData({
+class _ClientViewData {
+  const _ClientViewData({
     required this.eyebrow,
     required this.title,
     required this.subtitle,
     this.notice,
-    this.statusCards = const [],
-    this.primaryAction,
-    this.summaryCards = const [],
+    this.metrics = const [],
+    this.cards = const [],
     required this.primaryTitle,
     required this.primaryRows,
     required this.primaryEmpty,
@@ -836,47 +825,32 @@ class _ClientSectionData {
   final String title;
   final String subtitle;
   final String? notice;
-  final List<_StatusCard> statusCards;
-  final _PrimaryAction? primaryAction;
-  final List<_SummaryCardData> summaryCards;
+  final List<_MetricData> metrics;
+  final List<_InsightCardData> cards;
   final String primaryTitle;
-  final List<_DataRow> primaryRows;
+  final List<_RowData> primaryRows;
   final String primaryEmpty;
   final String secondaryTitle;
-  final List<_DataRow> secondaryRows;
+  final List<_RowData> secondaryRows;
   final String secondaryEmpty;
 }
 
-class _StatusCard {
-  const _StatusCard(this.label, this.value);
+class _MetricData {
+  const _MetricData({required this.label, required this.value});
 
   final String label;
   final String value;
 }
 
-class _PrimaryAction {
-  const _PrimaryAction({
-    required this.title,
-    required this.body,
-    this.actionLabel,
-    this.onTap,
-  });
-
-  final String title;
-  final String body;
-  final String? actionLabel;
-  final VoidCallback? onTap;
-}
-
-class _SummaryCardData {
-  const _SummaryCardData({required this.title, required this.body});
+class _InsightCardData {
+  const _InsightCardData({required this.title, required this.body});
 
   final String title;
   final String body;
 }
 
-class _DataRow {
-  const _DataRow({
+class _RowData {
+  const _RowData({
     required this.title,
     this.primary = '',
     this.secondary = '',
@@ -891,241 +865,80 @@ class _DataRow {
   final VoidCallback? onTap;
 }
 
-_PrimaryAction _overviewAction({
-  required bool setupComplete,
-  required bool billingActive,
-  required int replies,
-  required int meetings,
-  required int campaigns,
-  required int openNotices,
-}) {
-  if (!setupComplete) {
-    return const _PrimaryAction(
-      title: 'Finish setup',
-      body: 'Complete scope and workspace setup so service can move forward cleanly.',
-    );
+Map<String, dynamic> _asMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return value.map((key, val) => MapEntry(key.toString(), val));
   }
-
-  if (!billingActive) {
-    return const _PrimaryAction(
-      title: 'Resolve billing',
-      body: 'Billing needs attention before service can stay fully active.',
-    );
-  }
-
-  if (openNotices > 0) {
-    return _PrimaryAction(
-      title: 'Review open notices',
-      body: '$openNotices support or service notices are waiting for review.',
-    );
-  }
-
-  if (replies > 0 || meetings > 0 || campaigns > 0) {
-    return _PrimaryAction(
-      title: 'Review current work',
-      body: '$replies replies, $meetings meetings, and $campaigns campaigns are currently in motion.',
-    );
-  }
-
-  return const _PrimaryAction(
-    title: 'Workspace is ready',
-    body: 'Your account is in place. Billing, support, and account controls are available when needed.',
-  );
+  return const <String, dynamic>{};
 }
 
-List<_DataRow> _overviewAttentionRows({
-  required Map<String, dynamic> client,
-  required AuthSessionController session,
-  required Map<String, dynamic> billing,
-  required Map<String, dynamic> communications,
-  required Map<String, dynamic> activity,
-}) {
-  final rows = <_DataRow>[];
-
-  if (!session.hasSetupCompleted) {
-    rows.add(
-      const _DataRow(
-        title: 'Setup is still pending',
-        primary: 'Complete workspace setup before live service begins.',
-        secondary: 'Country, region, industry, and service profile still need to be confirmed.',
-      ),
-    );
-  }
-
-  if (session.normalizedSubscriptionStatus != 'active') {
-    rows.add(
-      _DataRow(
-        title: 'Billing requires attention',
-        primary: _labelize(session.subscriptionStatus),
-        secondary: '${_money(billing['outstandingCents'])} outstanding',
-      ),
-    );
-  }
-
-  final openNotices = _numberValue(communications['openNotifications']);
-  if (openNotices > 0) {
-    rows.add(
-      _DataRow(
-        title: 'Open notices',
-        primary: '$openNotices currently open',
-        secondary: 'Review the latest support or service notices from the workspace.',
-      ),
-    );
-  }
-
-  final replies = _numberValue(activity['replies']);
-  final meetings = _numberValue(activity['meetings']);
-  if (replies > 0 || meetings > 0) {
-    rows.add(
-      _DataRow(
-        title: 'Current movement',
-        primary: '$replies replies · $meetings meetings',
-        secondary: 'There is active work in motion right now.',
-      ),
-    );
-  }
-
-  if (rows.isEmpty) {
-    rows.add(
-      _DataRow(
-        title: 'Everything is in order',
-        primary: _displayIdentity(client),
-        secondary: 'No immediate action is required right now.',
-      ),
-    );
-  }
-
-  return rows;
-}
-
-List<_DataRow> _overviewActivityRows({
-  required Map<String, dynamic> client,
-  required Map<String, dynamic> billing,
-  required Map<String, dynamic> communications,
-  required Map<String, dynamic> activity,
-}) {
-  return [
-    _DataRow(
-      title: 'Workspace identity',
-      primary: [
-        _displayIdentity(client),
-        _read(client, 'industry'),
-      ].where((e) => e.isNotEmpty).join(' · '),
-      secondary: [
-        _read(client, 'websiteUrl'),
-        _read(client, 'primaryTimezone'),
-      ].where((e) => e.isNotEmpty).join(' · '),
-      actionLabel: _linkLabel(_read(client, 'websiteUrl')),
-      onTap: _openLinkAction(_read(client, 'websiteUrl')),
-    ),
-    _DataRow(
-      title: 'Billing snapshot',
-      primary: '${_money(billing['outstandingCents'])} outstanding',
-      secondary:
-          '${_numberValue(billing['invoiceCount'])} invoices · ${_money(billing['collectedCents'])} collected',
-    ),
-    _DataRow(
-      title: 'Activity',
-      primary:
-          '${_numberValue(activity['campaigns'])} campaigns · ${_numberValue(activity['replies'])} replies · ${_numberValue(activity['meetings'])} meetings',
-      secondary:
-          '${_numberValue(communications['emailDispatches'])} dispatches · ${_numberValue(communications['openNotifications'])} open notices',
-    ),
-  ];
-}
-
-String _overviewSubtitle({
-  required bool setupComplete,
-  required bool billingActive,
-  required int replies,
-  required int meetings,
-  required int campaigns,
-  required int openNotices,
-}) {
-  if (!setupComplete) return 'Complete setup to prepare this workspace for live service.';
-  if (!billingActive) return 'Billing needs attention before service can remain fully active.';
-  if (openNotices > 0) return 'There are open notices waiting for review.';
-  if (replies > 0 || meetings > 0 || campaigns > 0) {
-    return '$replies replies, $meetings meetings, and $campaigns campaigns are currently in motion.';
-  }
-  return 'Everything is in place and ready for the next move.';
-}
-
-_DataRow _rowFromMap(
-  dynamic raw, {
-  required String titleKey,
-  List<String> primaryKeys = const [],
-  List<String> secondaryKeys = const [],
-}) {
-  final map = _asMap(raw);
-  return _DataRow(
-    title: _read(map, titleKey, fallback: 'Record'),
-    primary: primaryKeys.map((key) => _read(map, key)).where((value) => value.isNotEmpty).join(' · '),
-    secondary: secondaryKeys.map((key) => _read(map, key)).where((value) => value.isNotEmpty).join(' · '),
-  );
-}
-
-Map<String, dynamic> _asMap(dynamic value) =>
-    value is Map ? Map<String, dynamic>.from(value) : const {};
-
-String _read(dynamic source, String key, {String fallback = ''}) {
-  final map = _asMap(source);
+String _read(Map<String, dynamic> map, String key, {String fallback = ''}) {
   final value = map[key];
   if (value == null) return fallback;
-  return value.toString();
+  final text = value.toString().trim();
+  return text.isEmpty ? fallback : text;
 }
 
-int _numberValue(dynamic value) {
-  if (value is int) return value;
-  if (value is double) return value.round();
-  return int.tryParse(value?.toString() ?? '') ?? 0;
-}
-
-String _money(dynamic cents) {
-  final amount = cents is num ? cents / 100 : 0;
-  return '\$${amount.toStringAsFixed(2)}';
-}
-
-String _scopeLabel(Map<String, dynamic> client) {
-  final country = _read(client, 'countryName');
-  final region = _read(client, 'regionName');
-  final parts = [country, region].where((e) => e.isNotEmpty).toList();
-  if (parts.isEmpty) return 'Not set';
-  return parts.join(' · ');
-}
-
-String _displayIdentity(Map<String, dynamic> client) {
-  final displayName = _read(client, 'displayName');
-  if (displayName.isNotEmpty) return displayName;
-  final legalName = _read(client, 'legalName');
-  if (legalName.isNotEmpty) return legalName;
-  return 'Client workspace';
-}
-
-String _labelize(String value) {
-  final normalized = value.trim();
-  if (normalized.isEmpty) return '';
+String _title(String text) {
+  final normalized = text.trim();
+  if (normalized.isEmpty) return 'Not set';
   return normalized
-      .split(RegExp(r'[_\\-\\s]+'))
+      .split(RegExp(r'[-_\s]+'))
       .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
       .join(' ');
 }
 
-String? _linkLabel(String value) {
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) return null;
-  return 'Open link';
+String _displayIdentity(Map<String, dynamic> client) {
+  return _firstNonEmpty([
+    _read(client, 'displayName'),
+    _read(client, 'legalName'),
+    _read(client, 'brandName'),
+    'Client account',
+  ]);
+}
+
+String _firstNonEmpty(List<String> values) {
+  for (final value in values) {
+    if (value.trim().isNotEmpty) return value.trim();
+  }
+  return '';
+}
+
+String _joinNonEmpty(List<String> values) {
+  return values.where((value) => value.trim().isNotEmpty).join(' · ');
+}
+
+int _countValue(dynamic value) {
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+String _countLabel(dynamic value) => '${_countValue(value)}';
+
+String _money(dynamic cents) {
+  final raw = cents is num ? cents.toInt() : int.tryParse('${cents ?? 0}') ?? 0;
+  return '\$${(raw / 100).toStringAsFixed(2)}';
+}
+
+String _accountState(AuthSessionController session) {
+  if (!session.emailVerified) return 'Verification pending';
+  if (!session.hasSetupCompleted) return 'Draft';
+  if (session.normalizedSubscriptionStatus == 'active') return 'Active';
+  return 'Review';
+}
+
+String? _linkLabel(String url) {
+  return url.trim().isEmpty ? null : 'Open link';
 }
 
 VoidCallback? _openLinkAction(String url) {
-  final trimmed = url.trim();
-  if (trimmed.isEmpty) return null;
-  return () => openExternalUrl(trimmed);
-}
-
-Future<void> openExternalUrl(String? url) async {
-  final uri = Uri.tryParse(url ?? '');
-  if (uri == null) return;
-  await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (url.trim().isEmpty) return null;
+  return () async {
+    final uri = Uri.tryParse(url.trim());
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  };
 }

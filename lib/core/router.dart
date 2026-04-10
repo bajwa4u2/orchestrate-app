@@ -9,6 +9,7 @@ import '../screens/client_support_screen.dart';
 import '../screens/client_workspace_screen.dart';
 import '../screens/inquiries_list_screen.dart';
 import '../screens/inquiry_detail_screen.dart';
+import '../screens/meetings_screen.dart';
 import '../screens/operator_workspace_screen.dart';
 import '../screens/public/contact_screen.dart';
 import '../screens/public/pricing_screen.dart';
@@ -23,6 +24,15 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _clientShellNavigatorKey = GlobalKey<NavigatorState>();
 final _appShellNavigatorKey = GlobalKey<NavigatorState>();
 
+const _clientCoreRoutes = <String>{
+  '/client/workspace',
+  '/client/outreach',
+  '/client/meetings',
+  '/client/billing',
+  '/client/account',
+  '/client/help',
+};
+
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
@@ -32,31 +42,24 @@ final router = GoRouter(
     if (!session.isReady) return null;
 
     final path = state.uri.path;
-    final plan = _normalized(state.uri.queryParameters['plan']) ?? session.selectedPlan;
-    final tier = _normalized(state.uri.queryParameters['tier']) ?? session.selectedTier;
+    final plan = _normalized(state.uri.queryParameters['plan']) ??
+        session.selectedPlan;
+    final tier = _normalized(state.uri.queryParameters['tier']) ??
+        session.selectedTier;
     final trial = _normalized(state.uri.queryParameters['trial']);
 
-    final isPublic = <String>{
-      '/',
-      '/pricing',
-      '/contact',
-      '/how-it-works',
-      '/terms',
-      '/privacy',
-    }.contains(path) || path.startsWith('/legal/');
-
-    final isClientAuth = <String>{'/client/login', '/client/join', '/login', '/join'}.contains(path);
-    final isOpsAuth = <String>{'/ops/login', '/ops/join', '/ops-login', '/ops-join'}.contains(path);
+    final isClientAuth =
+        <String>{'/client/login', '/client/join', '/login', '/join'}
+            .contains(path);
+    final isOpsAuth =
+        <String>{'/ops/login', '/ops/join', '/ops-login', '/ops-join'}
+            .contains(path);
     final isVerification = path == '/client/verify-email';
     final isReset = path == '/client/reset-password';
     final isSetup = path == '/client/setup';
     final isSubscribe = path == '/client/subscribe';
-    final isClientArea = path.startsWith('/client/workspace') ||
-        path.startsWith('/client/billing') ||
-        path.startsWith('/client/agreements') ||
-        path.startsWith('/client/statements') ||
-        path.startsWith('/client/help') ||
-        path.startsWith('/client/account');
+    final isClientArea =
+        _clientCoreRoutes.contains(path) || path.startsWith('/client/');
 
     if (!session.isAuthenticated) {
       if (path.startsWith('/app/')) return '/ops/login';
@@ -75,20 +78,53 @@ final router = GoRouter(
     if (session.surface == 'client') {
       if (!session.emailVerified) {
         if (isVerification || isReset) return null;
-        return _clientRoute('/client/verify-email', plan: plan, tier: tier, trial: trial);
+        return _clientRoute(
+          '/client/verify-email',
+          plan: plan,
+          tier: tier,
+          trial: trial,
+        );
       }
 
+      final setupAllowed = <String>{
+        '/client/setup',
+        '/client/workspace',
+        '/client/billing',
+        '/client/account',
+        '/client/help',
+      };
+
       if (!session.hasSetupCompleted) {
-        if (isSetup) return null;
+        if (setupAllowed.contains(path)) return null;
         return _clientRoute('/client/setup', plan: plan, tier: tier, trial: trial);
       }
 
+      final subscriptionAllowed = <String>{
+        '/client/workspace',
+        '/client/outreach',
+        '/client/meetings',
+        '/client/billing',
+        '/client/account',
+        '/client/help',
+        '/client/subscribe',
+      };
+
       if (session.normalizedSubscriptionStatus != 'active') {
-        if (isSubscribe || path.startsWith('/client/account')) return null;
-        return _clientRoute('/client/subscribe', plan: plan, tier: tier, trial: trial);
+        if (subscriptionAllowed.contains(path)) return null;
+        return _clientRoute(
+          '/client/workspace',
+          plan: plan,
+          tier: tier,
+          trial: trial,
+        );
       }
 
-      if (isClientAuth || isVerification || isReset || isSetup || isSubscribe || path == '/') {
+      if (isClientAuth ||
+          isVerification ||
+          isReset ||
+          isSetup ||
+          isSubscribe ||
+          path == '/') {
         return '/client/workspace';
       }
       if (isOpsAuth) return '/client/workspace';
@@ -98,11 +134,20 @@ final router = GoRouter(
   },
   routes: [
     GoRoute(path: '/ops/login', builder: (context, state) => const OpsLoginScreen()),
-    GoRoute(path: '/ops/join', builder: (context, state) => const OpsLoginScreen(createMode: true)),
+    GoRoute(
+      path: '/ops/join',
+      builder: (context, state) => const OpsLoginScreen(createMode: true),
+    ),
     GoRoute(path: '/ops-login', redirect: (context, state) => '/ops/login'),
     GoRoute(path: '/ops-join', redirect: (context, state) => '/ops/join'),
-    GoRoute(path: '/client/login', builder: (context, state) => const ClientLoginScreen()),
-    GoRoute(path: '/client/join', builder: (context, state) => const ClientLoginScreen(createMode: true)),
+    GoRoute(
+      path: '/client/login',
+      builder: (context, state) => const ClientLoginScreen(),
+    ),
+    GoRoute(
+      path: '/client/join',
+      builder: (context, state) => const ClientLoginScreen(createMode: true),
+    ),
     GoRoute(path: '/login', redirect: (context, state) => '/client/login'),
     GoRoute(path: '/join', redirect: (context, state) => '/client/join'),
     GoRoute(
@@ -114,7 +159,10 @@ final router = GoRouter(
       builder: (context, state) => const ClientLoginScreen(resetMode: true),
     ),
     GoRoute(path: '/client/setup', builder: (context, state) => const ClientSetupScreen()),
-    GoRoute(path: '/client/subscribe', builder: (context, state) => const ClientSubscribeScreen()),
+    GoRoute(
+      path: '/client/subscribe',
+      builder: (context, state) => const ClientSubscribeScreen(),
+    ),
     GoRoute(
       path: '/',
       pageBuilder: (context, state) => NoTransitionPage(
@@ -189,27 +237,31 @@ final router = GoRouter(
       routes: [
         GoRoute(
           path: '/client/workspace',
-          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.overview),
+          builder: (context, state) =>
+              const ClientWorkspaceScreen(section: ClientSection.overview),
+        ),
+        GoRoute(
+          path: '/client/outreach',
+          builder: (context, state) =>
+              const ClientWorkspaceScreen(section: ClientSection.outreach),
+        ),
+        GoRoute(
+          path: '/client/meetings',
+          builder: (context, state) => const MeetingsScreen(),
         ),
         GoRoute(
           path: '/client/billing',
-          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.billing),
+          builder: (context, state) =>
+              const ClientWorkspaceScreen(section: ClientSection.billing),
         ),
         GoRoute(
-          path: '/client/agreements',
-          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.agreements),
-        ),
-        GoRoute(
-          path: '/client/statements',
-          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.statements),
+          path: '/client/account',
+          builder: (context, state) =>
+              const ClientWorkspaceScreen(section: ClientSection.account),
         ),
         GoRoute(
           path: '/client/help',
           builder: (context, state) => const ClientSupportScreen(),
-        ),
-        GoRoute(
-          path: '/client/account',
-          builder: (context, state) => const ClientWorkspaceScreen(section: ClientSection.account),
         ),
       ],
     ),
@@ -219,52 +271,66 @@ final router = GoRouter(
       routes: [
         GoRoute(
           path: '/app/command',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.command),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.command),
         ),
         GoRoute(
           path: '/app/pipeline',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.pipeline),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.pipeline),
         ),
         GoRoute(path: '/app/inquiries', builder: (context, state) => const InquiriesListScreen()),
         GoRoute(
           path: '/app/inquiries/:id',
-          builder: (context, state) => InquiryDetailScreen(inquiryId: state.pathParameters['id'] ?? ''),
+          builder: (context, state) =>
+              InquiryDetailScreen(inquiryId: state.pathParameters['id'] ?? ''),
         ),
         GoRoute(
           path: '/app/execution/campaigns',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.execution),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/execution/replies',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.execution),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/execution/meetings',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.execution),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/clients',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.clients),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.clients),
         ),
         GoRoute(
           path: '/app/revenue',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.revenue),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.revenue),
         ),
         GoRoute(
           path: '/app/deliverability',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.deliverability),
+          builder: (context, state) => const OperatorWorkspaceScreen(
+            section: OperatorSection.deliverability,
+          ),
         ),
         GoRoute(
           path: '/app/communications',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.communications),
+          builder: (context, state) => const OperatorWorkspaceScreen(
+            section: OperatorSection.communications,
+          ),
         ),
         GoRoute(
           path: '/app/records',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.records),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.records),
         ),
         GoRoute(
           path: '/app/settings',
-          builder: (context, state) => const OperatorWorkspaceScreen(section: OperatorSection.settings),
+          builder: (context, state) =>
+              const OperatorWorkspaceScreen(section: OperatorSection.settings),
         ),
       ],
     ),

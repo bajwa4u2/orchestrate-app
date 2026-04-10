@@ -18,47 +18,19 @@ class ClientShell extends StatelessWidget {
   static const double _sidebarWidth = 284;
   static const double _maxContentWidth = 1320;
 
-  static const List<_ClientNavGroup> _groups = [
-    _ClientNavGroup(
-      'Workspace',
-      [
-        _ClientNavItem(label: 'Home', path: '/client/workspace'),
-      ],
-    ),
-    _ClientNavGroup(
-      'Billing & Records',
-      [
-        _ClientNavItem(label: 'Billing', path: '/client/billing'),
-        _ClientNavItem(label: 'Agreements', path: '/client/agreements'),
-        _ClientNavItem(label: 'Statements', path: '/client/statements'),
-      ],
-    ),
-    _ClientNavGroup(
-      'Support',
-      [
-        _ClientNavItem(label: 'Help & Support', path: '/client/help'),
-      ],
-    ),
-    _ClientNavGroup(
-      'Account',
-      [
-        _ClientNavItem(label: 'Account', path: '/client/account'),
-      ],
-    ),
+  static const List<_ClientNavItem> _primaryItems = [
+    _ClientNavItem(label: 'Workspace', path: '/client/workspace'),
+    _ClientNavItem(label: 'Outreach', path: '/client/outreach'),
+    _ClientNavItem(label: 'Meetings', path: '/client/meetings'),
+    _ClientNavItem(label: 'Billing', path: '/client/billing'),
+    _ClientNavItem(label: 'Account', path: '/client/account'),
   ];
 
-  bool _matchesBillingGroup() {
-    return currentPath == '/client/billing' ||
-        currentPath == '/client/agreements' ||
-        currentPath == '/client/statements';
-  }
-
   String _topTitle() {
-    for (final group in _groups) {
-      for (final item in group.items) {
-        if (item.path == currentPath) return item.label;
-      }
+    for (final item in _primaryItems) {
+      if (item.path == currentPath) return item.label;
     }
+    if (currentPath == '/client/help') return 'Support';
     return 'Client workspace';
   }
 
@@ -81,9 +53,11 @@ class ClientShell extends StatelessWidget {
     return session.hasSetupCompleted ? 'Set' : 'Incomplete';
   }
 
-  String _supportLabel() {
-    if (currentPath == '/client/help') return 'Open';
-    return 'Available';
+  String _accountState(AuthSessionController session) {
+    if (!session.emailVerified) return 'Verification pending';
+    if (!session.hasSetupCompleted) return 'Draft';
+    if (session.normalizedSubscriptionStatus == 'active') return 'Active';
+    return 'Review';
   }
 
   String _workspaceName(AuthSessionController session) {
@@ -111,12 +85,19 @@ class ClientShell extends StatelessWidget {
   }
 
   String _topStateLine(AuthSessionController session) {
-    if (!session.hasSetupCompleted) return 'Setup still needs attention.';
-    if (session.normalizedSubscriptionStatus != 'active') {
-      return 'Billing needs attention.';
+    if (!session.emailVerified) {
+      return 'Verify the account so workspace access stays fully clear.';
     }
-    if (currentPath == '/client/help') return 'Support is open.';
-    return 'Workspace is ready.';
+    if (!session.hasSetupCompleted) {
+      return 'Finish setup so scope and account control are properly in place.';
+    }
+    if (session.normalizedSubscriptionStatus != 'active') {
+      return 'Account control stays open while billing awaits activation.';
+    }
+    if (currentPath == '/client/help') {
+      return 'Support stays available without leaving the client workspace.';
+    }
+    return 'Workspace, outcomes, billing, and account control are all in view.';
   }
 
   @override
@@ -150,24 +131,29 @@ class ClientShell extends StatelessWidget {
                       _WorkspaceStateCard(
                         billingLabel: _billingStatus(session),
                         scopeLabel: _scopeLabel(session),
-                        setupComplete: session.hasSetupCompleted,
+                        accountState: _accountState(session),
                       ),
                       const SizedBox(height: 18),
                       Expanded(
                         child: ListView.separated(
-                          itemCount: _groups.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemCount: _primaryItems.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 6),
                           itemBuilder: (context, index) {
-                            final group = _groups[index];
-                            return _ClientNavGroupWidget(
-                              group: group,
-                              currentPath: currentPath,
-                              billingGroupSelected: _matchesBillingGroup(),
+                            final item = _primaryItems[index];
+                            return _ClientShellButton(
+                              item: item,
+                              selected: currentPath == item.path,
                             );
                           },
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 14),
+                      _UtilityButton(
+                        label: 'Support',
+                        selected: currentPath == '/client/help',
+                        onTap: () => context.go('/client/help'),
+                      ),
+                      const SizedBox(height: 6),
                       SizedBox(
                         width: double.infinity,
                         child: TextButton(
@@ -246,11 +232,16 @@ class ClientShell extends StatelessWidget {
                                   ],
                                 );
 
-                                final statusWrap = Wrap(
+                                final utilityWrap = Wrap(
                                   spacing: 10,
                                   runSpacing: 10,
                                   alignment: WrapAlignment.end,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
+                                    _StatusPill(
+                                      label: 'State',
+                                      value: _accountState(session),
+                                    ),
                                     _StatusPill(
                                       label: 'Plan',
                                       value: _title(
@@ -263,13 +254,21 @@ class ClientShell extends StatelessWidget {
                                       label: 'Billing',
                                       value: _billingStatus(session),
                                     ),
-                                    _StatusPill(
-                                      label: 'Scope',
-                                      value: _scopeLabel(session),
-                                    ),
-                                    _StatusPill(
-                                      label: 'Support',
-                                      value: _supportLabel(),
+                                    FilledButton.tonal(
+                                      onPressed: () => context.go('/client/help'),
+                                      style: FilledButton.styleFrom(
+                                        foregroundColor: AppTheme.publicText,
+                                        backgroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: const Text('Support'),
                                     ),
                                   ],
                                 );
@@ -281,7 +280,7 @@ class ClientShell extends StatelessWidget {
                                     children: [
                                       titleBlock,
                                       const SizedBox(height: 16),
-                                      statusWrap,
+                                      utilityWrap,
                                     ],
                                   );
                                 }
@@ -291,7 +290,7 @@ class ClientShell extends StatelessWidget {
                                   children: [
                                     Expanded(child: titleBlock),
                                     const SizedBox(width: 20),
-                                    Flexible(child: statusWrap),
+                                    Flexible(child: utilityWrap),
                                   ],
                                 );
                               },
@@ -388,12 +387,12 @@ class _WorkspaceStateCard extends StatelessWidget {
   const _WorkspaceStateCard({
     required this.billingLabel,
     required this.scopeLabel,
-    required this.setupComplete,
+    required this.accountState,
   });
 
   final String billingLabel;
   final String scopeLabel;
-  final bool setupComplete;
+  final String accountState;
 
   @override
   Widget build(BuildContext context) {
@@ -408,33 +407,16 @@ class _WorkspaceStateCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: setupComplete
-                      ? AppTheme.publicAccent
-                      : AppTheme.publicMuted,
-                  shape: BoxShape.circle,
+          Text(
+            'Client standing',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.publicText,
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  setupComplete
-                      ? 'Workspace ready'
-                      : 'Setup still needs attention',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.publicText,
-                      ),
-                ),
-              ),
-            ],
           ),
           const SizedBox(height: 14),
+          _StateLine(label: 'Account', value: accountState),
+          const SizedBox(height: 8),
           _StateLine(label: 'Billing', value: billingLabel),
           const SizedBox(height: 8),
           _StateLine(label: 'Scope', value: scopeLabel),
@@ -456,7 +438,7 @@ class _StateLine extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 52,
+          width: 56,
           child: Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -474,45 +456,6 @@ class _StateLine extends StatelessWidget {
                 ),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _ClientNavGroupWidget extends StatelessWidget {
-  const _ClientNavGroupWidget({
-    required this.group,
-    required this.currentPath,
-    required this.billingGroupSelected,
-  });
-
-  final _ClientNavGroup group;
-  final String currentPath;
-  final bool billingGroupSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 10, bottom: 8),
-          child: Text(
-            group.label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-        ),
-        for (final item in group.items) ...[
-          _ClientShellButton(
-            item: item,
-            selected: group.label == 'Billing & Records'
-                ? (billingGroupSelected && currentPath == item.path)
-                : currentPath == item.path,
-          ),
-          const SizedBox(height: 6),
-        ],
       ],
     );
   }
@@ -559,6 +502,46 @@ class _ClientShellButton extends StatelessWidget {
   }
 }
 
+class _UtilityButton extends StatelessWidget {
+  const _UtilityButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: selected ? AppTheme.publicText : AppTheme.publicMuted,
+          side: BorderSide(
+            color: selected ? AppTheme.publicLine : AppTheme.publicLine,
+          ),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          backgroundColor: selected ? AppTheme.publicSurfaceSoft : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StatusPill extends StatelessWidget {
   const _StatusPill({required this.label, required this.value});
 
@@ -597,13 +580,6 @@ class _StatusPill extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ClientNavGroup {
-  const _ClientNavGroup(this.label, this.items);
-
-  final String label;
-  final List<_ClientNavItem> items;
 }
 
 class _ClientNavItem {
