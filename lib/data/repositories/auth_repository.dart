@@ -71,30 +71,39 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> saveClientSetup({
-    required String countryCode,
-    required String countryName,
-    required String regionType,
-    required String regionCode,
-    required String regionName,
-    String? localityName,
-    required String industryCode,
-    required String industryLabel,
-    required String selectedPlan,
+    required String serviceType,
+    required String scopeMode,
+    required List<Map<String, String>> countries,
+    required List<Map<String, String>> regions,
+    required List<Map<String, String>> industries,
+    List<Map<String, String>> metros = const [],
+    List<String> includeGeo = const [],
+    List<String> excludeGeo = const [],
+    List<String> priorityMarkets = const [],
+    String? notes,
+    String? selectedPlan,
+    String? selectedTier,
+    Map<String, dynamic>? metadata,
   }) async {
     final json = await _apiClient.postJson(
       '/clients/me/setup',
       surface: ApiSurface.client,
       body: {
-        'countryCode': countryCode,
-        'countryName': countryName,
-        'regionType': regionType,
-        'regionCode': regionCode,
-        'regionName': regionName,
-        if (localityName != null && localityName.trim().isNotEmpty)
-          'localityName': localityName.trim(),
-        'industryCode': industryCode,
-        'industryLabel': industryLabel,
-        'selectedPlan': selectedPlan,
+        'serviceType': serviceType.trim().toLowerCase(),
+        'scopeMode': scopeMode.trim().toLowerCase(),
+        'countries': countries,
+        'regions': regions,
+        'metros': metros,
+        'industries': industries,
+        if (includeGeo.isNotEmpty) 'includeGeo': includeGeo,
+        if (excludeGeo.isNotEmpty) 'excludeGeo': excludeGeo,
+        if (priorityMarkets.isNotEmpty) 'priorityMarkets': priorityMarkets,
+        if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+        if (selectedPlan != null && selectedPlan.trim().isNotEmpty)
+          'selectedPlan': selectedPlan.trim().toLowerCase(),
+        if (selectedTier != null && selectedTier.trim().isNotEmpty)
+          'selectedTier': selectedTier.trim().toLowerCase(),
+        if (metadata != null && metadata.isNotEmpty) 'metadata': metadata,
       },
     );
     return Map<String, dynamic>.from(json as Map);
@@ -120,11 +129,10 @@ class AuthRepository {
     });
   }
 
-  Future<Map<String, dynamic>> verifyEmail(String token) async {
-    final json = await _apiClient.postJson('/auth/email/verify', body: {
+  Future<void> verifyEmail(String token) async {
+    await _apiClient.postJson('/auth/email/verify', body: {
       'token': token,
     });
-    return Map<String, dynamic>.from(json as Map);
   }
 
   Future<void> requestEmailVerification(String email) async {

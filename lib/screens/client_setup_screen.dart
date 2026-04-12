@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -62,60 +61,44 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
 
     try {
       final response = await AuthRepository().fetchClientSetup();
-      final setup = _asMap(response['setup']);
-      final client = _asMap(response['client']);
+      final payloadSetup = _asMap(response['setup']);
+      final nestedScope = _asMap(payloadSetup['scope']);
       final sessionDraft = _asMap(draft);
 
       if (!mounted) return;
       setState(() {
         _planCode = _normalizedLane(
-              client['selectedPlan']?.toString(),
+              response['selectedPlan']?.toString(),
             ) ??
+            _normalizedLane(payloadSetup['selectedPlan']?.toString()) ??
+            _normalizedLane(payloadSetup['serviceType']?.toString()) ??
             _planCode;
         _tierCode = _normalizedTier(
-              client['selectedTier']?.toString(),
+              response['selectedTier']?.toString(),
             ) ??
+            _normalizedTier(payloadSetup['selectedTier']?.toString()) ??
+            _normalizedTier(payloadSetup['scopeMode']?.toString()) ??
+            _normalizedTier(nestedScope['mode']?.toString()) ??
             _tierCode;
-        _industryCode = _read(setup, 'industryCode') ?? sessionDraft['industryCode']?.toString();
-        _marketNotes.text = sessionDraft['marketNotes']?.toString() ?? '';
 
-        final loadedCountries = _asStringList(sessionDraft['countries']);
-        final loadedRegions = _asStringList(sessionDraft['regions']);
-        final loadedMetros = _asStringList(sessionDraft['metros']);
+        _industryCode = _firstIndustryCode(payloadSetup, sessionDraft) ?? _industryCode;
+        _marketNotes.text = _firstNotes(payloadSetup, sessionDraft) ?? '';
 
-        if (loadedCountries.isNotEmpty) {
-          _countryCodes
-            ..clear()
-            ..addAll(loadedCountries);
-        } else {
-          final countryCode = _read(setup, 'countryCode');
-          if (countryCode != null && countryCode.isNotEmpty) {
-            _countryCodes
-              ..clear()
-              ..add(countryCode.toUpperCase());
-          }
-        }
+        final loadedCountries = _countryCodesFromSetup(payloadSetup, sessionDraft);
+        final loadedRegions = _regionCodesFromSetup(payloadSetup, sessionDraft);
+        final loadedMetros = _metroLabelsFromSetup(payloadSetup, sessionDraft);
 
-        if (loadedRegions.isNotEmpty) {
-          _regionCodes
-            ..clear()
-            ..addAll(loadedRegions);
-        } else {
-          final regionCode = _read(setup, 'regionCode');
-          if (regionCode != null && regionCode.isNotEmpty) {
-            _regionCodes
-              ..clear()
-              ..add(regionCode);
-          }
-        }
+        _countryCodes
+          ..clear()
+          ..addAll(loadedCountries);
+
+        _regionCodes
+          ..clear()
+          ..addAll(loadedRegions);
 
         _metroNames
           ..clear()
-          ..addAll(
-            loadedMetros.isNotEmpty
-                ? loadedMetros
-                : _splitLocality(_read(setup, 'localityName')),
-          );
+          ..addAll(loadedMetros);
 
         _applyTierRules();
         _loading = false;
@@ -147,13 +130,12 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
       return;
     }
 
-    final primaryCountryCode = _countryCodes.first;
-    final primaryCountry = GlobalSetupOptions.countryByCode(primaryCountryCode);
-    final primaryRegionCode = _regionCodes.first;
-    final primaryRegion = _findRegionByCode(primaryRegionCode);
-    final industry = GlobalSetupOptions.industryByCode(_industryCode);
+    final countries = _buildCountriesPayload();
+    final regions = _buildRegionsPayload();
+    final metros = _buildMetrosPayload(regions);
+    final industries = _buildIndustriesPayload();
 
-    if (primaryCountry == null || primaryRegion == null || industry == null) {
+    if (countries.isEmpty || regions.isEmpty || industries.isEmpty) {
       setState(() => _error = 'Complete your market coverage before continuing.');
       return;
     }
@@ -164,8 +146,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
       'countries': _sortedCountryCodes(),
       'regions': _sortedRegionCodes(),
       'metros': List<String>.from(_metroNames),
-      'industryCode': industry.code,
-      'industryLabel': industry.label,
+      'industryCode': industries.first['code'],
+      'industryLabel': industries.first['label'],
       'marketNotes': _marketNotes.text.trim(),
       'reviewSummary': _buildReviewSummary(),
       'lastUpdatedAt': DateTime.now().toIso8601String(),
@@ -178,15 +160,15 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
 
     try {
       final response = await AuthRepository().saveClientSetup(
-        countryCode: primaryCountry.code,
-        countryName: primaryCountry.label,
-        regionType: GlobalSetupOptions.regionLabelForCountry(primaryCountry.code),
-        regionCode: primaryRegion.code,
-        regionName: primaryRegion.label,
-        localityName: _metroNames.isEmpty ? null : _metroNames.join(', '),
-        industryCode: industry.code,
-        industryLabel: industry.label,
+        serviceType: _planCode,
+        scopeMode: _tierCode,
+        countries: countries,
+        regions: regions,
+        metros: metros,
+        industries: industries,
+        notes: _marketNotes.text.trim(),
         selectedPlan: _planCode,
+        selectedTier: _tierCode,
       );
 
       await AuthSessionController.instance.rememberSelection(
@@ -214,6 +196,67 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
         _error = 'We could not save your setup right now.';
       });
     }
+  }
+
+  List<Map<String, String>> _buildCountriesPayload() {
+    return _sortedCountryCodes()
+        .map((code) {
+          final country = GlobalSetupOptions.countryByCode(code);
+          if (country == null) return null;
+          return <String, String>{
+            'code': country.code,
+            'label': country.label,
+          };
+        })
+        .whereType<Map<String, String>>()
+        .toList();
+  }
+
+  List<Map<String, String>> _buildRegionsPayload() {
+    return _sortedSelectedRegions()
+        .map((region) {
+          final countryCode = region.code.split('-').first.toUpperCase();
+          final country = GlobalSetupOptions.countryByCode(countryCode);
+          if (country == null) return null;
+          return <String, String>{
+            'countryCode': country.code,
+            'countryLabel': country.label,
+            'regionType': region.type,
+            'regionCode': region.code,
+            'regionLabel': region.label,
+          };
+        })
+        .whereType<Map<String, String>>()
+        .toList();
+  }
+
+  List<Map<String, String>> _buildMetrosPayload(List<Map<String, String>> regions) {
+    if (_metroNames.isEmpty || regions.isEmpty) return const <Map<String, String>>[];
+
+    final primaryRegion = regions.first;
+    final countryCode = primaryRegion['countryCode']!;
+    final regionCode = primaryRegion['regionCode']!;
+
+    return _metroNames
+        .map(
+          (metro) => <String, String>{
+            'countryCode': countryCode,
+            'regionCode': regionCode,
+            'label': metro,
+          },
+        )
+        .toList();
+  }
+
+  List<Map<String, String>> _buildIndustriesPayload() {
+    final industry = GlobalSetupOptions.industryByCode(_industryCode);
+    if (industry == null) return const <Map<String, String>>[];
+    return <Map<String, String>>[
+      <String, String>{
+        'code': industry.code,
+        'label': industry.label,
+      },
+    ];
   }
 
   void _applyTierRules() {
@@ -250,35 +293,6 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
     setState(() {
       _tierCode = _normalizedTier(value) ?? 'focused';
       _applyTierRules();
-      _error = null;
-    });
-  }
-
-  void _toggleCountry(String code) {
-    setState(() {
-      final normalized = code.toUpperCase();
-      if (_tierCode == 'focused') {
-        _countryCodes
-          ..clear()
-          ..add(normalized);
-        _regionCodes.removeWhere((regionCode) => !regionCode.startsWith('$normalized-'));
-      } else if (_countryCodes.contains(normalized)) {
-        _countryCodes.remove(normalized);
-        _regionCodes.removeWhere((regionCode) => regionCode.startsWith('$normalized-'));
-      } else {
-        _countryCodes.add(normalized);
-      }
-      _error = null;
-    });
-  }
-
-  void _toggleRegion(String code) {
-    setState(() {
-      if (_regionCodes.contains(code)) {
-        _regionCodes.remove(code);
-      } else {
-        _regionCodes.add(code);
-      }
       _error = null;
     });
   }
@@ -1382,12 +1396,6 @@ Map<String, dynamic> _asMap(dynamic value) {
   return <String, dynamic>{};
 }
 
-String? _read(Map<String, dynamic> map, String key) {
-  final value = map[key]?.toString().trim();
-  if (value == null || value.isEmpty) return null;
-  return value;
-}
-
 List<String> _asStringList(dynamic value) {
   if (value is List) {
     return value.whereType<String>().map((item) => item.trim()).where((item) => item.isNotEmpty).toList();
@@ -1403,13 +1411,74 @@ List<String> _asStringList(dynamic value) {
   return <String>[];
 }
 
-List<String> _splitLocality(String? value) {
-  if (value == null || value.trim().isEmpty) return const <String>[];
-  return value
-      .split(',')
+List<String> _countryCodesFromSetup(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+  final countries = setup['countries'];
+  if (countries is List && countries.isNotEmpty) {
+    return countries
+        .map((item) => _asMap(item)['code']?.toString().trim().toUpperCase())
+        .whereType<String>()
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList();
+  }
+  return _asStringList(draft['countries'])
+      .map((item) => item.trim().toUpperCase())
+      .where((item) => item.isNotEmpty)
+      .toSet()
+      .toList();
+}
+
+List<String> _regionCodesFromSetup(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+  final regions = setup['regions'];
+  if (regions is List && regions.isNotEmpty) {
+    return regions
+        .map((item) => _asMap(item)['regionCode']?.toString().trim())
+        .whereType<String>()
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList();
+  }
+  return _asStringList(draft['regions'])
       .map((item) => item.trim())
       .where((item) => item.isNotEmpty)
+      .toSet()
       .toList();
+}
+
+List<String> _metroLabelsFromSetup(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+  final metros = setup['metros'];
+  if (metros is List && metros.isNotEmpty) {
+    return metros
+        .map((item) => _asMap(item)['label']?.toString().trim())
+        .whereType<String>()
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList();
+  }
+  return _asStringList(draft['metros'])
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .toSet()
+      .toList();
+}
+
+String? _firstIndustryCode(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+  final industries = setup['industries'];
+  if (industries is List && industries.isNotEmpty) {
+    final first = _asMap(industries.first)['code']?.toString().trim();
+    if (first != null && first.isNotEmpty) return first;
+  }
+  final draftCode = draft['industryCode']?.toString().trim();
+  if (draftCode != null && draftCode.isNotEmpty) return draftCode;
+  return null;
+}
+
+String? _firstNotes(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+  final setupNotes = setup['notes']?.toString().trim();
+  if (setupNotes != null && setupNotes.isNotEmpty) return setupNotes;
+  final draftNotes = draft['marketNotes']?.toString().trim();
+  if (draftNotes != null && draftNotes.isNotEmpty) return draftNotes;
+  return null;
 }
 
 String? _normalizedLane(dynamic value) {
