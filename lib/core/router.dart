@@ -42,27 +42,23 @@ final router = GoRouter(
     if (!session.isReady) return null;
 
     final path = state.uri.path;
-    final plan = _normalized(state.uri.queryParameters['plan']) ??
-        session.selectedPlan;
-    final tier = _normalized(state.uri.queryParameters['tier']) ??
-        session.selectedTier;
-    final trial = _normalized(state.uri.queryParameters['trial']);
+    final plan = _normalizedPlan(state.uri.queryParameters['plan']) ?? session.selectedPlan;
+    final tier = _normalizedTier(state.uri.queryParameters['tier']) ?? session.selectedTier;
+    final trial = _normalizedTrial(state.uri.queryParameters['trial']);
 
     final isClientAuth =
-        <String>{'/client/login', '/client/join', '/login', '/join'}
-            .contains(path);
+        <String>{'/client/login', '/client/join', '/login', '/join'}.contains(path);
     final isOpsAuth =
-        <String>{'/ops/login', '/ops/join', '/ops-login', '/ops-join'}
-            .contains(path);
+        <String>{'/ops/login', '/ops/join', '/ops-login', '/ops-join'}.contains(path);
     final isVerification = path == '/client/verify-email';
     final isReset = path == '/client/reset-password';
     final isSetup = path == '/client/setup';
     final isSubscribe = path == '/client/subscribe';
-    final isClientArea =
-        _clientCoreRoutes.contains(path) || path.startsWith('/client/');
+    final isClientArea = _clientCoreRoutes.contains(path) || path.startsWith('/client/');
 
     if (!session.isAuthenticated) {
       if (path.startsWith('/app/')) return '/ops/login';
+      if (isVerification || isReset) return null;
       if (isClientArea || isSetup || isSubscribe) {
         return _clientRoute('/client/login', plan: plan, tier: tier, trial: trial);
       }
@@ -100,19 +96,16 @@ final router = GoRouter(
       }
 
       final subscriptionAllowed = <String>{
-        '/client/workspace',
-        '/client/outreach',
-        '/client/meetings',
+        '/client/subscribe',
         '/client/billing',
         '/client/account',
         '/client/help',
-        '/client/subscribe',
       };
 
       if (session.normalizedSubscriptionStatus != 'active') {
         if (subscriptionAllowed.contains(path)) return null;
         return _clientRoute(
-          '/client/workspace',
+          '/client/subscribe',
           plan: plan,
           tier: tier,
           trial: trial,
@@ -341,10 +334,24 @@ final router = GoRouter(
   ),
 );
 
-String? _normalized(String? value) {
+String? _normalizedPlan(String? value) {
   final text = value?.trim().toLowerCase();
-  if (text == null || text.isEmpty) return null;
-  return text;
+  if (text == 'opportunity' || text == 'revenue') return text;
+  return null;
+}
+
+String? _normalizedTier(String? value) {
+  final text = value?.trim().toLowerCase();
+  if (text == 'focused') return 'focused';
+  if (text == 'multi' || text == 'multi-market' || text == 'multi_market') return 'multi';
+  if (text == 'precision') return 'precision';
+  return null;
+}
+
+String? _normalizedTrial(String? value) {
+  final text = value?.trim().toLowerCase();
+  if (text == '15d') return '15d';
+  return null;
 }
 
 String _clientRoute(String path, {String? plan, String? tier, String? trial}) {

@@ -44,8 +44,12 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
 
   void _syncSelectionFromUri(Uri uri) {
     final session = AuthSessionController.instance;
-    final nextPlan = uri.queryParameters['plan']?.trim().toLowerCase() ?? session.selectedPlan ?? 'opportunity';
-    final nextTier = uri.queryParameters['tier']?.trim().toLowerCase() ?? session.selectedTier ?? 'focused';
+    final nextPlan = _normalizedPlan(uri.queryParameters['plan']) ??
+        _normalizedPlan(session.selectedPlan) ??
+        'opportunity';
+    final nextTier = _normalizedTier(uri.queryParameters['tier']) ??
+        _normalizedTier(session.selectedTier) ??
+        'focused';
     final nextTrial = uri.queryParameters['trial']?.trim().toLowerCase() == '15d';
 
     session.rememberSelection(plan: nextPlan, tier: nextTier);
@@ -81,8 +85,8 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
   }
 
   Future<void> _applySelection({String? plan, String? tier, bool? trialRequested}) async {
-    final nextPlan = (plan ?? _planCode).trim().toLowerCase();
-    final nextTier = (tier ?? _tierCode).trim().toLowerCase();
+    final nextPlan = _normalizedPlan(plan ?? _planCode) ?? 'opportunity';
+    final nextTier = _normalizedTier(tier ?? _tierCode) ?? 'focused';
     final nextTrial = trialRequested ?? _trialRequested;
 
     await AuthSessionController.instance.rememberSelection(plan: nextPlan, tier: nextTier);
@@ -351,8 +355,6 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-
-
 class _ScopeSnapshotCard extends StatelessWidget {
   const _ScopeSnapshotCard({required this.draft});
 
@@ -361,7 +363,7 @@ class _ScopeSnapshotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = draft['serviceType']?.toString() == 'revenue' ? 'Revenue' : 'Opportunity';
-    final mode = _title(draft['scopeMode']?.toString() ?? 'focused');
+    final mode = _title(_normalizedTier(draft['scopeMode']?.toString()) ?? 'focused');
     final countries = _stringList(draft['countries']);
     final regions = _stringList(draft['regions']);
     final metros = _stringList(draft['metros']);
@@ -558,10 +560,23 @@ String _title(String text) => text
     .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
     .join(' ');
 
-
 List<String> _stringList(dynamic value) {
   if (value is List) {
     return value.whereType<String>().where((item) => item.trim().isNotEmpty).toList();
   }
   return const <String>[];
+}
+
+String? _normalizedPlan(String? value) {
+  final text = value?.trim().toLowerCase();
+  if (text == 'opportunity' || text == 'revenue') return text;
+  return null;
+}
+
+String? _normalizedTier(String? value) {
+  final text = value?.trim().toLowerCase();
+  if (text == 'focused') return 'focused';
+  if (text == 'multi' || text == 'multi-market' || text == 'multi_market') return 'multi';
+  if (text == 'precision') return 'precision';
+  return null;
 }

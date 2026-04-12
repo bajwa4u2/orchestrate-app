@@ -120,10 +120,11 @@ class AuthRepository {
     });
   }
 
-  Future<void> verifyEmail(String token) async {
-    await _apiClient.postJson('/auth/email/verify', body: {
+  Future<Map<String, dynamic>> verifyEmail(String token) async {
+    final json = await _apiClient.postJson('/auth/email/verify', body: {
       'token': token,
     });
+    return Map<String, dynamic>.from(json as Map);
   }
 
   Future<void> requestEmailVerification(String email) async {
