@@ -176,11 +176,21 @@ class AppShell extends StatelessWidget {
   static String _topbarTitle(String currentPath) {
     for (final group in groups) {
       for (final item in group.items) {
-        if (item.path == currentPath) return item.label;
+        if (_matchesPath(currentPath, item.path)) return item.label;
       }
     }
     return 'Operator';
   }
+}
+
+
+
+bool _matchesPath(String currentPath, String itemPath) {
+  if (currentPath == itemPath) return true;
+  if (itemPath == '/app/inquiries' && currentPath.startsWith('/app/inquiries/')) {
+    return true;
+  }
+  return false;
 }
 
 class _OperatorBrand extends StatelessWidget {
@@ -259,7 +269,7 @@ class _NavGroupWidget extends StatelessWidget {
           ),
         ),
         for (final item in group.items) ...[
-          _ShellNavButton(item: item, selected: currentPath == item.path),
+          _ShellNavButton(item: item, selected: _matchesPath(currentPath, item.path)),
           const SizedBox(height: 6),
         ],
       ],
