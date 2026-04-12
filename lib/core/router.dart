@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/auth/client_login_screen.dart';
 import '../screens/auth/ops_login_screen.dart';
+import '../screens/client_account_screen.dart';
 import '../screens/client_setup_screen.dart';
 import '../screens/client_subscribe_screen.dart';
 import '../screens/client_support_screen.dart';
@@ -248,8 +249,7 @@ final router = GoRouter(
         ),
         GoRoute(
           path: '/client/account',
-          builder: (context, state) =>
-              const ClientWorkspaceScreen(section: ClientSection.account),
+          builder: (context, state) => const ClientAccountScreen(),
         ),
         GoRoute(
           path: '/client/help',
