@@ -78,7 +78,9 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
         final offset = Tween<Offset>(
           begin: const Offset(0.08, 0),
           end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+        ).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        );
 
         return SlideTransition(
           position: offset,
@@ -99,7 +101,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 1080;
               final overview = _SupportOverview(onOpenDrawer: _openSupportDrawer);
-              final workspace = _SupportWorkspace(
+              final thread = _SupportThread(
                 controller: _controller,
                 draft: _draft,
                 onDraftChanged: (value) => setState(() => _draft = value),
@@ -111,7 +113,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
                   children: [
                     overview,
                     const SizedBox(height: 20),
-                    workspace,
+                    thread,
                   ],
                 );
               }
@@ -121,7 +123,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
                 children: [
                   Expanded(flex: 4, child: overview),
                   const SizedBox(width: 24),
-                  Expanded(flex: 7, child: workspace),
+                  Expanded(flex: 7, child: thread),
                 ],
               );
             },
@@ -140,8 +142,8 @@ class _SupportOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = AuthSessionController.instance;
-    final workspaceName =
-        session.workspaceName.isNotEmpty ? session.workspaceName : 'Client workspace';
+    final accountName =
+        session.workspaceName.isNotEmpty ? session.workspaceName : 'Client account';
 
     return Container(
       padding: const EdgeInsets.all(28),
@@ -169,28 +171,28 @@ class _SupportOverview extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Get help without leaving the workspace rhythm.',
+            'Reach support directly when you need help.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 14),
           Text(
-            'Support stays tied to your current setup, so questions can be handled with the right client, plan, and workspace context already in view.',
+            'Support uses your current account, plan, and setup context automatically so questions can be handled with the right client details already in view.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
           ),
           const SizedBox(height: 22),
-          _WorkspaceCard(
-            label: 'Workspace',
-            value: workspaceName,
+          _SupportCard(
+            label: 'Account',
+            value: accountName,
           ),
           const SizedBox(height: 12),
-          _WorkspaceCard(
+          _SupportCard(
             label: 'Signed in as',
             value: session.email.isNotEmpty ? session.email : 'Client account',
           ),
           const SizedBox(height: 12),
-          const _WorkspaceCard(
+          const _SupportCard(
             label: 'Use this space for',
             value:
                 'Setup guidance, plan questions, billing support, workflow issues, and execution clarity.',
@@ -206,7 +208,7 @@ class _SupportOverview extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            child: const Text('Open support panel'),
+            child: const Text('Open support conversation'),
           ),
         ],
       ),
@@ -214,8 +216,8 @@ class _SupportOverview extends StatelessWidget {
   }
 }
 
-class _SupportWorkspace extends StatelessWidget {
-  const _SupportWorkspace({
+class _SupportThread extends StatelessWidget {
+  const _SupportThread({
     required this.controller,
     required this.draft,
     required this.onDraftChanged,
@@ -273,8 +275,8 @@ class _SupportWorkspace extends StatelessWidget {
   }
 }
 
-class _WorkspaceCard extends StatelessWidget {
-  const _WorkspaceCard({required this.label, required this.value});
+class _SupportCard extends StatelessWidget {
+  const _SupportCard({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -377,7 +379,7 @@ class _ClientSupportDrawerState extends State<_ClientSupportDrawer> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Continue from the same support thread without leaving your workspace.',
+                    'Continue the same support conversation without leaving this page.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),

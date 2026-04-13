@@ -98,7 +98,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
       case ClientSection.workspace:
         final overview = await repo.fetchOverview();
         final subscription = await repo.fetchSubscription();
-        final meetings = await repo.fetchMeetings();
         final notifications = await repo.fetchNotifications();
 
         final client = _asMap(overview['client']);
@@ -112,18 +111,16 @@ class ClientWorkspaceScreen extends StatelessWidget {
           _read(subscriptionMap, 'status', fallback: session.subscriptionStatus),
         );
         final planName = _title(
-          _read(subscriptionMap, 'planName', fallback: session.selectedPlan ?? 'Not set'),
+          _read(
+            subscriptionMap,
+            'planName',
+            fallback: session.selectedPlan ?? 'Not set',
+          ),
         );
         final tier = session.selectedTier;
-        final tierName = _title((tier != null && tier.isNotEmpty) ? tier : 'focused');
-        final upcomingMeetings = meetings.where((item) {
-          final raw = _asMap(item);
-          final bucket = _title(_firstNonEmpty([
-            _read(raw, 'bucket'),
-            _read(raw, 'status'),
-          ]));
-          return bucket == 'Upcoming' || bucket == 'Scheduled' || bucket == 'Confirmed';
-        }).length;
+        final tierName = _title(
+          (tier != null && tier.isNotEmpty) ? tier : 'focused',
+        );
 
         return _ClientViewData(
           eyebrow: 'Workspace',
@@ -137,7 +134,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
           metrics: [
             _MetricData(label: 'Account state', value: _accountState(session)),
             _MetricData(label: 'Plan', value: '$planName · $tierName'),
-            _MetricData(label: 'Upcoming meetings', value: '$upcomingMeetings'),
             _MetricData(
               label: 'Open notices',
               value: _countLabel(communications['openNotifications']),
@@ -146,11 +142,13 @@ class ClientWorkspaceScreen extends StatelessWidget {
           cards: const [
             _InsightCardData(
               title: 'Client home',
-              body: 'Workspace should stay the calm overview layer, not a container for every client task.',
+              body:
+                  'Workspace should stay the calm overview layer, not a container for every client task.',
             ),
             _InsightCardData(
               title: 'Direct ownership',
-              body: 'Meetings, billing, account, and help should remain separate client destinations while workspace keeps the overall view coherent.',
+              body:
+                  'Meetings, billing, account, and help should remain separate client destinations while workspace keeps the overall view coherent.',
             ),
           ],
           primaryTitle: 'Current standing',
@@ -165,8 +163,11 @@ class ClientWorkspaceScreen extends StatelessWidget {
                 _read(client, 'primaryEmail', fallback: session.email),
                 _read(client, 'primaryTimezone'),
               ]),
-              actionLabel: session.hasSetupCompleted ? null : 'Open setup',
-              onTap: session.hasSetupCompleted ? null : () => context.go('/client/setup'),
+              actionLabel:
+                  session.hasSetupCompleted ? null : 'Open setup',
+              onTap: session.hasSetupCompleted
+                  ? null
+                  : () => context.go('/client/setup'),
             ),
             _RowData(
               title: 'Recent outreach movement',
@@ -174,16 +175,17 @@ class ClientWorkspaceScreen extends StatelessWidget {
                 '${_countValue(activity['replies'])} replies',
                 '${_countValue(communications['emailDispatches'])} dispatches',
               ]),
-              secondary: 'Use outreach for the communication record and recent reply activity.',
+              secondary:
+                  'Use outreach for the communication record and recent reply activity.',
               actionLabel: 'Open outreach',
               onTap: () => context.go('/client/outreach'),
             ),
             _RowData(
               title: 'Meetings and outcomes',
-              primary: upcomingMeetings == 0
-                  ? 'No upcoming meetings are on record yet.'
-                  : '$upcomingMeetings upcoming meetings are on record.',
-              secondary: 'Scheduled, completed, and missed meetings stay under the meetings surface.',
+              primary:
+                  'Scheduled, completed, and missed meetings are tracked separately.',
+              secondary:
+                  'Use the meetings screen to view outcomes and status.',
               actionLabel: 'Open meetings',
               onTap: () => context.go('/client/meetings'),
             ),
@@ -199,7 +201,8 @@ class ClientWorkspaceScreen extends StatelessWidget {
                     ? 'No invoices visible yet'
                     : '${_countValue(billing['invoiceCount'])} invoices on record',
               ]),
-              secondary: 'Billing, invoices, statements, agreements, and reminders stay together in one client destination.',
+              secondary:
+                  'Billing, invoices, statements, agreements, and reminders stay together in one client destination.',
               actionLabel: 'Open billing',
               onTap: () => context.go('/client/billing'),
             ),
@@ -209,21 +212,23 @@ class ClientWorkspaceScreen extends StatelessWidget {
                 _read(client, 'websiteUrl'),
                 _read(client, 'bookingUrl'),
               ]).isEmpty
-                  ? 'Profile, website, booking link, and account controls are managed under account.'
+                  ? 'Profile and account controls are managed under account.'
                   : _joinNonEmpty([
                       _read(client, 'websiteUrl'),
                       _read(client, 'bookingUrl'),
                     ]),
-              secondary: 'Keep profile editing and account controls separate from the workspace overview.',
+              secondary:
+                  'Keep profile editing and account controls separate from the workspace overview.',
               actionLabel: 'Open account',
               onTap: () => context.go('/client/account'),
             ),
             _RowData(
               title: 'Help and support',
               primary: notifications.isEmpty
-                  ? 'Support is available directly from the client side whenever you need guidance or intervention.'
+                  ? 'Support is available whenever you need guidance or intervention.'
                   : '${notifications.length} notices are currently visible across support and communication records.',
-              secondary: 'Use help for setup guidance, plan questions, billing support, workflow issues, and execution clarity.',
+              secondary:
+                  'Use help for setup guidance, plan questions, billing support, workflow issues, and execution clarity.',
               actionLabel: 'Open help',
               onTap: () => context.go('/client/help'),
             ),
@@ -265,17 +270,21 @@ class ClientWorkspaceScreen extends StatelessWidget {
             ),
             _MetricData(
               label: 'Billing standing',
-              value: _title(_read(billing, 'status', fallback: session.subscriptionStatus)),
+              value: _title(
+                _read(billing, 'status', fallback: session.subscriptionStatus),
+              ),
             ),
           ],
           cards: const [
             _InsightCardData(
               title: 'Client-side outreach view',
-              body: 'This area should show movement and communication truth without drifting into operator controls.',
+              body:
+                  'This area should show movement and communication truth without drifting into operator controls.',
             ),
             _InsightCardData(
               title: 'Execution gating',
-              body: 'Execution can remain plan-gated while visibility, setup, and account control stay open.',
+              body:
+                  'Execution can remain plan-gated while visibility, setup, and account control stay open.',
             ),
           ],
           primaryTitle: 'Recent replies',
@@ -361,7 +370,11 @@ class ClientWorkspaceScreen extends StatelessWidget {
             _MetricData(
               label: 'Plan',
               value: _title(
-                _read(subscriptionMap, 'planName', fallback: session.selectedPlan ?? 'Not set'),
+                _read(
+                  subscriptionMap,
+                  'planName',
+                  fallback: session.selectedPlan ?? 'Not set',
+                ),
               ),
             ),
             _MetricData(label: 'Status', value: subscriptionState),
@@ -371,11 +384,13 @@ class ClientWorkspaceScreen extends StatelessWidget {
           cards: const [
             _InsightCardData(
               title: 'One billing destination',
-              body: 'Billing should hold the full commercial record rather than scatter documents across the shell.',
+              body:
+                  'Billing should hold the full commercial record rather than scatter documents across the shell.',
             ),
             _InsightCardData(
               title: 'Powered by Stripe',
-              body: 'Subscription actions and portal access stay under the billing layer, not as floating routes.',
+              body:
+                  'Subscription actions and portal access stay under the billing layer, not as floating routes.',
             ),
           ],
           primaryTitle: 'Financial records',
@@ -442,7 +457,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
           ],
           secondaryEmpty: 'No agreements or reminders are available yet.',
         );
-
     }
   }
 

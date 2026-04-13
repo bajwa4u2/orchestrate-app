@@ -44,7 +44,8 @@ class MeetingsScreen extends StatelessWidget {
                 const SizedBox(height: 18),
                 _MeetingPanel(
                   title: 'Meeting record',
-                  emptyLabel: 'Meetings booked through outreach will appear here.',
+                  emptyLabel:
+                      'Scheduled, completed, and missed meetings appear here.',
                   items: meetings.map((item) => _MeetingRow.fromRaw(item)).toList(),
                 ),
               ],
@@ -89,7 +90,7 @@ class _MeetingsHero extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'This page keeps the outcome side of outreach visible, with scheduled, completed, and missed meetings in one place.',
+            'This page keeps the outcome side of client meetings visible, with scheduled, completed, and missed meetings in one place.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
