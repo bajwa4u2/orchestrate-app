@@ -4,7 +4,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/auth_session.dart';
 import '../core/theme/app_theme.dart';
-import '../data/repositories/client_portal_repository.dart';
+import '../data/repositories/client/client_account_repository.dart';
+import '../data/repositories/client/client_billing_repository.dart';
+import '../data/repositories/client/client_workspace_repository.dart';
 
 class ClientAccountScreen extends StatefulWidget {
   const ClientAccountScreen({super.key});
@@ -14,7 +16,10 @@ class ClientAccountScreen extends StatefulWidget {
 }
 
 class _ClientAccountScreenState extends State<ClientAccountScreen> {
-  final ClientPortalRepository _repository = ClientPortalRepository();
+  final ClientWorkspaceRepository _workspaceRepository = ClientWorkspaceRepository();
+  final ClientAccountRepository _accountRepository = ClientAccountRepository();
+  final ClientBillingRepository _billingRepository = ClientBillingRepository();
+
   late Future<_AccountViewData> _future;
 
   @override
@@ -24,9 +29,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   }
 
   Future<_AccountViewData> _load() async {
-    final overview = await _repository.fetchOverview();
-    final profile = await _repository.fetchClientProfile();
-    final subscription = await _repository.fetchSubscription();
+    final overview = await _workspaceRepository.fetchOverview();
+    final profile = await _accountRepository.fetchClientProfile();
+    final subscription = await _billingRepository.fetchSubscription();
     return _AccountViewData(
       overview: overview,
       profile: profile,
@@ -47,7 +52,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   }
 
   Future<void> _openBillingPortal() async {
-    final url = await _repository.createBillingPortalSession();
+    final url = await _billingRepository.createBillingPortalSession();
     await _openUrl(url);
   }
 
@@ -57,7 +62,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
       barrierDismissible: false,
       builder: (context) => _ProfileEditorDialog(
         initialProfile: data.profile,
-        repository: _repository,
+        repository: _accountRepository,
       ),
     );
 
@@ -70,7 +75,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _DeactivateAccountDialog(repository: _repository),
+      builder: (context) => _DeactivateAccountDialog(repository: _accountRepository),
     );
 
     if (result == true && mounted) {
@@ -270,7 +275,7 @@ class _ProfileEditorDialog extends StatefulWidget {
   });
 
   final Map<String, dynamic> initialProfile;
-  final ClientPortalRepository repository;
+  final ClientAccountRepository repository;
 
   @override
   State<_ProfileEditorDialog> createState() => _ProfileEditorDialogState();
@@ -429,7 +434,7 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
 class _DeactivateAccountDialog extends StatefulWidget {
   const _DeactivateAccountDialog({required this.repository});
 
-  final ClientPortalRepository repository;
+  final ClientAccountRepository repository;
 
   @override
   State<_DeactivateAccountDialog> createState() => _DeactivateAccountDialogState();

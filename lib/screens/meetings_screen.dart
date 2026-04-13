@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
-import '../data/repositories/client_portal_repository.dart';
+import '../data/repositories/client/client_meetings_repository.dart';
 
 class MeetingsScreen extends StatelessWidget {
   const MeetingsScreen({super.key});
@@ -9,7 +9,7 @@ class MeetingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<dynamic>>(
-      future: ClientPortalRepository().fetchMeetings(),
+      future: ClientMeetingsRepository().fetchMeetings(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());

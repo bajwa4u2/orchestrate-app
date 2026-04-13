@@ -4,7 +4,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/auth_session.dart';
 import '../core/theme/app_theme.dart';
-import '../data/repositories/client_portal_repository.dart';
+import '../data/repositories/client/client_billing_repository.dart';
+import '../data/repositories/client/client_outreach_repository.dart';
+import '../data/repositories/client/client_workspace_repository.dart';
 
 enum ClientSection { workspace, outreach, billing }
 
@@ -91,14 +93,14 @@ class ClientWorkspaceScreen extends StatelessWidget {
   }
 
   Future<_ClientViewData> _load(BuildContext context) async {
-    final repo = ClientPortalRepository();
     final session = AuthSessionController.instance;
 
     switch (section) {
       case ClientSection.workspace:
-        final overview = await repo.fetchOverview();
-        final subscription = await repo.fetchSubscription();
-        final notifications = await repo.fetchNotifications();
+        final workspaceRepo = ClientWorkspaceRepository();
+        final overview = await workspaceRepo.fetchOverview();
+        final subscription = await workspaceRepo.fetchSubscription();
+        final notifications = await workspaceRepo.fetchNotifications();
 
         final client = _asMap(overview['client']);
         final activity = _asMap(overview['activity']);
@@ -237,10 +239,13 @@ class ClientWorkspaceScreen extends StatelessWidget {
         );
 
       case ClientSection.outreach:
-        final overview = await repo.fetchOverview();
-        final replies = await repo.fetchReplies(limit: 12);
-        final dispatches = await repo.fetchEmailDispatches();
-        final notifications = await repo.fetchNotifications();
+        final workspaceRepo = ClientWorkspaceRepository();
+        final outreachRepo = ClientOutreachRepository();
+
+        final overview = await workspaceRepo.fetchOverview();
+        final replies = await outreachRepo.fetchReplies(limit: 12);
+        final dispatches = await outreachRepo.fetchEmailDispatches();
+        final notifications = await workspaceRepo.fetchNotifications();
 
         final activity = _asMap(overview['activity']);
         final communications = _asMap(overview['communications']);
@@ -344,11 +349,13 @@ class ClientWorkspaceScreen extends StatelessWidget {
         );
 
       case ClientSection.billing:
-        final subscription = await repo.fetchSubscription();
-        final invoices = await repo.fetchInvoices();
-        final statements = await repo.fetchStatements();
-        final agreements = await repo.fetchAgreements();
-        final reminders = await repo.fetchReminders();
+        final billingRepo = ClientBillingRepository();
+
+        final subscription = await billingRepo.fetchSubscription();
+        final invoices = await billingRepo.fetchInvoices();
+        final statements = await billingRepo.fetchStatements();
+        final agreements = await billingRepo.fetchAgreements();
+        final reminders = await billingRepo.fetchReminders();
 
         final subscriptionMap = _asMap(subscription);
         final subscriptionState = _title(
@@ -461,8 +468,8 @@ class ClientWorkspaceScreen extends StatelessWidget {
   }
 
   Future<void> _openBillingPortal() async {
-    final repo = ClientPortalRepository();
-    final url = await repo.createBillingPortalSession();
+    final billingRepo = ClientBillingRepository();
+    final url = await billingRepo.createBillingPortalSession();
     final uri = Uri.tryParse(url);
     if (uri != null) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -851,28 +858,9 @@ int _countValue(dynamic value) {
 
 String _countLabel(dynamic value) => '${_countValue(value)}';
 
-String _money(dynamic cents) {
-  final raw = cents is num ? cents.toInt() : int.tryParse('${cents ?? 0}') ?? 0;
-  return '\$${(raw / 100).toStringAsFixed(2)}';
-}
-
 String _accountState(AuthSessionController session) {
   if (!session.emailVerified) return 'Verification pending';
   if (!session.hasSetupCompleted) return 'Draft';
   if (session.normalizedSubscriptionStatus == 'active') return 'Active';
   return 'Review';
-}
-
-String? _linkLabel(String url) {
-  return url.trim().isEmpty ? null : 'Open link';
-}
-
-VoidCallback? _openLinkAction(String url) {
-  if (url.trim().isEmpty) return null;
-  return () async {
-    final uri = Uri.tryParse(url.trim());
-    if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  };
 }
