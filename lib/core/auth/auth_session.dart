@@ -27,17 +27,33 @@ class AuthSessionController extends ChangeNotifier {
   String get workspaceName => (_session?['workspaceName'] as String?) ?? '';
   bool get hasSetupCompleted => (_session?['setupCompleted'] as bool?) ?? false;
 
-  String? get selectedPlan {
-    final value = (_session?['selectedPlan'] as String?)?.trim();
+  String? get commercialPlan {
+    final value = (_session?['commercialPlan'] as String?)?.trim();
     if (value == null || value.isEmpty) return null;
     return _normalizePlan(value);
   }
 
-  String? get selectedTier {
-    final value = (_session?['selectedTier'] as String?)?.trim();
+  String? get commercialTier {
+    final value = (_session?['commercialTier'] as String?)?.trim();
     if (value == null || value.isEmpty) return null;
     return _normalizeTier(value);
   }
+
+  String? get setupSelectedPlan {
+    final value = ((_session?['setupSelectedPlan'] ?? _session?['selectedPlan']) as String?)?.trim();
+    if (value == null || value.isEmpty) return null;
+    return _normalizePlan(value);
+  }
+
+  String? get setupSelectedTier {
+    final value = ((_session?['setupSelectedTier'] ?? _session?['selectedTier']) as String?)?.trim();
+    if (value == null || value.isEmpty) return null;
+    return _normalizeTier(value);
+  }
+
+  String? get selectedPlan => commercialPlan ?? setupSelectedPlan;
+
+  String? get selectedTier => commercialTier ?? setupSelectedTier;
 
   String get subscriptionStatus => (_session?['subscriptionStatus'] as String?) ?? 'none';
   String get normalizedSubscriptionStatus => subscriptionStatus.trim().toLowerCase();
@@ -84,6 +100,9 @@ class AuthSessionController extends ChangeNotifier {
     final workspace = Map<String, dynamic>.from((payload['workspace'] as Map?) ?? const {});
     final session = Map<String, dynamic>.from((payload['session'] as Map?) ?? const {});
     final setup = Map<String, dynamic>.from((payload['setup'] as Map?) ?? const {});
+    final commercial = Map<String, dynamic>.from(
+      ((payload['commercial'] ?? payload['subscription']) as Map?) ?? const {},
+    );
 
     final newSurface = session['surface']?.toString() ?? previous['surface']?.toString() ?? 'client';
     final nextToken = payload['token']?.toString().trim();
@@ -108,18 +127,29 @@ class AuthSessionController extends ChangeNotifier {
       'setupCompleted': user['setupCompleted'] == true ||
           setup['setupCompleted'] == true ||
           previous['setupCompleted'] == true,
-      'selectedPlan': _normalizePlan(
-        user['selectedPlan']?.toString() ??
-            setup['selectedPlan']?.toString() ??
+      'setupSelectedPlan': _normalizePlan(
+        setup['selectedPlan']?.toString() ??
+            user['selectedPlan']?.toString() ??
+            previous['setupSelectedPlan']?.toString() ??
             previous['selectedPlan']?.toString(),
       ),
-      'selectedTier': _normalizeTier(
+      'setupSelectedTier': _normalizeTier(
+        setup['selectedTier']?.toString() ??
             user['selectedTier']?.toString() ??
-                setup['selectedTier']?.toString() ??
-                previous['selectedTier']?.toString(),
-          ) ??
-          'focused',
-      'subscriptionStatus': (user['subscriptionStatus']?.toString() ??
+            previous['setupSelectedTier']?.toString() ??
+            previous['selectedTier']?.toString(),
+      ),
+      'commercialPlan': _normalizePlan(
+        commercial['service']?.toString() ??
+            commercial['lane']?.toString() ??
+            previous['commercialPlan']?.toString(),
+      ),
+      'commercialTier': _normalizeTier(
+        commercial['tier']?.toString() ??
+            previous['commercialTier']?.toString(),
+      ),
+      'subscriptionStatus': (commercial['status']?.toString() ??
+              user['subscriptionStatus']?.toString() ??
               setup['subscriptionStatus']?.toString() ??
               previous['subscriptionStatus']?.toString() ??
               'none')
@@ -134,14 +164,29 @@ class AuthSessionController extends ChangeNotifier {
   Future<void> applyClientSetupResponse(Map<String, dynamic> payload) async {
     _session ??= {};
     final client = Map<String, dynamic>.from((payload['client'] as Map?) ?? const {});
+    final commercial = Map<String, dynamic>.from((client['commercial'] as Map?) ?? const {});
     _session!['setupCompleted'] = client['setupCompleted'] == true;
-    _session!['selectedPlan'] = _normalizePlan(
-      client['selectedPlan']?.toString() ?? _session!['selectedPlan']?.toString(),
+    _session!['setupSelectedPlan'] = _normalizePlan(
+      client['setupSelectedPlan']?.toString() ??
+          client['selectedPlan']?.toString() ??
+          _session!['setupSelectedPlan']?.toString() ??
+          _session!['selectedPlan']?.toString(),
     );
-    _session!['selectedTier'] = _normalizeTier(
-          client['selectedTier']?.toString() ?? _session!['selectedTier']?.toString(),
-        ) ??
-        'focused';
+    _session!['setupSelectedTier'] = _normalizeTier(
+      client['setupSelectedTier']?.toString() ??
+          client['selectedTier']?.toString() ??
+          _session!['setupSelectedTier']?.toString() ??
+          _session!['selectedTier']?.toString(),
+    );
+    _session!['commercialPlan'] = _normalizePlan(
+      commercial['service']?.toString() ??
+          commercial['lane']?.toString() ??
+          _session!['commercialPlan']?.toString(),
+    );
+    _session!['commercialTier'] = _normalizeTier(
+      commercial['tier']?.toString() ??
+          _session!['commercialTier']?.toString(),
+    );
     _session!['subscriptionStatus'] =
         (client['subscriptionStatus']?.toString() ?? _session!['subscriptionStatus'] ?? 'none')
             .toLowerCase();
@@ -162,9 +207,11 @@ class AuthSessionController extends ChangeNotifier {
 
     _session ??= {};
     if (normalizedPlan != null && normalizedPlan.isNotEmpty) {
+      _session!['setupSelectedPlan'] = normalizedPlan;
       _session!['selectedPlan'] = normalizedPlan;
     }
     if (normalizedTier != null && normalizedTier.isNotEmpty) {
+      _session!['setupSelectedTier'] = normalizedTier;
       _session!['selectedTier'] = normalizedTier;
     }
 
