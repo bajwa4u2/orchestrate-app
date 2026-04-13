@@ -112,17 +112,12 @@ class ClientWorkspaceScreen extends StatelessWidget {
         final billingStatus = _title(
           _read(subscriptionMap, 'status', fallback: session.subscriptionStatus),
         );
-        final planName = _title(
-          _read(
-            subscriptionMap,
-            'planName',
-            fallback: session.selectedPlan ?? 'Not set',
-          ),
-        );
-        final tier = session.selectedTier;
-        final tierName = _title(
-          (tier != null && tier.isNotEmpty) ? tier : 'focused',
-        );
+        final subscriptionPlanName = _resolveSubscriptionPlanName(subscriptionMap);
+        final subscriptionTierName = _resolveSubscriptionTierName(subscriptionMap);
+        final combinedPlanLabel = _joinNonEmpty([
+          subscriptionPlanName,
+          subscriptionTierName,
+        ]);
 
         return _ClientViewData(
           eyebrow: 'Workspace',
@@ -135,7 +130,10 @@ class ClientWorkspaceScreen extends StatelessWidget {
               : null,
           metrics: [
             _MetricData(label: 'Account state', value: _accountState(session)),
-            _MetricData(label: 'Plan', value: '$planName · $tierName'),
+            _MetricData(
+              label: 'Plan',
+              value: combinedPlanLabel.isEmpty ? 'Not set' : combinedPlanLabel,
+            ),
             _MetricData(
               label: 'Open notices',
               value: _countLabel(communications['openNotifications']),
@@ -361,6 +359,8 @@ class ClientWorkspaceScreen extends StatelessWidget {
         final subscriptionState = _title(
           _read(subscriptionMap, 'status', fallback: session.subscriptionStatus),
         );
+        final subscriptionPlanName = _resolveSubscriptionPlanName(subscriptionMap);
+        final subscriptionTierName = _resolveSubscriptionTierName(subscriptionMap);
 
         return _ClientViewData(
           eyebrow: 'Commercial relationship',
@@ -375,14 +375,12 @@ class ClientWorkspaceScreen extends StatelessWidget {
               : null,
           metrics: [
             _MetricData(
-              label: 'Plan',
-              value: _title(
-                _read(
-                  subscriptionMap,
-                  'planName',
-                  fallback: session.selectedPlan ?? 'Not set',
-                ),
-              ),
+              label: 'Service',
+              value: subscriptionPlanName,
+            ),
+            _MetricData(
+              label: 'Tier',
+              value: subscriptionTierName,
             ),
             _MetricData(label: 'Status', value: subscriptionState),
             _MetricData(label: 'Invoices', value: '${invoices.length}'),
@@ -863,4 +861,33 @@ String _accountState(AuthSessionController session) {
   if (!session.hasSetupCompleted) return 'Draft';
   if (session.normalizedSubscriptionStatus == 'active') return 'Active';
   return 'Review';
+}
+
+String _resolveSubscriptionPlanName(Map<String, dynamic> subscriptionMap) {
+  final explicitPlan = _read(subscriptionMap, 'plan');
+  if (explicitPlan.isNotEmpty) return _title(explicitPlan);
+
+  final planName = _read(subscriptionMap, 'planName');
+  if (planName.isNotEmpty) return _title(planName);
+
+  final lane = _read(subscriptionMap, 'lane');
+  if (lane.isNotEmpty) return _title(lane);
+
+  final planCode = _read(subscriptionMap, 'planCode').toUpperCase();
+  if (planCode.contains('REVENUE')) return 'Revenue';
+  if (planCode.contains('OPPORTUNITY')) return 'Opportunity';
+
+  return 'Not set';
+}
+
+String _resolveSubscriptionTierName(Map<String, dynamic> subscriptionMap) {
+  final tier = _read(subscriptionMap, 'tier');
+  if (tier.isNotEmpty) return _title(tier);
+
+  final planCode = _read(subscriptionMap, 'planCode').toUpperCase();
+  if (planCode.contains('PRECISION')) return 'Precision';
+  if (planCode.contains('MULTI')) return 'Multi';
+  if (planCode.contains('FOCUSED')) return 'Focused';
+
+  return 'Not set';
 }
