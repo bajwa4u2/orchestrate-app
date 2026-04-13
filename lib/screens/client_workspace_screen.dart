@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../core/auth/auth_session.dart';
 import '../core/theme/app_theme.dart';
 import '../data/repositories/client_portal_repository.dart';
 
-enum ClientSection { workspace, outreach, billing, account }
+enum ClientSection { workspace, outreach, billing }
 
 class ClientWorkspaceScreen extends StatelessWidget {
   const ClientWorkspaceScreen({super.key, required this.section});
@@ -306,122 +304,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
           secondaryEmpty: 'No agreements or reminders are available yet.',
         );
 
-      case ClientSection.account:
-        final profile = await repo.fetchClientProfile();
-        final subscription = await repo.fetchSubscription();
-        final client = _asMap(profile['client']);
-        final planName = _title(
-          _read(client, 'selectedPlan', fallback: session.selectedPlan ?? 'Not set'),
-        );
-        final tierName = _title(session.selectedTier ?? 'focused');
-        final subscriptionMap = _asMap(subscription);
-        final portalAction = _read(subscriptionMap, 'status').isNotEmpty
-            ? () {
-                _openBillingPortal();
-              }
-            : null;
-
-        return _ClientViewData(
-          eyebrow: 'Control',
-          title: _displayIdentity(client),
-          subtitle: 'Profile, scope, plan visibility, and account actions belong together here.',
-          metrics: [
-            _MetricData(label: 'Account state', value: _accountState(session)),
-            _MetricData(label: 'Plan', value: '$planName · $tierName'),
-            _MetricData(
-              label: 'Verification',
-              value: session.emailVerified ? 'Verified' : 'Pending',
-            ),
-            _MetricData(
-              label: 'Currency',
-              value: _read(client, 'currencyCode', fallback: 'USD'),
-            ),
-          ],
-          cards: [
-            _InsightCardData(
-              title: 'Identity and business setup',
-              body: _joinNonEmpty([
-                _read(client, 'displayName'),
-                _read(client, 'legalName'),
-                _read(client, 'brandName'),
-              ]),
-            ),
-            _InsightCardData(
-              title: 'Profile links',
-              body: _joinNonEmpty([
-                _read(client, 'websiteUrl'),
-                _read(client, 'bookingUrl'),
-              ]).isEmpty
-                  ? 'Website and booking links can live here without waiting for activation.'
-                  : _joinNonEmpty([
-                      _read(client, 'websiteUrl'),
-                      _read(client, 'bookingUrl'),
-                    ]),
-            ),
-          ],
-          primaryTitle: 'Profile and setup',
-          primaryRows: [
-            _RowData(
-              title: _displayIdentity(client),
-              primary: _read(client, 'legalName'),
-              secondary: _joinNonEmpty([
-                _read(client, 'primaryEmail', fallback: session.email),
-                _read(client, 'primaryTimezone'),
-              ]),
-              actionLabel: _linkLabel(_read(client, 'websiteUrl')),
-              onTap: _openLinkAction(_read(client, 'websiteUrl')),
-            ),
-            _RowData(
-              title: 'Business profile',
-              primary: _joinNonEmpty([
-                _read(client, 'brandName'),
-                _read(client, 'industry'),
-              ]),
-              secondary: _joinNonEmpty([
-                _read(client, 'websiteUrl'),
-                _read(client, 'bookingUrl'),
-              ]),
-              actionLabel: _linkLabel(_read(client, 'bookingUrl')),
-              onTap: _openLinkAction(_read(client, 'bookingUrl')),
-            ),
-            _RowData(
-              title: 'Scope and readiness',
-              primary: session.hasSetupCompleted ? 'Setup completed' : 'Setup still in draft',
-              secondary: _joinNonEmpty([
-                _title(session.selectedPlan ?? 'not set'),
-                _title(session.selectedTier ?? 'focused'),
-              ]),
-            ),
-          ],
-          primaryEmpty: 'No profile details are available yet.',
-          secondaryTitle: 'Plan and account actions',
-          secondaryRows: [
-            _RowData(
-              title: 'Subscription standing',
-              primary: _title(
-                _read(_asMap(subscription), 'status', fallback: session.subscriptionStatus),
-              ),
-              secondary: _joinNonEmpty([
-                _read(_asMap(subscription), 'interval'),
-                _read(_asMap(subscription), 'currentPeriodEnd'),
-              ]),
-              actionLabel: portalAction == null ? null : 'Open billing portal',
-              onTap: portalAction,
-            ),
-            _RowData(
-              title: 'Security',
-              primary: session.emailVerified ? 'Email verified' : 'Email verification pending',
-              secondary: 'Password reset and account closure should live here as direct actions.',
-            ),
-            _RowData(
-              title: 'Account status',
-              primary: _accountState(session),
-              secondary: 'Control should remain accessible before activation. Execution can remain gated separately.',
-            ),
-          ],
-          secondaryEmpty: 'No account state is available yet.',
-        );
-
       case ClientSection.workspace:
         final overview = await repo.fetchOverview();
         final billing = _asMap(overview['billing']);
@@ -520,14 +402,6 @@ class ClientWorkspaceScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _openBillingPortal() async {
-    final repo = ClientPortalRepository();
-    final url = await repo.createBillingPortalSession();
-    final uri = Uri.tryParse(url);
-    if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
 }
 
 class _Hero extends StatelessWidget {

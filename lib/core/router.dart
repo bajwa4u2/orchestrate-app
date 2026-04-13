@@ -8,6 +8,7 @@ import '../screens/client_setup_screen.dart';
 import '../screens/client_subscribe_screen.dart';
 import '../screens/client_support_screen.dart';
 import '../screens/client_workspace_screen.dart';
+import '../screens/inquiries_list_screen.dart';
 import '../screens/inquiry_detail_screen.dart';
 import '../screens/meetings_screen.dart';
 import '../screens/operator_workspace_screen.dart';
@@ -271,11 +272,7 @@ final router = GoRouter(
           builder: (context, state) =>
               const OperatorWorkspaceScreen(section: OperatorSection.pipeline),
         ),
-        GoRoute(
-          path: '/app/inquiries',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.inquiries),
-        ),
+        GoRoute(path: '/app/inquiries', builder: (context, state) => const InquiriesListScreen()),
         GoRoute(
           path: '/app/inquiries/:id',
           builder: (context, state) =>
@@ -284,17 +281,17 @@ final router = GoRouter(
         GoRoute(
           path: '/app/execution/campaigns',
           builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.campaigns),
+              const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/execution/replies',
           builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.replies),
+              const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/execution/meetings',
           builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.meetings),
+              const OperatorWorkspaceScreen(section: OperatorSection.execution),
         ),
         GoRoute(
           path: '/app/clients',
