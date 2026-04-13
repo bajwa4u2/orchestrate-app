@@ -114,7 +114,8 @@ class ClientWorkspaceScreen extends StatelessWidget {
         final planName = _title(
           _read(subscriptionMap, 'planName', fallback: session.selectedPlan ?? 'Not set'),
         );
-        final tierName = _title(session.selectedTier.isNotEmpty ? session.selectedTier : 'focused');
+        final tier = session.selectedTier;
+        final tierName = _title((tier != null && tier.isNotEmpty) ? tier : 'focused');
         final upcomingMeetings = meetings.where((item) {
           final raw = _asMap(item);
           final bucket = _title(_firstNonEmpty([
