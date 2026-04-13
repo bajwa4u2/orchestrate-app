@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/auth/auth_session.dart';
 import '../core/config/pricing_config.dart';
 import '../core/theme/app_theme.dart';
-import '../data/repositories/client_portal_repository.dart';
+import '../data/repositories/client/client_billing_repository.dart';
 
 class ClientSubscribeScreen extends StatefulWidget {
   const ClientSubscribeScreen({super.key});
@@ -68,7 +68,7 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
     _syncSelectionFromUri(uri);
 
     try {
-      final catalog = await ClientPortalRepository().fetchPricingCatalog();
+      final catalog = await ClientBillingRepository().fetchPricingCatalog();
       if (!mounted) return;
       setState(() {
         _catalog = catalog;
@@ -120,7 +120,7 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
     });
 
     try {
-      final response = await ClientPortalRepository().createSubscription(_planCode, _tierCode);
+      final response = await ClientBillingRepository().createSubscription(_planCode, _tierCode);
       final url = response['checkoutUrl']?.toString();
       if (url == null || url.isEmpty) {
         throw Exception('Missing checkout URL');
