@@ -57,7 +57,9 @@ class _ContactScreenState extends State<ContactScreen> {
         final offset = Tween<Offset>(
           begin: const Offset(0.08, 0),
           end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+        ).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        );
 
         return SlideTransition(
           position: offset,
@@ -145,33 +147,33 @@ class _ContactIntro extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Describe what you need and we’ll guide the conversation forward.',
+            'Talk through fit, scope, pricing, or next steps.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 16),
           Text(
-            'Use this page for fit, pricing, onboarding, billing, or any operational question before you move ahead.',
+            'Use this page when you want a direct conversation before moving forward. Contact is the full support surface for public entry. Quick guidance remains available if you want help to stay open while reviewing another page.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
           ),
           const SizedBox(height: 28),
           const _DetailCard(
-            title: 'How to begin',
+            title: 'Best use of this page',
             body:
-                'Start with the message itself. We will respond directly or guide the next step from there.',
+                'Use contact for service fit, pricing clarity, onboarding questions, billing questions, or scope decisions before account setup.',
           ),
           const SizedBox(height: 14),
           const _DetailCard(
-            title: 'What to include',
+            title: 'What helps most',
             body:
-                'Share the market you serve, what you want to achieve, what is already in place, and anything that changes the scope.',
+                'Share what your business is trying to achieve, the market you serve, what is already in place, and anything that changes the scope or pace of the work.',
           ),
           const SizedBox(height: 14),
           const _DetailCard(
-            title: 'When to open the side panel',
+            title: 'When quick guidance helps',
             body:
-                'Use the side panel if you want support to stay open while you review pricing or another public page.',
+                'Use quick guidance if you want support to stay open while you compare pricing or review another public page.',
           ),
           const SizedBox(height: 22),
           OutlinedButton(
@@ -184,7 +186,7 @@ class _ContactIntro extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            child: const Text('Open support panel'),
+            child: const Text('Open quick guidance'),
           ),
         ],
       ),
@@ -216,12 +218,12 @@ class _ContactSupportSurface extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tell us what you need',
+            'Start the conversation',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 10),
           Text(
-            'We’ll respond immediately or guide you forward.',
+            'We’ll respond directly or guide the next step from here.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
