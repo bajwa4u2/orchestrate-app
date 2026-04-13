@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/auth_session.dart';
@@ -94,6 +95,141 @@ class ClientWorkspaceScreen extends StatelessWidget {
     final session = AuthSessionController.instance;
 
     switch (section) {
+      case ClientSection.workspace:
+        final overview = await repo.fetchOverview();
+        final subscription = await repo.fetchSubscription();
+        final meetings = await repo.fetchMeetings();
+        final notifications = await repo.fetchNotifications();
+
+        final client = _asMap(overview['client']);
+        final activity = _asMap(overview['activity']);
+        final communications = _asMap(overview['communications']);
+        final billing = _asMap(overview['billing']);
+        final subscriptionMap = _asMap(subscription);
+
+        final workspaceName = _displayIdentity(client);
+        final billingStatus = _title(
+          _read(subscriptionMap, 'status', fallback: session.subscriptionStatus),
+        );
+        final planName = _title(
+          _read(subscriptionMap, 'planName', fallback: session.selectedPlan ?? 'Not set'),
+        );
+        final tierName = _title(session.selectedTier.isNotEmpty ? session.selectedTier : 'focused');
+        final upcomingMeetings = meetings.where((item) {
+          final raw = _asMap(item);
+          final bucket = _title(_firstNonEmpty([
+            _read(raw, 'bucket'),
+            _read(raw, 'status'),
+          ]));
+          return bucket == 'Upcoming' || bucket == 'Scheduled' || bucket == 'Confirmed';
+        }).length;
+
+        return _ClientViewData(
+          eyebrow: 'Workspace',
+          title: workspaceName,
+          subtitle: session.normalizedSubscriptionStatus == 'active'
+              ? 'This is the client home for service standing, recent movement, and direct paths into outreach, meetings, billing, account, and support.'
+              : 'This is the client home for setup, billing standing, support, and visible progress before service activation is complete.',
+          notice: !session.hasSetupCompleted
+              ? 'Setup is still incomplete. Finish setup so outreach, meetings, and billing remain grounded in the right scope.'
+              : null,
+          metrics: [
+            _MetricData(label: 'Account state', value: _accountState(session)),
+            _MetricData(label: 'Plan', value: '$planName · $tierName'),
+            _MetricData(label: 'Upcoming meetings', value: '$upcomingMeetings'),
+            _MetricData(
+              label: 'Open notices',
+              value: _countLabel(communications['openNotifications']),
+            ),
+          ],
+          cards: const [
+            _InsightCardData(
+              title: 'Client home',
+              body: 'Workspace should stay the calm overview layer, not a container for every client task.',
+            ),
+            _InsightCardData(
+              title: 'Direct ownership',
+              body: 'Meetings, billing, account, and help should remain separate client destinations while workspace keeps the overall view coherent.',
+            ),
+          ],
+          primaryTitle: 'Current standing',
+          primaryRows: [
+            _RowData(
+              title: 'Setup and service state',
+              primary: _joinNonEmpty([
+                session.hasSetupCompleted ? 'Setup completed' : 'Setup incomplete',
+                billingStatus,
+              ]),
+              secondary: _joinNonEmpty([
+                _read(client, 'primaryEmail', fallback: session.email),
+                _read(client, 'primaryTimezone'),
+              ]),
+              actionLabel: session.hasSetupCompleted ? null : 'Open setup',
+              onTap: session.hasSetupCompleted ? null : () => context.go('/client/setup'),
+            ),
+            _RowData(
+              title: 'Recent outreach movement',
+              primary: _joinNonEmpty([
+                '${_countValue(activity['replies'])} replies',
+                '${_countValue(communications['emailDispatches'])} dispatches',
+              ]),
+              secondary: 'Use outreach for the communication record and recent reply activity.',
+              actionLabel: 'Open outreach',
+              onTap: () => context.go('/client/outreach'),
+            ),
+            _RowData(
+              title: 'Meetings and outcomes',
+              primary: upcomingMeetings == 0
+                  ? 'No upcoming meetings are on record yet.'
+                  : '$upcomingMeetings upcoming meetings are on record.',
+              secondary: 'Scheduled, completed, and missed meetings stay under the meetings surface.',
+              actionLabel: 'Open meetings',
+              onTap: () => context.go('/client/meetings'),
+            ),
+          ],
+          primaryEmpty: 'No workspace standing is available yet.',
+          secondaryTitle: 'Direct actions',
+          secondaryRows: [
+            _RowData(
+              title: 'Billing and records',
+              primary: _joinNonEmpty([
+                billingStatus,
+                _countValue(billing['invoiceCount']) == 0
+                    ? 'No invoices visible yet'
+                    : '${_countValue(billing['invoiceCount'])} invoices on record',
+              ]),
+              secondary: 'Billing, invoices, statements, agreements, and reminders stay together in one client destination.',
+              actionLabel: 'Open billing',
+              onTap: () => context.go('/client/billing'),
+            ),
+            _RowData(
+              title: 'Profile and account control',
+              primary: _joinNonEmpty([
+                _read(client, 'websiteUrl'),
+                _read(client, 'bookingUrl'),
+              ]).isEmpty
+                  ? 'Profile, website, booking link, and account controls are managed under account.'
+                  : _joinNonEmpty([
+                      _read(client, 'websiteUrl'),
+                      _read(client, 'bookingUrl'),
+                    ]),
+              secondary: 'Keep profile editing and account controls separate from the workspace overview.',
+              actionLabel: 'Open account',
+              onTap: () => context.go('/client/account'),
+            ),
+            _RowData(
+              title: 'Help and support',
+              primary: notifications.isEmpty
+                  ? 'Support is available directly from the client side whenever you need guidance or intervention.'
+                  : '${notifications.length} notices are currently visible across support and communication records.',
+              secondary: 'Use help for setup guidance, plan questions, billing support, workflow issues, and execution clarity.',
+              actionLabel: 'Open help',
+              onTap: () => context.go('/client/help'),
+            ),
+          ],
+          secondaryEmpty: 'No direct actions are available yet.',
+        );
+
       case ClientSection.outreach:
         final overview = await repo.fetchOverview();
         final replies = await repo.fetchReplies(limit: 12);
