@@ -57,8 +57,7 @@ class _SupportDrawerState extends State<SupportDrawer> {
       return;
     }
 
-    if (_ownsController &&
-        oldWidget.baseUrl != widget.baseUrl) {
+    if (_ownsController && oldWidget.baseUrl != widget.baseUrl) {
       _controller.removeListener(_refresh);
       _ownedController?.dispose();
       _ownedController = null;
@@ -126,9 +125,21 @@ class _SupportDrawerState extends State<SupportDrawer> {
                   const SizedBox(height: 6),
                   Text(
                     widget.publicMode
-                        ? 'Describe what you need and we’ll guide you forward.'
-                        : 'Continue from the same support thread without leaving your workspace.',
+                        ? 'Send a message and we’ll guide the next step from here.'
+                        : 'Send a message and continue in the same support conversation.',
                     style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: ResponseStream(
+                        messages: _controller.session.messages,
+                        isLoading: _controller.session.isLoading,
+                        onFollowUpTap: (value) async {
+                          await _controller.sendMessage(message: value);
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   IntakeCard(
@@ -145,19 +156,8 @@ class _SupportDrawerState extends State<SupportDrawer> {
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: ResponseStream(
-                        messages: _controller.session.messages,
-                        isLoading: _controller.session.isLoading,
-                        onFollowUpTap: (value) async {
-                          await _controller.sendMessage(message: value);
-                        },
-                      ),
-                    ),
-                  ),
-                  SupportFooter(showStripe: false),
+                  const SizedBox(height: 12),
+                  const SupportFooter(showStripe: false),
                 ],
               ),
             ),

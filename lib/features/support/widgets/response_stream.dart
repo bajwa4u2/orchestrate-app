@@ -60,7 +60,9 @@ class _UserMessageBlock extends StatelessWidget {
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: scheme.outlineVariant.withOpacity(0.5)),
+            border: Border.all(
+              color: scheme.outlineVariant.withOpacity(0.5),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,7 +75,10 @@ class _UserMessageBlock extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 8),
-              Text(message.content),
+              Text(
+                message.content,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ],
           ),
         ),
@@ -95,9 +100,12 @@ class _SystemMessageBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final statusKey = _normalizeStatus(message.status);
-    final isReviewState = message.isEscalated || message.caseCreated || statusKey == 'escalated';
-    final isFollowUpState = message.followUps.isNotEmpty || statusKey == 'follow_up';
-    final isResolvedState = statusKey == 'resolved' || statusKey == 'answered';
+    final isReviewState =
+        message.isEscalated || message.caseCreated || statusKey == 'escalated';
+    final isFollowUpState =
+        message.followUps.isNotEmpty || statusKey == 'follow_up';
+    final isResolvedState =
+        statusKey == 'resolved' || statusKey == 'answered';
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -110,7 +118,7 @@ class _SystemMessageBlock extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isReviewState
-                  ? scheme.outline.withOpacity(0.8)
+                  ? scheme.outline.withOpacity(0.78)
                   : scheme.outlineVariant.withOpacity(0.55),
             ),
           ),
@@ -125,17 +133,24 @@ class _SystemMessageBlock extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Text(message.content),
+              Text(
+                message.content,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               if (message.category != null || message.priority != null) ...[
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    if (message.category != null && message.category!.isNotEmpty)
-                      _MetaPill(label: message.category!),
-                    if (message.priority != null && message.priority!.isNotEmpty)
-                      _MetaPill(label: 'Priority: ${message.priority}'),
+                    if (message.category != null &&
+                        message.category!.trim().isNotEmpty)
+                      _MetaPill(label: message.category!.trim()),
+                    if (message.priority != null &&
+                        message.priority!.trim().isNotEmpty)
+                      _MetaPill(
+                        label: 'Priority: ${message.priority!.trim()}',
+                      ),
                   ],
                 ),
               ],
@@ -146,9 +161,16 @@ class _SystemMessageBlock extends StatelessWidget {
               if (message.followUps.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 Text(
-                  'Next details',
+                  'Helpful next details',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Choose one if it matches, or type your own reply below.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurface.withOpacity(0.68),
                       ),
                 ),
                 const SizedBox(height: 10),
@@ -159,7 +181,7 @@ class _SystemMessageBlock extends StatelessWidget {
               ],
               if (isResolvedState && !isReviewState) ...[
                 const SizedBox(height: 14),
-                _ResolvedStateBlock(),
+                const _ResolvedStateBlock(),
               ],
             ],
           ),
@@ -170,7 +192,11 @@ class _SystemMessageBlock extends StatelessWidget {
 
   static String _normalizeStatus(String? value) {
     if (value == null) return '';
-    final normalized = value.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    final normalized = value
+        .trim()
+        .toLowerCase()
+        .replaceAll('-', '_')
+        .replaceAll(' ', '_');
     if (normalized == 'needs_follow_up') return 'follow_up';
     return normalized;
   }
@@ -230,7 +256,9 @@ class _ReviewStateBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant.withOpacity(0.6)),
+        border: Border.all(
+          color: scheme.outlineVariant.withOpacity(0.6),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,7 +273,7 @@ class _ReviewStateBlock extends StatelessWidget {
           Text(
             hasCaseId
                 ? 'Reference: $caseId'
-                : 'We captured this for follow-up and will continue from the same thread.',
+                : 'This has been captured for follow-up. You can continue in the same conversation if more context helps.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -255,6 +283,8 @@ class _ReviewStateBlock extends StatelessWidget {
 }
 
 class _ResolvedStateBlock extends StatelessWidget {
+  const _ResolvedStateBlock();
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -265,10 +295,12 @@ class _ResolvedStateBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant.withOpacity(0.45)),
+        border: Border.all(
+          color: scheme.outlineVariant.withOpacity(0.45),
+        ),
       ),
       child: Text(
-        'You can continue here if you need anything else.',
+        'You can send another message below if you want to continue.',
         style: Theme.of(context).textTheme.bodyMedium,
       ),
     );
@@ -289,7 +321,9 @@ class _LoadingBlock extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: scheme.outlineVariant.withOpacity(0.45)),
+          border: Border.all(
+            color: scheme.outlineVariant.withOpacity(0.45),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

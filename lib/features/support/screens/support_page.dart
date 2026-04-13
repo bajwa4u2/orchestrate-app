@@ -39,7 +39,9 @@ class _SupportPageState extends State<SupportPage> {
     )..addListener(_refresh);
   }
 
-  void _refresh() => setState(() {});
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
@@ -73,14 +75,6 @@ class _SupportPageState extends State<SupportPage> {
                 children: [
                   _SupportPageHeader(publicMode: widget.publicMode),
                   const SizedBox(height: 24),
-                  IntakeCard(
-                    publicMode: widget.publicMode,
-                    isLoading: session.isLoading,
-                    initialValue: _draft,
-                    onChanged: (value) => _draft = value,
-                    onSubmit: _submit,
-                  ),
-                  const SizedBox(height: 20),
                   ResponseStream(
                     messages: session.messages,
                     isLoading: session.isLoading,
@@ -88,7 +82,15 @@ class _SupportPageState extends State<SupportPage> {
                       await controller.sendMessage(message: value);
                     },
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 20),
+                  IntakeCard(
+                    publicMode: widget.publicMode,
+                    isLoading: session.isLoading,
+                    initialValue: _draft,
+                    onChanged: (value) => _draft = value,
+                    onSubmit: _submit,
+                  ),
+                  const SizedBox(height: 12),
                   const SupportFooter(showStripe: false),
                 ],
               ),
@@ -115,7 +117,9 @@ class _SupportPageHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.45),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,14 +139,14 @@ class _SupportPageHeader extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            publicMode ? 'Start with what you need' : 'Get help without losing context',
+            publicMode ? 'Start the conversation' : 'Continue the conversation',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 10),
           Text(
             publicMode
-                ? 'Describe the question, issue, or setup need. We will answer immediately where possible and move it into review only when needed.'
-                : 'Describe the question, issue, or setup need. We will answer immediately where possible and use your existing workspace context where it helps.',
+                ? 'Use this page when you want a direct support conversation about fit, setup, billing, scope, or an issue that needs clarification.'
+                : 'Use this page when you want to continue the same support conversation with your current account context already in place.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: scheme.onSurface.withValues(alpha: 0.72),
                 ),

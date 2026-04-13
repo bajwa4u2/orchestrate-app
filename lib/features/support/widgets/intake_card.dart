@@ -78,19 +78,20 @@ class _IntakeCardState extends State<IntakeCard> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final heading = widget.publicMode
-        ? 'Start with what you need'
-        : 'Describe what you need help with';
+    final heading =
+        widget.publicMode ? 'Send your message' : 'Send a message';
     final supportingText = widget.publicMode
-        ? 'Share the question, issue, or setup need. You can add contact details only if follow-up is needed.'
-        : 'Share the question, issue, or setup need. We will use your current workspace context where it helps.';
+        ? 'Describe the question, issue, or setup need. Add contact details only if you want follow-up outside this conversation.'
+        : 'Describe the question, issue, or setup need. Your current account context will be used where it helps.';
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: scheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.45),
+        ),
         boxShadow: const [
           BoxShadow(
             blurRadius: 24,
@@ -124,8 +125,8 @@ class _IntakeCardState extends State<IntakeCard> {
             onChanged: widget.onChanged,
             decoration: InputDecoration(
               hintText: widget.publicMode
-                  ? 'For example: I need help choosing a plan, starting setup, understanding billing, or resolving an issue.'
-                  : 'Describe what you need. Include enough detail for a useful first response.',
+                  ? 'For example: I need help choosing a plan, understanding setup, clarifying billing, or resolving an issue.'
+                  : 'Describe what you need. Include enough detail for a useful reply.',
               filled: true,
               fillColor: scheme.surfaceContainerLowest,
               border: OutlineInputBorder(
@@ -152,11 +153,15 @@ class _IntakeCardState extends State<IntakeCard> {
                   ? null
                   : () => setState(() => _showContactFields = !_showContactFields),
               icon: Icon(
-                _showContactFields ? Icons.remove_circle_outline : Icons.add_circle_outline,
+                _showContactFields
+                    ? Icons.remove_circle_outline
+                    : Icons.add_circle_outline,
                 size: 18,
               ),
               label: Text(
-                _showContactFields ? 'Hide contact details' : 'Add contact details',
+                _showContactFields
+                    ? 'Hide contact details'
+                    : 'Add contact details',
               ),
             ),
             if (_showContactFields) ...[
@@ -193,8 +198,8 @@ class _IntakeCardState extends State<IntakeCard> {
               Expanded(
                 child: Text(
                   widget.publicMode
-                      ? 'We will respond immediately or guide the issue into review if needed.'
-                      : 'We will respond immediately or guide the issue into follow-up if needed.',
+                      ? 'We’ll respond directly or move it into review if needed.'
+                      : 'We’ll respond directly or continue the thread if more detail helps.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: scheme.onSurface.withValues(alpha: 0.70),
                       ),
@@ -203,7 +208,9 @@ class _IntakeCardState extends State<IntakeCard> {
               const SizedBox(width: 12),
               FilledButton(
                 onPressed: widget.isLoading ? null : _submit,
-                child: Text(widget.isLoading ? 'Working…' : 'Continue'),
+                child: Text(
+                  widget.isLoading ? 'Sending…' : 'Send message',
+                ),
               ),
             ],
           ),
