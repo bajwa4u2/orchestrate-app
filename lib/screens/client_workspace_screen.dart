@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../core/auth/auth_session.dart';
 import '../core/theme/app_theme.dart';
 import '../data/repositories/client_portal_repository.dart';
@@ -304,104 +306,17 @@ class ClientWorkspaceScreen extends StatelessWidget {
           secondaryEmpty: 'No agreements or reminders are available yet.',
         );
 
-      case ClientSection.workspace:
-        final overview = await repo.fetchOverview();
-        final billing = _asMap(overview['billing']);
-        final activity = _asMap(overview['activity']);
-        final communications = _asMap(overview['communications']);
-        final client = _asMap(overview['client']);
-
-        final setupComplete = session.hasSetupCompleted;
-        final billingActive = session.normalizedSubscriptionStatus == 'active';
-        final accountState = _accountState(session);
-        final subscriptionState = _title(
-          _read(billing, 'status', fallback: session.subscriptionStatus),
-        );
-        final planName = _title(
-          _read(billing, 'planName', fallback: session.selectedPlan ?? 'Not set'),
-        );
-        final repliesCount = _countValue(activity['replies']);
-        final meetingsCount = _countValue(activity['meetings']);
-        final noticesCount = _countValue(communications['openNotifications']);
-        final dispatchCount = _countValue(communications['emailDispatches']);
-        final outstandingValue = _countValue(billing['outstandingCents']);
-        final portalUrl = _read(communications, 'portalUrl');
-
-        return _ClientViewData(
-          eyebrow: 'Workspace',
-          title: _displayIdentity(client),
-          subtitle: 'Service visibility, outcomes, billing, and account control stay visible here without guessing beyond real data.',
-          notice: !setupComplete
-              ? 'Setup is still incomplete.'
-              : (!billingActive ? 'Plan is not active yet.' : null),
-          metrics: [
-            _MetricData(label: 'Account', value: accountState),
-            _MetricData(label: 'Plan', value: subscriptionState),
-            _MetricData(label: 'Replies', value: '$repliesCount'),
-            _MetricData(label: 'Meetings', value: '$meetingsCount'),
-          ],
-          cards: const [],
-          primaryTitle: 'Status',
-          primaryRows: [
-            _RowData(
-              title: 'Account state',
-              primary: accountState,
-              secondary: setupComplete ? 'Setup completed.' : 'Setup incomplete.',
-            ),
-            _RowData(
-              title: 'Plan state',
-              primary: subscriptionState,
-              secondary: planName == 'Not Set' ? '' : planName,
-            ),
-            _RowData(
-              title: 'Outstanding balance',
-              primary: outstandingValue == 0 ? 'No outstanding balance' : _money(outstandingValue),
-              secondary: _countValue(billing['invoiceCount']) == 0
-                  ? ''
-                  : '${_countValue(billing['invoiceCount'])} invoices on record',
-            ),
-            _RowData(
-              title: 'Support portal',
-              primary: portalUrl.isEmpty ? 'Not available' : 'Available',
-              secondary: portalUrl,
-              actionLabel: _linkLabel(portalUrl),
-              onTap: _openLinkAction(portalUrl),
-            ),
-          ],
-          primaryEmpty: 'No status data is available yet.',
-          secondaryTitle: 'Current visibility',
-          secondaryRows: [
-            _RowData(
-              title: 'Outreach snapshot',
-              primary: repliesCount == 0 ? 'No reply activity yet' : '$repliesCount replies visible',
-              secondary: '',
-            ),
-            _RowData(
-              title: 'Meetings snapshot',
-              primary: meetingsCount == 0 ? 'No meetings visible yet' : '$meetingsCount meetings visible',
-              secondary: '',
-            ),
-            _RowData(
-              title: 'Billing snapshot',
-              primary: planName == 'Not Set' ? subscriptionState : '$planName · $subscriptionState',
-              secondary: outstandingValue == 0 ? '' : 'Outstanding balance is visible above.',
-            ),
-            _RowData(
-              title: 'Communications',
-              primary: noticesCount == 0 && dispatchCount == 0
-                  ? 'No communication activity yet'
-                  : _joinNonEmpty([
-                      noticesCount == 0 ? '' : '$noticesCount open notices',
-                      dispatchCount == 0 ? '' : '$dispatchCount email dispatches',
-                    ]),
-              secondary: '',
-            ),
-          ],
-          secondaryEmpty: 'No workspace activity is visible yet.',
-        );
     }
   }
 
+  Future<void> _openBillingPortal() async {
+    final repo = ClientPortalRepository();
+    final url = await repo.createBillingPortalSession();
+    final uri = Uri.tryParse(url);
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 }
 
 class _Hero extends StatelessWidget {

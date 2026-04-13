@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/auth_session.dart';
@@ -13,322 +14,524 @@ class ClientAccountScreen extends StatefulWidget {
 }
 
 class _ClientAccountScreenState extends State<ClientAccountScreen> {
-  final _repo = ClientPortalRepository();
-  final _formKey = GlobalKey<FormState>();
-
-  final _displayNameController = TextEditingController();
-  final _legalNameController = TextEditingController();
-  final _brandNameController = TextEditingController();
-  final _websiteUrlController = TextEditingController();
-  final _bookingUrlController = TextEditingController();
-  final _timezoneController = TextEditingController();
-  final _currencyController = TextEditingController();
-  final _headlineController = TextEditingController();
-  final _deactivationReasonController = TextEditingController();
-  final _deactivationConfirmController = TextEditingController();
-
-  bool _loading = true;
-  bool _saving = false;
-  bool _openingPortal = false;
-  bool _deactivating = false;
-  String? _error;
-  Map<String, dynamic> _profile = const {};
-  Map<String, dynamic>? _subscription;
+  final ClientPortalRepository _repository = ClientPortalRepository();
+  late Future<_AccountViewData> _future;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _future = _load();
   }
 
-  @override
-  void dispose() {
-    _displayNameController.dispose();
-    _legalNameController.dispose();
-    _brandNameController.dispose();
-    _websiteUrlController.dispose();
-    _bookingUrlController.dispose();
-    _timezoneController.dispose();
-    _currencyController.dispose();
-    _headlineController.dispose();
-    _deactivationReasonController.dispose();
-    _deactivationConfirmController.dispose();
-    super.dispose();
+  Future<_AccountViewData> _load() async {
+    final overview = await _repository.fetchOverview();
+    final profile = await _repository.fetchClientProfile();
+    final subscription = await _repository.fetchSubscription();
+    return _AccountViewData(
+      overview: overview,
+      profile: profile,
+      subscription: subscription,
+    );
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      final results = await Future.wait<dynamic>([
-        _repo.fetchClientProfile(),
-        _repo.fetchSubscription(),
-      ]);
-
-      final profile = Map<String, dynamic>.from(results[0] as Map);
-      final subscription = results[1] == null
-          ? null
-          : Map<String, dynamic>.from(results[1] as Map);
-
-      _profile = profile;
-      _subscription = subscription;
-      _applyProfile(profile);
-
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = 'Account details could not load right now.';
-        });
-      }
-    }
+  Future<void> _refresh() async {
+    final next = _load();
+    setState(() => _future = next);
+    await next;
   }
 
-  void _applyProfile(Map<String, dynamic> profile) {
-    final client = _asMap(profile['client']);
-    _displayNameController.text = _read(client, 'displayName');
-    _legalNameController.text = _read(client, 'legalName');
-    _brandNameController.text = _read(client, 'brandName');
-    _websiteUrlController.text = _read(client, 'websiteUrl');
-    _bookingUrlController.text = _read(client, 'bookingUrl');
-    _timezoneController.text = _read(client, 'primaryTimezone', fallback: 'America/Detroit');
-    _currencyController.text = _read(client, 'currencyCode', fallback: 'USD');
-    _headlineController.text = _read(client, 'welcomeHeadline');
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _saving = true;
-    });
-
-    try {
-      final updated = await _repo.updateClientProfile(
-        displayName: _displayNameController.text.trim(),
-        legalName: _legalNameController.text.trim(),
-        brandName: _brandNameController.text.trim(),
-        websiteUrl: _websiteUrlController.text.trim(),
-        bookingUrl: _bookingUrlController.text.trim(),
-        primaryTimezone: _timezoneController.text.trim(),
-        currencyCode: _currencyController.text.trim(),
-        welcomeHeadline: _headlineController.text.trim(),
-      );
-
-      _profile = updated;
-      _applyProfile(updated);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account details updated.')),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account details could not be updated.')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-        });
-      }
-    }
+  Future<void> _openUrl(String value) async {
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _openBillingPortal() async {
-    setState(() {
-      _openingPortal = true;
-    });
+    final url = await _repository.createBillingPortalSession();
+    await _openUrl(url);
+  }
 
-    try {
-      final url = await _repo.createBillingPortalSession();
-      final uri = Uri.tryParse(url);
-      if (uri != null) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Billing portal could not be opened.')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _openingPortal = false;
-        });
-      }
+  Future<void> _showProfileEditor(_AccountViewData data) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _ProfileEditorDialog(
+        initialProfile: data.profile,
+        repository: _repository,
+      ),
+    );
+
+    if (saved == true) {
+      await _refresh();
     }
   }
 
-  Future<void> _confirmDeactivate() async {
-    final confirmed = await showDialog<bool>(
+  Future<void> _showDeactivateDialog() async {
+    final result = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Deactivate account'),
-          content: const Text(
-            'This requests account deactivation. Billing and record visibility should be reviewed before continuing.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Continue'),
-            ),
-          ],
-        );
-      },
+      barrierDismissible: false,
+      builder: (context) => _DeactivateAccountDialog(repository: _repository),
     );
 
-    if (confirmed != true) return;
-
-    setState(() {
-      _deactivating = true;
-    });
-
-    try {
-      await _repo.deactivateClientAccount(
-        reason: _deactivationReasonController.text.trim(),
-        confirmationText: _deactivationConfirmController.text.trim(),
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Deactivation request submitted.')),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Deactivation request could not be submitted.')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _deactivating = false;
-        });
-      }
+    if (result == true && mounted) {
+      await AuthSessionController.instance.clear();
+      if (mounted) context.go('/client/login');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return FutureBuilder<_AccountViewData>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error!),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _load, child: const Text('Try again')),
-          ],
-        ),
-      );
-    }
+        if (snapshot.hasError || snapshot.data == null) {
+          return const Center(child: Text('This area could not load right now.'));
+        }
 
-    final session = AuthSessionController.instance;
-    final client = _asMap(_profile['client']);
-    final subscription = _asMap(_subscription);
+        final data = snapshot.data!;
+        final session = AuthSessionController.instance;
+        final profile = data.profile;
+        final subscription = data.subscription ?? const <String, dynamic>{};
+        final client = _asMap(data.overview['client']);
+        final billing = _asMap(data.overview['billing']);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Hero(
-            eyebrow: 'Account',
-            title: _displayIdentity(client, session),
-            subtitle:
-                'Profile, business links, billing access, and account controls belong together here instead of staying buried inside workspace.',
-          ),
-          const SizedBox(height: 18),
-          _MetricStrip(
-            metrics: [
-              _MetricData(label: 'State', value: _accountState(session)),
-              _MetricData(
-                label: 'Plan',
-                value: _title(_read(subscription, 'planName', fallback: session.selectedPlan ?? 'Not set')),
+        final workspaceName = _displayIdentity(profile, fallback: _displayIdentity(client));
+        final planName = _title(
+          _read(subscription, 'planName', fallback: session.selectedPlan ?? 'Not set'),
+        );
+        final tierName = _title(session.selectedTier ?? 'focused');
+        final billingStatus = _title(
+          _read(subscription, 'status', fallback: session.subscriptionStatus),
+        );
+        final currency = _read(profile, 'currencyCode', fallback: 'USD');
+        final periodEnd = _read(subscription, 'currentPeriodEnd');
+        final websiteUrl = _read(profile, 'websiteUrl');
+        final bookingUrl = _read(profile, 'bookingUrl');
+        final outstanding = _centsToMoney(_intValue(billing['outstandingCents']), currency);
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Hero(
+                eyebrow: 'Account',
+                title: workspaceName,
+                subtitle:
+                    'Profile, billing standing, account controls, and direct actions stay together here.',
+                actions: [
+                  _HeroAction(
+                    label: 'Edit profile',
+                    onPressed: () => _showProfileEditor(data),
+                  ),
+                  _HeroAction(
+                    label: 'Help',
+                    isPrimary: false,
+                    onPressed: () => context.go('/client/help'),
+                  ),
+                ],
               ),
-              _MetricData(
-                label: 'Billing',
-                value: _title(_read(subscription, 'status', fallback: session.subscriptionStatus)),
+              const SizedBox(height: 18),
+              _MetricStrip(
+                metrics: [
+                  _MetricData(label: 'Account state', value: _accountState(session)),
+                  _MetricData(label: 'Plan', value: '$planName · $tierName'),
+                  _MetricData(label: 'Billing', value: billingStatus),
+                  _MetricData(
+                    label: 'Verification',
+                    value: session.emailVerified ? 'Verified' : 'Pending',
+                  ),
+                ],
               ),
-              _MetricData(
-                label: 'Verification',
-                value: session.emailVerified ? 'Verified' : 'Pending',
+              const SizedBox(height: 18),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final stacked = constraints.maxWidth < 980;
+                  final profilePanel = _Panel(
+                    title: 'Profile and setup',
+                    rows: [
+                      _RowData(
+                        title: workspaceName,
+                        primary: _joinNonEmpty([
+                          _read(profile, 'legalName'),
+                          _read(profile, 'brandName'),
+                        ]),
+                        secondary: _joinNonEmpty([
+                          _read(profile, 'primaryEmail', fallback: session.email),
+                          _read(profile, 'primaryTimezone'),
+                        ]),
+                        actionLabel: 'Edit profile',
+                        onTap: () => _showProfileEditor(data),
+                      ),
+                      _RowData(
+                        title: 'Website and booking',
+                        primary: _joinNonEmpty([
+                          websiteUrl,
+                          bookingUrl,
+                        ]).isEmpty
+                            ? 'No public links added yet.'
+                            : _joinNonEmpty([websiteUrl, bookingUrl]),
+                        secondary: 'These stay editable without waiting for plan activation.',
+                        actionLabel: websiteUrl.isNotEmpty
+                            ? 'Open website'
+                            : bookingUrl.isNotEmpty
+                                ? 'Open booking link'
+                                : null,
+                        onTap: websiteUrl.isNotEmpty
+                            ? () => _openUrl(websiteUrl)
+                            : bookingUrl.isNotEmpty
+                                ? () => _openUrl(bookingUrl)
+                                : null,
+                      ),
+                      _RowData(
+                        title: 'Setup readiness',
+                        primary: session.hasSetupCompleted
+                            ? 'Setup completed'
+                            : 'Setup still needs completion',
+                        secondary: _joinNonEmpty([
+                          _title(session.selectedPlan ?? 'not set'),
+                          _title(session.selectedTier ?? 'focused'),
+                        ]),
+                        actionLabel: 'Open setup',
+                        onTap: () => context.go('/client/setup'),
+                      ),
+                    ],
+                    emptyLabel: 'No profile details are available yet.',
+                  );
+
+                  final controlPanel = _Panel(
+                    title: 'Billing and account control',
+                    rows: [
+                      _RowData(
+                        title: 'Subscription standing',
+                        primary: billingStatus,
+                        secondary: _joinNonEmpty([
+                          planName == 'Not Set' ? '' : '$planName · $tierName',
+                          periodEnd,
+                        ]),
+                        actionLabel: 'Open billing portal',
+                        onTap: _openBillingPortal,
+                      ),
+                      _RowData(
+                        title: 'Outstanding balance',
+                        primary: outstanding,
+                        secondary: _intValue(billing['invoiceCount']) == 0
+                            ? 'No invoices are currently visible.'
+                            : '${_intValue(billing['invoiceCount'])} invoices are on record.',
+                      ),
+                      _RowData(
+                        title: 'Support and account closure',
+                        primary: 'Help stays available directly from the client side.',
+                        secondary:
+                            'If you need to stop the account, use the closure action here rather than leaving the workspace unclear.',
+                        actionLabel: 'Deactivate account',
+                        onTap: _showDeactivateDialog,
+                      ),
+                    ],
+                    emptyLabel: 'No billing control is available yet.',
+                  );
+
+                  if (stacked) {
+                    return Column(
+                      children: [
+                        profilePanel,
+                        const SizedBox(height: 18),
+                        controlPanel,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 6, child: profilePanel),
+                      const SizedBox(width: 18),
+                      Expanded(flex: 5, child: controlPanel),
+                    ],
+                  );
+                },
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 980;
-              final left = _FormPanel(
-                formKey: _formKey,
-                displayNameController: _displayNameController,
-                legalNameController: _legalNameController,
-                brandNameController: _brandNameController,
-                websiteUrlController: _websiteUrlController,
-                bookingUrlController: _bookingUrlController,
-                timezoneController: _timezoneController,
-                currencyController: _currencyController,
-                headlineController: _headlineController,
-                saving: _saving,
-                onSave: _save,
-              );
-              final right = _ControlPanel(
-                session: session,
-                client: client,
-                subscription: subscription,
-                openingPortal: _openingPortal,
-                onOpenPortal: _openBillingPortal,
-                deactivationReasonController: _deactivationReasonController,
-                deactivationConfirmController: _deactivationConfirmController,
-                deactivating: _deactivating,
-                onDeactivate: _confirmDeactivate,
-              );
+        );
+      },
+    );
+  }
+}
 
-              if (stacked) {
-                return Column(
-                  children: [
-                    left,
-                    const SizedBox(height: 18),
-                    right,
-                  ],
-                );
-              }
+class _ProfileEditorDialog extends StatefulWidget {
+  const _ProfileEditorDialog({
+    required this.initialProfile,
+    required this.repository,
+  });
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 6, child: left),
-                  const SizedBox(width: 18),
-                  Expanded(flex: 5, child: right),
+  final Map<String, dynamic> initialProfile;
+  final ClientPortalRepository repository;
+
+  @override
+  State<_ProfileEditorDialog> createState() => _ProfileEditorDialogState();
+}
+
+class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
+  late final TextEditingController _displayName;
+  late final TextEditingController _legalName;
+  late final TextEditingController _brandName;
+  late final TextEditingController _websiteUrl;
+  late final TextEditingController _bookingUrl;
+  late final TextEditingController _timezone;
+  late final TextEditingController _currency;
+  late final TextEditingController _headline;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.initialProfile;
+    _displayName = TextEditingController(text: _read(p, 'displayName'));
+    _legalName = TextEditingController(text: _read(p, 'legalName'));
+    _brandName = TextEditingController(text: _read(p, 'brandName'));
+    _websiteUrl = TextEditingController(text: _read(p, 'websiteUrl'));
+    _bookingUrl = TextEditingController(text: _read(p, 'bookingUrl'));
+    _timezone = TextEditingController(text: _read(p, 'primaryTimezone'));
+    _currency = TextEditingController(text: _read(p, 'currencyCode', fallback: 'USD'));
+    _headline = TextEditingController(text: _read(p, 'welcomeHeadline'));
+  }
+
+  @override
+  void dispose() {
+    _displayName.dispose();
+    _legalName.dispose();
+    _brandName.dispose();
+    _websiteUrl.dispose();
+    _bookingUrl.dispose();
+    _timezone.dispose();
+    _currency.dispose();
+    _headline.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final displayName = _displayName.text.trim();
+    final legalName = _legalName.text.trim();
+    if (displayName.isEmpty || legalName.isEmpty) {
+      setState(() => _error = 'Display name and legal name are required.');
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    try {
+      await widget.repository.updateClientProfile(
+        displayName: displayName,
+        legalName: legalName,
+        brandName: _brandName.text.trim(),
+        websiteUrl: _websiteUrl.text.trim(),
+        bookingUrl: _bookingUrl.text.trim(),
+        primaryTimezone: _timezone.text.trim(),
+        currencyCode: _currency.text.trim(),
+        welcomeHeadline: _headline.text.trim(),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = 'Profile could not be updated right now.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Edit profile', style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 8),
+                Text(
+                  'Keep the client identity and public links current without leaving the account surface.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: AppTheme.publicMuted),
+                ),
+                const SizedBox(height: 20),
+                _FormRow(
+                  left: _Field(controller: _displayName, label: 'Display name'),
+                  right: _Field(controller: _legalName, label: 'Legal name'),
+                ),
+                const SizedBox(height: 14),
+                _FormRow(
+                  left: _Field(controller: _brandName, label: 'Brand name'),
+                  right: _Field(controller: _timezone, label: 'Primary timezone'),
+                ),
+                const SizedBox(height: 14),
+                _FormRow(
+                  left: _Field(controller: _websiteUrl, label: 'Website URL'),
+                  right: _Field(controller: _bookingUrl, label: 'Booking URL'),
+                ),
+                const SizedBox(height: 14),
+                _FormRow(
+                  left: _Field(controller: _currency, label: 'Currency code'),
+                  right: _Field(controller: _headline, label: 'Welcome headline'),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    _error!,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.red.shade700),
+                  ),
                 ],
-              );
-            },
+                const SizedBox(height: 22),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 10),
+                    FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: Text(_saving ? 'Saving...' : 'Save changes'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DeactivateAccountDialog extends StatefulWidget {
+  const _DeactivateAccountDialog({required this.repository});
+
+  final ClientPortalRepository repository;
+
+  @override
+  State<_DeactivateAccountDialog> createState() => _DeactivateAccountDialogState();
+}
+
+class _DeactivateAccountDialogState extends State<_DeactivateAccountDialog> {
+  final TextEditingController _reason = TextEditingController();
+  final TextEditingController _confirmation = TextEditingController();
+  bool _working = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    _confirmation.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_confirmation.text.trim().toUpperCase() != 'DEACTIVATE') {
+      setState(() => _error = 'Type DEACTIVATE to continue.');
+      return;
+    }
+
+    setState(() {
+      _working = true;
+      _error = null;
+    });
+
+    try {
+      await widget.repository.deactivateClientAccount(
+        reason: _reason.text.trim(),
+        confirmationText: _confirmation.text.trim(),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _working = false;
+        _error = 'The account could not be deactivated right now.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Deactivate account', style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 8),
+            Text(
+              'This closes the client account from the account surface instead of leaving access in an unclear state.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(color: AppTheme.publicMuted),
+            ),
+            const SizedBox(height: 18),
+            _Field(
+              controller: _reason,
+              label: 'Reason',
+              minLines: 3,
+            ),
+            const SizedBox(height: 14),
+            _Field(
+              controller: _confirmation,
+              label: 'Type DEACTIVATE to confirm',
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 14),
+              Text(
+                _error!,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.red.shade700),
+              ),
+            ],
+            const SizedBox(height: 22),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: _working ? null : () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 10),
+                FilledButton(
+                  onPressed: _working ? null : _submit,
+                  child: Text(_working ? 'Working...' : 'Deactivate'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -339,11 +542,13 @@ class _Hero extends StatelessWidget {
     required this.eyebrow,
     required this.title,
     required this.subtitle,
+    required this.actions,
   });
 
   final String eyebrow;
   final String title;
   final String subtitle;
+  final List<_HeroAction> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -355,40 +560,73 @@ class _Hero extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: AppTheme.publicLine),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            eyebrow,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 980;
+          final text = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                eyebrow,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.publicMuted,
+                    ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.publicMuted,
+                    ),
+              ),
+            ],
+          );
+
+          final actionRow = Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final action in actions)
+                action.isPrimary
+                    ? FilledButton(onPressed: action.onPressed, child: Text(action.label))
+                    : OutlinedButton(onPressed: action.onPressed, child: Text(action.label)),
+            ],
+          );
+
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [text, const SizedBox(height: 18), actionRow],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [Expanded(child: text), const SizedBox(width: 24), actionRow],
+          );
+        },
       ),
     );
   }
 }
 
-class _MetricData {
-  const _MetricData({required this.label, required this.value});
+class _HeroAction {
+  const _HeroAction({
+    required this.label,
+    required this.onPressed,
+    this.isPrimary = true,
+  });
 
   final String label;
-  final String value;
+  final VoidCallback onPressed;
+  final bool isPrimary;
 }
 
 class _MetricStrip extends StatelessWidget {
@@ -441,348 +679,183 @@ class _MetricTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            metric.label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            metric.value,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
+          Text(metric.label, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 10),
+          Text(metric.value, style: Theme.of(context).textTheme.titleLarge),
         ],
       ),
     );
   }
 }
 
-class _FormPanel extends StatelessWidget {
-  const _FormPanel({
-    required this.formKey,
-    required this.displayNameController,
-    required this.legalNameController,
-    required this.brandNameController,
-    required this.websiteUrlController,
-    required this.bookingUrlController,
-    required this.timezoneController,
-    required this.currencyController,
-    required this.headlineController,
-    required this.saving,
-    required this.onSave,
+class _Panel extends StatelessWidget {
+  const _Panel({
+    required this.title,
+    required this.rows,
+    required this.emptyLabel,
   });
 
-  final GlobalKey<FormState> formKey;
-  final TextEditingController displayNameController;
-  final TextEditingController legalNameController;
-  final TextEditingController brandNameController;
-  final TextEditingController websiteUrlController;
-  final TextEditingController bookingUrlController;
-  final TextEditingController timezoneController;
-  final TextEditingController currencyController;
-  final TextEditingController headlineController;
-  final bool saving;
-  final VoidCallback onSave;
+  final String title;
+  final List<_RowData> rows;
+  final String emptyLabel;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: AppTheme.publicLine),
       ),
-      child: Form(
-        key: formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Business profile', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 10),
-            Text(
-              'Keep the client-facing identity, links, and default operating details current here.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
-            ),
-            const SizedBox(height: 22),
-            _LabeledField(
-              label: 'Display name',
-              controller: displayNameController,
-              validator: (value) => (value == null || value.trim().isEmpty) ? 'Display name is required.' : null,
-            ),
-            const SizedBox(height: 14),
-            _LabeledField(
-              label: 'Legal name',
-              controller: legalNameController,
-              validator: (value) => (value == null || value.trim().isEmpty) ? 'Legal name is required.' : null,
-            ),
-            const SizedBox(height: 14),
-            _LabeledField(label: 'Brand name', controller: brandNameController),
-            const SizedBox(height: 14),
-            _LabeledField(
-              label: 'Website',
-              controller: websiteUrlController,
-              keyboardType: TextInputType.url,
-            ),
-            const SizedBox(height: 14),
-            _LabeledField(
-              label: 'Booking link',
-              controller: bookingUrlController,
-              keyboardType: TextInputType.url,
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _LabeledField(label: 'Timezone', controller: timezoneController),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: _LabeledField(
-                    label: 'Currency',
-                    controller: currencyController,
-                    textCapitalization: TextCapitalization.characters,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _LabeledField(
-              label: 'Welcome headline',
-              controller: headlineController,
-              maxLines: 2,
-            ),
-            const SizedBox(height: 22),
-            FilledButton(
-              onPressed: saving ? null : onSave,
-              child: Text(saving ? 'Saving...' : 'Save changes'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ControlPanel extends StatelessWidget {
-  const _ControlPanel({
-    required this.session,
-    required this.client,
-    required this.subscription,
-    required this.openingPortal,
-    required this.onOpenPortal,
-    required this.deactivationReasonController,
-    required this.deactivationConfirmController,
-    required this.deactivating,
-    required this.onDeactivate,
-  });
-
-  final AuthSessionController session;
-  final Map<String, dynamic> client;
-  final Map<String, dynamic> subscription;
-  final bool openingPortal;
-  final VoidCallback onOpenPortal;
-  final TextEditingController deactivationReasonController;
-  final TextEditingController deactivationConfirmController;
-  final bool deactivating;
-  final VoidCallback onDeactivate;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppTheme.publicLine),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Account standing', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 16),
-              _InfoRow(label: 'Email', value: session.email.isNotEmpty ? session.email : 'Client account'),
-              _InfoRow(label: 'Verification', value: session.emailVerified ? 'Verified' : 'Pending'),
-              _InfoRow(label: 'Scope', value: session.hasSetupCompleted ? 'Setup completed' : 'Setup still in draft'),
-              _InfoRow(
-                label: 'Subscription',
-                value: _title(_read(subscription, 'status', fallback: session.subscriptionStatus)),
-              ),
-              _InfoRow(
-                label: 'Current period',
-                value: _read(subscription, 'currentPeriodEnd', fallback: 'Not available'),
-              ),
-              const SizedBox(height: 18),
-              FilledButton.tonal(
-                onPressed: openingPortal ? null : onOpenPortal,
-                child: Text(openingPortal ? 'Opening billing...' : 'Open billing portal'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppTheme.publicLine),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Public links and status', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 16),
-              _InfoRow(label: 'Website', value: _read(client, 'websiteUrl', fallback: 'Not set')),
-              _InfoRow(label: 'Booking', value: _read(client, 'bookingUrl', fallback: 'Not set')),
-              _InfoRow(label: 'Timezone', value: _read(client, 'primaryTimezone', fallback: 'America/Detroit')),
-              _InfoRow(label: 'Currency', value: _read(client, 'currencyCode', fallback: 'USD')),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppTheme.publicLine),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Deactivate account', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 10),
-              Text(
-                'Use this only when the account should be taken out of service. Billing and records should be reviewed first.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
-              ),
-              const SizedBox(height: 18),
-              _LabeledField(
-                label: 'Reason',
-                controller: deactivationReasonController,
-                maxLines: 2,
-              ),
-              const SizedBox(height: 14),
-              _LabeledField(
-                label: 'Confirmation note',
-                controller: deactivationConfirmController,
-                maxLines: 2,
-              ),
-              const SizedBox(height: 18),
-              FilledButton(
-                onPressed: deactivating ? null : onDeactivate,
-                style: FilledButton.styleFrom(backgroundColor: Colors.black),
-                child: Text(deactivating ? 'Submitting...' : 'Request deactivation'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
-            ),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ),
+          const SizedBox(height: 16),
+          if (rows.isEmpty)
+            Text(emptyLabel, style: Theme.of(context).textTheme.bodyMedium)
+          else
+            for (int i = 0; i < rows.length; i++) ...[
+              _RowTile(row: rows[i]),
+              if (i != rows.length - 1) const Divider(height: 22),
+            ],
         ],
       ),
     );
   }
 }
 
-class _LabeledField extends StatelessWidget {
-  const _LabeledField({
-    required this.label,
-    required this.controller,
-    this.validator,
-    this.keyboardType,
-    this.textCapitalization = TextCapitalization.none,
-    this.maxLines = 1,
-  });
+class _RowTile extends StatelessWidget {
+  const _RowTile({required this.row});
 
-  final String label;
-  final TextEditingController controller;
-  final String? Function(String?)? validator;
-  final TextInputType? keyboardType;
-  final TextCapitalization textCapitalization;
-  final int maxLines;
+  final _RowData row;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          validator: validator,
-          keyboardType: keyboardType,
-          textCapitalization: textCapitalization,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: AppTheme.publicSurfaceSoft,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppTheme.publicLine),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppTheme.publicLine),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppTheme.publicText),
-            ),
+        Text(row.title, style: Theme.of(context).textTheme.titleLarge),
+        if (row.primary.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            row.primary,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicText,
+                ),
           ),
-        ),
+        ],
+        if (row.secondary.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            row.secondary,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+        ],
+        if (row.actionLabel != null && row.onTap != null) ...[
+          const SizedBox(height: 10),
+          TextButton(onPressed: row.onTap, child: Text(row.actionLabel!)),
+        ],
       ],
     );
   }
 }
 
+class _Field extends StatelessWidget {
+  const _Field({
+    required this.controller,
+    required this.label,
+    this.minLines = 1,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final int minLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      minLines: minLines,
+      maxLines: minLines == 1 ? 1 : 6,
+      decoration: InputDecoration(labelText: label),
+    );
+  }
+}
+
+class _FormRow extends StatelessWidget {
+  const _FormRow({required this.left, required this.right});
+
+  final Widget left;
+  final Widget right;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 640) {
+          return Column(
+            children: [left, const SizedBox(height: 14), right],
+          );
+        }
+        return Row(
+          children: [Expanded(child: left), const SizedBox(width: 14), Expanded(child: right)],
+        );
+      },
+    );
+  }
+}
+
+class _AccountViewData {
+  const _AccountViewData({
+    required this.overview,
+    required this.profile,
+    required this.subscription,
+  });
+
+  final Map<String, dynamic> overview;
+  final Map<String, dynamic> profile;
+  final Map<String, dynamic>? subscription;
+}
+
+class _MetricData {
+  const _MetricData({required this.label, required this.value});
+
+  final String label;
+  final String value;
+}
+
+class _RowData {
+  const _RowData({
+    required this.title,
+    required this.primary,
+    required this.secondary,
+    this.actionLabel,
+    this.onTap,
+  });
+
+  final String title;
+  final String primary;
+  final String secondary;
+  final String? actionLabel;
+  final VoidCallback? onTap;
+}
+
 Map<String, dynamic> _asMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;
-  if (value is Map) return Map<String, dynamic>.from(value);
-  return const {};
+  if (value is Map) {
+    return value.map((key, val) => MapEntry(key.toString(), val));
+  }
+  return const <String, dynamic>{};
 }
 
 String _read(Map<String, dynamic> map, String key, {String fallback = ''}) {
@@ -792,13 +865,30 @@ String _read(Map<String, dynamic> map, String key, {String fallback = ''}) {
   return text.isEmpty ? fallback : text;
 }
 
+String _joinNonEmpty(List<String> values) {
+  return values.where((value) => value.trim().isNotEmpty).join(' · ');
+}
+
 String _title(String value) {
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) return '';
-  return trimmed
-      .split(RegExp(r'[\s_\-]+'))
-      .map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+  final text = value.trim();
+  if (text.isEmpty) return '';
+  return text
+      .split(RegExp(r'[\s_-]+'))
+      .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
       .join(' ');
+}
+
+String _displayIdentity(Map<String, dynamic> map, {String fallback = 'Client workspace'}) {
+  final candidates = [
+    _read(map, 'displayName'),
+    _read(map, 'brandName'),
+    _read(map, 'legalName'),
+  ];
+
+  for (final value in candidates) {
+    if (value.isNotEmpty) return value;
+  }
+  return fallback;
 }
 
 String _accountState(AuthSessionController session) {
@@ -808,17 +898,14 @@ String _accountState(AuthSessionController session) {
   return 'Review';
 }
 
-String _displayIdentity(Map<String, dynamic> client, AuthSessionController session) {
-  final choices = <String>[
-    _read(client, 'displayName'),
-    _read(client, 'brandName'),
-    session.workspaceName.trim(),
-    session.fullName.trim(),
-  ];
+int _intValue(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
 
-  for (final value in choices) {
-    if (value.isNotEmpty) return value;
-  }
-
-  return 'Client account';
+String _centsToMoney(int cents, String currency) {
+  if (cents <= 0) return 'No outstanding balance';
+  final amount = (cents / 100).toStringAsFixed(2);
+  return '$currency $amount';
 }
