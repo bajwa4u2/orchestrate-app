@@ -66,34 +66,35 @@ class _SupportPageState extends State<SupportPage> {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SupportPageHeader(publicMode: widget.publicMode),
-                  const SizedBox(height: 24),
-                  ResponseStream(
-                    messages: session.messages,
-                    isLoading: session.isLoading,
-                    onFollowUpTap: (value) async {
-                      await controller.sendMessage(message: value);
-                    },
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SupportPageHeader(publicMode: widget.publicMode),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: ResponseStream(
+                      messages: session.messages,
+                      isLoading: session.isLoading,
+                      onFollowUpTap: (_) {},
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                  IntakeCard(
-                    publicMode: widget.publicMode,
-                    isLoading: session.isLoading,
-                    initialValue: _draft,
-                    onChanged: (value) => _draft = value,
-                    onSubmit: _submit,
-                  ),
-                  const SizedBox(height: 12),
-                  const SupportFooter(showStripe: false),
-                ],
-              ),
+                ),
+                IntakeCard(
+                  publicMode: widget.publicMode,
+                  isLoading: session.isLoading,
+                  initialValue: _draft,
+                  onChanged: (value) => setState(() => _draft = value),
+                  onSubmit: _submit,
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(24, 8, 24, 16),
+                  child: SupportFooter(showStripe: false),
+                ),
+              ],
             ),
           ),
         ),
@@ -111,47 +112,50 @@ class _SupportPageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.45),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: 0.45),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(999),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'Help & Support',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
             ),
-            child: Text(
-              'Help & Support',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
+            const SizedBox(height: 16),
+            Text(
+              publicMode ? 'Start the conversation' : 'Continue the conversation',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              publicMode
+                  ? 'Use this page when you want a direct support conversation about fit, setup, billing, scope, or an issue that needs clarification.'
+                  : 'Use this page when you want to continue the same support conversation with your current account context already in place.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.72),
                   ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            publicMode ? 'Start the conversation' : 'Continue the conversation',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            publicMode
-                ? 'Use this page when you want a direct support conversation about fit, setup, billing, scope, or an issue that needs clarification.'
-                : 'Use this page when you want to continue the same support conversation with your current account context already in place.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: scheme.onSurface.withValues(alpha: 0.72),
-                ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

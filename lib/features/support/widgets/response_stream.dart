@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/support_message.dart';
-import 'followup_chips.dart';
 
 class ResponseStream extends StatelessWidget {
   final List<SupportMessage> messages;
@@ -17,24 +16,34 @@ class ResponseStream extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (messages.isEmpty && !isLoading) return const SizedBox.shrink();
+    if (messages.isEmpty && !isLoading) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+          child: Text(
+            'Start the conversation by sending a message below.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.68),
+                ),
+          ),
+        ),
+      );
+    }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
       children: [
         for (final message in messages)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: const EdgeInsets.only(bottom: 12),
             child: message.role == 'user'
                 ? _UserMessageBlock(message: message)
-                : _SystemMessageBlock(
-                    message: message,
-                    onFollowUpTap: onFollowUpTap,
-                  ),
+                : _SystemMessageBlock(message: message),
           ),
         if (isLoading)
           const Padding(
-            padding: EdgeInsets.only(top: 14),
+            padding: EdgeInsets.only(bottom: 12),
             child: _LoadingBlock(),
           ),
       ],
@@ -88,13 +97,9 @@ class _UserMessageBlock extends StatelessWidget {
 }
 
 class _SystemMessageBlock extends StatelessWidget {
-  const _SystemMessageBlock({
-    required this.message,
-    required this.onFollowUpTap,
-  });
+  const _SystemMessageBlock({required this.message});
 
   final SupportMessage message;
-  final ValueChanged<String> onFollowUpTap;
 
   @override
   Widget build(BuildContext context) {
@@ -102,10 +107,6 @@ class _SystemMessageBlock extends StatelessWidget {
     final statusKey = _normalizeStatus(message.status);
     final isReviewState =
         message.isEscalated || message.caseCreated || statusKey == 'escalated';
-    final isFollowUpState =
-        message.followUps.isNotEmpty || statusKey == 'follow_up';
-    final isResolvedState =
-        statusKey == 'resolved' || statusKey == 'answered';
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -126,11 +127,7 @@ class _SystemMessageBlock extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _StateHeader(
-                label: _stateLabel(
-                  isReviewState: isReviewState,
-                  isFollowUpState: isFollowUpState,
-                  isResolvedState: isResolvedState,
-                ),
+                label: isReviewState ? 'Under review' : 'Support',
               ),
               const SizedBox(height: 12),
               Text(
@@ -158,31 +155,6 @@ class _SystemMessageBlock extends StatelessWidget {
                 const SizedBox(height: 14),
                 _ReviewStateBlock(message: message),
               ],
-              if (message.followUps.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Text(
-                  'Helpful next details',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Choose one if it matches, or type your own reply below.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurface.withOpacity(0.68),
-                      ),
-                ),
-                const SizedBox(height: 10),
-                FollowUpChips(
-                  items: message.followUps,
-                  onTap: onFollowUpTap,
-                ),
-              ],
-              if (isResolvedState && !isReviewState) ...[
-                const SizedBox(height: 14),
-                const _ResolvedStateBlock(),
-              ],
             ],
           ),
         ),
@@ -192,24 +164,11 @@ class _SystemMessageBlock extends StatelessWidget {
 
   static String _normalizeStatus(String? value) {
     if (value == null) return '';
-    final normalized = value
+    return value
         .trim()
         .toLowerCase()
         .replaceAll('-', '_')
         .replaceAll(' ', '_');
-    if (normalized == 'needs_follow_up') return 'follow_up';
-    return normalized;
-  }
-
-  static String _stateLabel({
-    required bool isReviewState,
-    required bool isFollowUpState,
-    required bool isResolvedState,
-  }) {
-    if (isReviewState) return 'Under review';
-    if (isFollowUpState) return 'Follow-up';
-    if (isResolvedState) return 'Response';
-    return 'Support';
   }
 }
 
@@ -273,35 +232,10 @@ class _ReviewStateBlock extends StatelessWidget {
           Text(
             hasCaseId
                 ? 'Reference: $caseId'
-                : 'This has been captured for follow-up. You can continue in the same conversation if more context helps.',
+                : 'This has been captured for follow-up. Add another message below if more detail will help.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ResolvedStateBlock extends StatelessWidget {
-  const _ResolvedStateBlock();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: scheme.outlineVariant.withOpacity(0.45),
-        ),
-      ),
-      child: Text(
-        'You can send another message below if you want to continue.',
-        style: Theme.of(context).textTheme.bodyMedium,
       ),
     );
   }

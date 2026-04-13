@@ -103,12 +103,12 @@ class _SupportDrawerState extends State<SupportDrawer> {
         child: SafeArea(
           child: SizedBox(
             width: drawerWidth,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: Row(
                     children: [
                       Expanded(
                         child: Text(
@@ -122,44 +122,46 @@ class _SupportDrawerState extends State<SupportDrawer> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
+                  child: Text(
                     widget.publicMode
-                        ? 'Send a message and we’ll guide the next step from here.'
+                        ? 'Send a message and continue here.'
                         : 'Send a message and continue in the same support conversation.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: ResponseStream(
-                        messages: _controller.session.messages,
-                        isLoading: _controller.session.isLoading,
-                        onFollowUpTap: (value) async {
-                          await _controller.sendMessage(message: value);
-                        },
-                      ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ResponseStream(
+                      messages: _controller.session.messages,
+                      isLoading: _controller.session.isLoading,
+                      onFollowUpTap: (_) {},
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  IntakeCard(
-                    publicMode: widget.publicMode,
-                    isLoading: _controller.session.isLoading,
-                    initialValue: _draft,
-                    onChanged: (value) => setState(() => _draft = value),
-                    onSubmit: (message, name, email) async {
-                      setState(() => _draft = '');
-                      await _controller.sendMessage(
-                        message: message,
-                        name: name,
-                        email: email,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  const SupportFooter(showStripe: false),
-                ],
-              ),
+                ),
+                IntakeCard(
+                  publicMode: widget.publicMode,
+                  isLoading: _controller.session.isLoading,
+                  initialValue: _draft,
+                  onChanged: (value) => setState(() => _draft = value),
+                  onSubmit: (message, name, email) async {
+                    setState(() => _draft = '');
+                    await _controller.sendMessage(
+                      message: message,
+                      name: name,
+                      email: email,
+                    );
+                  },
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
+                  child: SupportFooter(showStripe: false),
+                ),
+              ],
             ),
           ),
         ),
