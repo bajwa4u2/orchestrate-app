@@ -208,7 +208,7 @@ class _ContactSupportSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(28),
+      height: 600,
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
         borderRadius: BorderRadius.circular(28),
@@ -217,18 +217,33 @@ class _ContactSupportSurface extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Start the conversation',
-            style: Theme.of(context).textTheme.headlineMedium,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 28, 28, 10),
+            child: Text(
+              'Start the conversation',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            'We’ll respond directly or guide the next step from here.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 0, 28, 18),
+            child: Text(
+              'We’ll respond directly or guide the next step from here.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppTheme.publicMuted,
+                  ),
+            ),
           ),
-          const SizedBox(height: 24),
+          const Divider(height: 1),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              child: ResponseStream(
+                messages: controller.session.messages,
+                isLoading: controller.session.isLoading,
+                onFollowUpTap: (_) {},
+              ),
+            ),
+          ),
           IntakeCard(
             publicMode: true,
             isLoading: controller.session.isLoading,
@@ -243,14 +258,10 @@ class _ContactSupportSurface extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 18),
-          ResponseStream(
-            messages: controller.session.messages,
-            isLoading: controller.session.isLoading,
-            onFollowUpTap: (value) => controller.sendMessage(message: value),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: SupportFooter(showStripe: false),
           ),
-          const SizedBox(height: 18),
-          const SupportFooter(showStripe: false),
         ],
       ),
     );

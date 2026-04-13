@@ -230,7 +230,7 @@ class _SupportThread extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(28),
+      height: 600,
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
         borderRadius: BorderRadius.circular(28),
@@ -239,18 +239,33 @@ class _SupportThread extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Start with what you need',
-            style: Theme.of(context).textTheme.headlineMedium,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 28, 28, 10),
+            child: Text(
+              'Start with what you need',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            'We’ll respond immediately or guide it into follow-up if needed.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 0, 28, 18),
+            child: Text(
+              'We’ll respond immediately or guide it into follow-up if needed.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppTheme.publicMuted,
+                  ),
+            ),
           ),
-          const SizedBox(height: 24),
+          const Divider(height: 1),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+              child: ResponseStream(
+                messages: controller.session.messages,
+                isLoading: controller.session.isLoading,
+                onFollowUpTap: (_) {},
+              ),
+            ),
+          ),
           IntakeCard(
             publicMode: false,
             isLoading: controller.session.isLoading,
@@ -261,14 +276,10 @@ class _SupportThread extends StatelessWidget {
               await controller.sendMessage(message: message);
             },
           ),
-          const SizedBox(height: 18),
-          ResponseStream(
-            messages: controller.session.messages,
-            isLoading: controller.session.isLoading,
-            onFollowUpTap: (value) => controller.sendMessage(message: value),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: SupportFooter(showStripe: true),
           ),
-          const SizedBox(height: 18),
-          const SupportFooter(showStripe: true),
         ],
       ),
     );
@@ -358,12 +369,12 @@ class _ClientSupportDrawerState extends State<_ClientSupportDrawer> {
         child: SafeArea(
           child: SizedBox(
             width: 460,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: Row(
                     children: [
                       Expanded(
                         child: Text(
@@ -377,36 +388,40 @@ class _ClientSupportDrawerState extends State<_ClientSupportDrawer> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
+                  child: Text(
                     'Continue the same support conversation without leaving this page.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 16),
-                  IntakeCard(
-                    publicMode: false,
-                    isLoading: widget.controller.session.isLoading,
-                    initialValue: _draft,
-                    onChanged: (value) => setState(() => _draft = value),
-                    onSubmit: (message, name, email) async {
-                      setState(() => _draft = '');
-                      await widget.controller.sendMessage(message: message);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: ResponseStream(
-                        messages: widget.controller.session.messages,
-                        isLoading: widget.controller.session.isLoading,
-                        onFollowUpTap: (value) =>
-                            widget.controller.sendMessage(message: value),
-                      ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ResponseStream(
+                      messages: widget.controller.session.messages,
+                      isLoading: widget.controller.session.isLoading,
+                      onFollowUpTap: (_) {},
                     ),
                   ),
-                  const SupportFooter(showStripe: true),
-                ],
-              ),
+                ),
+                IntakeCard(
+                  publicMode: false,
+                  isLoading: widget.controller.session.isLoading,
+                  initialValue: _draft,
+                  onChanged: (value) => setState(() => _draft = value),
+                  onSubmit: (message, name, email) async {
+                    setState(() => _draft = '');
+                    await widget.controller.sendMessage(message: message);
+                  },
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
+                  child: SupportFooter(showStripe: true),
+                ),
+              ],
             ),
           ),
         ),
