@@ -154,7 +154,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                 builder: (context, constraints) {
                   final stacked = constraints.maxWidth < 980;
                   final profilePanel = _Panel(
-                    title: 'Profile and setup',
+                    title: 'Profile and links',
                     rows: [
                       _RowData(
                         title: workspaceName,
@@ -177,7 +177,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                         ]).isEmpty
                             ? 'No public links added yet.'
                             : _joinNonEmpty([websiteUrl, bookingUrl]),
-                        secondary: 'These stay editable without waiting for plan activation.',
+                        secondary: 'These stay editable directly from account.',
                         actionLabel: websiteUrl.isNotEmpty
                             ? 'Open website'
                             : bookingUrl.isNotEmpty
@@ -188,18 +188,6 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                             : bookingUrl.isNotEmpty
                                 ? () => _openUrl(bookingUrl)
                                 : null,
-                      ),
-                      _RowData(
-                        title: 'Setup readiness',
-                        primary: session.hasSetupCompleted
-                            ? 'Setup completed'
-                            : 'Setup still needs completion',
-                        secondary: _joinNonEmpty([
-                          _title(session.selectedPlan ?? 'not set'),
-                          _title(session.selectedTier ?? 'focused'),
-                        ]),
-                        actionLabel: 'Open setup',
-                        onTap: () => context.go('/client/setup'),
                       ),
                     ],
                     emptyLabel: 'No profile details are available yet.',
