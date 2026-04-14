@@ -55,6 +55,11 @@ class AuthSessionController extends ChangeNotifier {
 
   String? get selectedTier => commercialTier ?? setupSelectedTier;
 
+  String? get selectedPlanDisplay => _buildPlanDisplay(
+    plan: commercialPlan ?? setupSelectedPlan,
+    tier: commercialTier ?? setupSelectedTier,
+  );
+
   String get subscriptionStatus => (_session?['subscriptionStatus'] as String?) ?? 'none';
   String get normalizedSubscriptionStatus => subscriptionStatus.trim().toLowerCase();
 
@@ -269,4 +274,42 @@ String? _normalizeTier(String? value) {
   if (text == 'multi' || text == 'multi-market' || text == 'multi_market') return 'multi';
   if (text == 'precision') return 'precision';
   return null;
+}
+
+String? _buildPlanDisplay({
+  required String? plan,
+  required String? tier,
+}) {
+  final normalizedPlan = _normalizePlan(plan);
+  final normalizedTier = _normalizeTier(tier);
+
+  if (normalizedPlan == null && normalizedTier == null) return null;
+  if (normalizedPlan == null) return _humanizeTier(normalizedTier);
+  if (normalizedTier == null) return _humanizePlan(normalizedPlan);
+
+  return '${_humanizePlan(normalizedPlan)} · ${_humanizeTier(normalizedTier)}';
+}
+
+String _humanizePlan(String? value) {
+  switch (_normalizePlan(value)) {
+    case 'revenue':
+      return 'Revenue';
+    case 'opportunity':
+      return 'Opportunity';
+    default:
+      return 'Not set';
+  }
+}
+
+String _humanizeTier(String? value) {
+  switch (_normalizeTier(value)) {
+    case 'precision':
+      return 'Precision';
+    case 'multi':
+      return 'Multi-Market';
+    case 'focused':
+      return 'Focused';
+    default:
+      return 'Not set';
+  }
 }

@@ -47,11 +47,6 @@ class ClientShell extends StatelessWidget {
     return 'Not active';
   }
 
-  String _scopeLabel(AuthSessionController session) {
-    final tier = (session.selectedTier ?? '').trim();
-    if (tier.isNotEmpty) return _title(tier);
-    return session.hasSetupCompleted ? 'Set' : 'Incomplete';
-  }
 
   String _accountState(AuthSessionController session) {
     if (!session.emailVerified) return 'Verification pending';
@@ -127,13 +122,7 @@ class ClientShell extends StatelessWidget {
                         workspaceName: workspaceName,
                         email: workspaceEmail,
                       ),
-                      const SizedBox(height: 18),
-                      _WorkspaceStateCard(
-                        billingLabel: _billingStatus(session),
-                        scopeLabel: _scopeLabel(session),
-                        accountState: _accountState(session),
-                      ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 12),
                       Expanded(
                         child: ListView.separated(
                           itemCount: _primaryItems.length,
@@ -244,11 +233,7 @@ class ClientShell extends StatelessWidget {
                                     ),
                                     _StatusPill(
                                       label: 'Plan',
-                                      value: _title(
-                                        session.selectedTier ??
-                                            session.selectedPlan ??
-                                            'Not set',
-                                      ),
+                                      value: session.selectedPlanDisplay ?? 'Not set',
                                     ),
                                     _StatusPill(
                                       label: 'Billing',
@@ -379,84 +364,6 @@ class _ClientBrand extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _WorkspaceStateCard extends StatelessWidget {
-  const _WorkspaceStateCard({
-    required this.billingLabel,
-    required this.scopeLabel,
-    required this.accountState,
-  });
-
-  final String billingLabel;
-  final String scopeLabel;
-  final String accountState;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Client standing',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.publicText,
-                ),
-          ),
-          const SizedBox(height: 14),
-          _StateLine(label: 'Account', value: accountState),
-          const SizedBox(height: 8),
-          _StateLine(label: 'Billing', value: billingLabel),
-          const SizedBox(height: 8),
-          _StateLine(label: 'Scope', value: scopeLabel),
-        ],
-      ),
-    );
-  }
-}
-
-class _StateLine extends StatelessWidget {
-  const _StateLine({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 56,
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.publicMuted,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.publicText,
-                ),
-          ),
-        ),
-      ],
     );
   }
 }

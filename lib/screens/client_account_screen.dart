@@ -105,10 +105,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
         final billing = _asMap(data.overview['billing']);
 
         final workspaceName = _displayIdentity(profile, fallback: _displayIdentity(client));
-        final planName = _title(
-          _read(subscription, 'planName', fallback: session.selectedPlan ?? 'Not set'),
-        );
-        final tierName = _title(session.selectedTier ?? 'focused');
+        final planLabel = _resolvePlanLabel(subscription, session);
         final billingStatus = _title(
           _read(subscription, 'status', fallback: session.subscriptionStatus),
         );
@@ -144,7 +141,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
               _MetricStrip(
                 metrics: [
                   _MetricData(label: 'Account state', value: _accountState(session)),
-                  _MetricData(label: 'Plan', value: '$planName · $tierName'),
+                  _MetricData(label: 'Plan', value: planLabel),
                   _MetricData(label: 'Billing', value: billingStatus),
                   _MetricData(
                     label: 'Verification',
@@ -198,8 +195,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                             ? 'Setup completed'
                             : 'Setup still needs completion',
                         secondary: _joinNonEmpty([
-                          _title(session.selectedPlan ?? 'not set'),
-                          _title(session.selectedTier ?? 'focused'),
+                          session.selectedPlanDisplay ?? 'Not set',
                         ]),
                         actionLabel: 'Open setup',
                         onTap: () => context.go('/client/setup'),
@@ -215,7 +211,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                         title: 'Subscription standing',
                         primary: billingStatus,
                         secondary: _joinNonEmpty([
-                          planName == 'Not Set' ? '' : '$planName · $tierName',
+                          planLabel == 'Not set' ? '' : planLabel,
                           periodEnd,
                         ]),
                         actionLabel: 'Open billing portal',
@@ -881,6 +877,53 @@ String _title(String value) {
       .split(RegExp(r'[\s_-]+'))
       .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
       .join(' ');
+}
+
+
+String _resolvePlanLabel(
+  Map<String, dynamic> subscription,
+  AuthSessionController session,
+) {
+  final explicit = _read(subscription, 'displayPlanLabel');
+  if (explicit.isNotEmpty) return explicit;
+
+  final service = _read(subscription, 'service');
+  final lane = _read(subscription, 'lane');
+  final plan = _read(subscription, 'plan');
+  final tier = _read(subscription, 'tier', fallback: session.selectedTier ?? '');
+
+  final normalizedLane = (service.isNotEmpty ? service : lane.isNotEmpty ? lane : plan)
+      .trim()
+      .toLowerCase();
+  final normalizedTier = tier.trim().toLowerCase();
+
+  String laneLabel = '';
+  if (normalizedLane == 'revenue') laneLabel = 'Revenue';
+  if (normalizedLane == 'opportunity') laneLabel = 'Opportunity';
+
+  String tierLabel = '';
+  if (normalizedTier == 'precision') tierLabel = 'Precision';
+  if (normalizedTier == 'multi' || normalizedTier == 'multi-market' || normalizedTier == 'multi_market') {
+    tierLabel = 'Multi-Market';
+  }
+  if (normalizedTier == 'focused') tierLabel = 'Focused';
+
+  if (laneLabel.isNotEmpty && tierLabel.isNotEmpty) {
+    return '$laneLabel · $tierLabel';
+  }
+
+  final sessionLabel = session.selectedPlanDisplay;
+  if (sessionLabel != null && sessionLabel.trim().isNotEmpty) {
+    return sessionLabel.trim();
+  }
+
+  final fallbackPlanName = _read(subscription, 'planName');
+  if (fallbackPlanName.isNotEmpty && tierLabel.isNotEmpty) {
+    return '$fallbackPlanName · $tierLabel';
+  }
+
+  if (fallbackPlanName.isNotEmpty) return fallbackPlanName;
+  return 'Not set';
 }
 
 String _displayIdentity(Map<String, dynamic> map, {String fallback = 'Client workspace'}) {
