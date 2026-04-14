@@ -16,10 +16,18 @@ class ClientShell extends StatefulWidget {
   final String currentPath;
   final Widget child;
 
-  static const double sidebarWidth = 284;
-  static const double maxContentWidth = 1320;
+  @override
+  State<ClientShell> createState() => _ClientShellState();
+}
 
-  static const List<_ClientNavItem> primaryItems = [
+class _ClientShellState extends State<ClientShell> {
+  final ClientBillingRepository _billingRepository = ClientBillingRepository();
+  Map<String, dynamic>? _subscription;
+
+  static const double _sidebarWidth = 284;
+  static const double _maxContentWidth = 1320;
+
+  static const List<_ClientNavItem> _primaryItems = [
     _ClientNavItem(label: 'Workspace', path: '/client/workspace'),
     _ClientNavItem(label: 'Outreach', path: '/client/outreach'),
     _ClientNavItem(label: 'Meetings', path: '/client/meetings'),
@@ -28,37 +36,40 @@ class ClientShell extends StatefulWidget {
   ];
 
   @override
-  State<ClientShell> createState() => _ClientShellState();
-}
-
-class _ClientShellState extends State<ClientShell> {
-  final ClientBillingRepository _billingRepository = ClientBillingRepository();
-  Future<Map<String, dynamic>?>? _subscriptionFuture;
-
-  @override
   void initState() {
     super.initState();
-    _subscriptionFuture = _loadSubscription();
+    AuthSessionController.instance.addListener(_handleSessionChanged);
+    _refreshSubscription();
   }
 
   @override
-  void didUpdateWidget(covariant ClientShell oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentPath != widget.currentPath) {
-      _subscriptionFuture = _loadSubscription();
+  void dispose() {
+    AuthSessionController.instance.removeListener(_handleSessionChanged);
+    super.dispose();
+  }
+
+  void _handleSessionChanged() {
+    if (!mounted) return;
+    _refreshSubscription();
+  }
+
+  Future<void> _refreshSubscription() async {
+    try {
+      final next = await _billingRepository.fetchSubscription();
+      if (!mounted) return;
+      setState(() => _subscription = next);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _subscription = null);
     }
   }
 
-  Future<Map<String, dynamic>?> _loadSubscription() async {
-    try {
-      return await _billingRepository.fetchSubscription();
-    } catch (_) {
-      return null;
-    }
+  String _subscriptionPlanLabel(AuthSessionController session) {
+    return _planDisplayLabel(subscription: _subscription, session: session);
   }
 
   String _topTitle() {
-    for (final item in ClientShell.primaryItems) {
+    for (final item in _primaryItems) {
       if (item.path == widget.currentPath) return item.label;
     }
     if (widget.currentPath == '/client/help') return 'Support';
@@ -76,6 +87,12 @@ class _ClientShellState extends State<ClientShell> {
       return 'Inactive';
     }
     return 'Not active';
+  }
+
+  String _scopeLabel(AuthSessionController session) {
+    final tier = (session.selectedTier ?? '').trim();
+    if (tier.isNotEmpty) return _title(tier);
+    return session.hasSetupCompleted ? 'Set' : 'Incomplete';
   }
 
   String _accountState(AuthSessionController session) {
@@ -125,18 +142,6 @@ class _ClientShellState extends State<ClientShell> {
     return 'Workspace, outcomes, billing, and account control are all in view.';
   }
 
-  String _planLabel(AuthSessionController session, Map<String, dynamic>? subscription) {
-    final subscriptionLabel = _displayPlanLabel(subscription);
-    if (subscriptionLabel.isNotEmpty) return subscriptionLabel;
-
-    final lane = _title(session.selectedPlan ?? '');
-    final tier = _title(session.selectedTier ?? '');
-    if (lane.isNotEmpty && tier.isNotEmpty) return '$lane · $tier';
-    if (tier.isNotEmpty) return tier;
-    if (lane.isNotEmpty) return lane;
-    return 'Not set';
-  }
-
   @override
   Widget build(BuildContext context) {
     final session = AuthSessionController.instance;
@@ -147,208 +152,203 @@ class _ClientShellState extends State<ClientShell> {
       data: AppTheme.lightTheme,
       child: Scaffold(
         backgroundColor: AppTheme.publicBackground,
-        body: FutureBuilder<Map<String, dynamic>?>(
-          future: _subscriptionFuture,
-          builder: (context, snapshot) {
-            final subscription = snapshot.data;
-
-            return Row(
-              children: [
-                Container(
-                  width: ClientShell.sidebarWidth,
-                  color: Colors.white,
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 22, 18, 22),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _ClientBrand(
-                            currentPath: widget.currentPath,
-                            workspaceName: workspaceName,
-                            email: workspaceEmail,
-                          ),
-                          const SizedBox(height: 18),
-                          Expanded(
-                            child: ListView.separated(
-                              itemCount: ClientShell.primaryItems.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 6),
-                              itemBuilder: (context, index) {
-                                final item = ClientShell.primaryItems[index];
-                                return _ClientShellButton(
-                                  item: item,
-                                  selected: widget.currentPath == item.path,
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          _UtilityButton(
-                            label: 'Support',
-                            selected: widget.currentPath == '/client/help',
-                            onTap: () => context.go('/client/help'),
-                          ),
-                          const SizedBox(height: 6),
-                          SizedBox(
-                            width: double.infinity,
-                            child: TextButton(
-                              onPressed: () async {
-                                await AuthSessionController.instance.clear();
-                                if (context.mounted) context.go('/client/login');
-                              },
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppTheme.publicMuted,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 14,
-                                ),
-                                alignment: Alignment.centerLeft,
-                                textStyle: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              child: const Text('Sign out'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
+        body: Row(
+          children: [
+            Container(
+              width: _sidebarWidth,
+              color: Colors.white,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 18, 22),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: AppTheme.publicBackground,
-                          border: Border(
-                            bottom: BorderSide(color: AppTheme.publicLine),
-                          ),
-                        ),
-                        child: SafeArea(
-                          bottom: false,
-                          left: false,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
-                            child: Center(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: ClientShell.maxContentWidth,
-                                ),
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final compact = constraints.maxWidth < 980;
-
-                                    final titleBlock = Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _topTitle(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                                color: AppTheme.publicText,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          _topStateLine(session),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
-                                                color: AppTheme.publicMuted,
-                                              ),
-                                        ),
-                                      ],
-                                    );
-
-                                    final utilityWrap = Wrap(
-                                      spacing: 10,
-                                      runSpacing: 10,
-                                      alignment: WrapAlignment.end,
-                                      crossAxisAlignment: WrapCrossAlignment.center,
-                                      children: [
-                                        _StatusPill(
-                                          label: 'State',
-                                          value: _accountState(session),
-                                        ),
-                                        _StatusPill(
-                                          label: 'Plan',
-                                          value: _planLabel(session, subscription),
-                                        ),
-                                        _StatusPill(
-                                          label: 'Billing',
-                                          value: _billingStatus(session),
-                                        ),
-                                        FilledButton.tonal(
-                                          onPressed: () => context.go('/client/help'),
-                                          style: FilledButton.styleFrom(
-                                            foregroundColor: AppTheme.publicText,
-                                            backgroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 14,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(16),
-                                            ),
-                                          ),
-                                          child: const Text('Support'),
-                                        ),
-                                      ],
-                                    );
-
-                                    if (compact) {
-                                      return Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          titleBlock,
-                                          const SizedBox(height: 16),
-                                          utilityWrap,
-                                        ],
-                                      );
-                                    }
-
-                                    return Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(child: titleBlock),
-                                        const SizedBox(width: 20),
-                                        Flexible(child: utilityWrap),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
+                      _ClientBrand(
+                        currentPath: widget.currentPath,
+                        workspaceName: workspaceName,
+                        email: workspaceEmail,
+                      ),
+                      const SizedBox(height: 18),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: _primaryItems.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 6),
+                          itemBuilder: (context, index) {
+                            final item = _primaryItems[index];
+                            return _ClientShellButton(
+                              item: item,
+                              selected: widget.currentPath == item.path,
+                            );
+                          },
                         ),
                       ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                maxWidth: ClientShell.maxContentWidth,
-                              ),
-                              child: SizedBox.expand(child: widget.child),
+                      const SizedBox(height: 14),
+                      _UtilityButton(
+                        label: 'Support',
+                        selected: widget.currentPath == '/client/help',
+                        onTap: () => context.go('/client/help'),
+                      ),
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () async {
+                            await AuthSessionController.instance.clear();
+                            if (context.mounted) context.go('/client/login');
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.publicMuted,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
                             ),
+                            alignment: Alignment.centerLeft,
+                            textStyle: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           ),
+                          child: const Text('Sign out'),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            );
-          },
+              ),
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.publicBackground,
+                      border: Border(
+                        bottom: BorderSide(color: AppTheme.publicLine),
+                      ),
+                    ),
+                    child: SafeArea(
+                      bottom: false,
+                      left: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth: _maxContentWidth,
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final compact = constraints.maxWidth < 980;
+
+                                final titleBlock = Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _topTitle(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.publicText,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      _topStateLine(session),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: AppTheme.publicMuted,
+                                          ),
+                                    ),
+                                  ],
+                                );
+
+                                final utilityWrap = Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  alignment: WrapAlignment.end,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    _StatusPill(
+                                      label: 'State',
+                                      value: _accountState(session),
+                                    ),
+                                    _StatusPill(
+                                      label: 'Plan',
+                                      value: _subscriptionPlanLabel(session),
+                                    ),
+                                    _StatusPill(
+                                      label: 'Billing',
+                                      value: _billingStatus(session),
+                                    ),
+                                    FilledButton.tonal(
+                                      onPressed: () => context.go('/client/help'),
+                                      style: FilledButton.styleFrom(
+                                        foregroundColor: AppTheme.publicText,
+                                        backgroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: const Text('Support'),
+                                    ),
+                                  ],
+                                );
+
+                                if (compact) {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      titleBlock,
+                                      const SizedBox(height: 16),
+                                      utilityWrap,
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(child: titleBlock),
+                                    const SizedBox(width: 20),
+                                    Flexible(child: utilityWrap),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: _maxContentWidth,
+                          ),
+                          child: SizedBox.expand(child: widget.child),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -415,6 +415,84 @@ class _ClientBrand extends StatelessWidget {
   }
 }
 
+class _WorkspaceStateCard extends StatelessWidget {
+  const _WorkspaceStateCard({
+    required this.billingLabel,
+    required this.scopeLabel,
+    required this.accountState,
+  });
+
+  final String billingLabel;
+  final String scopeLabel;
+  final String accountState;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Client standing',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.publicText,
+                ),
+          ),
+          const SizedBox(height: 14),
+          _StateLine(label: 'Account', value: accountState),
+          const SizedBox(height: 8),
+          _StateLine(label: 'Billing', value: billingLabel),
+          const SizedBox(height: 8),
+          _StateLine(label: 'Scope', value: scopeLabel),
+        ],
+      ),
+    );
+  }
+}
+
+class _StateLine extends StatelessWidget {
+  const _StateLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 56,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.publicMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicText,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ClientShellButton extends StatelessWidget {
   const _ClientShellButton({required this.item, required this.selected});
 
@@ -445,7 +523,9 @@ class _ClientShellButton extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontSize: 15,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppTheme.publicText : AppTheme.publicMuted,
+                  color: selected
+                      ? AppTheme.publicText
+                      : AppTheme.publicMuted,
                 ),
           ),
         ),
@@ -473,15 +553,22 @@ class _UtilityButton extends StatelessWidget {
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           foregroundColor: selected ? AppTheme.publicText : AppTheme.publicMuted,
-          side: BorderSide(color: selected ? AppTheme.publicLine : AppTheme.publicLine),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          side: BorderSide(
+            color: selected ? AppTheme.publicLine : AppTheme.publicLine,
+          ),
           alignment: Alignment.centerLeft,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          backgroundColor: selected ? AppTheme.publicSurfaceSoft : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
         ),
-        child: Text(label),
       ),
     );
   }
@@ -496,23 +583,24 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.publicMuted,
                   fontWeight: FontWeight.w600,
                 ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -526,6 +614,58 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
+String _planDisplayLabel({
+  Map<String, dynamic>? subscription,
+  required AuthSessionController session,
+}) {
+  final live = _subscriptionPlanDisplay(subscription);
+  if (live.isNotEmpty) return live;
+
+  final fallback = _composePlanLabel(
+    plan: session.commercialPlan ?? session.selectedPlan,
+    tier: session.commercialTier ?? session.selectedTier,
+  );
+  return fallback.isNotEmpty ? fallback : 'Not set';
+}
+
+String _subscriptionPlanDisplay(Map<String, dynamic>? subscription) {
+  if (subscription == null || subscription.isEmpty) return '';
+
+  final explicit = _stringValue(subscription['displayPlanLabel']);
+  if (explicit.isNotEmpty) return explicit;
+
+  return _composePlanLabel(
+    plan: _stringValue(subscription['service']).isNotEmpty
+        ? _stringValue(subscription['service'])
+        : _stringValue(subscription['lane']),
+    tier: _stringValue(subscription['tier']),
+  );
+}
+
+String _composePlanLabel({String? plan, String? tier}) {
+  final normalizedPlan = _humanizeValue(plan);
+  final normalizedTier = _humanizeValue(tier);
+
+  if (normalizedPlan.isEmpty && normalizedTier.isEmpty) return '';
+  if (normalizedPlan.isEmpty) return normalizedTier;
+  if (normalizedTier.isEmpty) return normalizedPlan;
+  return '$normalizedPlan · $normalizedTier';
+}
+
+String _humanizeValue(String? input) {
+  final normalized = (input ?? '').trim();
+  if (normalized.isEmpty) return '';
+  return normalized
+      .split(RegExp(r'[\s_-]+'))
+      .where((part) => part.isNotEmpty)
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+      .join(' ');
+}
+
+String _stringValue(dynamic value) {
+  return value?.toString().trim() ?? '';
+}
+
 class _ClientNavItem {
   const _ClientNavItem({required this.label, required this.path});
 
@@ -533,29 +673,12 @@ class _ClientNavItem {
   final String path;
 }
 
-String _title(String value) {
-  if (value.trim().isEmpty) return '';
-  return value
-      .trim()
-      .split(RegExp(r'[\s_\-]+'))
+String _title(String text) {
+  final normalized = text.trim();
+  if (normalized.isEmpty) return 'Not set';
+  return normalized
+      .split(RegExp(r'[-_]'))
       .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
       .join(' ');
-}
-
-String _displayPlanLabel(Map<String, dynamic>? subscription) {
-  if (subscription == null || subscription.isEmpty) return '';
-
-  final display = (subscription['displayPlanLabel'] as String?)?.trim() ?? '';
-  if (display.isNotEmpty) return display;
-
-  final service = _title(
-    (subscription['service'] ?? subscription['lane'] ?? subscription['plan'])?.toString() ?? '',
-  );
-  final tier = _title(subscription['tier']?.toString() ?? '');
-
-  if (service.isNotEmpty && tier.isNotEmpty) return '$service · $tier';
-  if (service.isNotEmpty) return service;
-  if (tier.isNotEmpty) return tier;
-  return '';
 }
