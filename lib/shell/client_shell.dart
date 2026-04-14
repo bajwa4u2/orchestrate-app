@@ -30,6 +30,7 @@ class _ClientShellState extends State<ClientShell> {
   static const List<_ClientNavItem> _primaryItems = [
     _ClientNavItem(label: 'Workspace', path: '/client/workspace'),
     _ClientNavItem(label: 'Outreach', path: '/client/outreach'),
+    _ClientNavItem(label: 'Campaigns', path: '/client/campaigns'),
     _ClientNavItem(label: 'Meetings', path: '/client/meetings'),
     _ClientNavItem(label: 'Billing', path: '/client/billing'),
     _ClientNavItem(label: 'Account', path: '/client/account'),
@@ -89,12 +90,6 @@ class _ClientShellState extends State<ClientShell> {
     return 'Not active';
   }
 
-  String _scopeLabel(AuthSessionController session) {
-    final tier = (session.selectedTier ?? '').trim();
-    if (tier.isNotEmpty) return _title(tier);
-    return session.hasSetupCompleted ? 'Set' : 'Incomplete';
-  }
-
   String _accountState(AuthSessionController session) {
     if (!session.emailVerified) return 'Verification pending';
     if (!session.hasSetupCompleted) return 'Draft';
@@ -138,6 +133,9 @@ class _ClientShellState extends State<ClientShell> {
     }
     if (widget.currentPath == '/client/help') {
       return 'Support stays available without leaving the client workspace.';
+    }
+    if (widget.currentPath == '/client/campaigns') {
+      return 'Targeting, geography, and market boundaries stay editable from one client surface.';
     }
     return 'Workspace, outcomes, billing, and account control are all in view.';
   }
@@ -415,84 +413,6 @@ class _ClientBrand extends StatelessWidget {
   }
 }
 
-class _WorkspaceStateCard extends StatelessWidget {
-  const _WorkspaceStateCard({
-    required this.billingLabel,
-    required this.scopeLabel,
-    required this.accountState,
-  });
-
-  final String billingLabel;
-  final String scopeLabel;
-  final String accountState;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Client standing',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.publicText,
-                ),
-          ),
-          const SizedBox(height: 14),
-          _StateLine(label: 'Account', value: accountState),
-          const SizedBox(height: 8),
-          _StateLine(label: 'Billing', value: billingLabel),
-          const SizedBox(height: 8),
-          _StateLine(label: 'Scope', value: scopeLabel),
-        ],
-      ),
-    );
-  }
-}
-
-class _StateLine extends StatelessWidget {
-  const _StateLine({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 56,
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.publicMuted,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.publicText,
-                ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _ClientShellButton extends StatelessWidget {
   const _ClientShellButton({required this.item, required this.selected});
 
@@ -552,13 +472,13 @@ class _UtilityButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
-          foregroundColor: selected ? AppTheme.publicText : AppTheme.publicMuted,
-          side: BorderSide(
-            color: selected ? AppTheme.publicLine : AppTheme.publicLine,
-          ),
+          foregroundColor:
+              selected ? AppTheme.publicText : AppTheme.publicMuted,
+          side: const BorderSide(color: AppTheme.publicLine),
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          backgroundColor: selected ? AppTheme.publicSurfaceSoft : Colors.white,
+          backgroundColor:
+              selected ? AppTheme.publicSurfaceSoft : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -658,7 +578,9 @@ String _humanizeValue(String? input) {
   return normalized
       .split(RegExp(r'[\s_-]+'))
       .where((part) => part.isNotEmpty)
-      .map((word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+      .map(
+        (word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+      )
       .join(' ');
 }
 
@@ -671,14 +593,4 @@ class _ClientNavItem {
 
   final String label;
   final String path;
-}
-
-String _title(String text) {
-  final normalized = text.trim();
-  if (normalized.isEmpty) return 'Not set';
-  return normalized
-      .split(RegExp(r'[-_]'))
-      .where((part) => part.isNotEmpty)
-      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
-      .join(' ');
 }
