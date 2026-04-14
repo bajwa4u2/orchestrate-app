@@ -664,7 +664,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   _StepHeader(
                     step: '2',
                     title: 'Regions',
-                    subtitle: 'After selecting a country, only that country's regions stay in view.',
+                    subtitle: "After selecting a country, only that country's regions stay in view.",
                   ),
                   const SizedBox(height: 12),
                   _FlowChipWrap(
