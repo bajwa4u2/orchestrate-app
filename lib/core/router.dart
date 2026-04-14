@@ -5,6 +5,7 @@ import '../screens/auth/client_login_screen.dart';
 import '../screens/auth/ops_login_screen.dart';
 import '../screens/client_account_screen.dart';
 import '../screens/client_setup_screen.dart';
+import '../screens/campaigns_screen.dart';
 import '../screens/client_subscribe_screen.dart';
 import '../screens/client_support_screen.dart';
 import '../screens/client_workspace_screen.dart';
@@ -100,6 +101,7 @@ final router = GoRouter(
         '/client/billing',
         '/client/account',
         '/client/help',
+        '/client/campaigns',
       };
 
       if (session.normalizedSubscriptionStatus != 'active') {
@@ -237,6 +239,10 @@ final router = GoRouter(
           path: '/client/outreach',
           builder: (context, state) =>
               const ClientWorkspaceScreen(section: ClientSection.outreach),
+        ),
+        GoRoute(
+          path: '/client/campaigns',
+          builder: (context, state) => const CampaignsScreen(),
         ),
         GoRoute(
           path: '/client/meetings',

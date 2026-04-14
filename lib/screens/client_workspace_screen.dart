@@ -153,21 +153,13 @@ class ClientWorkspaceScreen extends StatelessWidget {
           primaryTitle: 'Current standing',
           primaryRows: [
             _RowData(
-              title: 'Setup and service state',
-              primary: _joinNonEmpty([
-                session.hasSetupCompleted ? 'Setup completed' : 'Setup incomplete',
-                billingStatus,
-              ]),
-              secondary: _joinNonEmpty([
-                _read(client, 'primaryEmail', fallback: session.email),
-                _read(client, 'primaryTimezone'),
-              ]),
-              actionLabel:
-                  session.hasSetupCompleted ? null : 'Open setup',
-              onTap: session.hasSetupCompleted
-                  ? null
-                  : () => context.go('/client/setup'),
-            ),
+              title: 'Campaign configuration',
+              primary: 'Control targeting, geography, and outreach scope',
+              secondary: 'These settings define how outreach and meetings operate.',
+              actionLabel: 'Open campaign settings',
+              onTap: () => context.go('/client/campaigns'),
+
+              ),
             _RowData(
               title: 'Recent outreach movement',
               primary: _joinNonEmpty([
