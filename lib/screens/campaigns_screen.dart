@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/repositories/client/client_billing_repository.dart';
 import '../data/repositories/client/client_campaign_repository.dart';
@@ -14,28 +15,28 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   final ClientCampaignRepository _campaignRepository = ClientCampaignRepository();
   final ClientBillingRepository _billingRepository = ClientBillingRepository();
 
+  final TextEditingController _countryController = TextEditingController();
+  final TextEditingController _regionController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _industryController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
+
   bool _loading = true;
   bool _saving = false;
   String? _error;
 
-  String _subscriptionPlanLabel = 'Not set';
+  String _subscriptionPlanLabel = 'Current plan';
   String _subscriptionTier = '';
   String _campaignLane = 'opportunity';
   String _campaignMode = 'focused';
 
-  final List<_NamedItem> _countries = [];
-  final List<_RegionItem> _regions = [];
-  final List<_MetroItem> _metros = [];
-  final List<_NamedItem> _industries = [];
-  final List<String> _includeGeo = [];
-  final List<String> _excludeGeo = [];
-  final List<String> _priorityMarkets = [];
+  final List<_NamedItem> _countries = <_NamedItem>[];
+  final List<_RegionItem> _regions = <_RegionItem>[];
+  final List<_MetroItem> _metros = <_MetroItem>[];
+  final List<_NamedItem> _industries = <_NamedItem>[];
 
-  String? _selectedCountryCode;
-  String? _selectedRegionKey;
-  final TextEditingController _notesController = TextEditingController();
-
-  static const List<String> _regionTypes = <String>['state', 'province', 'region', 'county', 'territory'];
+  String? _activeCountryCode;
+  String? _activeRegionKey;
 
   @override
   void initState() {
@@ -45,80 +46,70 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   @override
   void dispose() {
+    _countryController.dispose();
+    _regionController.dispose();
+    _cityController.dispose();
+    _industryController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
-  bool get _singleCountryPlan => _subscriptionTier == 'focused';
-
-  List<_RegionItem> get _regionsForSelectedCountry {
-    if (_selectedCountryCode == null) return const <_RegionItem>[];
-    return _regions.where((item) => item.countryCode == _selectedCountryCode).toList();
+  List<_RegionItem> get _regionsForActiveCountry {
+    if (_activeCountryCode == null) return const <_RegionItem>[];
+    return _regions.where((item) => item.countryCode == _activeCountryCode).toList();
   }
 
-  List<_MetroItem> get _metrosForSelectedRegion {
-    if (_selectedCountryCode == null || _selectedRegionKey == null) return const <_MetroItem>[];
-
+  List<_MetroItem> get _metrosForActiveRegion {
+    if (_activeCountryCode == null || _activeRegionKey == null) return const <_MetroItem>[];
     final region = _regions.firstWhere(
-      (item) => item.key == _selectedRegionKey,
+      (item) => item.key == _activeRegionKey,
       orElse: () => const _RegionItem(
         countryCode: '',
         countryLabel: '',
-        regionType: '',
+        regionType: 'region',
         regionCode: '',
         regionLabel: '',
       ),
     );
-
     if (region.key.isEmpty) return const <_MetroItem>[];
-
     return _metros
         .where((item) => item.countryCode == region.countryCode && item.regionCode == region.regionCode)
         .toList();
   }
 
-  int get _sendabilityPressureScore {
-    var score = 0;
-    if (_countries.length > 1) score += 1;
-    if (_regions.length > 6) score += 1;
-    if (_metros.length > 10) score += 1;
-    if (_industries.length > 3) score += 1;
-    if (_includeGeo.isNotEmpty) score += 1;
-    if (_priorityMarkets.length > 2) score += 1;
-    return score;
+  String get _scopeSummary {
+    final countries = _countries.length;
+    final regions = _regions.length;
+    final cities = _metros.length;
+    final industries = _industries.length;
+    final parts = <String>[];
+    if (countries > 0) {
+      parts.add(countries == 1 ? '1 market selected' : '$countries markets selected');
+    }
+    if (regions > 0) {
+      parts.add(regions == 1 ? '1 area narrowed' : '$regions areas narrowed');
+    }
+    if (cities > 0) {
+      parts.add(cities == 1 ? '1 city focus' : '$cities city focuses');
+    }
+    if (industries > 0) {
+      parts.add(industries == 1 ? '1 business type' : '$industries business types');
+    }
+    if (parts.isEmpty) return 'Add a market and business type to get this campaign ready.';
+    return parts.join(' • ');
   }
 
-  String get _coverageLabel {
-    if (_countries.isEmpty && _industries.isEmpty) return 'Not ready';
-    if (_sendabilityPressureScore <= 1) return 'Tight';
-    if (_sendabilityPressureScore <= 3) return 'Balanced';
-    return 'Broad';
-  }
-
-  String get _costControlLabel {
-    if (_countries.isEmpty || _industries.isEmpty) return 'Waiting on basics';
-    if (_sendabilityPressureScore <= 1) return 'High control';
-    if (_sendabilityPressureScore <= 3) return 'Good control';
-    return 'Watch usage';
-  }
-
-  String get _launchReadinessLabel {
-    if (_countries.isEmpty || _industries.isEmpty) return 'Needs setup';
-    if (_notesController.text.trim().isEmpty) return 'Almost ready';
-    return 'Ready to activate';
-  }
-
-  List<String> get _launchChecks {
-    return <String>[
-      _countries.isNotEmpty ? 'At least one country is set.' : 'Add at least one country.',
-      _industries.isNotEmpty ? 'At least one industry is set.' : 'Add at least one industry.',
-      _notesController.text.trim().isNotEmpty
-          ? 'Campaign guidance is written.'
-          : 'Add campaign guidance so targeting stays closer to intent.',
-      _singleCountryPlan && _countries.length > 1
-          ? 'Plan allows one country only. Remove extra countries or upgrade.'
-          : 'Plan boundaries are respected.',
-    ];
+  String get _coverageMessage {
+    switch (_subscriptionTier) {
+      case 'focused':
+        return 'Built for one country with room to narrow by area.';
+      case 'multi':
+        return 'Built for broader coverage across multiple countries.';
+      case 'precision':
+        return 'Built for deep targeting down to the city level.';
+      default:
+        return 'Your saved targeting will stay aligned with your current plan.';
+    }
   }
 
   Future<void> _load() async {
@@ -128,7 +119,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     });
 
     try {
-      final results = await Future.wait<dynamic>([
+      final results = await Future.wait<dynamic>(<Future<dynamic>>[
         _campaignRepository.fetchCampaignProfile(),
         _billingRepository.fetchSubscription(),
       ]);
@@ -154,25 +145,16 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       _industries
         ..clear()
         ..addAll(_readNamedItems(profile['industries']));
-      _includeGeo
-        ..clear()
-        ..addAll(_readStringList(profile['includeGeo']));
-      _excludeGeo
-        ..clear()
-        ..addAll(_readStringList(profile['excludeGeo']));
-      _priorityMarkets
-        ..clear()
-        ..addAll(_readStringList(profile['priorityMarkets']));
 
       _notesController.text = _string(profile['notes']);
 
-      _selectedCountryCode = _countries.any((item) => item.code == _selectedCountryCode)
-          ? _selectedCountryCode
+      _activeCountryCode = _countries.any((item) => item.code == _activeCountryCode)
+          ? _activeCountryCode
           : (_countries.isNotEmpty ? _countries.first.code : null);
 
-      final availableRegions = _regionsForSelectedCountry;
-      _selectedRegionKey = availableRegions.any((item) => item.key == _selectedRegionKey)
-          ? _selectedRegionKey
+      final availableRegions = _regionsForActiveCountry;
+      _activeRegionKey = availableRegions.any((item) => item.key == _activeRegionKey)
+          ? _activeRegionKey
           : (availableRegions.isNotEmpty ? availableRegions.first.key : null);
 
       if (!mounted) return;
@@ -181,22 +163,23 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Campaign settings could not be loaded right now.';
+        _error = 'This campaign area could not be loaded right now.';
       });
     }
   }
 
   Future<void> _save() async {
+    final planIssue = _planIssue();
+    if (planIssue != null) {
+      await _showPlanDialog(planIssue);
+      return;
+    }
     if (_countries.isEmpty) {
-      _showNotice('Add at least one country before saving.');
+      _showNotice('Add at least one market before saving.');
       return;
     }
     if (_industries.isEmpty) {
-      _showNotice('Add at least one industry before saving.');
-      return;
-    }
-    if (_singleCountryPlan && _countries.length > 1) {
-      _showNotice('The current plan allows one country only.');
+      _showNotice('Add at least one business type before saving.');
       return;
     }
 
@@ -207,11 +190,11 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
     try {
       await _campaignRepository.updateCampaignProfile(
-        profile: {
-          'countries': _countries.map((item) => {'code': item.code, 'label': item.label}).toList(),
+        profile: <String, dynamic>{
+          'countries': _countries.map((item) => <String, String>{'code': item.code, 'label': item.label}).toList(),
           'regions': _regions
               .map(
-                (item) => {
+                (item) => <String, String>{
                   'countryCode': item.countryCode,
                   'countryLabel': item.countryLabel,
                   'regionType': item.regionType,
@@ -222,17 +205,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
               .toList(),
           'metros': _metros
               .map(
-                (item) => {
+                (item) => <String, String>{
                   'countryCode': item.countryCode,
                   'regionCode': item.regionCode,
                   'label': item.label,
                 },
               )
               .toList(),
-          'industries': _industries.map((item) => {'code': item.code, 'label': item.label}).toList(),
-          'includeGeo': List<String>.from(_includeGeo),
-          'excludeGeo': List<String>.from(_excludeGeo),
-          'priorityMarkets': List<String>.from(_priorityMarkets),
+          'industries': _industries.map((item) => <String, String>{'code': item.code, 'label': item.label}).toList(),
           'notes': _notesController.text.trim(),
         },
       );
@@ -240,15 +220,54 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Campaign settings updated')),
+        const SnackBar(content: Text('Targeting saved')),
       );
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'Campaign settings could not be saved right now.';
+        _error = 'Targeting could not be saved right now.';
       });
     }
+  }
+
+  _PlanIssue? _planIssue() {
+    if (_subscriptionTier == 'focused' && _countries.length > 1) {
+      return const _PlanIssue(
+        title: 'Expand your coverage',
+        message: 'Your current plan focuses on one country at a time. Upgrade to keep multiple countries in one campaign.',
+      );
+    }
+    if (_subscriptionTier != 'precision' && _metros.isNotEmpty) {
+      return const _PlanIssue(
+        title: 'Expand your precision',
+        message: 'City-level targeting is available on Precision. Upgrade to save campaigns narrowed by city or metro.',
+      );
+    }
+    return null;
+  }
+
+  Future<void> _showPlanDialog(_PlanIssue issue) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(issue.title),
+        content: Text(issue.message),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Adjust targeting'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.go('/client/billing');
+            },
+            child: const Text('View plans'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showNotice(String message) {
@@ -256,306 +275,106 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _openAddCountryDialog() async {
-    final codeController = TextEditingController();
-    final labelController = TextEditingController();
-
-    final result = await showDialog<_NamedItem>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add country'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: codeController,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(labelText: 'Country code'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: labelController,
-              decoration: const InputDecoration(labelText: 'Country label'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final code = codeController.text.trim().toUpperCase();
-              final label = labelController.text.trim();
-              if (code.isEmpty || label.isEmpty) return;
-              Navigator.pop(context, _NamedItem(code: code, label: label));
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-
-    codeController.dispose();
-    labelController.dispose();
-
-    if (result == null) return;
-    if (_countries.any((item) => item.code.toUpperCase() == result.code)) {
-      _showNotice('That country is already in this campaign.');
+  void _addCountry() {
+    final label = _countryController.text.trim();
+    if (label.isEmpty) return;
+    final item = _NamedItem(code: _slug(label).toUpperCase(), label: _titleCase(label));
+    final exists = _countries.any((entry) => entry.label.toLowerCase() == item.label.toLowerCase());
+    if (exists) {
+      _showNotice('That market is already listed.');
       return;
     }
-    if (_singleCountryPlan && _countries.isNotEmpty) {
-      _showNotice('The current plan allows one country only. Upgrade the plan to add more.');
-      return;
-    }
-
     setState(() {
-      _countries.add(result);
-      _selectedCountryCode = result.code;
-      _selectedRegionKey = null;
+      _countries.add(item);
+      _activeCountryCode = item.code;
+      _activeRegionKey = null;
+      _countryController.clear();
     });
   }
 
-  Future<void> _openAddRegionDialog() async {
-    if (_selectedCountryCode == null) {
-      _showNotice('Select a country first.');
+  void _addRegion() {
+    if (_activeCountryCode == null) {
+      _showNotice('Choose a market first.');
       return;
     }
-
-    final codeController = TextEditingController();
-    final labelController = TextEditingController();
-    String selectedType = _regionTypes.first;
-
-    final result = await showDialog<_RegionItem>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setLocalState) => AlertDialog(
-          title: const Text('Add region'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                value: selectedType,
-                decoration: const InputDecoration(labelText: 'Region type'),
-                items: _regionTypes
-                    .map((type) => DropdownMenuItem<String>(value: type, child: Text(_humanize(type))))
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setLocalState(() => selectedType = value);
-                },
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: codeController,
-                decoration: const InputDecoration(labelText: 'Region code'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: labelController,
-                decoration: const InputDecoration(labelText: 'Region label'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () {
-                final regionCode = codeController.text.trim();
-                final regionLabel = labelController.text.trim();
-                if (regionCode.isEmpty || regionLabel.isEmpty) return;
-
-                final country = _countries.firstWhere(
-                  (item) => item.code == _selectedCountryCode,
-                  orElse: () => const _NamedItem(code: '', label: ''),
-                );
-                if (country.code.isEmpty) return;
-
-                Navigator.pop(
-                  context,
-                  _RegionItem(
-                    countryCode: country.code,
-                    countryLabel: country.label,
-                    regionType: selectedType,
-                    regionCode: regionCode,
-                    regionLabel: regionLabel,
-                  ),
-                );
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        ),
-      ),
+    final label = _regionController.text.trim();
+    if (label.isEmpty) return;
+    final country = _countries.firstWhere(
+      (item) => item.code == _activeCountryCode,
+      orElse: () => const _NamedItem(code: '', label: ''),
     );
-
-    codeController.dispose();
-    labelController.dispose();
-
-    if (result == null) return;
-    if (_regions.any((item) => item.key == result.key)) {
-      _showNotice('That region is already in this campaign.');
+    if (country.code.isEmpty) return;
+    final region = _RegionItem(
+      countryCode: country.code,
+      countryLabel: country.label,
+      regionType: 'region',
+      regionCode: _slug(label).toUpperCase(),
+      regionLabel: _titleCase(label),
+    );
+    final exists = _regions.any((entry) => entry.key == region.key);
+    if (exists) {
+      _showNotice('That area is already listed for this market.');
       return;
     }
-
     setState(() {
-      _regions.add(result);
-      _selectedRegionKey = result.key;
+      _regions.add(region);
+      _activeRegionKey = region.key;
+      _regionController.clear();
     });
   }
 
-  Future<void> _openAddMetroDialog() async {
-    if (_selectedCountryCode == null || _selectedRegionKey == null) {
-      _showNotice('Select a country and region first.');
+  void _addCity() {
+    if (_activeCountryCode == null || _activeRegionKey == null) {
+      _showNotice('Choose a market and area first.');
       return;
     }
-
-    final labelController = TextEditingController();
-
-    final result = await showDialog<_MetroItem>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add city or metro'),
-        content: TextField(
-          controller: labelController,
-          decoration: const InputDecoration(labelText: 'City or metro label'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final label = labelController.text.trim();
-              if (label.isEmpty) return;
-
-              final region = _regions.firstWhere(
-                (item) => item.key == _selectedRegionKey,
-                orElse: () => const _RegionItem(
-                  countryCode: '',
-                  countryLabel: '',
-                  regionType: '',
-                  regionCode: '',
-                  regionLabel: '',
-                ),
-              );
-              if (region.key.isEmpty) return;
-
-              Navigator.pop(
-                context,
-                _MetroItem(
-                  countryCode: region.countryCode,
-                  regionCode: region.regionCode,
-                  label: label,
-                ),
-              );
-            },
-            child: const Text('Add'),
-          ),
-        ],
+    final label = _cityController.text.trim();
+    if (label.isEmpty) return;
+    final region = _regions.firstWhere(
+      (item) => item.key == _activeRegionKey,
+      orElse: () => const _RegionItem(
+        countryCode: '',
+        countryLabel: '',
+        regionType: 'region',
+        regionCode: '',
+        regionLabel: '',
       ),
     );
-
-    labelController.dispose();
-
-    if (result == null) return;
+    if (region.key.isEmpty) return;
+    final city = _MetroItem(
+      countryCode: region.countryCode,
+      regionCode: region.regionCode,
+      label: _titleCase(label),
+    );
     final exists = _metros.any(
-      (item) =>
-          item.countryCode == result.countryCode &&
-          item.regionCode == result.regionCode &&
-          item.label.toLowerCase() == result.label.toLowerCase(),
+      (entry) =>
+          entry.countryCode == city.countryCode &&
+          entry.regionCode == city.regionCode &&
+          entry.label.toLowerCase() == city.label.toLowerCase(),
     );
     if (exists) {
-      _showNotice('That city or metro is already in this campaign.');
+      _showNotice('That city is already listed for this area.');
       return;
     }
-
-    setState(() => _metros.add(result));
+    setState(() {
+      _metros.add(city);
+      _cityController.clear();
+    });
   }
 
-  Future<void> _openAddIndustryDialog() async {
-    final codeController = TextEditingController();
-    final labelController = TextEditingController();
-
-    final result = await showDialog<_NamedItem>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add industry'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: codeController,
-              decoration: const InputDecoration(labelText: 'Industry code'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: labelController,
-              decoration: const InputDecoration(labelText: 'Industry label'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final code = codeController.text.trim().toLowerCase();
-              final label = labelController.text.trim();
-              if (code.isEmpty || label.isEmpty) return;
-              Navigator.pop(context, _NamedItem(code: code, label: label));
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-
-    codeController.dispose();
-    labelController.dispose();
-
-    if (result == null) return;
-    if (_industries.any((item) => item.code.toLowerCase() == result.code)) {
-      _showNotice('That industry is already in this campaign.');
+  void _addIndustry() {
+    final label = _industryController.text.trim();
+    if (label.isEmpty) return;
+    final item = _NamedItem(code: _slug(label), label: _titleCase(label));
+    final exists = _industries.any((entry) => entry.label.toLowerCase() == item.label.toLowerCase());
+    if (exists) {
+      _showNotice('That business type is already listed.');
       return;
     }
-
-    setState(() => _industries.add(result));
-  }
-
-  Future<void> _openAddStringDialog({
-    required String title,
-    required List<String> target,
-    String label = 'Value',
-  }) async {
-    final controller = TextEditingController();
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(labelText: label),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final value = controller.text.trim();
-              if (value.isEmpty) return;
-              Navigator.pop(context, value);
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-
-    controller.dispose();
-
-    if (result == null) return;
-    if (target.any((entry) => entry.toLowerCase() == result.toLowerCase())) {
-      _showNotice('That value is already listed.');
-      return;
-    }
-
-    setState(() => target.add(result));
+    setState(() {
+      _industries.add(item);
+      _industryController.clear();
+    });
   }
 
   void _removeCountry(_NamedItem item) {
@@ -563,10 +382,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       _countries.removeWhere((entry) => entry.code == item.code);
       _regions.removeWhere((entry) => entry.countryCode == item.code);
       _metros.removeWhere((entry) => entry.countryCode == item.code);
-
-      if (_selectedCountryCode == item.code) {
-        _selectedCountryCode = _countries.isNotEmpty ? _countries.first.code : null;
-        _selectedRegionKey = null;
+      if (_activeCountryCode == item.code) {
+        _activeCountryCode = _countries.isNotEmpty ? _countries.first.code : null;
+        final nextRegions = _regionsForActiveCountry;
+        _activeRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
       }
     });
   }
@@ -574,18 +393,15 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   void _removeRegion(_RegionItem item) {
     setState(() {
       _regions.removeWhere((entry) => entry.key == item.key);
-      _metros.removeWhere(
-        (entry) => entry.countryCode == item.countryCode && entry.regionCode == item.regionCode,
-      );
-
-      if (_selectedRegionKey == item.key) {
-        final nextRegions = _regionsForSelectedCountry;
-        _selectedRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
+      _metros.removeWhere((entry) => entry.countryCode == item.countryCode && entry.regionCode == item.regionCode);
+      final nextRegions = _regionsForActiveCountry;
+      if (_activeRegionKey == item.key) {
+        _activeRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
       }
     });
   }
 
-  void _removeMetro(_MetroItem item) {
+  void _removeCity(_MetroItem item) {
     setState(() {
       _metros.removeWhere(
         (entry) =>
@@ -597,11 +413,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   }
 
   void _removeIndustry(_NamedItem item) {
-    setState(() => _industries.removeWhere((entry) => entry.code == item.code));
-  }
-
-  void _removeStringItem(String value, List<String> target) {
-    setState(() => target.remove(value));
+    setState(() {
+      _industries.removeWhere((entry) => entry.code == item.code);
+    });
   }
 
   @override
@@ -619,499 +433,303 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       );
     }
 
+    final theme = Theme.of(context);
+    _NamedItem? activeCountry;
+    for (final item in _countries) {
+      if (item.code == _activeCountryCode) {
+        activeCountry = item;
+        break;
+      }
+    }
+    _RegionItem? activeRegion;
+    for (final item in _regions) {
+      if (item.key == _activeRegionKey) {
+        activeRegion = item;
+        break;
+      }
+    }
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _HeroCard(
-            title: 'Campaign targeting',
-            subtitle:
-                'Keep one clean targeting surface. Define where to search, who to search, and what the system should protect before launch.',
-            trailing: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.end,
-              children: [
-                OutlinedButton(onPressed: _saving ? null : _load, child: const Text('Reload')),
-                FilledButton(
-                  onPressed: _saving ? null : _save,
-                  child: Text(_saving ? 'Saving...' : 'Save changes'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _StatCard(
-                label: 'Launch readiness',
-                value: _launchReadinessLabel,
-                icon: Icons.rocket_launch_outlined,
-                tone: _launchReadinessLabel == 'Ready to activate'
-                    ? _Tone.good
-                    : _launchReadinessLabel == 'Almost ready'
-                        ? _Tone.caution
-                        : _Tone.neutral,
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1040),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _HeroCard(
+                planLabel: _subscriptionPlanLabel,
+                summary: _scopeSummary,
+                coverageMessage: _coverageMessage,
+                laneLabel: _humanize(_campaignLane),
               ),
-              _StatCard(
-                label: 'Coverage',
-                value: _coverageLabel,
-                icon: Icons.public_outlined,
-              ),
-              _StatCard(
-                label: 'Cost control',
-                value: _costControlLabel,
-                icon: Icons.tune_outlined,
-              ),
-              _StatCard(
-                label: 'Plan',
-                value: _subscriptionPlanLabel,
-                icon: Icons.workspace_premium_outlined,
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _Panel(
-            title: 'Launch review',
-            subtitle: 'A quick read before you activate. Tight campaigns cost less, review faster, and usually produce cleaner sendable leads.',
-            child: Column(
-              children: [
-                _InsightBanner(
-                  title: _launchReadinessLabel,
-                  body: _buildReviewSummary(),
-                  tone: _launchReadinessLabel == 'Ready to activate'
-                      ? _Tone.good
-                      : _launchReadinessLabel == 'Almost ready'
-                          ? _Tone.caution
-                          : _Tone.neutral,
-                ),
-                const SizedBox(height: 14),
-                ..._launchChecks.map((entry) => _CheckRow(text: entry)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          _Panel(
-            title: 'Where to search',
-            subtitle: 'Set the market footprint first. Start narrower, then widen only if coverage is too thin.',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionLabel(
-                  icon: Icons.flag_outlined,
-                  title: 'Countries',
-                  subtitle: _singleCountryPlan
-                      ? 'Your current plan supports one country.'
-                      : 'Choose the countries this campaign can search.',
-                ),
-                const SizedBox(height: 12),
-                _SelectableWrap(
-                  emptyText: 'No countries selected yet.',
-                  children: _countries
-                      .map(
-                        (item) => ChoiceChip(
-                          label: Text(item.label),
-                          selected: _selectedCountryCode == item.code,
-                          onSelected: (_) {
-                            setState(() {
-                              _selectedCountryCode = item.code;
-                              final nextRegions = _regionsForSelectedCountry;
-                              _selectedRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
-                            });
-                          },
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    FilledButton.icon(
-                      onPressed: _openAddCountryDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add country'),
+              const SizedBox(height: 20),
+              _SectionCard(
+                title: 'Where should we look?',
+                subtitle: 'Add markets in plain language. We will keep the saved targeting aligned with your plan.',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    _AddBar(
+                      controller: _countryController,
+                      hintText: 'Type a country and press add',
+                      buttonLabel: 'Add market',
+                      onSubmitted: (_) => _addCountry(),
+                      onPressed: _addCountry,
                     ),
-                    const SizedBox(width: 10),
-                    if (_countries.isNotEmpty)
+                    const SizedBox(height: 12),
+                    _SelectableChipWrap<_NamedItem>(
+                      items: _countries,
+                      labelBuilder: (item) => item.label,
+                      selected: (item) => item.code == _activeCountryCode,
+                      onSelected: (item) {
+                        setState(() {
+                          _activeCountryCode = item.code;
+                          final nextRegions = _regionsForActiveCountry;
+                          _activeRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
+                        });
+                      },
+                      onDeleted: _removeCountry,
+                      emptyLabel: 'No markets added yet.',
+                    ),
+                    if (activeCountry != null) ...<Widget>[
+                      const SizedBox(height: 20),
                       Text(
-                        '${_countries.length} selected',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280)),
+                        'Narrow ${activeCountry.label}',
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                       ),
+                      const SizedBox(height: 8),
+                      _AddBar(
+                        controller: _regionController,
+                        hintText: 'Add a state, province, region, or county',
+                        buttonLabel: 'Add area',
+                        onSubmitted: (_) => _addRegion(),
+                        onPressed: _addRegion,
+                      ),
+                      const SizedBox(height: 12),
+                      _SelectableChipWrap<_RegionItem>(
+                        items: _regionsForActiveCountry,
+                        labelBuilder: (item) => item.regionLabel,
+                        selected: (item) => item.key == _activeRegionKey,
+                        onSelected: (item) => setState(() => _activeRegionKey = item.key),
+                        onDeleted: _removeRegion,
+                        emptyLabel: 'No areas added yet for this market.',
+                      ),
+                    ],
+                    if (activeRegion != null) ...<Widget>[
+                      const SizedBox(height: 20),
+                      Text(
+                        'City focus in ${activeRegion.regionLabel}',
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      _AddBar(
+                        controller: _cityController,
+                        hintText: 'Add a city or metro area',
+                        buttonLabel: 'Add city',
+                        onSubmitted: (_) => _addCity(),
+                        onPressed: _addCity,
+                      ),
+                      const SizedBox(height: 12),
+                      _ChipList<_MetroItem>(
+                        items: _metrosForActiveRegion,
+                        labelBuilder: (item) => item.label,
+                        onDeleted: _removeCity,
+                        emptyLabel: 'No city focus added yet.',
+                      ),
+                    ],
                   ],
                 ),
-                if (_countries.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _TokenWrap(
-                    children: _countries
-                        .map(
-                          (item) => InputChip(
-                            label: Text('${item.label} (${item.code})'),
-                            onDeleted: () => _removeCountry(item),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                _SectionLabel(
-                  icon: Icons.map_outlined,
-                  title: 'Regions',
-                  subtitle: _selectedCountryCode == null
-                      ? 'Choose a country first.'
-                      : 'Refine the campaign inside the selected country.',
-                ),
-                const SizedBox(height: 12),
-                _SelectableWrap(
-                  emptyText: _selectedCountryCode == null
-                      ? 'Select a country to manage regions.'
-                      : 'No regions listed for this country yet.',
-                  children: _regionsForSelectedCountry
-                      .map(
-                        (item) => ChoiceChip(
-                          label: Text(item.regionLabel),
-                          selected: _selectedRegionKey == item.key,
-                          onSelected: (_) => setState(() => _selectedRegionKey = item.key),
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 12),
-                FilledButton.tonalIcon(
-                  onPressed: _openAddRegionDialog,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add region'),
-                ),
-                if (_regionsForSelectedCountry.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _TokenWrap(
-                    children: _regionsForSelectedCountry
-                        .map(
-                          (item) => InputChip(
-                            label: Text('${item.regionLabel} (${_humanize(item.regionType)})'),
-                            onDeleted: () => _removeRegion(item),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                _SectionLabel(
-                  icon: Icons.location_city_outlined,
-                  title: 'Cities and metros',
-                  subtitle: _selectedRegionKey == null
-                      ? 'Choose a region first.'
-                      : 'Use metros only when you really need tighter focus.',
-                ),
-                const SizedBox(height: 12),
-                _SelectableWrap(
-                  emptyText: _selectedRegionKey == null
-                      ? 'Select a region to manage metros.'
-                      : 'No metros listed for this region yet.',
-                  children: _metrosForSelectedRegion.map((item) => Chip(label: Text(item.label))).toList(),
-                ),
-                const SizedBox(height: 12),
-                FilledButton.tonalIcon(
-                  onPressed: _openAddMetroDialog,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add metro'),
-                ),
-                if (_metrosForSelectedRegion.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _TokenWrap(
-                    children: _metrosForSelectedRegion
-                        .map(
-                          (item) => InputChip(
-                            label: Text(item.label),
-                            onDeleted: () => _removeMetro(item),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          _Panel(
-            title: 'Who to search',
-            subtitle: 'Keep audience controls visible. The backend already does the heavy lifting, so this screen should stay focused and readable.',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionLabel(
-                  icon: Icons.apartment_outlined,
-                  title: 'Industries',
-                  subtitle: 'A short, accurate list usually performs better than a broad stack.',
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    FilledButton.icon(
-                      onPressed: _openAddIndustryDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add industry'),
+              ),
+              const SizedBox(height: 20),
+              _SectionCard(
+                title: 'What kind of businesses should we reach?',
+                subtitle: 'Use everyday language. You can add one or several business types.',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    _AddBar(
+                      controller: _industryController,
+                      hintText: 'Examples: roofing companies, dental clinics, trucking companies',
+                      buttonLabel: 'Add business type',
+                      onSubmitted: (_) => _addIndustry(),
+                      onPressed: _addIndustry,
                     ),
-                    const SizedBox(width: 10),
-                    if (_industries.isNotEmpty)
-                      Text(
-                        '${_industries.length} listed',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280)),
-                      ),
+                    const SizedBox(height: 12),
+                    _ChipList<_NamedItem>(
+                      items: _industries,
+                      labelBuilder: (item) => item.label,
+                      onDeleted: _removeIndustry,
+                      emptyLabel: 'No business types added yet.',
+                    ),
                   ],
                 ),
-                if (_industries.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _TokenWrap(
-                    children: _industries
-                        .map(
-                          (item) => InputChip(
-                            label: Text('${item.label} (${item.code})'),
-                            onDeleted: () => _removeIndustry(item),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ] else
-                  Text(
-                    'No industries added yet.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280)),
-                  ),
-                const SizedBox(height: 24),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final stacked = constraints.maxWidth < 860;
-                    final children = <Widget>[
-                      Expanded(
-                        child: _RuleCard(
-                          icon: Icons.add_location_alt_outlined,
-                          title: 'Must include',
-                          subtitle: 'Specific markets that must stay inside the campaign.',
-                          buttonLabel: 'Add market',
-                          items: _includeGeo,
-                          emptyText: 'No include rules added yet.',
-                          onAdd: () => _openAddStringDialog(
-                            title: 'Add included market',
-                            target: _includeGeo,
-                            label: 'Market, area, or signal',
-                          ),
-                          onRemove: (value) => _removeStringItem(value, _includeGeo),
-                        ),
-                      ),
-                      const SizedBox(width: 14, height: 14),
-                      Expanded(
-                        child: _RuleCard(
-                          icon: Icons.block_outlined,
-                          title: 'Avoid',
-                          subtitle: 'Places or market pockets the campaign should skip.',
-                          buttonLabel: 'Add exclusion',
-                          items: _excludeGeo,
-                          emptyText: 'No excluded markets added yet.',
-                          onAdd: () => _openAddStringDialog(
-                            title: 'Add excluded market',
-                            target: _excludeGeo,
-                            label: 'Market, area, or signal',
-                          ),
-                          onRemove: (value) => _removeStringItem(value, _excludeGeo),
-                        ),
-                      ),
-                      const SizedBox(width: 14, height: 14),
-                      Expanded(
-                        child: _RuleCard(
-                          icon: Icons.low_priority_outlined,
-                          title: 'Prioritize first',
-                          subtitle: 'Use this when you want the system to lean into a few markets before broadening.',
-                          buttonLabel: 'Add priority',
-                          items: _priorityMarkets,
-                          emptyText: 'No priority markets added yet.',
-                          onAdd: () => _openAddStringDialog(
-                            title: 'Add priority market',
-                            target: _priorityMarkets,
-                            label: 'Market, area, or signal',
-                          ),
-                          onRemove: (value) => _removeStringItem(value, _priorityMarkets),
-                        ),
-                      ),
-                    ];
-                    if (stacked) {
-                      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
-                    }
-                    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: children);
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          _Panel(
-            title: 'Guidance to the system',
-            subtitle: 'Use this field for what your campaign must protect: offer nuance, exclusions, tone, service boundaries, or special requirements.',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
+              ),
+              const SizedBox(height: 20),
+              _SectionCard(
+                title: 'Anything else we should keep in mind?',
+                subtitle: 'Optional guidance helps us keep the campaign closer to your intent.',
+                child: TextField(
                   controller: _notesController,
-                  minLines: 5,
-                  maxLines: 10,
+                  maxLines: 5,
                   decoration: const InputDecoration(
-                    hintText:
-                        'Example: Focus on owner-led roofing companies in Michigan first. Avoid enterprise chains. Prioritize businesses with clear residential service pages.',
+                    hintText: 'Examples: focus on locally owned businesses, avoid franchises, prioritize companies with a clear booking need.',
                     border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'These notes do not replace your targeting. They help the backend make better decisions once targeting is set.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
                 ),
-              ],
-            ),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 14),
-            Text(_error!, style: TextStyle(color: Colors.red.shade700)),
-          ],
-          const SizedBox(height: 18),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                OutlinedButton(onPressed: _saving ? null : _load, child: const Text('Reload')),
-                FilledButton(
-                  onPressed: _saving ? null : _save,
-                  child: Text(_saving ? 'Saving...' : 'Save changes'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Ready when you are',
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Save your targeting here. When your campaign runs, this is the market profile your backend will use.',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_error != null) ...<Widget>[
+                      Text(
+                        _error!,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: <Widget>[
+                        FilledButton.icon(
+                          onPressed: _saving ? null : _save,
+                          icon: _saving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.check_circle_outline),
+                          label: Text(_saving ? 'Saving...' : 'Save targeting'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => context.go('/client/workspace'),
+                          icon: const Icon(Icons.arrow_forward),
+                          label: const Text('Back to workspace'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
-  }
-
-  String _buildReviewSummary() {
-    if (_countries.isEmpty || _industries.isEmpty) {
-      return 'Set at least one country and one industry before launch. That is the minimum for a credible sourcing run.';
-    }
-
-    if (_sendabilityPressureScore <= 1) {
-      return 'This is a tight setup. It should keep lead sourcing focused and easier to control.';
-    }
-
-    if (_sendabilityPressureScore <= 3) {
-      return 'This is balanced. You have enough room to search without making the campaign too loose.';
-    }
-
-    return 'This setup is broad. It may widen sourcing and cost faster than needed. Narrow the footprint if you want tighter control.';
   }
 }
 
 class _HeroCard extends StatelessWidget {
-  const _HeroCard({required this.title, required this.subtitle, required this.trailing});
+  const _HeroCard({
+    required this.planLabel,
+    required this.summary,
+    required this.coverageMessage,
+    required this.laneLabel,
+  });
 
-  final String title;
-  final String subtitle;
-  final Widget trailing;
+  final String planLabel;
+  final String summary;
+  final String coverageMessage;
+  final String laneLabel;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 860;
-          if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 10),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFF6B7280)),
-                ),
-                const SizedBox(height: 16),
-                trailing,
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 10),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFF6B7280)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 18),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 320),
-                child: trailing,
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-enum _Tone { neutral, good, caution }
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.label, required this.value, required this.icon, this.tone = _Tone.neutral});
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final _Tone tone;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = _toneColors(tone);
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: palette.background,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: palette.border),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: palette.accent),
+        children: <Widget>[
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Text(
+                'Find customers',
+                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  planLabel,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  laneLabel,
+                  style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280))),
+          Text(
+            'Tell us where to look and who you want to reach. The system will use this saved profile when your campaign runs.',
+            style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            summary,
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 6),
-          Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            coverageMessage,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
         ],
       ),
     );
   }
 }
 
-class _Panel extends StatelessWidget {
-  const _Panel({required this.title, required this.subtitle, required this.child});
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
 
   final String title;
   final String subtitle;
@@ -1119,20 +737,27 @@ class _Panel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Text(subtitle, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: const Color(0xFF6B7280))),
+        children: <Widget>[
+          Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
           const SizedBox(height: 18),
           child,
         ],
@@ -1141,212 +766,136 @@ class _Panel extends StatelessWidget {
   }
 }
 
-class _InsightBanner extends StatelessWidget {
-  const _InsightBanner({required this.title, required this.body, required this.tone});
+class _AddBar extends StatelessWidget {
+  const _AddBar({
+    required this.controller,
+    required this.hintText,
+    required this.buttonLabel,
+    required this.onSubmitted,
+    required this.onPressed,
+  });
 
-  final String title;
-  final String body;
-  final _Tone tone;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = _toneColors(tone);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: palette.background,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: palette.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Text(body, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckRow extends StatelessWidget {
-  const _CheckRow({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: Icon(Icons.check_circle_outline, size: 18, color: Color(0xFF374151)),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text)),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.icon, required this.title, required this.subtitle});
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
+  final TextEditingController controller;
+  final String hintText;
+  final String buttonLabel;
+  final ValueChanged<String> onSubmitted;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(12),
+      children: <Widget>[
+        Expanded(
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hintText,
+              border: const OutlineInputBorder(),
+              isDense: true,
+            ),
+            onSubmitted: onSubmitted,
           ),
-          child: Icon(icon, size: 20, color: const Color(0xFF374151)),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280))),
-            ],
-          ),
+        FilledButton(
+          onPressed: onPressed,
+          child: Text(buttonLabel),
         ),
       ],
     );
   }
 }
 
-class _SelectableWrap extends StatelessWidget {
-  const _SelectableWrap({required this.children, required this.emptyText});
-
-  final List<Widget> children;
-  final String emptyText;
-
-  @override
-  Widget build(BuildContext context) {
-    if (children.isEmpty) {
-      return Text(emptyText, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280)));
-    }
-    return Wrap(spacing: 8, runSpacing: 8, children: children);
-  }
-}
-
-class _TokenWrap extends StatelessWidget {
-  const _TokenWrap({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(spacing: 8, runSpacing: 8, children: children);
-  }
-}
-
-class _RuleCard extends StatelessWidget {
-  const _RuleCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.buttonLabel,
+class _SelectableChipWrap<T> extends StatelessWidget {
+  const _SelectableChipWrap({
     required this.items,
-    required this.emptyText,
-    required this.onAdd,
-    required this.onRemove,
+    required this.labelBuilder,
+    required this.selected,
+    required this.onSelected,
+    required this.onDeleted,
+    required this.emptyLabel,
   });
 
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String buttonLabel;
-  final List<String> items;
-  final String emptyText;
-  final VoidCallback onAdd;
-  final void Function(String value) onRemove;
+  final List<T> items;
+  final String Function(T item) labelBuilder;
+  final bool Function(T item) selected;
+  final ValueChanged<T> onSelected;
+  final ValueChanged<T> onDeleted;
+  final String emptyLabel;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: const Color(0xFF374151)),
-          const SizedBox(height: 10),
-          Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280))),
-          const SizedBox(height: 12),
-          if (items.isEmpty)
-            Text(emptyText, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B7280)))
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: items.map((item) => InputChip(label: Text(item), onDeleted: () => onRemove(item))).toList(),
+    final theme = Theme.of(context);
+    if (items.isEmpty) {
+      return Text(
+        emptyLabel,
+        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      );
+    }
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: items
+          .map(
+            (item) => InputChip(
+              label: Text(labelBuilder(item)),
+              selected: selected(item),
+              onSelected: (_) => onSelected(item),
+              onDeleted: () => onDeleted(item),
             ),
-          const SizedBox(height: 12),
-          FilledButton.tonalIcon(onPressed: onAdd, icon: const Icon(Icons.add), label: Text(buttonLabel)),
-        ],
-      ),
+          )
+          .toList(),
     );
   }
 }
 
-class _ToneColors {
-  const _ToneColors({required this.background, required this.border, required this.accent});
+class _ChipList<T> extends StatelessWidget {
+  const _ChipList({
+    required this.items,
+    required this.labelBuilder,
+    required this.onDeleted,
+    required this.emptyLabel,
+  });
 
-  final Color background;
-  final Color border;
-  final Color accent;
+  final List<T> items;
+  final String Function(T item) labelBuilder;
+  final ValueChanged<T> onDeleted;
+  final String emptyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (items.isEmpty) {
+      return Text(
+        emptyLabel,
+        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      );
+    }
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: items
+          .map(
+            (item) => InputChip(
+              label: Text(labelBuilder(item)),
+              onDeleted: () => onDeleted(item),
+            ),
+          )
+          .toList(),
+    );
+  }
 }
 
-_ToneColors _toneColors(_Tone tone) {
-  switch (tone) {
-    case _Tone.good:
-      return const _ToneColors(
-        background: Color(0xFFF0FDF4),
-        border: Color(0xFFBBF7D0),
-        accent: Color(0xFF15803D),
-      );
-    case _Tone.caution:
-      return const _ToneColors(
-        background: Color(0xFFFFFBEB),
-        border: Color(0xFFFDE68A),
-        accent: Color(0xFFB45309),
-      );
-    case _Tone.neutral:
-      return const _ToneColors(
-        background: Color(0xFFF9FAFB),
-        border: Color(0xFFE5E7EB),
-        accent: Color(0xFF374151),
-      );
-  }
+class _PlanIssue {
+  const _PlanIssue({required this.title, required this.message});
+
+  final String title;
+  final String message;
 }
 
 class _NamedItem {
   const _NamedItem({required this.code, required this.label});
+
   final String code;
   final String label;
 }
@@ -1370,7 +919,12 @@ class _RegionItem {
 }
 
 class _MetroItem {
-  const _MetroItem({required this.countryCode, required this.regionCode, required this.label});
+  const _MetroItem({
+    required this.countryCode,
+    required this.regionCode,
+    required this.label,
+  });
+
   final String countryCode;
   final String regionCode;
   final String label;
@@ -1379,28 +933,47 @@ class _MetroItem {
 Map<String, dynamic> _asMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;
   if (value is Map) {
-    return value.map((key, val) => MapEntry(key.toString(), val));
+    return value.map((key, dynamic entry) => MapEntry(key.toString(), entry));
   }
-  return const <String, dynamic>{};
+  return <String, dynamic>{};
 }
 
 String _string(dynamic value, {String fallback = ''}) {
-  final text = value?.toString().trim() ?? '';
+  if (value == null) return fallback;
+  final text = value.toString().trim();
   return text.isEmpty ? fallback : text;
 }
 
+String _titleCase(String value) {
+  final words = value
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((word) => word.isNotEmpty)
+      .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+      .toList();
+  return words.join(' ');
+}
+
+String _slug(String value) {
+  return value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+}
+
 String _humanize(String value) {
-  final text = value.trim();
-  if (text.isEmpty) return 'Not set';
-  return text
-      .split(RegExp(r'[\s_-]+'))
+  if (value.trim().isEmpty) return '';
+  return value
+      .trim()
+      .split(RegExp(r'[_\s-]+'))
       .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
       .join(' ');
 }
 
 String _resolveSubscriptionLabel(Map<String, dynamic>? subscription) {
-  if (subscription == null || subscription.isEmpty) return 'Not set';
+  if (subscription == null) return 'Current plan';
 
   final explicit = _string(subscription['displayPlanLabel']);
   if (explicit.isNotEmpty) return explicit;
@@ -1410,95 +983,48 @@ String _resolveSubscriptionLabel(Map<String, dynamic>? subscription) {
   final lane = _string(subscription['lane']);
   final tier = _string(subscription['tier']);
 
-  final primaryPlan = service.isNotEmpty ? service : lane.isNotEmpty ? lane : plan;
-  final humanPlan = _humanize(primaryPlan);
-  final humanTier = _humanize(tier);
-
-  if (humanPlan.isEmpty && humanTier.isEmpty) return 'Not set';
-  if (humanPlan.isEmpty) return humanTier;
-  if (humanTier.isEmpty) return humanPlan;
-  return '$humanPlan · $humanTier';
+  final parts = <String>[plan, service, lane, tier].where((entry) => entry.isNotEmpty).map(_humanize).toSet().toList();
+  if (parts.isEmpty) return 'Current plan';
+  return parts.join(' • ');
 }
 
 String _resolveSubscriptionTier(Map<String, dynamic>? subscription) {
-  if (subscription == null || subscription.isEmpty) return '';
+  if (subscription == null) return '';
   return _string(subscription['tier']).toLowerCase();
 }
 
 List<_NamedItem> _readNamedItems(dynamic value) {
-  if (value is! List) return const [];
-  final items = <_NamedItem>[];
-  final seen = <String>{};
-  for (final entry in value) {
+  if (value is! List) return const <_NamedItem>[];
+  return value.map((entry) {
     final map = _asMap(entry);
     final code = _string(map['code']);
     final label = _string(map['label']);
-    if (code.isEmpty || label.isEmpty) continue;
-    final key = code.toLowerCase();
-    if (seen.contains(key)) continue;
-    seen.add(key);
-    items.add(_NamedItem(code: code, label: label));
-  }
-  return items;
+    return _NamedItem(code: code, label: label);
+  }).where((item) => item.code.isNotEmpty && item.label.isNotEmpty).toList();
 }
 
 List<_RegionItem> _readRegions(dynamic value) {
-  if (value is! List) return const [];
-  final items = <_RegionItem>[];
-  final seen = <String>{};
-  for (final entry in value) {
+  if (value is! List) return const <_RegionItem>[];
+  return value.map((entry) {
     final map = _asMap(entry);
-    final countryCode = _string(map['countryCode']).toUpperCase();
-    final countryLabel = _string(map['countryLabel']);
-    final regionType = _string(map['regionType']);
-    final regionCode = _string(map['regionCode']);
-    final regionLabel = _string(map['regionLabel']);
-    if (countryCode.isEmpty || countryLabel.isEmpty || regionType.isEmpty || regionCode.isEmpty || regionLabel.isEmpty) {
-      continue;
-    }
-    final key = '$countryCode::$regionCode';
-    if (seen.contains(key)) continue;
-    seen.add(key);
-    items.add(_RegionItem(
-      countryCode: countryCode,
-      countryLabel: countryLabel,
-      regionType: regionType,
-      regionCode: regionCode,
-      regionLabel: regionLabel,
-    ));
-  }
-  return items;
+    return _RegionItem(
+      countryCode: _string(map['countryCode']).toUpperCase(),
+      countryLabel: _string(map['countryLabel']),
+      regionType: _string(map['regionType'], fallback: 'region'),
+      regionCode: _string(map['regionCode']).toUpperCase(),
+      regionLabel: _string(map['regionLabel']),
+    );
+  }).where((item) => item.countryCode.isNotEmpty && item.regionCode.isNotEmpty && item.regionLabel.isNotEmpty).toList();
 }
 
 List<_MetroItem> _readMetros(dynamic value) {
-  if (value is! List) return const [];
-  final items = <_MetroItem>[];
-  final seen = <String>{};
-  for (final entry in value) {
+  if (value is! List) return const <_MetroItem>[];
+  return value.map((entry) {
     final map = _asMap(entry);
-    final countryCode = _string(map['countryCode']).toUpperCase();
-    final regionCode = _string(map['regionCode']);
-    final label = _string(map['label']);
-    if (countryCode.isEmpty || regionCode.isEmpty || label.isEmpty) continue;
-    final key = '$countryCode::$regionCode::${label.toLowerCase()}';
-    if (seen.contains(key)) continue;
-    seen.add(key);
-    items.add(_MetroItem(countryCode: countryCode, regionCode: regionCode, label: label));
-  }
-  return items;
-}
-
-List<String> _readStringList(dynamic value) {
-  if (value is! List) return const [];
-  final items = <String>[];
-  final seen = <String>{};
-  for (final entry in value) {
-    final text = _string(entry);
-    if (text.isEmpty) continue;
-    final key = text.toLowerCase();
-    if (seen.contains(key)) continue;
-    seen.add(key);
-    items.add(text);
-  }
-  return items;
+    return _MetroItem(
+      countryCode: _string(map['countryCode']).toUpperCase(),
+      regionCode: _string(map['regionCode']).toUpperCase(),
+      label: _string(map['label']),
+    );
+  }).where((item) => item.countryCode.isNotEmpty && item.regionCode.isNotEmpty && item.label.isNotEmpty).toList();
 }
