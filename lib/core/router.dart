@@ -10,6 +10,7 @@ import '../screens/client_subscribe_screen.dart';
 import '../screens/client_support_screen.dart';
 import '../screens/client_workspace_screen.dart';
 import '../screens/inquiry_detail_screen.dart';
+import '../screens/leads_screen.dart';
 import '../screens/meetings_screen.dart';
 import '../screens/operator_workspace_screen.dart';
 import '../screens/public/contact_screen.dart';
@@ -27,7 +28,8 @@ final _appShellNavigatorKey = GlobalKey<NavigatorState>();
 
 const _clientCoreRoutes = <String>{
   '/client/workspace',
-  '/client/outreach',
+  '/client/campaigns',
+  '/client/leads',
   '/client/meetings',
   '/client/billing',
   '/client/account',
@@ -237,8 +239,11 @@ final router = GoRouter(
         ),
         GoRoute(
           path: '/client/outreach',
-          builder: (context, state) =>
-              const ClientWorkspaceScreen(section: ClientSection.outreach),
+          redirect: (context, state) => '/client/leads',
+        ),
+        GoRoute(
+          path: '/client/leads',
+          builder: (context, state) => const LeadsScreen(),
         ),
         GoRoute(
           path: '/client/campaigns',
