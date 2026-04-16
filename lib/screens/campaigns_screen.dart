@@ -115,6 +115,20 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
+  String get _campaignStatusLabel {
+    switch (_campaignState) {
+      case 'ACTIVATING':
+        return 'Activation in progress';
+      case 'ACTIVE':
+        return 'Campaign active';
+      case 'ERROR':
+        return 'Needs attention';
+      case 'NEEDS_REBUILD':
+        return 'Needs rebuild';
+      default:
+        return 'Ready for activation';
+    }
+  }
 
   String get _campaignCardTitle {
     switch (_campaignState) {
@@ -196,7 +210,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       final campaignJson = results[0] as Map<String, dynamic>;
       final subscriptionJson = results[1] as Map<String, dynamic>?;
-      final profile = _asMap(campaignJson['campaignProfile']);
+      final profile = _resolveCampaignProfile(campaignJson);
 
       _campaignLane = _string(profile['lane'], fallback: 'opportunity');
       _campaignMode = _string(profile['mode'], fallback: 'focused');
@@ -239,7 +253,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       });
     }
   }
-
 
   Map<String, dynamic> _buildProfilePayload() {
     return <String, dynamic>{
@@ -294,6 +307,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Targeting saved')),
       );
+      await _load();
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -352,7 +366,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       final result = await _campaignRepository.startCampaign();
       if (!mounted) return;
 
-      final status = _string(result['status']);
+      final status = _string(result['status']).toLowerCase();
       final message = _string(result['message']);
 
       if (status == 'upgrade_required') {
@@ -362,9 +376,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         await _showPlanDialog(
           _PlanIssue(
             title: 'Expand your plan',
-            message: message.isEmpty
-                ? 'Your current plan does not cover this targeting.'
-                : message,
+            message: message.isEmpty ? 'Your current plan does not cover this targeting.' : message,
           ),
         );
         return;
@@ -372,17 +384,17 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       setState(() {
         _starting = false;
-        _campaignState = _normalizeCampaignState(status, fallback: 'ACTIVATING');
+        _campaignState = _resolveCampaignState(result, _resolveCampaignProfile(result));
         _activationMessage = message.isEmpty
-            ? (_campaignState == 'ACTIVE'
-                ? 'Your campaign is active. We are finding businesses and preparing outreach now.'
-                : 'Campaign activation has started. We are preparing leads and outreach now.')
+            ? _fallbackActivationMessageForState(_campaignState)
             : message;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_activationMessage!)),
       );
+
+      await _load();
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -405,8 +417,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       _countries.add(item);
       _activeCountryCode = item.code;
       _activeRegionKey = null;
-      _countryController.clear();
     });
+    _countryController.clear();
   }
 
   void _addRegion() {
@@ -436,8 +448,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     setState(() {
       _regions.add(region);
       _activeRegionKey = region.key;
-      _regionController.clear();
     });
+    _regionController.clear();
   }
 
   void _addCity() {
@@ -475,8 +487,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
     setState(() {
       _metros.add(city);
-      _cityController.clear();
     });
+    _cityController.clear();
   }
 
   void _addIndustry() {
@@ -490,8 +502,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
     setState(() {
       _industries.add(item);
-      _industryController.clear();
     });
+    _industryController.clear();
   }
 
   void _removeCountry(_NamedItem item) {
@@ -504,6 +516,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         final nextRegions = _regionsForActiveCountry;
         _activeRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
       }
+      if (_campaignState == 'ACTIVE' || _campaignState == 'ACTIVATING') {
+        _campaignState = 'NEEDS_REBUILD';
+      }
     });
   }
 
@@ -514,6 +529,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       final nextRegions = _regionsForActiveCountry;
       if (_activeRegionKey == item.key) {
         _activeRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
+      }
+      if (_campaignState == 'ACTIVE' || _campaignState == 'ACTIVATING') {
+        _campaignState = 'NEEDS_REBUILD';
       }
     });
   }
@@ -526,12 +544,18 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
             entry.regionCode == item.regionCode &&
             entry.label == item.label,
       );
+      if (_campaignState == 'ACTIVE' || _campaignState == 'ACTIVATING') {
+        _campaignState = 'NEEDS_REBUILD';
+      }
     });
   }
 
   void _removeIndustry(_NamedItem item) {
     setState(() {
       _industries.removeWhere((entry) => entry.code == item.code);
+      if (_campaignState == 'ACTIVE' || _campaignState == 'ACTIVATING') {
+        _campaignState = 'NEEDS_REBUILD';
+      }
     });
   }
 
@@ -574,11 +598,125 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              _HeroCard(
-                planLabel: _subscriptionPlanLabel,
-                summary: _scopeSummary,
-                coverageMessage: _coverageMessage,
-                laneLabel: _humanize(_campaignLane),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: theme.colorScheme.outlineVariant),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Campaign targeting',
+                      style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'This is the one place for targeting, geography, and activation control.',
+                      style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: <Widget>[
+                        _StatusChip(label: 'State: $_campaignStatusLabel'),
+                        _StatusChip(label: 'Plan: $_campaignLane · $_subscriptionTier'),
+                        _StatusChip(label: 'Billing: ACTIVE'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              _SectionCard(
+                title: 'Who should we reach?',
+                subtitle: 'Use plain language. The system will work from this saved targeting.',
+                child: Text(
+                  _notesController.text.trim().isEmpty
+                      ? 'No additional guidance saved yet.'
+                      : _notesController.text.trim(),
+                  style: theme.textTheme.headlineSmall?.copyWith(height: 1.4),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      _campaignCardTitle,
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _campaignCardSubtitle,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_error != null) ...<Widget>[
+                      Text(
+                        _error!,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_activationMessage != null) ...<Widget>[
+                      Text(
+                        _activationMessage!,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: (_starting || _saving || _campaignPrimaryAction == _CampaignPrimaryAction.waiting)
+                            ? null
+                            : (_campaignPrimaryAction == _CampaignPrimaryAction.viewLeads
+                                ? () => context.go('/client/leads')
+                                : _startCampaign),
+                        icon: (_starting || _saving)
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(_campaignPrimaryActionIcon),
+                        label: Text(
+                          _starting ? 'Starting your campaign...' : _campaignPrimaryActionLabel,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: <Widget>[
+                        OutlinedButton.icon(
+                          onPressed: (_saving || _starting) ? null : _save,
+                          icon: const Icon(Icons.check_circle_outline),
+                          label: Text(_saving ? 'Saving...' : 'Save for later'),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => context.go('/client/workspace'),
+                          icon: const Icon(Icons.arrow_back),
+                          label: const Text('Back to workspace'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
               _SectionCard(
@@ -690,100 +828,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   controller: _notesController,
                   maxLines: 5,
                   decoration: const InputDecoration(
-                    hintText: 'Examples: focus on locally owned businesses, avoid franchises, prioritize companies with a clear booking need.',
+                    hintText:
+                        'Examples: focus on locally owned businesses, avoid franchises, prioritize companies with a clear booking need.',
                     border: OutlineInputBorder(),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      _campaignCardTitle,
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _campaignCardSubtitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_error != null) ...<Widget>[
-                      Text(
-                        _error!,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    if (_activationMessage != null) ...<Widget>[
-                      Text(
-                        _activationMessage!,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: (_starting || _saving || _campaignState == 'ACTIVATING')
-                            ? null
-                            : (_campaignPrimaryAction == _CampaignPrimaryAction.viewLeads
-                                ? () => context.go('/client/leads')
-                                : _startCampaign),
-                        icon: (_starting || _saving)
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Icon(_campaignPrimaryActionIcon),
-                        label: Text(
-                          _starting
-                              ? 'Starting your campaign...'
-                              : _saving
-                                  ? 'Saving...'
-                                  : _campaignPrimaryActionLabel,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: <Widget>[
-                        OutlinedButton.icon(
-                          onPressed: (_saving || _starting) ? null : _save,
-                          icon: const Icon(Icons.check_circle_outline),
-                          label: Text(_saving ? 'Saving...' : 'Save for later'),
-                        ),
-                        TextButton.icon(
-                          onPressed: () => context.go('/client/workspace'),
-                          icon: const Icon(Icons.arrow_back),
-                          label: const Text('Back to workspace'),
-                        ),
-                      ],
-                    ),
-                    if (_campaignState == 'ACTIVE') ...<Widget>[
-                      const SizedBox(height: 16),
-                      Text(
-                        'Finding businesses\n'
-                        'Identifying decision-makers\n'
-                        'Preparing outreach',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant
-                        ),
-                      ),
-                    ],
-                  ],
                 ),
               ),
             ],
@@ -920,6 +968,29 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
 class _AddBar extends StatelessWidget {
   const _AddBar({
     required this.controller,
@@ -1047,8 +1118,6 @@ class _PlanIssue {
   final String message;
 }
 
-enum _CampaignPrimaryAction { start, waiting, viewLeads }
-
 class _NamedItem {
   const _NamedItem({required this.code, required this.label});
 
@@ -1086,11 +1155,31 @@ class _MetroItem {
   final String label;
 }
 
+enum _CampaignPrimaryAction {
+  start,
+  waiting,
+  viewLeads,
+}
+
 Map<String, dynamic> _asMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;
   if (value is Map) {
     return value.map((key, dynamic entry) => MapEntry(key.toString(), entry));
   }
+  return <String, dynamic>{};
+}
+
+Map<String, dynamic> _resolveCampaignProfile(Map<String, dynamic> payload) {
+  final direct = _asMap(payload['campaignProfile']);
+  if (direct.isNotEmpty) return direct;
+
+  final campaign = _asMap(payload['campaign']);
+  final nestedProfile = _asMap(campaign['profile']);
+  if (nestedProfile.isNotEmpty) return nestedProfile;
+
+  final profile = _asMap(payload['profile']);
+  if (profile.isNotEmpty) return profile;
+
   return <String, dynamic>{};
 }
 
@@ -1149,86 +1238,85 @@ String _resolveSubscriptionTier(Map<String, dynamic>? subscription) {
   return _string(subscription['tier']).toLowerCase();
 }
 
+String _resolveCampaignState(Map<String, dynamic> payload, Map<String, dynamic> profile) {
+  final metadata = _resolveCampaignMetadata(payload, profile);
+  final activation = _asMap(metadata['activation']);
+  final bootstrapStatus = _string(activation['bootstrapStatus']).toLowerCase();
+  final explicitStatus = _string(payload['status']).toLowerCase();
+  final generationState = _string(payload['generationState']).toUpperCase();
+  final profileGenerationState = _string(profile['generationState']).toUpperCase();
+  final effectiveGenerationState = generationState.isNotEmpty ? generationState : profileGenerationState;
 
-String _resolveCampaignState(Map<String, dynamic> campaignJson, Map<String, dynamic> profile) {
-  final nestedCampaign = _asMap(campaignJson['campaign']);
-  final nestedActivation = _asMap(campaignJson['activation']);
-  final metadata = _asMap(campaignJson['metadata']);
-  final profileMetadata = _asMap(profile['metadata']);
-
-  final candidates = <String>[
-    _string(campaignJson['generationState']),
-    _string(campaignJson['campaignState']),
-    _string(campaignJson['activationState']),
-    _string(nestedCampaign['generationState']),
-    _string(nestedCampaign['campaignState']),
-    _string(nestedActivation['generationState']),
-    _string(nestedActivation['state']),
-    _string(metadata['generationState']),
-    _string(profile['generationState']),
-    _string(profileMetadata['generationState']),
-  ];
-
-  for (final candidate in candidates) {
-    final normalized = _normalizeCampaignState(candidate);
-    if (normalized.isNotEmpty) return normalized;
+  if (bootstrapStatus == 'activation_requested' || bootstrapStatus == 'activation_in_progress' || bootstrapStatus == 'activation_retry_scheduled') {
+    return 'ACTIVATING';
   }
-
-  final statusCandidates = <String>[
-    _string(campaignJson['status']),
-    _string(campaignJson['campaignStatus']),
-    _string(nestedCampaign['status']),
-    _string(profile['status']),
-  ];
-
-  for (final candidate in statusCandidates) {
-    final normalized = candidate.trim().toUpperCase();
-    if (normalized == 'ACTIVE') return 'ACTIVE';
-    if (normalized == 'PAUSED') return 'PAUSED';
+  if (bootstrapStatus == 'activation_completed') {
+    return 'ACTIVE';
   }
-
+  if (bootstrapStatus == 'activation_failed') {
+    return 'ERROR';
+  }
+  if (explicitStatus == 'active' || effectiveGenerationState == 'ACTIVE') {
+    return 'ACTIVE';
+  }
   return 'READY';
 }
 
-String? _resolveActivationMessage(Map<String, dynamic> campaignJson, Map<String, dynamic> profile) {
-  final candidates = <String>[
-    _string(campaignJson['message']),
-    _string(campaignJson['activationMessage']),
-    _string(_asMap(campaignJson['activation'])['message']),
-    _string(_asMap(campaignJson['metadata'])['activationMessage']),
-    _string(_asMap(profile['metadata'])['activationMessage']),
-  ].where((entry) => entry.isNotEmpty).toList();
+String? _resolveActivationMessage(Map<String, dynamic> payload, Map<String, dynamic> profile) {
+  final explicit = _string(payload['message']);
+  if (explicit.isNotEmpty) return explicit;
 
-  if (candidates.isEmpty) return null;
-  return candidates.first;
+  final metadata = _resolveCampaignMetadata(payload, profile);
+  final activation = _asMap(metadata['activation']);
+  final bootstrapStatus = _string(activation['bootstrapStatus']).toLowerCase();
+  final lastError = _string(activation['lastError']);
+
+  switch (bootstrapStatus) {
+    case 'activation_requested':
+      return 'Your campaign has been accepted. We are preparing it now.';
+    case 'activation_in_progress':
+      return 'We are finding businesses and preparing outreach now.';
+    case 'activation_retry_scheduled':
+      return 'Activation hit a temporary issue. The system will try again.';
+    case 'activation_completed':
+      return 'Your campaign is active. Leads and outreach are moving.';
+    case 'activation_failed':
+      return lastError.isEmpty ? 'Activation did not finish cleanly. Please try again.' : lastError;
+    default:
+      return null;
+  }
 }
 
-String _normalizeCampaignState(String value, {String fallback = ''}) {
-  final normalized = value.trim().toUpperCase();
-  switch (normalized) {
-    case 'INIT':
-    case 'TARGETING_READY':
-    case 'READY_FOR_ACTIVATION':
-    case 'READY':
-      return 'READY';
+String _fallbackActivationMessageForState(String state) {
+  switch (state) {
     case 'ACTIVATING':
-    case 'QUEUED':
-    case 'STARTING':
-      return 'ACTIVATING';
+      return 'Your campaign has started. We are finding businesses and preparing outreach now.';
     case 'ACTIVE':
-    case 'RUNNING':
-      return 'ACTIVE';
-    case 'PAUSED':
-      return 'PAUSED';
-    case 'NEEDS_REBUILD':
-    case 'REBUILD_REQUIRED':
-      return 'NEEDS_REBUILD';
+      return 'Your campaign is active. Leads and outreach are moving.';
     case 'ERROR':
-    case 'FAILED':
-      return 'ERROR';
+      return 'Activation did not finish cleanly. Please try again.';
+    case 'NEEDS_REBUILD':
+      return 'Your saved targeting changed. Rebuild the campaign to apply it.';
     default:
-      return fallback;
+      return 'Your campaign request has been received.';
   }
+}
+
+Map<String, dynamic> _resolveCampaignMetadata(Map<String, dynamic> payload, Map<String, dynamic> profile) {
+  final campaign = _asMap(payload['campaign']);
+  final campaignMetadata = _asMap(campaign['metadataJson']);
+  if (campaignMetadata.isNotEmpty) return campaignMetadata;
+
+  final directMetadata = _asMap(payload['metadataJson']);
+  if (directMetadata.isNotEmpty) return directMetadata;
+
+  final profileMetadata = _asMap(profile['metadataJson']);
+  if (profileMetadata.isNotEmpty) return profileMetadata;
+
+  final profileMetadataAlt = _asMap(profile['metadata']);
+  if (profileMetadataAlt.isNotEmpty) return profileMetadataAlt;
+
+  return <String, dynamic>{};
 }
 
 List<_NamedItem> _readNamedItems(dynamic value) {
