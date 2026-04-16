@@ -24,7 +24,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   bool _loading = true;
   bool _saving = false;
   bool _starting = false;
-  bool _campaignActive = false;
+  String _campaignState = 'READY';
   String? _activationMessage;
   String? _error;
 
@@ -115,6 +115,73 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
+
+  String get _campaignCardTitle {
+    switch (_campaignState) {
+      case 'ACTIVATING':
+        return 'Campaign activation in progress';
+      case 'ACTIVE':
+        return 'Campaign is running';
+      case 'ERROR':
+        return 'Campaign needs attention';
+      case 'NEEDS_REBUILD':
+        return 'Campaign needs rebuild';
+      default:
+        return 'Start your campaign';
+    }
+  }
+
+  String get _campaignCardSubtitle {
+    switch (_campaignState) {
+      case 'ACTIVATING':
+        return 'We are preparing leads and outreach from your saved targeting.';
+      case 'ACTIVE':
+        return 'We are actively finding businesses and preparing outreach from your saved targeting.';
+      case 'ERROR':
+        return 'Activation did not finish cleanly. Review the campaign and try again.';
+      case 'NEEDS_REBUILD':
+        return 'Your targeting changed after activation. Rebuild the campaign to apply the latest scope.';
+      default:
+        return 'We will begin finding businesses and preparing outreach based on your targeting.';
+    }
+  }
+
+  _CampaignPrimaryAction get _campaignPrimaryAction {
+    switch (_campaignState) {
+      case 'ACTIVE':
+        return _CampaignPrimaryAction.viewLeads;
+      case 'ACTIVATING':
+        return _CampaignPrimaryAction.waiting;
+      case 'ERROR':
+      case 'NEEDS_REBUILD':
+      case 'READY':
+      default:
+        return _CampaignPrimaryAction.start;
+    }
+  }
+
+  String get _campaignPrimaryActionLabel {
+    switch (_campaignPrimaryAction) {
+      case _CampaignPrimaryAction.viewLeads:
+        return 'View leads';
+      case _CampaignPrimaryAction.waiting:
+        return 'Activation in progress';
+      case _CampaignPrimaryAction.start:
+        return _campaignState == 'NEEDS_REBUILD' ? 'Rebuild campaign' : 'Start campaign';
+    }
+  }
+
+  IconData get _campaignPrimaryActionIcon {
+    switch (_campaignPrimaryAction) {
+      case _CampaignPrimaryAction.viewLeads:
+        return Icons.people_outline;
+      case _CampaignPrimaryAction.waiting:
+        return Icons.hourglass_top_outlined;
+      case _CampaignPrimaryAction.start:
+        return _campaignState == 'NEEDS_REBUILD' ? Icons.autorenew_outlined : Icons.rocket_launch_outlined;
+    }
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -135,6 +202,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       _campaignMode = _string(profile['mode'], fallback: 'focused');
       _subscriptionPlanLabel = _resolveSubscriptionLabel(subscriptionJson);
       _subscriptionTier = _resolveSubscriptionTier(subscriptionJson);
+      _campaignState = _resolveCampaignState(campaignJson, profile);
+      _activationMessage = _resolveActivationMessage(campaignJson, profile);
 
       _countries
         ..clear()
@@ -303,9 +372,11 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       setState(() {
         _starting = false;
-        _campaignActive = status == 'active';
+        _campaignState = _normalizeCampaignState(status, fallback: 'ACTIVATING');
         _activationMessage = message.isEmpty
-            ? 'Your campaign has started. We are finding businesses and preparing outreach now.'
+            ? (_campaignState == 'ACTIVE'
+                ? 'Your campaign is active. We are finding businesses and preparing outreach now.'
+                : 'Campaign activation has started. We are preparing leads and outreach now.')
             : message;
       });
 
@@ -637,14 +708,12 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      _campaignActive ? 'Campaign is running' : 'Start your campaign',
+                      _campaignCardTitle,
                       style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _campaignActive
-                          ? 'We are actively finding businesses and preparing outreach from your saved targeting.'
-                          : 'We will begin finding businesses and preparing outreach based on your targeting.',
+                      _campaignCardSubtitle,
                       style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 16),
@@ -665,22 +734,24 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: (_starting || _saving)
+                        onPressed: (_starting || _saving || _campaignState == 'ACTIVATING')
                             ? null
-                            : (_campaignActive ? () => context.go('/client/leads') : _startCampaign),
+                            : (_campaignPrimaryAction == _CampaignPrimaryAction.viewLeads
+                                ? () => context.go('/client/leads')
+                                : _startCampaign),
                         icon: (_starting || _saving)
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : Icon(_campaignActive ? Icons.people_outline : Icons.rocket_launch_outlined),
+                            : Icon(_campaignPrimaryActionIcon),
                         label: Text(
                           _starting
                               ? 'Starting your campaign...'
                               : _saving
                                   ? 'Saving...'
-                                  : (_campaignActive ? 'View leads' : 'Start finding customers'),
+                                  : _campaignPrimaryActionLabel,
                         ),
                       ),
                     ),
@@ -701,7 +772,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         ),
                       ],
                     ),
-                    if (_campaignActive) ...<Widget>[
+                    if (_campaignState == 'ACTIVE') ...<Widget>[
                       const SizedBox(height: 16),
                       Text(
                         'Finding businesses\n'
@@ -976,6 +1047,8 @@ class _PlanIssue {
   final String message;
 }
 
+enum _CampaignPrimaryAction { start, waiting, viewLeads }
+
 class _NamedItem {
   const _NamedItem({required this.code, required this.label});
 
@@ -1074,6 +1147,88 @@ String _resolveSubscriptionLabel(Map<String, dynamic>? subscription) {
 String _resolveSubscriptionTier(Map<String, dynamic>? subscription) {
   if (subscription == null) return '';
   return _string(subscription['tier']).toLowerCase();
+}
+
+
+String _resolveCampaignState(Map<String, dynamic> campaignJson, Map<String, dynamic> profile) {
+  final nestedCampaign = _asMap(campaignJson['campaign']);
+  final nestedActivation = _asMap(campaignJson['activation']);
+  final metadata = _asMap(campaignJson['metadata']);
+  final profileMetadata = _asMap(profile['metadata']);
+
+  final candidates = <String>[
+    _string(campaignJson['generationState']),
+    _string(campaignJson['campaignState']),
+    _string(campaignJson['activationState']),
+    _string(nestedCampaign['generationState']),
+    _string(nestedCampaign['campaignState']),
+    _string(nestedActivation['generationState']),
+    _string(nestedActivation['state']),
+    _string(metadata['generationState']),
+    _string(profile['generationState']),
+    _string(profileMetadata['generationState']),
+  ];
+
+  for (final candidate in candidates) {
+    final normalized = _normalizeCampaignState(candidate);
+    if (normalized.isNotEmpty) return normalized;
+  }
+
+  final statusCandidates = <String>[
+    _string(campaignJson['status']),
+    _string(campaignJson['campaignStatus']),
+    _string(nestedCampaign['status']),
+    _string(profile['status']),
+  ];
+
+  for (final candidate in statusCandidates) {
+    final normalized = candidate.trim().toUpperCase();
+    if (normalized == 'ACTIVE') return 'ACTIVE';
+    if (normalized == 'PAUSED') return 'PAUSED';
+  }
+
+  return 'READY';
+}
+
+String? _resolveActivationMessage(Map<String, dynamic> campaignJson, Map<String, dynamic> profile) {
+  final candidates = <String>[
+    _string(campaignJson['message']),
+    _string(campaignJson['activationMessage']),
+    _string(_asMap(campaignJson['activation'])['message']),
+    _string(_asMap(campaignJson['metadata'])['activationMessage']),
+    _string(_asMap(profile['metadata'])['activationMessage']),
+  ].where((entry) => entry.isNotEmpty).toList();
+
+  if (candidates.isEmpty) return null;
+  return candidates.first;
+}
+
+String _normalizeCampaignState(String value, {String fallback = ''}) {
+  final normalized = value.trim().toUpperCase();
+  switch (normalized) {
+    case 'INIT':
+    case 'TARGETING_READY':
+    case 'READY_FOR_ACTIVATION':
+    case 'READY':
+      return 'READY';
+    case 'ACTIVATING':
+    case 'QUEUED':
+    case 'STARTING':
+      return 'ACTIVATING';
+    case 'ACTIVE':
+    case 'RUNNING':
+      return 'ACTIVE';
+    case 'PAUSED':
+      return 'PAUSED';
+    case 'NEEDS_REBUILD':
+    case 'REBUILD_REQUIRED':
+      return 'NEEDS_REBUILD';
+    case 'ERROR':
+    case 'FAILED':
+      return 'ERROR';
+    default:
+      return fallback;
+  }
 }
 
 List<_NamedItem> _readNamedItems(dynamic value) {
