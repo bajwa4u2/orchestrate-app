@@ -704,8 +704,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                     if (_campaignActive) ...<Widget>[
                       const SizedBox(height: 16),
                       Text(
-                        'Finding businesses\n
-                        'Identifying decision-makers\n
+                        'Finding businesses\n'
+                        'Identifying decision-makers\n'
                         'Preparing outreach',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant
