@@ -23,6 +23,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   bool _loading = true;
   bool _saving = false;
+  bool _starting = false;
+  bool _campaignActive = false;
+  String? _activationMessage;
   String? _error;
 
   String _subscriptionPlanLabel = 'Current plan';
@@ -168,12 +171,36 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
+
+  Map<String, dynamic> _buildProfilePayload() {
+    return <String, dynamic>{
+      'countries': _countries.map((item) => <String, String>{'code': item.code, 'label': item.label}).toList(),
+      'regions': _regions
+          .map(
+            (item) => <String, String>{
+              'countryCode': item.countryCode,
+              'countryLabel': item.countryLabel,
+              'regionType': item.regionType,
+              'regionCode': item.regionCode,
+              'regionLabel': item.regionLabel,
+            },
+          )
+          .toList(),
+      'metros': _metros
+          .map(
+            (item) => <String, String>{
+              'countryCode': item.countryCode,
+              'regionCode': item.regionCode,
+              'label': item.label,
+            },
+          )
+          .toList(),
+      'industries': _industries.map((item) => <String, String>{'code': item.code, 'label': item.label}).toList(),
+      'notes': _notesController.text.trim(),
+    };
+  }
+
   Future<void> _save() async {
-    final planIssue = _planIssue();
-    if (planIssue != null) {
-      await _showPlanDialog(planIssue);
-      return;
-    }
     if (_countries.isEmpty) {
       _showNotice('Add at least one market before saving.');
       return;
@@ -190,31 +217,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
     try {
       await _campaignRepository.updateCampaignProfile(
-        profile: <String, dynamic>{
-          'countries': _countries.map((item) => <String, String>{'code': item.code, 'label': item.label}).toList(),
-          'regions': _regions
-              .map(
-                (item) => <String, String>{
-                  'countryCode': item.countryCode,
-                  'countryLabel': item.countryLabel,
-                  'regionType': item.regionType,
-                  'regionCode': item.regionCode,
-                  'regionLabel': item.regionLabel,
-                },
-              )
-              .toList(),
-          'metros': _metros
-              .map(
-                (item) => <String, String>{
-                  'countryCode': item.countryCode,
-                  'regionCode': item.regionCode,
-                  'label': item.label,
-                },
-              )
-              .toList(),
-          'industries': _industries.map((item) => <String, String>{'code': item.code, 'label': item.label}).toList(),
-          'notes': _notesController.text.trim(),
-        },
+        profile: _buildProfilePayload(),
       );
 
       if (!mounted) return;
@@ -229,22 +232,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         _error = 'Targeting could not be saved right now.';
       });
     }
-  }
-
-  _PlanIssue? _planIssue() {
-    if (_subscriptionTier == 'focused' && _countries.length > 1) {
-      return const _PlanIssue(
-        title: 'Expand your coverage',
-        message: 'Your current plan focuses on one country at a time. Upgrade to keep multiple countries in one campaign.',
-      );
-    }
-    if (_subscriptionTier != 'precision' && _metros.isNotEmpty) {
-      return const _PlanIssue(
-        title: 'Expand your precision',
-        message: 'City-level targeting is available on Precision. Upgrade to save campaigns narrowed by city or metro.',
-      );
-    }
-    return null;
   }
 
   Future<void> _showPlanDialog(_PlanIssue issue) async {
@@ -273,6 +260,65 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   void _showNotice(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _startCampaign() async {
+    if (_countries.isEmpty) {
+      _showNotice('Add at least one market before starting.');
+      return;
+    }
+    if (_industries.isEmpty) {
+      _showNotice('Add at least one business type before starting.');
+      return;
+    }
+
+    setState(() {
+      _starting = true;
+      _error = null;
+      _activationMessage = null;
+    });
+
+    try {
+      await _campaignRepository.updateCampaignProfile(profile: _buildProfilePayload());
+      final result = await _campaignRepository.startCampaign();
+      if (!mounted) return;
+
+      final status = _string(result['status']);
+      final message = _string(result['message']);
+
+      if (status == 'upgrade_required') {
+        setState(() {
+          _starting = false;
+        });
+        await _showPlanDialog(
+          _PlanIssue(
+            title: 'Expand your plan',
+            message: message.isEmpty
+                ? 'Your current plan does not cover this targeting.'
+                : message,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _starting = false;
+        _campaignActive = status == 'active';
+        _activationMessage = message.isEmpty
+            ? 'Your campaign has started. We are finding businesses and preparing outreach now.'
+            : message;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_activationMessage!)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _starting = false;
+        _error = 'Your campaign could not be started right now.';
+      });
+    }
   }
 
   void _addCountry() {
@@ -591,12 +637,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Ready when you are',
+                      _campaignActive ? 'Campaign is running' : 'Start your campaign',
                       style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Save your targeting here. When your campaign runs, this is the market profile your backend will use.',
+                      _campaignActive
+                          ? 'We are actively finding businesses and preparing outreach from your saved targeting.'
+                          : 'We will begin finding businesses and preparing outreach based on your targeting.',
                       style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 16),
@@ -607,28 +655,61 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
+                    if (_activationMessage != null) ...<Widget>[
+                      Text(
+                        _activationMessage!,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: (_starting || _saving)
+                            ? null
+                            : (_campaignActive ? () => context.go('/client/leads') : _startCampaign),
+                        icon: (_starting || _saving)
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(_campaignActive ? Icons.people_outline : Icons.rocket_launch_outlined),
+                        label: Text(
+                          _starting
+                              ? 'Starting your campaign...'
+                              : _saving
+                                  ? 'Saving...'
+                                  : (_campaignActive ? 'View leads' : 'Start finding customers'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,
                       children: <Widget>[
-                        FilledButton.icon(
-                          onPressed: _saving ? null : _save,
-                          icon: _saving
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.check_circle_outline),
-                          label: Text(_saving ? 'Saving...' : 'Save targeting'),
-                        ),
                         OutlinedButton.icon(
+                          onPressed: (_saving || _starting) ? null : _save,
+                          icon: const Icon(Icons.check_circle_outline),
+                          label: Text(_saving ? 'Saving...' : 'Save for later'),
+                        ),
+                        TextButton.icon(
                           onPressed: () => context.go('/client/workspace'),
-                          icon: const Icon(Icons.arrow_forward),
+                          icon: const Icon(Icons.arrow_back),
                           label: const Text('Back to workspace'),
                         ),
                       ],
                     ),
+                    if (_campaignActive) ...<Widget>[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Finding businesses
+Identifying decision-makers
+Preparing outreach',
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ],
                   ],
                 ),
               ),
