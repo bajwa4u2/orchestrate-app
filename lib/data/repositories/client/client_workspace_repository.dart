@@ -12,6 +12,14 @@ class ClientWorkspaceRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<List<dynamic>> fetchLeads() async {
+    final json = await _apiClient.getJson(
+      '/client/leads',
+      surface: ApiSurface.client,
+    );
+    return (json as List? ?? const []).cast<dynamic>();
+  }
+
   Future<List<dynamic>> fetchNotifications() async {
     final json = await _apiClient.getJson(
       '/client/notifications',
