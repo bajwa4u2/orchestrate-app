@@ -33,4 +33,13 @@ class ClientCampaignRepository {
     );
     return Map<String, dynamic>.from(json as Map);
   }
+
+  Future<Map<String, dynamic>> restartCampaign() async {
+    final json = await _apiClient.postJson(
+      '/client/campaign-profile/restart',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.client,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
 }

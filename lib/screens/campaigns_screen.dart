@@ -24,6 +24,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   bool _loading = true;
   bool _saving = false;
   bool _starting = false;
+  bool _restarting = false;
   String _campaignState = 'READY';
   String? _activationMessage;
   String? _campaignHealth;
@@ -241,6 +242,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
+  bool get _canRestartCampaign =>
+      _campaignState == 'ACTIVE' || _campaignState == 'ERROR' || _campaignState == 'NEEDS_REBUILD';
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -376,6 +380,95 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
+
+
+  Future<bool> _confirmRestartCampaign() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Restart campaign with updated targeting?'),
+            content: const Text(
+              'Unsent outreach from the current run will be canceled. Leads already contacted will stay in your history. The system will fetch a fresh lead batch using your saved targeting.',
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Keep current run'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Restart campaign'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _restartCampaign() async {
+    if (_countries.isEmpty) {
+      _showNotice('Add at least one market before restarting.');
+      return;
+    }
+    if (_industries.isEmpty) {
+      _showNotice('Add at least one business type before restarting.');
+      return;
+    }
+
+    final confirmed = await _confirmRestartCampaign();
+    if (!confirmed || !mounted) return;
+
+    setState(() {
+      _restarting = true;
+      _error = null;
+      _activationMessage = null;
+    });
+
+    try {
+      await _campaignRepository.updateCampaignProfile(profile: _buildProfilePayload());
+      final result = await _campaignRepository.restartCampaign();
+      if (!mounted) return;
+
+      final status = _string(result['status']).toLowerCase();
+      final message = _string(result['message']);
+
+      if (status == 'upgrade_required') {
+        setState(() {
+          _restarting = false;
+        });
+        await _showPlanDialog(
+          _PlanIssue(
+            title: 'Expand your plan',
+            message: message.isEmpty ? 'Your current plan does not cover this targeting.' : message,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _restarting = false;
+        _pendingActivationPayload = result;
+        _campaignState = _resolveCampaignState(result, _resolveCampaignProfile(result));
+        _activationMessage = message.isEmpty
+            ? 'Campaign restart has started. We are applying your updated targeting now.'
+            : message;
+        _campaignHealth = _string(result['health']).isEmpty ? null : _string(result['health']);
+        _campaignMetrics = _asMap(result['metrics']);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_activationMessage!)),
+      );
+
+      _load();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _restarting = false;
+        _error = 'Your campaign could not be restarted right now.';
+      });
+    }
+  }
   Future<void> _showPlanDialog(_PlanIssue issue) async {
     await showDialog<void>(
       context: context,
@@ -774,12 +867,12 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: (_starting || _saving || _campaignPrimaryAction == _CampaignPrimaryAction.waiting)
+                        onPressed: (_starting || _restarting || _saving || _campaignPrimaryAction == _CampaignPrimaryAction.waiting)
                             ? null
                             : (_campaignPrimaryAction == _CampaignPrimaryAction.viewLeads
                                 ? () => context.go('/client/leads')
                                 : _startCampaign),
-                        icon: (_starting || _saving)
+                        icon: (_starting || _restarting || _saving)
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
@@ -787,7 +880,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                               )
                             : Icon(_campaignPrimaryActionIcon),
                         label: Text(
-                          _starting ? 'Starting your campaign...' : _campaignPrimaryActionLabel,
+                          _starting
+                              ? 'Starting your campaign...'
+                              : (_restarting ? 'Restarting your campaign...' : _campaignPrimaryActionLabel),
                         ),
                       ),
                     ),
@@ -797,12 +892,24 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       runSpacing: 12,
                       children: <Widget>[
                         OutlinedButton.icon(
-                          onPressed: (_saving || _starting) ? null : _save,
+                          onPressed: (_saving || _starting || _restarting) ? null : _save,
                           icon: const Icon(Icons.check_circle_outline),
                           label: Text(_saving ? 'Saving...' : 'Save for later'),
                         ),
+                        if (_canRestartCampaign)
+                          OutlinedButton.icon(
+                            onPressed: (_saving || _starting || _restarting) ? null : _restartCampaign,
+                            icon: _restarting
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.autorenew_outlined),
+                            label: Text(_restarting ? 'Restarting...' : 'Restart campaign'),
+                          ),
                         TextButton.icon(
-                          onPressed: () => context.go('/client/workspace'),
+                          onPressed: (_restarting || _starting) ? null : () => context.go('/client/workspace'),
                           icon: const Icon(Icons.arrow_back),
                           label: const Text('Back to workspace'),
                         ),
