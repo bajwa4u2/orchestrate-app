@@ -40,7 +40,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   String? _activeCountryCode;
   String? _activeRegionKey;
-  Map<String, dynamic>? _pendingActivationPayload;
 
   @override
   void initState() {
@@ -197,30 +196,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
-  bool _hasActivationData(Map<String, dynamic> payload, Map<String, dynamic> profile) {
-    final metadata = _resolveCampaignMetadata(payload, profile);
-    final activation = _asMap(metadata['activation']);
-    if (activation.isNotEmpty) {
-      return true;
-    }
-
-    final directBootstrap = _string(payload['bootstrapStatus']);
-    final directStatus = _string(payload['status']).toLowerCase();
-    final directJobId = _string(payload['jobId']);
-    final directAlreadyActive = payload['alreadyActive'] == true;
-
-    return directBootstrap.isNotEmpty ||
-        directJobId.isNotEmpty ||
-        directAlreadyActive ||
-        directStatus == 'active' ||
-        directStatus == 'activating';
-  }
-
-  bool _shouldPreserveInFlightState(String currentState, String nextState) {
-    const inFlightStates = <String>{'ACTIVATING', 'RETRY', 'BLOCKED', 'ACTIVE'};
-    return inFlightStates.contains(currentState) && nextState == 'READY';
-  }
-
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -237,28 +212,12 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       final subscriptionJson = results[1] as Map<String, dynamic>?;
       final profile = _resolveCampaignProfile(campaignJson);
 
-      final nextCampaignState = _resolveCampaignState(campaignJson, profile);
-      final nextActivationMessage = _resolveActivationMessage(campaignJson, profile);
-      final hasActivationData = _hasActivationData(campaignJson, profile);
-
       _campaignLane = _string(profile['lane'], fallback: 'opportunity');
       _campaignMode = _string(profile['mode'], fallback: 'focused');
       _subscriptionPlanLabel = _resolveSubscriptionLabel(subscriptionJson);
       _subscriptionTier = _resolveSubscriptionTier(subscriptionJson);
-
-      if (!hasActivationData &&
-          _pendingActivationPayload != null &&
-          _shouldPreserveInFlightState(_campaignState, nextCampaignState)) {
-        final pendingProfile = _resolveCampaignProfile(_pendingActivationPayload!);
-        _campaignState = _resolveCampaignState(_pendingActivationPayload!, pendingProfile);
-        _activationMessage = _resolveActivationMessage(_pendingActivationPayload!, pendingProfile);
-      } else {
-        _campaignState = nextCampaignState;
-        _activationMessage = nextActivationMessage;
-        if (hasActivationData) {
-          _pendingActivationPayload = campaignJson;
-        }
-      }
+      _campaignState = _resolveCampaignState(campaignJson, profile);
+      _activationMessage = _resolveActivationMessage(campaignJson, profile);
 
       _countries
         ..clear()
@@ -425,20 +384,21 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       final resolvedProfile = _resolveCampaignProfile(result);
       final resolvedState = _resolveCampaignState(result, resolvedProfile);
-      final resolvedMessage = message.isEmpty
-          ? _fallbackActivationMessageForState(resolvedState)
-          : message;
 
       setState(() {
         _starting = false;
-        _campaignState = resolvedState;
-        _activationMessage = resolvedMessage;
         _pendingActivationPayload = result;
+        _campaignState = resolvedState;
+        _activationMessage = message.isEmpty
+            ? _fallbackActivationMessageForState(_campaignState)
+            : message;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resolvedMessage)),
+        SnackBar(content: Text(_activationMessage!)),
       );
+
+      await _load();
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -673,6 +633,17 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       ],
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              _SectionCard(
+                title: 'Who should we reach?',
+                subtitle: 'Use plain language. The system will work from this saved targeting.',
+                child: Text(
+                  _notesController.text.trim().isEmpty
+                      ? 'No additional guidance saved yet.'
+                      : _notesController.text.trim(),
+                  style: theme.textTheme.headlineSmall?.copyWith(height: 1.4),
                 ),
               ),
               const SizedBox(height: 20),
@@ -1280,11 +1251,16 @@ String _resolveCampaignState(Map<String, dynamic> payload, Map<String, dynamic> 
   final profileGenerationState = _string(profile['generationState']).toUpperCase();
   final effectiveGenerationState = generationState.isNotEmpty ? generationState : profileGenerationState;
 
-  if (bootstrapStatus == 'activation_requested' || bootstrapStatus == 'activation_in_progress' || bootstrapStatus == 'activation_retry_scheduled') {
+  if (bootstrapStatus == 'activation_requested' ||
+      bootstrapStatus == 'activation_in_progress' ||
+      bootstrapStatus == 'activation_retry_scheduled') {
     return 'ACTIVATING';
   }
-  if (bootstrapStatus == 'activation_completed') {
+  if (bootstrapStatus == 'activation_completed' || bootstrapStatus == 'launch_queued') {
     return 'ACTIVE';
+  }
+  if (bootstrapStatus == 'blocked_no_sendable_leads' || bootstrapStatus == 'leads_ready_non_sendable') {
+    return 'ERROR';
   }
   if (bootstrapStatus == 'activation_failed') {
     return 'ERROR';
@@ -1313,6 +1289,16 @@ String? _resolveActivationMessage(Map<String, dynamic> payload, Map<String, dyna
       return 'Activation hit a temporary issue. The system will try again.';
     case 'activation_completed':
       return 'Your campaign is active. Leads and outreach are moving.';
+    case 'launch_queued':
+      return 'Your campaign is active and queued for continued outreach.';
+    case 'blocked_no_sendable_leads':
+      return lastError.isEmpty
+          ? 'We found candidates, but none are sendable yet. Review targeting or lead sources.'
+          : lastError;
+    case 'leads_ready_non_sendable':
+      return lastError.isEmpty
+          ? 'Leads were found, but none are sendable yet. Review targeting or lead sources.'
+          : lastError;
     case 'activation_failed':
       return lastError.isEmpty ? 'Activation did not finish cleanly. Please try again.' : lastError;
     default:
