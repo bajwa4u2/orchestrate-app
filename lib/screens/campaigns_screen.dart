@@ -26,6 +26,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   bool _starting = false;
   String _campaignState = 'READY';
   String? _activationMessage;
+  String? _campaignHealth;
+  Map<String, dynamic> _campaignMetrics = const <String, dynamic>{};
   String? _error;
   Map<String, dynamic>? _pendingActivationPayload;
 
@@ -131,6 +133,24 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
+  String get _campaignHealthLabel {
+    final value = _string(_campaignHealth).toUpperCase();
+    switch (value) {
+      case 'PAUSED':
+        return 'Paused';
+      case 'STALLED':
+        return 'Stalled';
+      case 'REFILLING':
+        return 'Refilling';
+      case 'SATURATED':
+        return 'Saturated';
+      case 'ACTIVE':
+        return 'Active';
+      default:
+        return '';
+    }
+  }
+
   String get _campaignCardTitle {
     switch (_campaignState) {
       case 'ACTIVATING':
@@ -220,6 +240,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       final nextCampaignState = _resolveCampaignState(campaignJson, profile);
       final nextActivationMessage = _resolveActivationMessage(campaignJson, profile);
+      final nextCampaignHealth = _string(campaignJson['health']);
+      final nextCampaignMetrics = _asMap(campaignJson['metrics']);
 
       if (_pendingActivationPayload != null &&
           _shouldPreserveInFlightState(_campaignState, nextCampaignState)) {
@@ -229,6 +251,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         _activationMessage = nextActivationMessage;
         _pendingActivationPayload = null;
       }
+      _campaignHealth = nextCampaignHealth.isEmpty ? null : nextCampaignHealth;
+      _campaignMetrics = nextCampaignMetrics;
 
       _countries
         ..clear()
@@ -397,6 +421,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         _starting = false;
         _pendingActivationPayload = result;
         _campaignState = _resolveCampaignState(result, _resolveCampaignProfile(result));
+        _campaignHealth = _string(result['health']).isEmpty ? null : _string(result['health']);
+        _campaignMetrics = _asMap(result['metrics']);
         _activationMessage = message.isEmpty
             ? _fallbackActivationMessageForState(_campaignState)
             : message;
@@ -651,6 +677,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       runSpacing: 12,
                       children: <Widget>[
                         _StatusChip(label: 'State: $_campaignStatusLabel'),
+                        if (_campaignHealthLabel.isNotEmpty)
+                          _StatusChip(label: 'Health: $_campaignHealthLabel'),
                         _StatusChip(label: 'Plan: $_campaignLane · $_subscriptionTier'),
                         _StatusChip(label: 'Billing: ACTIVE'),
                       ],
@@ -704,6 +732,20 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary),
                       ),
                       const SizedBox(height: 12),
+                    ],
+                    if (_campaignMetrics.isNotEmpty) ...<Widget>[
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: <Widget>[
+                          _StatusChip(label: 'Sendable: ${_metricInt(_campaignMetrics['sendable'])}'),
+                          _StatusChip(label: 'Queued: ${_metricInt(_campaignMetrics['queued'])}'),
+                          _StatusChip(label: 'Sent today: ${_metricInt(_campaignMetrics['sentToday'])}'),
+                          _StatusChip(label: 'Replies: ${_metricInt(_campaignMetrics['replies'])}'),
+                          _StatusChip(label: 'Meetings: ${_metricInt(_campaignMetrics['meetings'])}'),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                     ],
                     SizedBox(
                       width: double.infinity,
@@ -1242,6 +1284,12 @@ String _humanize(String value) {
       .where((part) => part.isNotEmpty)
       .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
       .join(' ');
+}
+
+int _metricInt(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(_string(value)) ?? 0;
 }
 
 String _resolveSubscriptionLabel(Map<String, dynamic>? subscription) {
