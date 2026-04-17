@@ -152,11 +152,23 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   }
 
   String get _campaignCardTitle {
+    final health = _string(_campaignHealth).toUpperCase();
     switch (_campaignState) {
       case 'ACTIVATING':
         return 'Campaign activation in progress';
       case 'ACTIVE':
-        return 'Campaign is running';
+        switch (health) {
+          case 'PAUSED':
+            return 'Campaign is paused';
+          case 'REFILLING':
+            return 'Refilling new leads';
+          case 'SATURATED':
+            return 'Queue is full and processing';
+          case 'STALLED':
+            return 'Campaign needs attention';
+          default:
+            return 'Campaign is running';
+        }
       case 'ERROR':
         return 'Campaign needs attention';
       case 'NEEDS_REBUILD':
@@ -167,11 +179,23 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   }
 
   String get _campaignCardSubtitle {
+    final health = _string(_campaignHealth).toUpperCase();
     switch (_campaignState) {
       case 'ACTIVATING':
         return 'We are preparing leads and outreach from your saved targeting.';
       case 'ACTIVE':
-        return 'We are actively finding businesses and preparing outreach from your saved targeting.';
+        switch (health) {
+          case 'PAUSED':
+            return 'Automation is paused. Your saved targeting is still here when you are ready to resume.';
+          case 'REFILLING':
+            return 'We are replenishing lead inventory from your saved targeting.';
+          case 'SATURATED':
+            return 'Current outreach inventory is full and processing against your saved targeting.';
+          case 'STALLED':
+            return 'Lead movement has slowed and the campaign may need attention.';
+          default:
+            return 'We are actively finding businesses and preparing outreach from your saved targeting.';
+        }
       case 'ERROR':
         return 'Activation did not finish cleanly. Review the campaign and try again.';
       case 'NEEDS_REBUILD':
