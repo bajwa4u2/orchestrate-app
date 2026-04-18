@@ -64,7 +64,6 @@ class ApiClient {
 
   Future<Map<String, String>> _headers(ApiSurface surface) async {
     final session = AuthSessionController.instance;
-    await session.init();
 
     final headers = <String, String>{
       'Accept': 'application/json',
