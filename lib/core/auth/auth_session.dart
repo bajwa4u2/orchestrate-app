@@ -78,6 +78,12 @@ class AuthSessionController extends ChangeNotifier {
   Future<void> init() async {
     if (_ready) return;
 
+    if (_session != null && _session!.isNotEmpty) {
+      _ready = true;
+      notifyListeners();
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
 
     final clientRaw = prefs.getString(_clientKey);
@@ -89,7 +95,9 @@ class AuthSessionController extends ChangeNotifier {
       } catch (_) {}
     }
 
-    if (_session == null && operatorRaw != null && operatorRaw.isNotEmpty) {
+    if ((_session == null || _session!.isEmpty) &&
+        operatorRaw != null &&
+        operatorRaw.isNotEmpty) {
       try {
         _session = Map<String, dynamic>.from(jsonDecode(operatorRaw));
       } catch (_) {}
@@ -110,7 +118,11 @@ class AuthSessionController extends ChangeNotifier {
 
     final newSurface =
         _readString(session, const ['surface']) ?? previous['surface']?.toString() ?? 'client';
-    final nextToken = payload['token']?.toString().trim();
+    final nextToken =
+        payload['token']?.toString().trim() ??
+        _readString(session, const ['token']) ??
+        _readString(client, const ['token']) ??
+        previous['token']?.toString().trim();
 
     final resolvedOrganizationId =
         _readString(workspace, const ['organizationId']) ??
@@ -180,6 +192,7 @@ class AuthSessionController extends ChangeNotifier {
       'setupDraft': previous['setupDraft'],
     };
 
+    _ready = true;
     await _persist();
   }
 
@@ -220,6 +233,7 @@ class AuthSessionController extends ChangeNotifier {
             .toLowerCase();
     _session!['setup'] = client['setup'];
 
+    _ready = true;
     await _persist();
   }
 
