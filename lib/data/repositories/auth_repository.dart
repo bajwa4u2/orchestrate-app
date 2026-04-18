@@ -34,10 +34,27 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> loginClientWithGoogle({
-    required String idToken,
+    String? idToken,
+    String? accessToken,
+    String? email,
+    String? fullName,
   }) async {
+    final normalizedIdToken = idToken?.trim();
+    final normalizedAccessToken = accessToken?.trim();
+
+    if ((normalizedIdToken == null || normalizedIdToken.isEmpty) &&
+        (normalizedAccessToken == null || normalizedAccessToken.isEmpty)) {
+      throw Exception('Google sign-in did not return a usable token.');
+    }
+
     final json = await _apiClient.postJson('/auth/client/oauth/google', body: {
-      'idToken': idToken,
+      if (normalizedIdToken != null && normalizedIdToken.isNotEmpty)
+        'idToken': normalizedIdToken,
+      if (normalizedAccessToken != null && normalizedAccessToken.isNotEmpty)
+        'accessToken': normalizedAccessToken,
+      if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
+      if (fullName != null && fullName.trim().isNotEmpty)
+        'fullName': fullName.trim(),
     });
     return Map<String, dynamic>.from(json as Map);
   }

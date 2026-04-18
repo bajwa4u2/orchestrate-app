@@ -268,6 +268,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     });
 
     try {
+      await _googleSignIn.signOut();
       final account = await _googleSignIn.signIn();
       if (account == null) {
         if (!mounted) return;
@@ -277,22 +278,29 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         return;
       }
 
-      final auth = await account.authentication;
-      final idToken = auth.idToken?.trim();
+      final googleAuth = await account.authentication;
+      final idToken = googleAuth.idToken?.trim();
+      final accessToken = googleAuth.accessToken?.trim();
+      final email = account.email.trim();
+      final fullName = account.displayName?.trim();
 
-      debugPrint('Google account email: ${account.email}');
-      debugPrint('Google accessToken present: ${auth.accessToken != null}');
-      debugPrint('Google idToken present: ${auth.idToken != null}');
-      debugPrint('Google idToken length: ${auth.idToken?.length ?? 0}');
+      debugPrint('Google account email: $email');
+      debugPrint('Google accessToken present: ${accessToken != null && accessToken.isNotEmpty}');
+      debugPrint('Google idToken present: ${idToken != null && idToken.isNotEmpty}');
+      debugPrint('Google idToken length: ${idToken?.length ?? 0}');
 
-      if (idToken == null || idToken.isEmpty) {
+      if ((idToken == null || idToken.isEmpty) &&
+          (accessToken == null || accessToken.isEmpty)) {
         throw Exception(
-          'Google signed in, but no ID token was returned. Check the Google OAuth web client configuration for this domain.',
+          'Google sign-in completed, but no usable Google token came back for this domain.',
         );
       }
 
       final response = await AuthRepository().loginClientWithGoogle(
         idToken: idToken,
+        accessToken: accessToken,
+        email: email.isEmpty ? null : email,
+        fullName: fullName == null || fullName.isEmpty ? null : fullName,
       );
       await _completeClientAccess(response);
     } catch (error, stackTrace) {
