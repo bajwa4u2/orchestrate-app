@@ -81,12 +81,19 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   Future<void> _readRouteContext() async {
     final uri = GoRouterState.of(context).uri;
-    _selectedPlan = _normalized(uri.queryParameters['plan']) ?? AuthSessionController.instance.selectedPlan;
-    _selectedTier = _normalized(uri.queryParameters['tier']) ?? AuthSessionController.instance.selectedTier;
+    _selectedPlan =
+        _normalized(uri.queryParameters['plan']) ??
+        AuthSessionController.instance.selectedPlan;
+    _selectedTier =
+        _normalized(uri.queryParameters['tier']) ??
+        AuthSessionController.instance.selectedTier;
     _selectedTrial = _normalized(uri.queryParameters['trial']);
 
     if (_selectedPlan != null || _selectedTier != null) {
-      await AuthSessionController.instance.rememberSelection(plan: _selectedPlan, tier: _selectedTier);
+      await AuthSessionController.instance.rememberSelection(
+        plan: _selectedPlan,
+        tier: _selectedTier,
+      );
     }
 
     if (_isVerification) {
@@ -158,7 +165,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                   final form = _AuthCard(state: this);
 
                   if (stacked) {
-                    return Column(children: [intro, const SizedBox(height: 18), form]);
+                    return Column(
+                      children: [intro, const SizedBox(height: 18), form],
+                    );
                   }
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,11 +208,15 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         email: _email.text.trim(),
         password: _password.text,
         companyName: _company.text.trim(),
-        websiteUrl: _website.text.trim().isEmpty ? null : _website.text.trim(),
+        websiteUrl:
+            _website.text.trim().isEmpty ? null : _website.text.trim(),
       );
 
       await AuthSessionController.instance.clear();
-      await AuthSessionController.instance.rememberSelection(plan: _selectedPlan, tier: _selectedTier);
+      await AuthSessionController.instance.rememberSelection(
+        plan: _selectedPlan,
+        tier: _selectedTier,
+      );
 
       if (!mounted) return;
       final email = response['email']?.toString().trim();
@@ -257,18 +270,35 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     try {
       final account = await _googleSignIn.signIn();
       if (account == null) {
+        if (!mounted) return;
+        setState(() {
+          _message = 'Google sign-in was cancelled.';
+        });
         return;
       }
 
       final auth = await account.authentication;
       final idToken = auth.idToken?.trim();
+
+      debugPrint('Google account email: ${account.email}');
+      debugPrint('Google accessToken present: ${auth.accessToken != null}');
+      debugPrint('Google idToken present: ${auth.idToken != null}');
+      debugPrint('Google idToken length: ${auth.idToken?.length ?? 0}');
+
       if (idToken == null || idToken.isEmpty) {
-        throw Exception('Google did not return a valid sign-in token.');
+        throw Exception(
+          'Google signed in, but no ID token was returned. Check the Google OAuth web client configuration for this domain.',
+        );
       }
 
-      final response = await AuthRepository().loginClientWithGoogle(idToken: idToken);
+      final response = await AuthRepository().loginClientWithGoogle(
+        idToken: idToken,
+      );
       await _completeClientAccess(response);
-    } catch (error) {
+    } catch (error, stackTrace) {
+      debugPrint('Google login failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
       if (!mounted) return;
       setState(() => _error = _humanize(error));
     } finally {
@@ -278,7 +308,10 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   Future<void> _completeClientAccess(Map<String, dynamic> response) async {
     await AuthSessionController.instance.applyAuthResponse(response);
-    await AuthSessionController.instance.rememberSelection(plan: _selectedPlan, tier: _selectedTier);
+    await AuthSessionController.instance.rememberSelection(
+      plan: _selectedPlan,
+      tier: _selectedTier,
+    );
     if (!mounted) return;
 
     final session = AuthSessionController.instance;
@@ -314,7 +347,8 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       await AuthRepository().requestPasswordReset(_email.text.trim());
       if (!mounted) return;
       setState(() {
-        _message = 'If this email is in the system, a password reset link is on the way.';
+        _message =
+            'If this email is in the system, a password reset link is on the way.';
       });
     } catch (error) {
       if (!mounted) return;
@@ -349,11 +383,15 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     });
 
     try {
-      await AuthRepository().resetPassword(token: token, password: _resetPassword.text.trim());
+      await AuthRepository().resetPassword(
+        token: token,
+        password: _resetPassword.text.trim(),
+      );
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _message = 'Your password has been updated. Sign in with your new password.';
+        _message =
+            'Your password has been updated. Sign in with your new password.';
       });
     } catch (error) {
       if (!mounted) return;
@@ -389,9 +427,12 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     return Uri(
       path: path,
       queryParameters: {
-        if (_selectedPlan != null && _selectedPlan!.isNotEmpty) 'plan': _selectedPlan!,
-        if (_selectedTier != null && _selectedTier!.isNotEmpty) 'tier': _selectedTier!,
-        if (_selectedTrial != null && _selectedTrial!.isNotEmpty) 'trial': _selectedTrial!,
+        if (_selectedPlan != null && _selectedPlan!.isNotEmpty)
+          'plan': _selectedPlan!,
+        if (_selectedTier != null && _selectedTier!.isNotEmpty)
+          'tier': _selectedTier!,
+        if (_selectedTrial != null && _selectedTrial!.isNotEmpty)
+          'trial': _selectedTrial!,
         if (sent) 'sent': '1',
         if (email != null && email.isNotEmpty) 'email': email,
       },
@@ -400,12 +441,30 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   String _humanize(Object error) {
     final text = error.toString().toLowerCase();
-    if (text.contains('popup_closed') || text.contains('popup closed')) return 'Google sign-in was closed before it finished.';
-    if (text.contains('google sign-in is not configured')) return 'Google sign-in is not configured yet.';
-    if (text.contains('incorrect')) return 'That email or password did not match our records.';
-    if (text.contains('already exists')) return 'An account with this email already exists.';
-    if (text.contains('expired')) return 'That link has expired. Request a fresh one and try again.';
-    if (text.contains('invalid')) return 'That link is not valid anymore.';
+    if (text.contains('popup_closed') || text.contains('popup closed')) {
+      return 'Google sign-in was closed before it finished.';
+    }
+    if (text.contains('google sign-in is not configured')) {
+      return 'Google sign-in is not configured yet.';
+    }
+    if (text.contains('no id token')) {
+      return 'Google signed in, but no ID token came back for this domain.';
+    }
+    if (text.contains('did not return a valid sign-in token')) {
+      return 'Google signed in, but no valid ID token came back.';
+    }
+    if (text.contains('incorrect')) {
+      return 'That email or password did not match our records.';
+    }
+    if (text.contains('already exists')) {
+      return 'An account with this email already exists.';
+    }
+    if (text.contains('expired')) {
+      return 'That link has expired. Request a fresh one and try again.';
+    }
+    if (text.contains('invalid')) {
+      return 'That link is not valid anymore.';
+    }
     return 'We could not complete that request.';
   }
 }
@@ -434,42 +493,67 @@ class _AuthIntro extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: AppTheme.publicLine),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        BrandAssets.logo(context, height: 28),
-        const SizedBox(height: 24),
-        Text(isJoin ? 'Create your workspace and move straight into setup.' : 'Return to your client workspace.', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 12),
-        Text(
-          isJoin
-              ? 'Create your workspace, confirm your email, define your operating scope, and continue to checkout.'
-              : 'Sign in to continue where you left off, review your account, and get back to work.',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
-        ),
-        if (details.isNotEmpty) ...[
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [for (final item in details) _Pill(label: item)],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BrandAssets.logo(context, height: 28),
+          const SizedBox(height: 24),
+          Text(
+            isJoin
+                ? 'Create your workspace and move straight into setup.'
+                : 'Return to your client workspace.',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            isJoin
+                ? 'Create your workspace, confirm your email, define your operating scope, and continue to checkout.'
+                : 'Sign in to continue where you left off, review your account, and get back to work.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
+          ),
+          if (details.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [for (final item in details) _Pill(label: item)],
+            ),
+          ],
+          const SizedBox(height: 22),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppTheme.publicSurfaceSoft,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppTheme.publicLine),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _IntroPoint(
+                  title: 'Verification',
+                  body:
+                      'Email confirmation stays in the main flow so setup does not get lost.',
+                ),
+                SizedBox(height: 12),
+                _IntroPoint(
+                  title: 'Setup continuity',
+                  body:
+                      'Plan and tier choices can carry directly into setup and subscription flow.',
+                ),
+                SizedBox(height: 12),
+                _IntroPoint(
+                  title: 'Access choices',
+                  body:
+                      'Email and Google can sit side by side without disrupting your existing sign-in path.',
+                ),
+              ],
+            ),
           ),
         ],
-        const SizedBox(height: 22),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: AppTheme.publicSurfaceSoft,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppTheme.publicLine),
-          ),
-          child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _IntroPoint(title: 'Verification', body: 'Email confirmation stays in the main flow so setup does not get lost.'),
-            SizedBox(height: 12),
-            _IntroPoint(title: 'Setup continuity', body: 'Plan and tier choices can carry directly into setup and subscription flow.'),
-            SizedBox(height: 12),
-            _IntroPoint(title: 'Access choices', body: 'Email and Google can sit side by side without disrupting your existing sign-in path.'),
-          ]),
-        ),
-      ]),
+      ),
     );
   }
 }
@@ -481,11 +565,14 @@ class _IntroPoint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: Theme.of(context).textTheme.titleLarge),
-      const SizedBox(height: 6),
-      Text(body, style: Theme.of(context).textTheme.bodyMedium),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 6),
+        Text(body, style: Theme.of(context).textTheme.bodyMedium),
+      ],
+    );
   }
 }
 
@@ -507,96 +594,223 @@ class _AuthCard extends StatelessWidget {
         padding: const EdgeInsets.all(28),
         child: Form(
           key: state._formKey,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(state._isJoin ? 'Create your workspace' : 'Sign in to your workspace', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 10),
-            Text(
-              state._isJoin
-                  ? 'Use your work details so setup can continue cleanly after verification.'
-                  : 'Use your work email to continue.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
-            ),
-            const SizedBox(height: 20),
-            if (state._message != null) _Banner(message: state._message!, error: false),
-            if (state._error != null) _Banner(message: state._error!, error: true),
-            if (canUseGoogle) ...[
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: (state._busy || state._googleBusy) ? null : state.loginWithGoogle,
-                  icon: state._googleBusy
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.login_outlined),
-                  label: Text(state._googleBusy ? 'Opening Google...' : 'Continue with Google'),
-                ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                state._isJoin
+                    ? 'Create your workspace'
+                    : 'Sign in to your workspace',
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 18),
-              Row(children: [
-                const Expanded(child: Divider(height: 1)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('or', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted)),
-                ),
-                const Expanded(child: Divider(height: 1)),
-              ]),
-              const SizedBox(height: 18),
-            ],
-            if (state._isJoin) ...[
-              _Field(controller: state._fullName, label: 'Full name'),
-              const SizedBox(height: 14),
-              _Field(controller: state._email, label: 'Work email', keyboardType: TextInputType.emailAddress),
-              const SizedBox(height: 14),
-              _Field(controller: state._company, label: 'Company name'),
-              const SizedBox(height: 14),
-              _Field(controller: state._website, label: 'Website', keyboardType: TextInputType.url, required: false, hintText: 'https://yourcompany.com'),
-              const SizedBox(height: 14),
-              _Field(
-                controller: state._password,
-                label: 'Password',
-                obscure: state._obscurePassword,
-                suffixIcon: IconButton(
-                  onPressed: () => state.setState(() => state._obscurePassword = !state._obscurePassword),
-                  icon: Icon(state._obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                ),
-              ),
-              const SizedBox(height: 14),
-              _Field(
-                controller: state._confirmPassword,
-                label: 'Confirm password',
-                obscure: state._obscureConfirmPassword,
-                suffixIcon: IconButton(
-                  onPressed: () => state.setState(() => state._obscureConfirmPassword = !state._obscureConfirmPassword),
-                  icon: Icon(state._obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                ),
+              const SizedBox(height: 10),
+              Text(
+                state._isJoin
+                    ? 'Use your work details so setup can continue cleanly after verification.'
+                    : 'Use your work email to continue.',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
               ),
               const SizedBox(height: 20),
-              SizedBox(width: double.infinity, child: FilledButton(onPressed: state._busy ? null : state.register, child: Text(state._busy ? 'Creating workspace...' : 'Continue'))),
-              const SizedBox(height: 14),
-              Center(child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [Text('Already have access?', style: Theme.of(context).textTheme.bodyMedium), TextButton(onPressed: () => context.go(state._route('/client/login')), child: const Text('Sign in'))])),
-            ] else ...[
-              _Field(controller: state._email, label: 'Work email', keyboardType: TextInputType.emailAddress),
-              const SizedBox(height: 14),
-              _Field(
-                controller: state._password,
-                label: 'Password',
-                obscure: state._obscurePassword,
-                suffixIcon: IconButton(
-                  onPressed: () => state.setState(() => state._obscurePassword = !state._obscurePassword),
-                  icon: Icon(state._obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+              if (state._message != null)
+                _Banner(message: state._message!, error: false),
+              if (state._error != null)
+                _Banner(message: state._error!, error: true),
+              if (canUseGoogle) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed:
+                        (state._busy || state._googleBusy)
+                            ? null
+                            : state.loginWithGoogle,
+                    icon:
+                        state._googleBusy
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Icon(Icons.login_outlined),
+                    label: Text(
+                      state._googleBusy
+                          ? 'Opening Google...'
+                          : 'Continue with Google',
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: state._requestingReset ? null : state.requestPasswordReset, child: Text(state._requestingReset ? 'Sending reset email...' : 'Send reset link'))),
-              const SizedBox(height: 10),
-              SizedBox(width: double.infinity, child: FilledButton(onPressed: state._busy ? null : state.login, child: Text(state._busy ? 'Opening workspace...' : 'Sign in'))),
-              const SizedBox(height: 14),
-              Center(child: Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [Text('New here?', style: Theme.of(context).textTheme.bodyMedium), TextButton(onPressed: () => context.go(state._route('/client/join')), child: const Text('Create workspace'))])),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    const Expanded(child: Divider(height: 1)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'or',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.publicMuted,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider(height: 1)),
+                  ],
+                ),
+                const SizedBox(height: 18),
+              ],
+              if (state._isJoin) ...[
+                _Field(controller: state._fullName, label: 'Full name'),
+                const SizedBox(height: 14),
+                _Field(
+                  controller: state._email,
+                  label: 'Work email',
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 14),
+                _Field(controller: state._company, label: 'Company name'),
+                const SizedBox(height: 14),
+                _Field(
+                  controller: state._website,
+                  label: 'Website',
+                  keyboardType: TextInputType.url,
+                  required: false,
+                  hintText: 'https://yourcompany.com',
+                ),
+                const SizedBox(height: 14),
+                _Field(
+                  controller: state._password,
+                  label: 'Password',
+                  obscure: state._obscurePassword,
+                  suffixIcon: IconButton(
+                    onPressed:
+                        () => state.setState(
+                          () =>
+                              state._obscurePassword = !state._obscurePassword,
+                        ),
+                    icon: Icon(
+                      state._obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _Field(
+                  controller: state._confirmPassword,
+                  label: 'Confirm password',
+                  obscure: state._obscureConfirmPassword,
+                  suffixIcon: IconButton(
+                    onPressed:
+                        () => state.setState(
+                          () =>
+                              state._obscureConfirmPassword =
+                                  !state._obscureConfirmPassword,
+                        ),
+                    icon: Icon(
+                      state._obscureConfirmPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: state._busy ? null : state.register,
+                    child: Text(
+                      state._busy ? 'Creating workspace...' : 'Continue',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: Wrap(
+                    spacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        'Already have access?',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      TextButton(
+                        onPressed: () => context.go(state._route('/client/login')),
+                        child: const Text('Sign in'),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                _Field(
+                  controller: state._email,
+                  label: 'Work email',
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 14),
+                _Field(
+                  controller: state._password,
+                  label: 'Password',
+                  obscure: state._obscurePassword,
+                  suffixIcon: IconButton(
+                    onPressed:
+                        () => state.setState(
+                          () =>
+                              state._obscurePassword = !state._obscurePassword,
+                        ),
+                    icon: Icon(
+                      state._obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed:
+                        state._requestingReset
+                            ? null
+                            : state.requestPasswordReset,
+                    child: Text(
+                      state._requestingReset
+                          ? 'Sending reset email...'
+                          : 'Send reset link',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: state._busy ? null : state.login,
+                    child: Text(
+                      state._busy ? 'Opening workspace...' : 'Sign in',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: Wrap(
+                    spacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        'New here?',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      TextButton(
+                        onPressed: () => context.go(state._route('/client/join')),
+                        child: const Text('Create workspace'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ]),
+          ),
         ),
       ),
     );
@@ -620,36 +834,69 @@ class _VerificationView extends StatelessWidget {
               child: Card(
                 elevation: 0,
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32), side: const BorderSide(color: AppTheme.publicLine)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(32),
+                  side: const BorderSide(color: AppTheme.publicLine),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(28),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    BrandAssets.logo(context, height: 28),
-                    const SizedBox(height: 20),
-                    Text('Confirm your email', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 10),
-                    Text(
-                      state._verificationComplete
-                          ? 'Your email is confirmed. Sign in to continue.'
-                          : 'Open the email we sent and confirm the address tied to this workspace.',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
-                    ),
-                    const SizedBox(height: 20),
-                    if (state._message != null) _Banner(message: state._message!, error: false),
-                    if (state._error != null) _Banner(message: state._error!, error: true),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        FilledButton(onPressed: () => context.go(state._route('/client/login')), child: const Text('Go to sign in')),
-                        OutlinedButton(
-                          onPressed: state._verificationEmail == null || state._resendingVerification || state._busy ? null : state.resendVerification,
-                          child: Text(state._resendingVerification ? 'Sending...' : 'Resend verification'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BrandAssets.logo(context, height: 28),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Confirm your email',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        state._verificationComplete
+                            ? 'Your email is confirmed. Sign in to continue.'
+                            : 'Open the email we sent and confirm the address tied to this workspace.',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyLarge?.copyWith(
+                          color: AppTheme.publicMuted,
                         ),
-                        TextButton(onPressed: () => context.go(state._route('/client/join')), child: const Text('Use another email')),
-                      ],
-                    ),
-                  ]),
+                      ),
+                      const SizedBox(height: 20),
+                      if (state._message != null)
+                        _Banner(message: state._message!, error: false),
+                      if (state._error != null)
+                        _Banner(message: state._error!, error: true),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          FilledButton(
+                            onPressed:
+                                () => context.go(state._route('/client/login')),
+                            child: const Text('Go to sign in'),
+                          ),
+                          OutlinedButton(
+                            onPressed:
+                                state._verificationEmail == null ||
+                                        state._resendingVerification ||
+                                        state._busy
+                                    ? null
+                                    : state.resendVerification,
+                            child: Text(
+                              state._resendingVerification
+                                  ? 'Sending...'
+                                  : 'Resend verification',
+                            ),
+                          ),
+                          TextButton(
+                            onPressed:
+                                () => context.go(state._route('/client/join')),
+                            child: const Text('Use another email'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -677,37 +924,75 @@ class _ResetView extends StatelessWidget {
               child: Card(
                 elevation: 0,
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32), side: const BorderSide(color: AppTheme.publicLine)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(32),
+                  side: const BorderSide(color: AppTheme.publicLine),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(28),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    BrandAssets.logo(context, height: 28),
-                    const SizedBox(height: 20),
-                    Text('Create a new password', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 10),
-                    Text('Use the secure link from your email to set a new password for this workspace.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted)),
-                    const SizedBox(height: 20),
-                    if (state._message != null) _Banner(message: state._message!, error: false),
-                    if (state._error != null) _Banner(message: state._error!, error: true),
-                    _Field(
-                      controller: state._resetPassword,
-                      label: 'New password',
-                      obscure: state._obscureResetPassword,
-                      suffixIcon: IconButton(
-                        onPressed: () => state.setState(() => state._obscureResetPassword = !state._obscureResetPassword),
-                        icon: Icon(state._obscureResetPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BrandAssets.logo(context, height: 28),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Create a new password',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        FilledButton(onPressed: state._busy ? null : state.submitReset, child: Text(state._busy ? 'Updating password...' : 'Update password')),
-                        OutlinedButton(onPressed: () => context.go(state._route('/client/login')), child: const Text('Back to sign in')),
-                      ],
-                    ),
-                  ]),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Use the secure link from your email to set a new password for this workspace.',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyLarge?.copyWith(
+                          color: AppTheme.publicMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (state._message != null)
+                        _Banner(message: state._message!, error: false),
+                      if (state._error != null)
+                        _Banner(message: state._error!, error: true),
+                      _Field(
+                        controller: state._resetPassword,
+                        label: 'New password',
+                        obscure: state._obscureResetPassword,
+                        suffixIcon: IconButton(
+                          onPressed:
+                              () => state.setState(
+                                () => state._obscureResetPassword =
+                                    !state._obscureResetPassword,
+                              ),
+                          icon: Icon(
+                            state._obscureResetPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          FilledButton(
+                            onPressed: state._busy ? null : state.submitReset,
+                            child: Text(
+                              state._busy
+                                  ? 'Updating password...'
+                                  : 'Update password',
+                            ),
+                          ),
+                          OutlinedButton(
+                            onPressed:
+                                () => context.go(state._route('/client/login')),
+                            child: const Text('Back to sign in'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -743,16 +1028,24 @@ class _Field extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscure,
-      validator: required
-          ? (value) {
-              if (value == null || value.trim().isEmpty) return '$label is required.';
-              if (label.toLowerCase().contains('email') && !value.contains('@')) {
-                return 'Enter a valid email address.';
+      validator:
+          required
+              ? (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '$label is required.';
+                }
+                if (label.toLowerCase().contains('email') &&
+                    !value.contains('@')) {
+                  return 'Enter a valid email address.';
+                }
+                return null;
               }
-              return null;
-            }
-          : null,
-      decoration: InputDecoration(labelText: label, hintText: hintText, suffixIcon: suffixIcon),
+              : null,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        suffixIcon: suffixIcon,
+      ),
     );
   }
 }
@@ -771,7 +1064,9 @@ class _Banner extends StatelessWidget {
       decoration: BoxDecoration(
         color: error ? Colors.red.shade50 : Colors.green.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: error ? Colors.red.shade100 : Colors.green.shade100),
+        border: Border.all(
+          color: error ? Colors.red.shade100 : Colors.green.shade100,
+        ),
       ),
       child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
     );
@@ -786,7 +1081,11 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: AppTheme.publicSurfaceSoft, borderRadius: BorderRadius.circular(999), border: Border.all(color: AppTheme.publicLine)),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
       child: Text(label, style: Theme.of(context).textTheme.titleMedium),
     );
   }
