@@ -71,8 +71,8 @@ class AuthSessionController extends ChangeNotifier {
     return null;
   }
 
-  String _resolveKey(String? surface) {
-    return surface == 'operator' ? _operatorKey : _clientKey;
+  String _resolveKey(String? currentSurface) {
+    return currentSurface == 'operator' ? _operatorKey : _clientKey;
   }
 
   Future<void> init() async {
@@ -101,61 +101,78 @@ class AuthSessionController extends ChangeNotifier {
 
   Future<void> applyAuthResponse(Map<String, dynamic> payload) async {
     final previous = Map<String, dynamic>.from(_session ?? const {});
-    final user = Map<String, dynamic>.from((payload['user'] as Map?) ?? const {});
-    final workspace = Map<String, dynamic>.from((payload['workspace'] as Map?) ?? const {});
-    final session = Map<String, dynamic>.from((payload['session'] as Map?) ?? const {});
-    final setup = Map<String, dynamic>.from((payload['setup'] as Map?) ?? const {});
-    final commercial = Map<String, dynamic>.from(
-      ((payload['commercial'] ?? payload['subscription']) as Map?) ?? const {},
-    );
+    final user = _mapOf(payload['user']);
+    final workspace = _mapOf(payload['workspace']);
+    final session = _mapOf(payload['session']);
+    final setup = _mapOf(payload['setup']);
+    final commercial = _mapOf(payload['commercial'] ?? payload['subscription']);
+    final client = _mapOf(payload['client']);
 
-    final newSurface = session['surface']?.toString() ?? previous['surface']?.toString() ?? 'client';
+    final newSurface =
+        _readString(session, const ['surface']) ?? previous['surface']?.toString() ?? 'client';
     final nextToken = payload['token']?.toString().trim();
+
+    final resolvedOrganizationId =
+        _readString(workspace, const ['organizationId']) ??
+        _readString(session, const ['organizationId']) ??
+        _readString(client, const ['organizationId']) ??
+        payload['organizationId']?.toString() ??
+        previous['organizationId']?.toString() ??
+        '';
+
+    final resolvedClientId =
+        _readString(session, const ['clientId']) ??
+        _readString(client, const ['id', 'clientId']) ??
+        _readString(workspace, const ['clientId']) ??
+        _readString(user, const ['clientId']) ??
+        payload['clientId']?.toString() ??
+        previous['clientId']?.toString() ??
+        '';
 
     _session = {
       'token': (nextToken != null && nextToken.isNotEmpty)
           ? nextToken
           : previous['token']?.toString() ?? '',
       'surface': newSurface,
-      'organizationId': workspace['organizationId']?.toString() ??
-          session['organizationId']?.toString() ??
-          previous['organizationId']?.toString() ??
-          '',
-      'clientId': session['clientId']?.toString() ?? previous['clientId']?.toString() ?? '',
-      'memberRole': session['memberRole']?.toString() ?? previous['memberRole']?.toString() ?? '',
-      'email': user['email']?.toString() ?? previous['email']?.toString() ?? '',
-      'fullName': user['fullName']?.toString() ?? previous['fullName']?.toString() ?? '',
+      'organizationId': resolvedOrganizationId,
+      'clientId': resolvedClientId,
+      'memberRole': _readString(session, const ['memberRole']) ?? previous['memberRole']?.toString() ?? '',
+      'email': _readString(user, const ['email']) ?? previous['email']?.toString() ?? '',
+      'fullName': _readString(user, const ['fullName', 'name']) ?? previous['fullName']?.toString() ?? '',
       'emailVerified': user.containsKey('emailVerified')
           ? user['emailVerified'] == true
           : previous['emailVerified'] == true,
-      'workspaceName': workspace['displayName']?.toString() ?? previous['workspaceName']?.toString() ?? '',
+      'workspaceName': _readString(workspace, const ['displayName', 'name']) ??
+          _readString(client, const ['displayName', 'legalName']) ??
+          previous['workspaceName']?.toString() ?? '',
       'setupCompleted': user['setupCompleted'] == true ||
           setup['setupCompleted'] == true ||
+          client['setupCompleted'] == true ||
           previous['setupCompleted'] == true,
       'setupSelectedPlan': _normalizePlan(
-        setup['selectedPlan']?.toString() ??
-            user['selectedPlan']?.toString() ??
+        _readString(setup, const ['selectedPlan']) ??
+            _readString(client, const ['setupSelectedPlan', 'selectedPlan']) ??
+            _readString(user, const ['selectedPlan']) ??
             previous['setupSelectedPlan']?.toString() ??
             previous['selectedPlan']?.toString(),
       ),
       'setupSelectedTier': _normalizeTier(
-        setup['selectedTier']?.toString() ??
-            user['selectedTier']?.toString() ??
+        _readString(setup, const ['selectedTier']) ??
+            _readString(client, const ['setupSelectedTier', 'selectedTier']) ??
+            _readString(user, const ['selectedTier']) ??
             previous['setupSelectedTier']?.toString() ??
             previous['selectedTier']?.toString(),
       ),
       'commercialPlan': _normalizePlan(
-        commercial['service']?.toString() ??
-            commercial['lane']?.toString() ??
-            previous['commercialPlan']?.toString(),
+        _readString(commercial, const ['service', 'lane']) ?? previous['commercialPlan']?.toString(),
       ),
       'commercialTier': _normalizeTier(
-        commercial['tier']?.toString() ??
-            previous['commercialTier']?.toString(),
+        _readString(commercial, const ['tier']) ?? previous['commercialTier']?.toString(),
       ),
-      'subscriptionStatus': (commercial['status']?.toString() ??
-              user['subscriptionStatus']?.toString() ??
-              setup['subscriptionStatus']?.toString() ??
+      'subscriptionStatus': (_readString(commercial, const ['status']) ??
+              _readString(user, const ['subscriptionStatus']) ??
+              _readString(setup, const ['subscriptionStatus']) ??
+              _readString(client, const ['subscriptionStatus']) ??
               previous['subscriptionStatus']?.toString() ??
               'none')
           .toLowerCase(),
@@ -168,32 +185,38 @@ class AuthSessionController extends ChangeNotifier {
 
   Future<void> applyClientSetupResponse(Map<String, dynamic> payload) async {
     _session ??= {};
-    final client = Map<String, dynamic>.from((payload['client'] as Map?) ?? const {});
-    final commercial = Map<String, dynamic>.from((client['commercial'] as Map?) ?? const {});
+    final client = _mapOf(payload['client']);
+    final commercial = _mapOf(client['commercial']);
+
+    final nextClientId = _readString(client, const ['id', 'clientId']);
+    final nextOrganizationId = _readString(client, const ['organizationId']);
+
+    if (nextClientId != null && nextClientId.isNotEmpty) {
+      _session!['clientId'] = nextClientId;
+    }
+    if (nextOrganizationId != null && nextOrganizationId.isNotEmpty) {
+      _session!['organizationId'] = nextOrganizationId;
+    }
+
     _session!['setupCompleted'] = client['setupCompleted'] == true;
     _session!['setupSelectedPlan'] = _normalizePlan(
-      client['setupSelectedPlan']?.toString() ??
-          client['selectedPlan']?.toString() ??
+      _readString(client, const ['setupSelectedPlan', 'selectedPlan']) ??
           _session!['setupSelectedPlan']?.toString() ??
           _session!['selectedPlan']?.toString(),
     );
     _session!['setupSelectedTier'] = _normalizeTier(
-      client['setupSelectedTier']?.toString() ??
-          client['selectedTier']?.toString() ??
+      _readString(client, const ['setupSelectedTier', 'selectedTier']) ??
           _session!['setupSelectedTier']?.toString() ??
           _session!['selectedTier']?.toString(),
     );
     _session!['commercialPlan'] = _normalizePlan(
-      commercial['service']?.toString() ??
-          commercial['lane']?.toString() ??
-          _session!['commercialPlan']?.toString(),
+      _readString(commercial, const ['service', 'lane']) ?? _session!['commercialPlan']?.toString(),
     );
     _session!['commercialTier'] = _normalizeTier(
-      commercial['tier']?.toString() ??
-          _session!['commercialTier']?.toString(),
+      _readString(commercial, const ['tier']) ?? _session!['commercialTier']?.toString(),
     );
     _session!['subscriptionStatus'] =
-        (client['subscriptionStatus']?.toString() ?? _session!['subscriptionStatus'] ?? 'none')
+        (_readString(client, const ['subscriptionStatus']) ?? _session!['subscriptionStatus'] ?? 'none')
             .toLowerCase();
     _session!['setup'] = client['setup'];
 
@@ -260,6 +283,23 @@ class AuthSessionController extends ChangeNotifier {
     await prefs.setString(key, jsonEncode(_session));
     notifyListeners();
   }
+}
+
+Map<String, dynamic> _mapOf(Object? value) {
+  if (value is Map) {
+    return value.map((key, value) => MapEntry(key.toString(), value));
+  }
+  return <String, dynamic>{};
+}
+
+String? _readString(Map<String, dynamic> map, List<String> keys) {
+  for (final key in keys) {
+    final value = map[key];
+    if (value == null) continue;
+    final text = value.toString().trim();
+    if (text.isNotEmpty) return text;
+  }
+  return null;
 }
 
 String? _normalizePlan(String? value) {

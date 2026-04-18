@@ -24,39 +24,80 @@ class ApiClient {
     );
   }
 
-  Future<dynamic> getJson(String path, {Map<String, String>? query, ApiSurface surface = ApiSurface.public}) async {
-    final response = await _httpClient.get(_uri(path, query), headers: _headers(surface));
+  Future<dynamic> getJson(
+    String path, {
+    Map<String, String>? query,
+    ApiSurface surface = ApiSurface.public,
+  }) async {
+    final response = await _httpClient.get(
+      _uri(path, query),
+      headers: await _headers(surface),
+    );
     return _decode(response);
   }
 
-  Future<dynamic> postJson(String path, {required Map<String, dynamic> body, ApiSurface surface = ApiSurface.public}) async {
+  Future<dynamic> postJson(
+    String path, {
+    required Map<String, dynamic> body,
+    ApiSurface surface = ApiSurface.public,
+  }) async {
     final response = await _httpClient.post(
       _uri(path),
-      headers: _headers(surface),
+      headers: await _headers(surface),
       body: jsonEncode(body),
     );
     return _decode(response);
   }
 
-  Future<dynamic> patchJson(String path, {required Map<String, dynamic> body, ApiSurface surface = ApiSurface.public}) async {
+  Future<dynamic> patchJson(
+    String path, {
+    required Map<String, dynamic> body,
+    ApiSurface surface = ApiSurface.public,
+  }) async {
     final response = await _httpClient.patch(
       _uri(path),
-      headers: _headers(surface),
+      headers: await _headers(surface),
       body: jsonEncode(body),
     );
     return _decode(response);
   }
 
-  Map<String, String> _headers(ApiSurface surface) {
+  Future<Map<String, String>> _headers(ApiSurface surface) async {
     final session = AuthSessionController.instance;
-    final headers = <String, String>{'content-type': 'application/json'};
-    if (session.token.isNotEmpty) {
-      headers['authorization'] = 'Bearer ${session.token}';
-      headers['x-user-email'] = session.email;
-      if (session.organizationId.isNotEmpty) headers['x-organization-id'] = session.organizationId;
-      if (surface == ApiSurface.client && session.clientId.isNotEmpty) headers['x-client-id'] = session.clientId;
-      if (session.memberRole.isNotEmpty) headers['x-member-role'] = session.memberRole;
+    await session.init();
+
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+
+    final token = session.token.trim();
+    if (token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
     }
+
+    final email = session.email.trim();
+    if (email.isNotEmpty) {
+      headers['X-User-Email'] = email;
+    }
+
+    final organizationId = session.organizationId.trim();
+    if (organizationId.isNotEmpty) {
+      headers['X-Organization-Id'] = organizationId;
+    }
+
+    final memberRole = session.memberRole.trim();
+    if (memberRole.isNotEmpty) {
+      headers['X-Member-Role'] = memberRole;
+    }
+
+    if (surface == ApiSurface.client) {
+      final clientId = session.clientId.trim();
+      if (clientId.isNotEmpty) {
+        headers['X-Client-Id'] = clientId;
+      }
+    }
+
     return headers;
   }
 
