@@ -1,3 +1,4 @@
+import '../../core/auth/auth_session.dart';
 import '../../core/network/api_client.dart';
 
 class AuthRepository {
@@ -30,7 +31,9 @@ class AuthRepository {
       'email': email,
       'password': password,
     });
-    return Map<String, dynamic>.from(json as Map);
+    final payload = Map<String, dynamic>.from(json as Map);
+    await AuthSessionController.instance.applyAuthResponse(payload);
+    return payload;
   }
 
   Future<Map<String, dynamic>> loginClientWithGoogle({
@@ -56,7 +59,9 @@ class AuthRepository {
       if (fullName != null && fullName.trim().isNotEmpty)
         'fullName': fullName.trim(),
     });
-    return Map<String, dynamic>.from(json as Map);
+    final payload = Map<String, dynamic>.from(json as Map);
+    await AuthSessionController.instance.applyAuthResponse(payload);
+    return payload;
   }
 
   Future<Map<String, dynamic>> bootstrapOperator({

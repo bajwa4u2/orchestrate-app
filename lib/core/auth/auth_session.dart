@@ -77,8 +77,7 @@ class AuthSessionController extends ChangeNotifier {
 
   Future<void> init() async {
     if (_ready) return;
-
-    if (_session != null && _session!.isNotEmpty) {
+    if (_session != null && (((_session?['token'] as String?)?.isNotEmpty ?? false) || ((_session?['organizationId'] as String?)?.isNotEmpty ?? false) || ((_session?['clientId'] as String?)?.isNotEmpty ?? false))) {
       _ready = true;
       notifyListeners();
       return;
@@ -95,9 +94,7 @@ class AuthSessionController extends ChangeNotifier {
       } catch (_) {}
     }
 
-    if ((_session == null || _session!.isEmpty) &&
-        operatorRaw != null &&
-        operatorRaw.isNotEmpty) {
+    if (_session == null && operatorRaw != null && operatorRaw.isNotEmpty) {
       try {
         _session = Map<String, dynamic>.from(jsonDecode(operatorRaw));
       } catch (_) {}
@@ -120,9 +117,9 @@ class AuthSessionController extends ChangeNotifier {
         _readString(session, const ['surface']) ?? previous['surface']?.toString() ?? 'client';
     final nextToken =
         payload['token']?.toString().trim() ??
-        _readString(session, const ['token']) ??
-        _readString(client, const ['token']) ??
-        previous['token']?.toString().trim();
+        _readString(session, const ['token', 'accessToken']) ??
+        _readString(client, const ['token', 'accessToken']) ??
+        payload['accessToken']?.toString().trim();
 
     final resolvedOrganizationId =
         _readString(workspace, const ['organizationId']) ??
