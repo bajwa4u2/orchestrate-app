@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/auth/auth_session.dart';
 import '../../core/brand/brand_assets.dart';
@@ -23,6 +24,14 @@ class ClientLoginScreen extends StatefulWidget {
 }
 
 class _ClientLoginScreenState extends State<ClientLoginScreen> {
+  static const String _googleClientId =
+      '383877062897-5f4f2vlrts0bdv0pv2p7m057v744bh7s.apps.googleusercontent.com';
+
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: _googleClientId,
+    scopes: const ['email', 'profile'],
+  );
+
   final _formKey = GlobalKey<FormState>();
   final _fullName = TextEditingController();
   final _company = TextEditingController();
@@ -33,6 +42,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   final _resetPassword = TextEditingController();
 
   bool _busy = false;
+  bool _googleBusy = false;
   bool _requestingReset = false;
   bool _resendingVerification = false;
   bool _obscurePassword = true;
@@ -150,7 +160,14 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
                   if (stacked) {
                     return Column(children: [intro, const SizedBox(height: 18), form]);
                   }
-                  return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 5, child: intro), const SizedBox(width: 18), Expanded(flex: 4, child: form)]);
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 5, child: intro),
+                      const SizedBox(width: 18),
+                      Expanded(flex: 4, child: form),
+                    ],
+                  );
                 },
               ),
             ),
@@ -212,30 +229,72 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         email: _email.text.trim(),
         password: _password.text,
       );
-      await AuthSessionController.instance.applyAuthResponse(response);
-      await AuthSessionController.instance.rememberSelection(plan: _selectedPlan, tier: _selectedTier);
-      if (!mounted) return;
-
-      final session = AuthSessionController.instance;
-      if (!session.emailVerified) {
-        context.go(_route('/client/verify-email', email: session.email));
-        return;
-      }
-      if (!session.hasSetupCompleted) {
-        context.go(_route('/client/setup'));
-        return;
-      }
-      if (session.normalizedSubscriptionStatus != 'active') {
-        context.go(_route('/client/subscribe'));
-        return;
-      }
-      context.go('/client/workspace');
+      await _completeClientAccess(response);
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = _humanize(error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> loginWithGoogle() async {
+    if (_busy || _googleBusy) return;
+    if (_googleClientId.isEmpty) {
+      setState(() {
+        _error = 'Google sign-in is not configured yet.';
+        _message = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _googleBusy = true;
+      _error = null;
+      _message = null;
+    });
+
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        return;
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken?.trim();
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception('Google did not return a valid sign-in token.');
+      }
+
+      final response = await AuthRepository().loginClientWithGoogle(idToken: idToken);
+      await _completeClientAccess(response);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = _humanize(error));
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
+    }
+  }
+
+  Future<void> _completeClientAccess(Map<String, dynamic> response) async {
+    await AuthSessionController.instance.applyAuthResponse(response);
+    await AuthSessionController.instance.rememberSelection(plan: _selectedPlan, tier: _selectedTier);
+    if (!mounted) return;
+
+    final session = AuthSessionController.instance;
+    if (!session.emailVerified) {
+      context.go(_route('/client/verify-email', email: session.email));
+      return;
+    }
+    if (!session.hasSetupCompleted) {
+      context.go(_route('/client/setup'));
+      return;
+    }
+    if (session.normalizedSubscriptionStatus != 'active') {
+      context.go(_route('/client/subscribe'));
+      return;
+    }
+    context.go('/client/workspace');
   }
 
   Future<void> requestPasswordReset() async {
@@ -341,6 +400,8 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   String _humanize(Object error) {
     final text = error.toString().toLowerCase();
+    if (text.contains('popup_closed') || text.contains('popup closed')) return 'Google sign-in was closed before it finished.';
+    if (text.contains('google sign-in is not configured')) return 'Google sign-in is not configured yet.';
     if (text.contains('incorrect')) return 'That email or password did not match our records.';
     if (text.contains('already exists')) return 'An account with this email already exists.';
     if (text.contains('expired')) return 'That link has expired. Request a fresh one and try again.';
@@ -405,7 +466,7 @@ class _AuthIntro extends StatelessWidget {
             SizedBox(height: 12),
             _IntroPoint(title: 'Setup continuity', body: 'Plan and tier choices can carry directly into setup and subscription flow.'),
             SizedBox(height: 12),
-            _IntroPoint(title: 'Reset and recovery', body: 'Password reset and email confirmation are available from the same access screen.'),
+            _IntroPoint(title: 'Access choices', body: 'Email and Google can sit side by side without disrupting your existing sign-in path.'),
           ]),
         ),
       ]),
@@ -434,6 +495,7 @@ class _AuthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canUseGoogle = _ClientLoginScreenState._googleClientId.isNotEmpty;
     return Card(
       elevation: 0,
       color: Colors.white,
@@ -457,6 +519,32 @@ class _AuthCard extends StatelessWidget {
             const SizedBox(height: 20),
             if (state._message != null) _Banner(message: state._message!, error: false),
             if (state._error != null) _Banner(message: state._error!, error: true),
+            if (canUseGoogle) ...[
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: (state._busy || state._googleBusy) ? null : state.loginWithGoogle,
+                  icon: state._googleBusy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.login_outlined),
+                  label: Text(state._googleBusy ? 'Opening Google...' : 'Continue with Google'),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(children: [
+                const Expanded(child: Divider(height: 1)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('or', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted)),
+                ),
+                const Expanded(child: Divider(height: 1)),
+              ]),
+              const SizedBox(height: 18),
+            ],
             if (state._isJoin) ...[
               _Field(controller: state._fullName, label: 'Full name'),
               const SizedBox(height: 14),

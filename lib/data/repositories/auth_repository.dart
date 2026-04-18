@@ -33,6 +33,15 @@ class AuthRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<Map<String, dynamic>> loginClientWithGoogle({
+    required String idToken,
+  }) async {
+    final json = await _apiClient.postJson('/auth/client/oauth/google', body: {
+      'idToken': idToken,
+    });
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<Map<String, dynamic>> bootstrapOperator({
     required String fullName,
     required String email,
