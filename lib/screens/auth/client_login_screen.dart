@@ -316,17 +316,18 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   Future<void> _completeClientAccess(Map<String, dynamic> response) async {
     await AuthSessionController.instance.applyAuthResponse(response);
+
     final session = AuthSessionController.instance;
+
     debugPrint('AFTER LOGIN token: ${session.token}');
     debugPrint('AFTER LOGIN clientId: ${session.clientId}');
-    
+
     await AuthSessionController.instance.rememberSelection(
       plan: _selectedPlan,
       tier: _selectedTier,
     );
     if (!mounted) return;
-
-    final session = AuthSessionController.instance;
+    
     if (!session.emailVerified) {
       context.go(_route('/client/verify-email', email: session.email));
       return;
