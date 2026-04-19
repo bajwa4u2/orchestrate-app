@@ -315,8 +315,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   }
 
   Future<void> _completeClientAccess(Map<String, dynamic> response) async {
-    await AuthSessionController.instance.applyAuthResponse(response);
-
     final session = AuthSessionController.instance;
 
     debugPrint('AFTER LOGIN token: ${session.token}');
