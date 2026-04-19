@@ -18,6 +18,14 @@ class OperatorRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<Map<String, dynamic>> fetchCommandWorkspace() async {
+    final json = await _apiClient.getJson(
+      '/operator/command',
+      surface: ApiSurface.operator,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<Map<String, dynamic>> fetchRevenueOverview() async {
     final json = await _apiClient.getJson(
       '/operator/revenue/overview',
