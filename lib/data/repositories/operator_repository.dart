@@ -86,13 +86,18 @@ class OperatorRepository {
         },
       );
 
-  Future<List<dynamic>> fetchReplies() => _fetchList(
-        '/replies',
-        query: {
-          if (AppConfig.operatorOrganizationId.isNotEmpty)
-            'organizationId': AppConfig.operatorOrganizationId,
-        },
-      );
+  Future<List<dynamic>> fetchReplies({String? clientId}) {
+    if (clientId == null || clientId.trim().isEmpty) {
+      return Future.value(const <dynamic>[]);
+    }
+
+    return _fetchList(
+      '/replies',
+      query: {
+        'clientId': clientId.trim(),
+      },
+    );
+  }
 
   Future<List<dynamic>> fetchMeetings() => _fetchList(
         '/meetings',

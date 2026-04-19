@@ -10,20 +10,59 @@ class CommandScreen extends StatefulWidget {
 }
 
 class _CommandScreenState extends State<CommandScreen> {
+  late final OperatorRepository _repo;
   late Future<Map<String, dynamic>> _future;
 
   @override
   void initState() {
     super.initState();
-    _future = OperatorRepository().fetchCommandWorkspace();
+    _repo = OperatorRepository();
+    _future = _repo.fetchCommandWorkspace();
   }
 
   Future<void> _refresh() async {
-    final next = OperatorRepository().fetchCommandWorkspace();
+    final next = _repo.fetchCommandWorkspace();
     setState(() {
       _future = next;
     });
     await next;
+  }
+
+  Future<void> _runAction(Future<void> Function() action) async {
+    FocusScope.of(context).unfocus();
+    await action();
+    if (!mounted) return;
+    await _refresh();
+  }
+
+  Future<void> _dispatchDueJobs() async {
+    await _runAction(() async {
+      await _repo.dispatchDueJobs();
+    });
+  }
+
+  Future<void> _resolveAlert(String alertId) async {
+    await _runAction(() async {
+      await _repo.resolveAlert(alertId);
+    });
+  }
+
+  Future<void> _activateCampaign(String campaignId) async {
+    await _runAction(() async {
+      await _repo.activateCampaign(campaignId);
+    });
+  }
+
+  Future<void> _runJob(String jobId) async {
+    await _runAction(() async {
+      await _repo.runJob(jobId: jobId, force: true);
+    });
+  }
+
+  Future<void> _refreshMailbox(String mailboxId) async {
+    await _runAction(() async {
+      await _repo.refreshMailboxHealth(mailboxId);
+    });
   }
 
   @override
@@ -86,13 +125,17 @@ class _CommandScreenState extends State<CommandScreen> {
         final executionPulse = _asMap(pulse['execution']);
         final deliverabilityPulse = _asMap(pulse['deliverability']);
         final health = _asMap(data['health']);
+        final healthSummary = _asMap(health['summary']);
         final deliverability = _asMap(health['deliverability']);
+        final execution = _asMap(data['execution']);
 
         final attention = _asList(data['attention']);
-        final dispatches = _asList(_asMap(data['execution'])['dispatches']);
+        final dispatches = _asList(execution['emailDispatches']);
+        final failedJobs = _asList(execution['failedJobs']);
         final campaigns = _asList(_asMap(data['outreach'])['campaigns']);
-        final clients = _asList(_asMap(data['clients'])['clients']);
+        final clients = _asList(_asMap(data['clients'])['items']);
         final inquiries = _asList(_asMap(data['conversations'])['inquiries']);
+        final mailboxes = _asList(deliverability['mailboxes']);
 
         final summary = _CommandSummary(
           sentToday: _read(today, 'sent', fallback: '0'),
@@ -111,7 +154,7 @@ class _CommandScreenState extends State<CommandScreen> {
           ),
           totalClients: _read(totals, 'clients', fallback: '${clients.length}'),
           totalCampaigns: _read(totals, 'campaigns', fallback: '${campaigns.length}'),
-          openAlerts: _read(_asMap(health['alertsSummary']), 'open', fallback: '${attention.length}'),
+          openAlerts: _read(healthSummary, 'open', fallback: '${_asList(health['alerts']).length}'),
         );
 
         return RefreshIndicator(
@@ -131,6 +174,11 @@ class _CommandScreenState extends State<CommandScreen> {
                         'One place to see pressure, movement, and what needs operator attention before the rest of the workspace.',
                   ),
                   summary: summary,
+                ),
+                const SizedBox(height: 18),
+                _TopActions(
+                  onRefresh: _refresh,
+                  onDispatchDueJobs: _dispatchDueJobs,
                 ),
                 const SizedBox(height: 18),
                 _MetricGrid(
@@ -154,7 +202,11 @@ class _CommandScreenState extends State<CommandScreen> {
                           title: 'Needs attention now',
                           subtitle:
                               'The first queue to review before leaving command. Keep urgency, failure, and pending work visible.',
-                          child: _AttentionList(items: attention),
+                          child: _AttentionList(
+                            items: attention,
+                            onResolveAlert: _resolveAlert,
+                            onActivateCampaign: _activateCampaign,
+                          ),
                         ),
                         const SizedBox(height: 18),
                         _DualCardRow(
@@ -173,11 +225,36 @@ class _CommandScreenState extends State<CommandScreen> {
                           ),
                         ),
                         const SizedBox(height: 18),
+                        _DualCardRow(
+                          stacked: constraints.maxWidth < 860,
+                          left: _CardSection(
+                            title: 'Failed jobs',
+                            subtitle:
+                                'Anything that failed should be runnable from here without leaving command.',
+                            child: _FailedJobList(
+                              items: failedJobs,
+                              onRunJob: _runJob,
+                            ),
+                          ),
+                          right: _CardSection(
+                            title: 'Mailbox health',
+                            subtitle:
+                                'Mailbox health should stay actionable from command when delivery posture slips.',
+                            child: _MailboxList(
+                              items: mailboxes,
+                              onRefreshMailbox: _refreshMailbox,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
                         _CardSection(
                           title: 'Campaign pressure',
                           subtitle:
                               'Campaigns should show state, timing, and signs of movement, not just existence.',
-                          child: _CampaignList(items: campaigns),
+                          child: _CampaignList(
+                            items: campaigns,
+                            onActivateCampaign: _activateCampaign,
+                          ),
                         ),
                       ],
                     );
@@ -387,6 +464,35 @@ class _HeroLine extends StatelessWidget {
   }
 }
 
+
+class _TopActions extends StatelessWidget {
+  const _TopActions({
+    required this.onRefresh,
+    required this.onDispatchDueJobs,
+  });
+
+  final Future<void> Function() onRefresh;
+  final Future<void> Function() onDispatchDueJobs;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        FilledButton(
+          onPressed: onDispatchDueJobs,
+          child: const Text('Dispatch due jobs'),
+        ),
+        OutlinedButton(
+          onPressed: onRefresh,
+          child: const Text('Refresh command'),
+        ),
+      ],
+    );
+  }
+}
+
 class _MetricGrid extends StatelessWidget {
   const _MetricGrid({required this.metrics});
 
@@ -516,9 +622,15 @@ class _CardSection extends StatelessWidget {
 }
 
 class _AttentionList extends StatelessWidget {
-  const _AttentionList({required this.items});
+  const _AttentionList({
+    required this.items,
+    required this.onResolveAlert,
+    required this.onActivateCampaign,
+  });
 
   final List<Map<String, dynamic>> items;
+  final Future<void> Function(String alertId) onResolveAlert;
+  final Future<void> Function(String campaignId) onActivateCampaign;
 
   @override
   Widget build(BuildContext context) {
@@ -527,22 +639,45 @@ class _AttentionList extends StatelessWidget {
     }
 
     return Column(
-      children: items
-          .take(10)
-          .map((item) => _ActionRow(
-                title: _firstNonEmpty([
-                  _read(item, 'title'),
-                  _read(item, 'label'),
-                  _read(item, 'type'),
-                ], fallback: 'Needs review'),
-                status: _read(item, 'severity'),
-                subtitle: _joinNonEmpty([
-                  _read(item, 'status'),
-                  _read(item, 'source'),
-                  _read(item, 'createdAt'),
-                ]),
-              ))
-          .toList(),
+      children: items.take(10).map((item) {
+        final kind = _read(item, 'kind');
+        final id = _read(item, 'id');
+        final status = _read(item, 'severity');
+        final actions = <Widget>[];
+
+        if (kind == 'alert' && id.isNotEmpty) {
+          actions.add(
+            TextButton(
+              onPressed: () => onResolveAlert(id),
+              child: const Text('Resolve'),
+            ),
+          );
+        }
+
+        if (kind == 'campaign' && id.isNotEmpty && _read(item, 'status') != 'ACTIVE') {
+          actions.add(
+            TextButton(
+              onPressed: () => onActivateCampaign(id),
+              child: const Text('Activate'),
+            ),
+          );
+        }
+
+        return _ActionRow(
+          title: _firstNonEmpty([
+            _read(item, 'title'),
+            _read(item, 'label'),
+            _read(item, 'type'),
+          ], fallback: 'Needs review'),
+          status: status,
+          subtitle: _joinNonEmpty([
+            _read(item, 'status'),
+            _read(item, 'source'),
+            _read(item, 'createdAt'),
+          ]),
+          actions: actions,
+        );
+      }).toList(),
     );
   }
 }
@@ -579,9 +714,13 @@ class _DispatchList extends StatelessWidget {
 }
 
 class _CampaignList extends StatelessWidget {
-  const _CampaignList({required this.items});
+  const _CampaignList({
+    required this.items,
+    required this.onActivateCampaign,
+  });
 
   final List<Map<String, dynamic>> items;
+  final Future<void> Function(String campaignId) onActivateCampaign;
 
   @override
   Widget build(BuildContext context) {
@@ -590,17 +729,104 @@ class _CampaignList extends StatelessWidget {
     }
 
     return Column(
-      children: items
-          .take(8)
-          .map((item) => _StatusRow(
-                title: _read(item, 'name', fallback: 'Campaign'),
-                subtitle: _joinNonEmpty([
-                  _read(item, 'status'),
-                  _read(item, 'channel'),
-                  _read(item, 'createdAt'),
-                ]),
-              ))
-          .toList(),
+      children: items.take(8).map((item) {
+        final id = _read(item, 'id');
+        final status = _read(item, 'status');
+        return _StatusRow(
+          title: _read(item, 'name', fallback: 'Campaign'),
+          subtitle: _joinNonEmpty([
+            status,
+            _read(item, 'channel'),
+            _read(item, 'createdAt'),
+          ]),
+          actions: [
+            if (id.isNotEmpty && status != 'ACTIVE')
+              TextButton(
+                onPressed: () => onActivateCampaign(id),
+                child: const Text('Activate'),
+              ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _FailedJobList extends StatelessWidget {
+  const _FailedJobList({
+    required this.items,
+    required this.onRunJob,
+  });
+
+  final List<Map<String, dynamic>> items;
+  final Future<void> Function(String jobId) onRunJob;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const _EmptyState(message: 'No failed jobs are visible.');
+    }
+
+    return Column(
+      children: items.take(8).map((item) {
+        final id = _read(item, 'id');
+        return _StatusRow(
+          title: _read(item, 'type', fallback: 'Failed job'),
+          subtitle: _joinNonEmpty([
+            _read(item, 'status'),
+            _read(item, 'error'),
+            _read(item, 'updatedAt'),
+          ]),
+          actions: [
+            if (id.isNotEmpty)
+              TextButton(
+                onPressed: () => onRunJob(id),
+                child: const Text('Run now'),
+              ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _MailboxList extends StatelessWidget {
+  const _MailboxList({
+    required this.items,
+    required this.onRefreshMailbox,
+  });
+
+  final List<Map<String, dynamic>> items;
+  final Future<void> Function(String mailboxId) onRefreshMailbox;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const _EmptyState(message: 'No mailboxes are visible.');
+    }
+
+    return Column(
+      children: items.take(8).map((item) {
+        final id = _read(item, 'id');
+        return _StatusRow(
+          title: _firstNonEmpty([
+            _read(item, 'emailAddress'),
+            _read(item, 'label'),
+          ], fallback: 'Mailbox'),
+          subtitle: _joinNonEmpty([
+            _read(item, 'healthStatus'),
+            _read(item, 'status'),
+            _read(item, 'provider'),
+          ]),
+          actions: [
+            if (id.isNotEmpty)
+              TextButton(
+                onPressed: () => onRefreshMailbox(id),
+                child: const Text('Refresh'),
+              ),
+          ],
+        );
+      }).toList(),
     );
   }
 }
@@ -750,11 +976,13 @@ class _ActionRow extends StatelessWidget {
     required this.title,
     required this.status,
     required this.subtitle,
+    this.actions = const <Widget>[],
   });
 
   final String title;
   final String status;
   final String subtitle;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -795,6 +1023,10 @@ class _ActionRow extends StatelessWidget {
             subtitle.isEmpty ? 'No detail available.' : subtitle,
             style: theme.textTheme.bodyMedium,
           ),
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(spacing: 8, runSpacing: 8, children: actions),
+          ],
         ],
       ),
     );
@@ -840,10 +1072,15 @@ _StatusTone _statusTone(ThemeData theme, String status) {
 }
 
 class _StatusRow extends StatelessWidget {
-  const _StatusRow({required this.title, required this.subtitle});
+  const _StatusRow({
+    required this.title,
+    required this.subtitle,
+    this.actions = const <Widget>[],
+  });
 
   final String title;
   final String subtitle;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -867,6 +1104,10 @@ class _StatusRow extends StatelessWidget {
             subtitle.isEmpty ? 'No detail available.' : subtitle,
             style: theme.textTheme.bodyMedium,
           ),
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(spacing: 8, runSpacing: 8, children: actions),
+          ],
         ],
       ),
     );
