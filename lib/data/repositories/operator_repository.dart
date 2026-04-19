@@ -50,10 +50,13 @@ class OperatorRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
-  Future<Map<String, dynamic>> fetchDeliverabilityOverview() async {
-    final query = {
+  Future<Map<String, dynamic>> fetchDeliverabilityOverview({
+    String? clientId,
+  }) async {
+    final query = <String, String>{
       if (AppConfig.operatorOrganizationId.isNotEmpty)
         'organizationId': AppConfig.operatorOrganizationId,
+      if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
     };
     final json = await _apiClient.getJson('/deliverability/overview', query: query);
     return Map<String, dynamic>.from(json as Map);
@@ -233,6 +236,88 @@ class OperatorRepository {
     );
   }
 
+  Future<Map<String, dynamic>> activateCampaign(String campaignId) async {
+    final json = await _apiClient.postJson(
+      '/campaigns/$campaignId/activate',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> resolveAlert(String alertId) async {
+    final json = await _apiClient.postJson(
+      '/notifications/alerts/$alertId/resolve',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> refreshMailboxHealth(String mailboxId) async {
+    final json = await _apiClient.postJson(
+      '/deliverability/mailboxes/$mailboxId/refresh-health',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> runJob({
+    required String jobId,
+    bool force = false,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/execution/jobs/$jobId/run',
+      body: <String, dynamic>{
+        if (force) 'force': true,
+      },
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> queueLeadFirstSend({
+    required String leadId,
+    String? scheduledAt,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/execution/leads/$leadId/queue-first-send',
+      body: <String, dynamic>{
+        if (scheduledAt != null && scheduledAt.trim().isNotEmpty)
+          'scheduledAt': scheduledAt.trim(),
+      },
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> queueLeadFollowUp({
+    required String leadId,
+    String? scheduledAt,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/execution/leads/$leadId/queue-follow-up',
+      body: <String, dynamic>{
+        if (scheduledAt != null && scheduledAt.trim().isNotEmpty)
+          'scheduledAt': scheduledAt.trim(),
+      },
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> dispatchDueJobs({
+    int limit = 25,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/execution/dispatch-due',
+      body: <String, dynamic>{'limit': limit},
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
   Future<List<dynamic>> fetchReminders() async {
     final json = await _apiClient.getJson(
       '/reminders',
@@ -245,5 +330,13 @@ class OperatorRepository {
     final json = await _apiClient.getJson(path, query: query);
     final map = Map<String, dynamic>.from(json as Map);
     return (map['items'] as List? ?? const []).cast<dynamic>();
+  }
+
+  Map<String, dynamic> _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map((key, item) => MapEntry('$key', item));
+    }
+    return <String, dynamic>{};
   }
 }

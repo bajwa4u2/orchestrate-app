@@ -9,6 +9,7 @@ import '../screens/campaigns_screen.dart';
 import '../screens/client_subscribe_screen.dart';
 import '../screens/client_support_screen.dart';
 import '../screens/client_workspace_screen.dart';
+import '../screens/command_screen.dart';
 import '../screens/inquiry_detail_screen.dart';
 import '../screens/leads_screen.dart';
 import '../screens/meetings_screen.dart';
@@ -274,8 +275,7 @@ final router = GoRouter(
       routes: [
         GoRoute(
           path: '/app/command',
-          builder: (context, state) =>
-              const OperatorWorkspaceScreen(section: OperatorSection.command),
+          builder: (context, state) => const CommandScreen(),
         ),
         GoRoute(
           path: '/app/pipeline',
@@ -291,6 +291,10 @@ final router = GoRouter(
           path: '/app/inquiries/:id',
           builder: (context, state) =>
               InquiryDetailScreen(inquiryId: state.pathParameters['id'] ?? ''),
+        ),
+        GoRoute(
+          path: '/app/execution',
+          redirect: (context, state) => '/app/execution/campaigns',
         ),
         GoRoute(
           path: '/app/execution/campaigns',

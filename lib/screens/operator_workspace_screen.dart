@@ -101,92 +101,96 @@ class OperatorWorkspaceScreen extends StatelessWidget {
 
     switch (section) {
       case OperatorSection.command:
-        final overview = await repo.fetchCommandOverview();
-        final today = _asMap(overview['today']);
-        final execution = _asMap(overview['execution']);
-        final deliverability = _asMap(overview['deliverability']);
-        final alerts = _asMap(overview['alerts']);
+        final workspace = await repo.fetchCommandWorkspace();
+        final pulse = _asMap(workspace['pulse']);
+        final totals = _asMap(pulse['totals']);
+        final today = _asMap(pulse['today']);
+        final execution = _asMap(pulse['execution']);
+        final deliverabilityPulse = _asMap(pulse['deliverability']);
+        final health = _asMap(workspace['health']);
+        final alerts = _alertsFrom(health['alerts']);
+        final attention = _rowsFromList(
+          workspace['attention'],
+          titleKeys: const ['title', 'label', 'type'],
+          primaryKeys: const ['severity', 'status'],
+          secondaryKeys: const ['source', 'createdAt'],
+        );
         return _OperatorData(
           eyebrow: 'Command',
-          title: 'System posture and immediate pressure',
+          title: 'System pressure and operator visibility',
           subtitle:
-              'See what needs attention across execution, deliverability, and alerts.',
+              'Command is now the center of the workspace. Pressure, health, and movement stay visible from one surface.',
           metrics: [
             _Metric('Sent today', _read(today, 'sent', fallback: '0')),
             _Metric('Replies', _read(today, 'replies', fallback: '0')),
             _Metric('Booked', _read(today, 'booked', fallback: '0')),
             _Metric('Failed jobs', _read(execution, 'failedJobs', fallback: '0')),
           ],
-          primaryTitle: 'Operational posture',
-          primaryRows: [
-            _Row(
-              title: 'System posture',
-              primary: _read(overview, 'systemPosture', fallback: 'Live'),
-              secondary: _read(overview, 'systemPhase'),
-            ),
-            _Row(
-              title: 'Deliverability',
-              primary:
-                  '${_read(deliverability, 'healthyMailboxes', fallback: '0')} healthy',
-              secondary:
-                  '${_read(deliverability, 'degradedMailboxes', fallback: '0')} degraded',
-            ),
-            _Row(
-              title: 'Alerts',
-              primary: '${_read(alerts, 'open', fallback: '0')} open',
-              secondary: '${_read(alerts, 'critical', fallback: '0')} critical',
-            ),
-          ],
-          primaryEmpty: 'No command detail is available.',
-          secondaryTitle: 'Today',
+          primaryTitle: 'Needs attention',
+          primaryRows: attention,
+          primaryEmpty: 'Nothing urgent is open right now.',
+          secondaryTitle: 'System posture',
           secondaryRows: [
             _Row(
-              title: 'Outbound movement',
-              primary: '${_read(today, 'sent', fallback: '0')} sent',
-              secondary: '${_read(today, 'replies', fallback: '0')} replies',
+              title: 'Organizations in view',
+              primary: _read(totals, 'organizations', fallback: '0'),
             ),
             _Row(
-              title: 'Meeting conversion',
-              primary: '${_read(today, 'booked', fallback: '0')} booked',
-              secondary: '${_read(today, 'followUps', fallback: '0')} follow-ups',
+              title: 'Clients in view',
+              primary: _read(totals, 'clients', fallback: '0'),
+            ),
+            _Row(
+              title: 'Healthy mailboxes',
+              primary: _read(
+                deliverabilityPulse,
+                'healthyMailboxes',
+                fallback: _read(health, 'healthyMailboxes', fallback: '0'),
+              ),
+              secondary: '${_read(deliverabilityPulse, 'degradedMailboxes', fallback: '0')} degraded',
+            ),
+            _Row(
+              title: 'Open alerts',
+              primary: '${alerts.open} open',
+              secondary: '${alerts.critical} critical',
             ),
           ],
-          secondaryEmpty: 'No daily movement is available.',
+          secondaryEmpty: 'No system posture is available.',
         );
 
       case OperatorSection.pipeline:
         final leads = await repo.fetchLeads();
         final campaigns = await repo.fetchCampaigns();
         return _OperatorData(
-          eyebrow: 'Pipeline',
-          title: 'Lead and campaign movement',
-          subtitle: 'View the raw prospecting flow that feeds execution.',
+          eyebrow: 'Flow',
+          title: 'Lead intake and campaign supply',
+          subtitle:
+              'This is the raw movement feeding execution. It should show what is entering the system and where it is pointed.',
           metrics: [
             _Metric('Leads', '${leads.length}'),
             _Metric('Campaigns', '${campaigns.length}'),
           ],
-          primaryTitle: 'Leads',
+          primaryTitle: 'Lead queue',
           primaryRows: leads
-              .take(8)
+              .take(10)
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'fullName',
+                  titleKeys: const ['fullName', 'name'],
                   primaryKeys: const ['companyName', 'status'],
                   secondaryKeys: const ['email'],
                 ),
               )
               .toList(),
           primaryEmpty: 'No leads are available.',
-          secondaryTitle: 'Campaigns feeding execution',
+          secondaryTitle: 'Campaign intake',
           secondaryRows: campaigns
               .take(8)
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'name',
+                  titleKeys: const ['name'],
                   primaryKeys: const ['status'],
-                  secondaryKeys: const ['channel'],
+                  secondaryKeys: const ['channel', 'createdAt'],
                 ),
               )
               .toList(),
@@ -197,9 +201,10 @@ class OperatorWorkspaceScreen extends StatelessWidget {
         final inquiries = await repo.fetchInquiries(limit: 12);
         final items = (inquiries['items'] as List? ?? const []).cast<dynamic>();
         return _OperatorData(
-          eyebrow: 'Inquiries',
+          eyebrow: 'Conversations',
           title: 'Inbound contact and handling queue',
-          subtitle: 'Keep new contact, ownership, and response posture visible together.',
+          subtitle:
+              'New contact should remain visible as active operator work, not as a detached inbox.',
           metrics: [
             _Metric('Open', _countByStatus(items, 'open')),
             _Metric('In progress', _countByStatus(items, 'in_progress')),
@@ -211,38 +216,39 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'name',
+                  titleKeys: const ['subject', 'name'],
                   primaryKeys: const ['status', 'type'],
-                  secondaryKeys: const ['email'],
+                  secondaryKeys: const ['email', 'createdAt'],
                 ),
               )
               .toList(),
           primaryEmpty: 'No inquiries are available.',
-          secondaryTitle: 'Handling notes',
+          secondaryTitle: 'Recent contact',
           secondaryRows: items
               .take(6)
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'subject',
+                  titleKeys: const ['name', 'subject'],
                   primaryKeys: const ['status'],
                   secondaryKeys: const ['createdAt'],
                 ),
               )
               .toList(),
-          secondaryEmpty: 'No inquiry notes are available.',
+          secondaryEmpty: 'No recent contact is available.',
         );
 
       case OperatorSection.campaigns:
         final campaigns = await repo.fetchCampaigns();
-        final leads = await repo.fetchLeads();
+        final dispatches = await repo.fetchEmailDispatches();
         return _OperatorData(
-          eyebrow: 'Campaigns',
-          title: 'Outbound campaigns and source movement',
-          subtitle: 'Campaign work should remain visible without being folded into a generic screen.',
+          eyebrow: 'Flow',
+          title: 'Campaign movement and outbound pressure',
+          subtitle:
+              'Campaign work should show both state and evidence of movement, not just a static list.',
           metrics: [
             _Metric('Campaigns', '${campaigns.length}'),
-            _Metric('Live leads', '${leads.length}'),
+            _Metric('Dispatches', '${dispatches.length}'),
           ],
           primaryTitle: 'Campaign list',
           primaryRows: campaigns
@@ -250,35 +256,36 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'name',
+                  titleKeys: const ['name'],
                   primaryKeys: const ['status'],
                   secondaryKeys: const ['channel', 'createdAt'],
                 ),
               )
               .toList(),
           primaryEmpty: 'No campaigns are available.',
-          secondaryTitle: 'Recent prospects',
-          secondaryRows: leads
+          secondaryTitle: 'Recent dispatch movement',
+          secondaryRows: dispatches
               .take(8)
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'fullName',
+                  titleKeys: const ['subject'],
                   primaryKeys: const ['status'],
-                  secondaryKeys: const ['companyName'],
+                  secondaryKeys: const ['recipientEmail', 'createdAt', 'sentAt'],
                 ),
               )
               .toList(),
-          secondaryEmpty: 'No prospects are available.',
+          secondaryEmpty: 'No dispatch movement is available.',
         );
 
       case OperatorSection.replies:
         final replies = await repo.fetchReplies();
         final meetings = await repo.fetchMeetings();
         return _OperatorData(
-          eyebrow: 'Replies',
-          title: 'Reply handling and conversion pressure',
-          subtitle: 'Response movement needs its own surface before it becomes meeting work.',
+          eyebrow: 'Conversations',
+          title: 'Replies and handoff pressure',
+          subtitle:
+              'Reply work belongs close to handoff readiness so operator can judge when conversation becomes meeting work.',
           metrics: [
             _Metric('Replies', '${replies.length}'),
             _Metric('Meetings', '${meetings.length}'),
@@ -289,22 +296,22 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'subject',
+                  titleKeys: const ['subject', 'fromEmail'],
                   primaryKeys: const ['status'],
                   secondaryKeys: const ['fromEmail', 'receivedAt'],
                 ),
               )
               .toList(),
           primaryEmpty: 'No replies are available.',
-          secondaryTitle: 'Next meeting cues',
+          secondaryTitle: 'Meeting cues',
           secondaryRows: meetings
               .take(6)
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'title',
+                  titleKeys: const ['title'],
                   primaryKeys: const ['status'],
-                  secondaryKeys: const ['scheduledAt'],
+                  secondaryKeys: const ['scheduledAt', 'timezone'],
                 ),
               )
               .toList(),
@@ -315,9 +322,10 @@ class OperatorWorkspaceScreen extends StatelessWidget {
         final meetings = await repo.fetchMeetings();
         final clients = await repo.fetchClients();
         return _OperatorData(
-          eyebrow: 'Meetings',
-          title: 'Booked calls and client handoff readiness',
-          subtitle: 'Meeting work should stand on its own instead of hiding inside execution.',
+          eyebrow: 'Conversations',
+          title: 'Meetings and client readiness',
+          subtitle:
+              'Booked calls should stay tied to who is arriving and what standing they have in the system.',
           metrics: [
             _Metric('Meetings', '${meetings.length}'),
             _Metric('Clients', '${clients.length}'),
@@ -328,7 +336,7 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'title',
+                  titleKeys: const ['title'],
                   primaryKeys: const ['status'],
                   secondaryKeys: const ['scheduledAt', 'timezone'],
                 ),
@@ -341,9 +349,9 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'displayName',
-                  primaryKeys: const ['subscriptionStatus'],
-                  secondaryKeys: const ['selectedPlan'],
+                  titleKeys: const ['displayName', 'legalName'],
+                  primaryKeys: const ['subscriptionStatus', 'status'],
+                  secondaryKeys: const ['selectedPlan', 'primaryTimezone'],
                 ),
               )
               .toList(),
@@ -352,32 +360,37 @@ class OperatorWorkspaceScreen extends StatelessWidget {
 
       case OperatorSection.clients:
         final clients = await repo.fetchClients();
+        final campaigns = await repo.fetchCampaigns();
         return _OperatorData(
-          eyebrow: 'Clients',
-          title: 'Client accounts and standing',
-          subtitle: 'The commercial side and the live side should remain visible together.',
-          metrics: [_Metric('Clients', '${clients.length}')],
+          eyebrow: 'Flow',
+          title: 'Clients and live standing',
+          subtitle:
+              'Client work should show both commercial state and whether the client is actually moving through the live system.',
+          metrics: [
+            _Metric('Clients', '${clients.length}'),
+            _Metric('Campaigns', '${campaigns.length}'),
+          ],
           primaryTitle: 'Accounts',
           primaryRows: clients
               .take(10)
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'displayName',
+                  titleKeys: const ['displayName', 'legalName'],
                   primaryKeys: const ['status', 'selectedPlan'],
                   secondaryKeys: const ['websiteUrl'],
                 ),
               )
               .toList(),
           primaryEmpty: 'No clients are available.',
-          secondaryTitle: 'Readiness cues',
+          secondaryTitle: 'Live readiness',
           secondaryRows: clients
               .take(6)
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'displayName',
-                  primaryKeys: const ['subscriptionStatus'],
+                  titleKeys: const ['displayName', 'legalName'],
+                  primaryKeys: const ['subscriptionStatus', 'status'],
                   secondaryKeys: const ['primaryTimezone'],
                 ),
               )
@@ -390,9 +403,10 @@ class OperatorWorkspaceScreen extends StatelessWidget {
         final invoices = await repo.fetchInvoices();
         final subscriptions = await repo.fetchSubscriptions();
         return _OperatorData(
-          eyebrow: 'Revenue',
-          title: 'Billing continuity and subscription view',
-          subtitle: 'Financial movement remains visible without leaving the operator surface.',
+          eyebrow: 'System',
+          title: 'Revenue continuity and subscription standing',
+          subtitle:
+              'Money movement should remain visible from the same operator environment without becoming a detached admin area.',
           metrics: [
             _Metric('Invoices', '${invoices.length}'),
             _Metric('Subscriptions', '${subscriptions.length}'),
@@ -404,7 +418,7 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'invoiceNumber',
+                  titleKeys: const ['invoiceNumber'],
                   primaryKeys: const ['status'],
                   secondaryKeys: const ['dueDate'],
                 ),
@@ -417,7 +431,7 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'externalRef',
+                  titleKeys: const ['externalRef'],
                   primaryKeys: const ['status'],
                   secondaryKeys: const ['createdAt'],
                 ),
@@ -429,14 +443,15 @@ class OperatorWorkspaceScreen extends StatelessWidget {
       case OperatorSection.deliverability:
         final overview = await repo.fetchDeliverabilityOverview();
         return _OperatorData(
-          eyebrow: 'Deliverability',
+          eyebrow: 'System',
           title: 'Mailboxes and sending posture',
-          subtitle: 'Healthy sending posture protects the rest of the execution chain.',
+          subtitle:
+              'Healthy mailbox posture protects the rest of the operator chain. This area should stay close to execution reality.',
           metrics: [
             _Metric('Healthy', _read(overview, 'healthyMailboxes', fallback: '0')),
             _Metric('Degraded', _read(overview, 'degradedMailboxes', fallback: '0')),
           ],
-          primaryTitle: 'Mailbox status',
+          primaryTitle: 'Mailbox standing',
           primaryRows: [
             _Row(
               title: 'Healthy mailboxes',
@@ -448,11 +463,11 @@ class OperatorWorkspaceScreen extends StatelessWidget {
             ),
           ],
           primaryEmpty: 'No deliverability data is available.',
-          secondaryTitle: 'Posture',
+          secondaryTitle: 'Operator note',
           secondaryRows: const [
             _Row(
-              title: 'Note',
-              primary: 'Review degraded mailboxes before scaling send volume.',
+              title: 'Posture',
+              primary: 'Review degraded mailboxes before scaling outbound volume.',
             ),
           ],
           secondaryEmpty: 'No posture note is available.',
@@ -463,9 +478,10 @@ class OperatorWorkspaceScreen extends StatelessWidget {
         final inquiries = await repo.fetchInquiries(limit: 6);
         final inquiryItems = (inquiries['items'] as List? ?? const []).cast<dynamic>();
         return _OperatorData(
-          eyebrow: 'Communications',
-          title: 'Outbound dispatch and inbound intake',
-          subtitle: 'Keep the communication record tied to operational handling.',
+          eyebrow: 'Conversations',
+          title: 'Outbound and inbound communication record',
+          subtitle:
+              'Dispatch history and inbound intake should stay visible together so communication does not split into separate worlds.',
           metrics: [
             _Metric('Dispatches', '${emails.length}'),
             _Metric('Inquiries', '${inquiryItems.length}'),
@@ -476,9 +492,9 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'subject',
+                  titleKeys: const ['subject'],
                   primaryKeys: const ['status'],
-                  secondaryKeys: const ['sentAt'],
+                  secondaryKeys: const ['sentAt', 'recipientEmail'],
                 ),
               )
               .toList(),
@@ -489,7 +505,7 @@ class OperatorWorkspaceScreen extends StatelessWidget {
               .map(
                 (item) => _mapRow(
                   item,
-                  titleKey: 'name',
+                  titleKeys: const ['name', 'subject'],
                   primaryKeys: const ['status'],
                   secondaryKeys: const ['email'],
                 ),
@@ -503,9 +519,10 @@ class OperatorWorkspaceScreen extends StatelessWidget {
         final agreements = await repo.fetchAgreements();
         final statements = await repo.fetchStatements();
         return _OperatorData(
-          eyebrow: 'Records',
-          title: 'Agreements, statements, and formal record flow',
-          subtitle: 'Documents remain first-class operational records, not detached files.',
+          eyebrow: 'System',
+          title: 'Agreements, statements, and formal records',
+          subtitle:
+              'Formal records should stay inside the operator environment, not become detached back-office files.',
           metrics: [
             _Metric('Agreements', '${agreements.length}'),
             _Metric('Statements', '${statements.length}'),
@@ -525,7 +542,7 @@ class OperatorWorkspaceScreen extends StatelessWidget {
             ...agreements.take(4).map(
                   (item) => _mapRow(
                     item,
-                    titleKey: 'title',
+                    titleKeys: const ['title'],
                     primaryKeys: const ['status'],
                     secondaryKeys: const ['updatedAt'],
                   ),
@@ -533,7 +550,7 @@ class OperatorWorkspaceScreen extends StatelessWidget {
             ...statements.take(4).map(
                   (item) => _mapRow(
                     item,
-                    titleKey: 'statementNumber',
+                    titleKeys: const ['statementNumber'],
                     primaryKeys: const ['status'],
                     secondaryKeys: const ['periodEnd'],
                   ),
@@ -545,9 +562,10 @@ class OperatorWorkspaceScreen extends StatelessWidget {
       case OperatorSection.settings:
         final auth = await repo.fetchAuthContext();
         return _OperatorData(
-          eyebrow: 'Settings',
+          eyebrow: 'System',
           title: 'Workspace context and access',
-          subtitle: 'Basic operator context and surface resolution.',
+          subtitle:
+              'Operator access stays visible here without pretending this area is a product feature of its own.',
           metrics: [_Metric('Surface', _read(auth, 'surface', fallback: 'operator'))],
           primaryTitle: 'Access context',
           primaryRows: [
@@ -558,11 +576,11 @@ class OperatorWorkspaceScreen extends StatelessWidget {
             _Row(title: 'Organization', primary: _read(auth, 'organizationId')),
           ],
           primaryEmpty: 'No access context is available.',
-          secondaryTitle: 'Notes',
+          secondaryTitle: 'Posture',
           secondaryRows: const [
             _Row(
-              title: 'Posture',
-              primary: 'Keep operator changes controlled and visible.',
+              title: 'Note',
+              primary: 'Keep operator changes controlled, visible, and tied to the live system.',
             ),
           ],
           secondaryEmpty: 'No notes are available.',
@@ -781,15 +799,32 @@ class _Row {
 
 _Row _mapRow(
   dynamic raw, {
-  required String titleKey,
+  required List<String> titleKeys,
   List<String> primaryKeys = const [],
   List<String> secondaryKeys = const [],
 }) {
   final map = _asMap(raw);
-  final title = _read(map, titleKey, fallback: 'Untitled');
+  final title = _firstValue(map, titleKeys, fallback: 'Untitled');
   final primary = _joinKeys(map, primaryKeys, fallback: 'No detail');
   final secondary = _joinKeys(map, secondaryKeys);
   return _Row(title: title, primary: primary, secondary: secondary);
+}
+
+List<_Row> _rowsFromList(
+  dynamic raw, {
+  required List<String> titleKeys,
+  List<String> primaryKeys = const [],
+  List<String> secondaryKeys = const [],
+}) {
+  return (raw as List? ?? const [])
+      .take(8)
+      .map((item) => _mapRow(
+            item,
+            titleKeys: titleKeys,
+            primaryKeys: primaryKeys,
+            secondaryKeys: secondaryKeys,
+          ))
+      .toList();
 }
 
 Map<String, dynamic> _asMap(dynamic value) {
@@ -814,6 +849,18 @@ String _joinKeys(
   return values.join(' · ');
 }
 
+String _firstValue(
+  Map<String, dynamic> map,
+  List<String> keys, {
+  String fallback = '',
+}) {
+  for (final key in keys) {
+    final value = _read(map, key);
+    if (value.trim().isNotEmpty) return value;
+  }
+  return fallback;
+}
+
 String _read(
   Map<String, dynamic> map,
   String key, {
@@ -823,6 +870,38 @@ String _read(
   if (value == null) return fallback;
   if (value is String) return value.trim().isEmpty ? fallback : value.trim();
   return '$value';
+}
+
+_AlertSummary _alertsFrom(dynamic raw) {
+  if (raw is Map) {
+    final map = _asMap(raw);
+    return _AlertSummary(
+      open: _read(map, 'open', fallback: '0'),
+      critical: _read(map, 'critical', fallback: '0'),
+    );
+  }
+
+  if (raw is List) {
+    int open = 0;
+    int critical = 0;
+    for (final item in raw) {
+      final map = _asMap(item);
+      final resolved = _read(map, 'resolved').toLowerCase();
+      final severity = _read(map, 'severity').toLowerCase();
+      if (resolved != 'true') open += 1;
+      if (severity == 'critical') critical += 1;
+    }
+    return _AlertSummary(open: '$open', critical: '$critical');
+  }
+
+  return const _AlertSummary(open: '0', critical: '0');
+}
+
+class _AlertSummary {
+  const _AlertSummary({required this.open, required this.critical});
+
+  final String open;
+  final String critical;
 }
 
 String _money(dynamic cents) {

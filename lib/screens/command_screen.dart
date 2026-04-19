@@ -41,26 +41,39 @@ class _CommandScreenState extends State<CommandScreen> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Command could not load right now.',
-                    style: theme.textTheme.titleMedium,
-                    textAlign: TextAlign.center,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.16),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${snapshot.error}',
-                    style: theme.textTheme.bodySmall,
-                    textAlign: TextAlign.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Command could not load right now.',
+                        style: theme.textTheme.titleLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${snapshot.error}',
+                        style: theme.textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _refresh,
+                        child: const Text('Try again'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _refresh,
-                    child: const Text('Try again'),
-                  ),
-                ],
+                ),
               ),
             ),
           );
@@ -81,6 +94,26 @@ class _CommandScreenState extends State<CommandScreen> {
         final clients = _asList(_asMap(data['clients'])['clients']);
         final inquiries = _asList(_asMap(data['conversations'])['inquiries']);
 
+        final summary = _CommandSummary(
+          sentToday: _read(today, 'sent', fallback: '0'),
+          repliesToday: _read(today, 'replies', fallback: '0'),
+          bookedToday: _read(today, 'booked', fallback: '0'),
+          failedJobs: _read(executionPulse, 'failedJobs', fallback: '0'),
+          healthyMailboxes: _read(
+            deliverabilityPulse,
+            'healthyMailboxes',
+            fallback: _read(deliverability, 'healthyMailboxes', fallback: '0'),
+          ),
+          degradedMailboxes: _read(
+            deliverabilityPulse,
+            'degradedMailboxes',
+            fallback: _read(deliverability, 'degradedMailboxes', fallback: '0'),
+          ),
+          totalClients: _read(totals, 'clients', fallback: '${clients.length}'),
+          totalCampaigns: _read(totals, 'campaigns', fallback: '${campaigns.length}'),
+          openAlerts: _read(_asMap(health['alertsSummary']), 'open', fallback: '${attention.length}'),
+        );
+
         return RefreshIndicator(
           onRefresh: _refresh,
           child: SingleChildScrollView(
@@ -95,86 +128,85 @@ class _CommandScreenState extends State<CommandScreen> {
                     data,
                     'subtitle',
                     fallback:
-                        'One place to see system pressure, business movement, and what needs action now.',
+                        'One place to see pressure, movement, and what needs operator attention before the rest of the workspace.',
                   ),
+                  summary: summary,
                 ),
                 const SizedBox(height: 18),
                 _MetricGrid(
                   metrics: [
-                    _MetricData(
-                      label: 'Sent today',
-                      value: _read(today, 'sent', fallback: '0'),
-                    ),
-                    _MetricData(
-                      label: 'Replies today',
-                      value: _read(today, 'replies', fallback: '0'),
-                    ),
-                    _MetricData(
-                      label: 'Booked today',
-                      value: _read(today, 'booked', fallback: '0'),
-                    ),
-                    _MetricData(
-                      label: 'Failed jobs',
-                      value: _read(executionPulse, 'failedJobs', fallback: '0'),
-                    ),
-                    _MetricData(
-                      label: 'Healthy mailboxes',
-                      value: _read(deliverabilityPulse, 'healthyMailboxes', fallback: '0'),
-                    ),
-                    _MetricData(
-                      label: 'Open alerts',
-                      value: _read(_asMap(health['alertsSummary']), 'open', fallback: '0'),
-                    ),
+                    _MetricData(label: 'Sent today', value: summary.sentToday),
+                    _MetricData(label: 'Replies today', value: summary.repliesToday),
+                    _MetricData(label: 'Booked today', value: summary.bookedToday),
+                    _MetricData(label: 'Failed jobs', value: summary.failedJobs),
+                    _MetricData(label: 'Healthy mailboxes', value: summary.healthyMailboxes),
+                    _MetricData(label: 'Open alerts', value: summary.openAlerts),
                   ],
                 ),
                 const SizedBox(height: 18),
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final stacked = constraints.maxWidth < 1080;
-                    final left = Column(
+                    final stacked = constraints.maxWidth < 1180;
+
+                    final mainColumn = Column(
                       children: [
                         _CardSection(
                           title: 'Needs attention now',
-                          subtitle: 'The first place to look before moving through the rest of the workspace.',
+                          subtitle:
+                              'The first queue to review before leaving command. Keep urgency, failure, and pending work visible.',
                           child: _AttentionList(items: attention),
                         ),
                         const SizedBox(height: 18),
-                        _CardSection(
-                          title: 'Live execution',
-                          subtitle: 'Dispatch pressure and current outbound movement.',
-                          child: _DispatchList(items: dispatches),
+                        _DualCardRow(
+                          stacked: constraints.maxWidth < 860,
+                          left: _CardSection(
+                            title: 'Dispatch pressure',
+                            subtitle:
+                                'Recent outbound movement, failures, and evidence that campaigns are actually pushing work.',
+                            child: _DispatchList(items: dispatches),
+                          ),
+                          right: _CardSection(
+                            title: 'Inbound pressure',
+                            subtitle:
+                                'Recent contact stays visible from the same surface so operator does not bounce between worlds.',
+                            child: _InquiryList(items: inquiries),
+                          ),
                         ),
                         const SizedBox(height: 18),
                         _CardSection(
                           title: 'Campaign pressure',
-                          subtitle: 'Which campaigns are active, stalled, or need review.',
+                          subtitle:
+                              'Campaigns should show state, timing, and signs of movement, not just existence.',
                           child: _CampaignList(items: campaigns),
                         ),
                       ],
                     );
 
-                    final right = Column(
+                    final sideColumn = Column(
                       children: [
                         _CardSection(
+                          title: 'Workspace posture',
+                          subtitle:
+                              'A compact read on client standing, campaign footprint, and mailbox health.',
+                          child: _WorkspacePosture(summary: summary),
+                        ),
+                        const SizedBox(height: 18),
+                        _CardSection(
+                          title: 'Clients needing visibility',
+                          subtitle:
+                              'Client state should remain visible here so operator can sense who is live, stalled, or under-served.',
+                          child: _ClientList(items: clients),
+                        ),
+                        const SizedBox(height: 18),
+                        _CardSection(
                           title: 'System health',
-                          subtitle: 'Mailbox and deliverability posture from the backend.',
+                          subtitle:
+                              'Mailbox and deliverability posture from the backend.',
                           child: _HealthSummary(
                             totals: totals,
                             deliverability: deliverability,
                             deliverabilityPulse: deliverabilityPulse,
                           ),
-                        ),
-                        const SizedBox(height: 18),
-                        _CardSection(
-                          title: 'Clients needing visibility',
-                          subtitle: 'Client-side state without leaving command.',
-                          child: _ClientList(items: clients),
-                        ),
-                        const SizedBox(height: 18),
-                        _CardSection(
-                          title: 'Inbound pressure',
-                          subtitle: 'Open inquiries should stay visible from the same surface.',
-                          child: _InquiryList(items: inquiries),
                         ),
                       ],
                     );
@@ -182,9 +214,9 @@ class _CommandScreenState extends State<CommandScreen> {
                     if (stacked) {
                       return Column(
                         children: [
-                          left,
+                          mainColumn,
                           const SizedBox(height: 18),
-                          right,
+                          sideColumn,
                         ],
                       );
                     }
@@ -192,9 +224,9 @@ class _CommandScreenState extends State<CommandScreen> {
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 7, child: left),
+                        Expanded(flex: 8, child: mainColumn),
                         const SizedBox(width: 18),
-                        Expanded(flex: 5, child: right),
+                        Expanded(flex: 5, child: sideColumn),
                       ],
                     );
                   },
@@ -209,10 +241,15 @@ class _CommandScreenState extends State<CommandScreen> {
 }
 
 class _CommandHero extends StatelessWidget {
-  const _CommandHero({required this.title, required this.subtitle});
+  const _CommandHero({
+    required this.title,
+    required this.subtitle,
+    required this.summary,
+  });
 
   final String title;
   final String subtitle;
+  final _CommandSummary summary;
 
   @override
   Widget build(BuildContext context) {
@@ -223,20 +260,128 @@ class _CommandHero extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: theme.colorScheme.outline.withOpacity(0.18),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked = constraints.maxWidth < 860;
+
+          final intro = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Command', style: theme.textTheme.labelLarge),
+              const SizedBox(height: 8),
+              Text(title, style: theme.textTheme.headlineSmall),
+              const SizedBox(height: 8),
+              Text(subtitle, style: theme.textTheme.bodyMedium),
+            ],
+          );
+
+          final status = _HeroStatus(summary: summary);
+
+          if (stacked) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                intro,
+                const SizedBox(height: 18),
+                status,
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 7, child: intro),
+              const SizedBox(width: 18),
+              Expanded(flex: 4, child: status),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _HeroStatus extends StatelessWidget {
+  const _HeroStatus({required this.summary});
+
+  final _CommandSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withOpacity(0.24),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.12),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Command', style: theme.textTheme.labelLarge),
-          const SizedBox(height: 8),
-          Text(title, style: theme.textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(subtitle, style: theme.textTheme.bodyMedium),
+          Text('Operator read', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          _HeroLine(
+            title: 'Today',
+            value:
+                '${summary.sentToday} sent · ${summary.repliesToday} replies · ${summary.bookedToday} booked',
+          ),
+          _HeroLine(
+            title: 'Pressure',
+            value:
+                '${summary.failedJobs} failed jobs · ${summary.openAlerts} open alerts',
+          ),
+          _HeroLine(
+            title: 'Mailboxes',
+            value:
+                '${summary.healthyMailboxes} healthy · ${summary.degradedMailboxes} degraded',
+          ),
+          _HeroLine(
+            title: 'Footprint',
+            value:
+                '${summary.totalClients} clients · ${summary.totalCampaigns} campaigns',
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeroLine extends StatelessWidget {
+  const _HeroLine({required this.title, required this.value});
+
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: RichText(
+        text: TextSpan(
+          style: theme.textTheme.bodyMedium,
+          children: [
+            TextSpan(
+              text: '$title  ',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
       ),
     );
   }
@@ -262,7 +407,7 @@ class _MetricGrid extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             mainAxisSpacing: 14,
             crossAxisSpacing: 14,
-            childAspectRatio: width >= 820 ? 1.55 : 1.45,
+            childAspectRatio: width >= 820 ? 1.6 : 1.45,
           ),
           itemBuilder: (context, index) => _MetricTile(metric: metrics[index]),
         );
@@ -295,6 +440,40 @@ class _MetricTile extends StatelessWidget {
           Text(metric.value, style: theme.textTheme.headlineMedium),
         ],
       ),
+    );
+  }
+}
+
+class _DualCardRow extends StatelessWidget {
+  const _DualCardRow({
+    required this.stacked,
+    required this.left,
+    required this.right,
+  });
+
+  final bool stacked;
+  final Widget left;
+  final Widget right;
+
+  @override
+  Widget build(BuildContext context) {
+    if (stacked) {
+      return Column(
+        children: [
+          left,
+          const SizedBox(height: 18),
+          right,
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 18),
+        Expanded(child: right),
+      ],
     );
   }
 }
@@ -349,12 +528,18 @@ class _AttentionList extends StatelessWidget {
 
     return Column(
       children: items
-          .take(8)
-          .map((item) => _StatusRow(
-                title: _read(item, 'title', fallback: 'Needs review'),
+          .take(10)
+          .map((item) => _ActionRow(
+                title: _firstNonEmpty([
+                  _read(item, 'title'),
+                  _read(item, 'label'),
+                  _read(item, 'type'),
+                ], fallback: 'Needs review'),
+                status: _read(item, 'severity'),
                 subtitle: _joinNonEmpty([
-                  _read(item, 'severity'),
                   _read(item, 'status'),
+                  _read(item, 'source'),
+                  _read(item, 'createdAt'),
                 ]),
               ))
           .toList(),
@@ -377,11 +562,15 @@ class _DispatchList extends StatelessWidget {
       children: items
           .take(8)
           .map((item) => _StatusRow(
-                title: _read(item, 'subject', fallback: 'Dispatch'),
+                title: _firstNonEmpty([
+                  _read(item, 'subject'),
+                  _read(item, 'templateName'),
+                ], fallback: 'Dispatch'),
                 subtitle: _joinNonEmpty([
                   _read(item, 'status'),
                   _read(item, 'recipientEmail'),
                   _read(item, 'createdAt'),
+                  _read(item, 'sentAt'),
                 ]),
               ))
           .toList(),
@@ -431,11 +620,15 @@ class _ClientList extends StatelessWidget {
       children: items
           .take(8)
           .map((item) => _StatusRow(
-                title: _read(item, 'displayName', fallback: _read(item, 'legalName', fallback: 'Client')),
+                title: _firstNonEmpty([
+                  _read(item, 'displayName'),
+                  _read(item, 'legalName'),
+                ], fallback: 'Client'),
                 subtitle: _joinNonEmpty([
                   _read(item, 'status'),
+                  _read(item, 'subscriptionStatus'),
+                  _read(item, 'selectedPlan'),
                   _read(item, 'industry'),
-                  _read(item, 'websiteUrl'),
                 ]),
               ))
           .toList(),
@@ -458,7 +651,10 @@ class _InquiryList extends StatelessWidget {
       children: items
           .take(8)
           .map((item) => _StatusRow(
-                title: _read(item, 'subject', fallback: _read(item, 'name', fallback: 'Inquiry')),
+                title: _firstNonEmpty([
+                  _read(item, 'subject'),
+                  _read(item, 'name'),
+                ], fallback: 'Inquiry'),
                 subtitle: _joinNonEmpty([
                   _read(item, 'status'),
                   _read(item, 'email'),
@@ -466,6 +662,37 @@ class _InquiryList extends StatelessWidget {
                 ]),
               ))
           .toList(),
+    );
+  }
+}
+
+class _WorkspacePosture extends StatelessWidget {
+  const _WorkspacePosture({required this.summary});
+
+  final _CommandSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _StatusRow(
+          title: 'Client footprint',
+          subtitle: '${summary.totalClients} clients in view',
+        ),
+        _StatusRow(
+          title: 'Campaign footprint',
+          subtitle: '${summary.totalCampaigns} campaigns in view',
+        ),
+        _StatusRow(
+          title: 'Failure pressure',
+          subtitle: '${summary.failedJobs} failed jobs and ${summary.openAlerts} open alerts',
+        ),
+        _StatusRow(
+          title: 'Mailbox posture',
+          subtitle:
+              '${summary.healthyMailboxes} healthy and ${summary.degradedMailboxes} degraded',
+        ),
+      ],
     );
   }
 }
@@ -499,15 +726,117 @@ class _HealthSummary extends StatelessWidget {
         ),
         _StatusRow(
           title: 'Healthy mailboxes',
-          subtitle: _read(deliverabilityPulse, 'healthyMailboxes', fallback: _read(deliverability, 'healthyMailboxes', fallback: '0')),
+          subtitle: _read(
+            deliverabilityPulse,
+            'healthyMailboxes',
+            fallback: _read(deliverability, 'healthyMailboxes', fallback: '0'),
+          ),
         ),
         _StatusRow(
           title: 'Degraded mailboxes',
-          subtitle: _read(deliverabilityPulse, 'degradedMailboxes', fallback: _read(deliverability, 'degradedMailboxes', fallback: '0')),
+          subtitle: _read(
+            deliverabilityPulse,
+            'degradedMailboxes',
+            fallback: _read(deliverability, 'degradedMailboxes', fallback: '0'),
+          ),
         ),
       ],
     );
   }
+}
+
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({
+    required this.title,
+    required this.status,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String status;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tone = _statusTone(theme, status);
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: tone.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: tone.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (status.trim().isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: tone.pill,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                status,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          Text(title, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(
+            subtitle.isEmpty ? 'No detail available.' : subtitle,
+            style: theme.textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusTone {
+  const _StatusTone({
+    required this.background,
+    required this.border,
+    required this.pill,
+  });
+
+  final Color background;
+  final Color border;
+  final Color pill;
+}
+
+_StatusTone _statusTone(ThemeData theme, String status) {
+  final value = status.toLowerCase();
+  if (value.contains('critical') || value.contains('failed')) {
+    final base = theme.colorScheme.error;
+    return _StatusTone(
+      background: base.withOpacity(0.10),
+      border: base.withOpacity(0.28),
+      pill: base.withOpacity(0.18),
+    );
+  }
+  if (value.contains('warning') || value.contains('degraded')) {
+    final base = theme.colorScheme.tertiary;
+    return _StatusTone(
+      background: base.withOpacity(0.10),
+      border: base.withOpacity(0.24),
+      pill: base.withOpacity(0.18),
+    );
+  }
+  final base = theme.colorScheme.primary;
+  return _StatusTone(
+    background: base.withOpacity(0.08),
+    border: base.withOpacity(0.18),
+    pill: base.withOpacity(0.16),
+  );
 }
 
 class _StatusRow extends StatelessWidget {
@@ -565,6 +894,30 @@ class _MetricData {
   final String value;
 }
 
+class _CommandSummary {
+  const _CommandSummary({
+    required this.sentToday,
+    required this.repliesToday,
+    required this.bookedToday,
+    required this.failedJobs,
+    required this.healthyMailboxes,
+    required this.degradedMailboxes,
+    required this.totalClients,
+    required this.totalCampaigns,
+    required this.openAlerts,
+  });
+
+  final String sentToday;
+  final String repliesToday;
+  final String bookedToday;
+  final String failedJobs;
+  final String healthyMailboxes;
+  final String degradedMailboxes;
+  final String totalClients;
+  final String totalCampaigns;
+  final String openAlerts;
+}
+
 Map<String, dynamic> _asMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;
   if (value is Map) {
@@ -596,4 +949,11 @@ String _read(
 
 String _joinNonEmpty(List<String> parts) {
   return parts.where((item) => item.trim().isNotEmpty).join(' • ');
+}
+
+String _firstNonEmpty(List<String> parts, {String fallback = ''}) {
+  for (final part in parts) {
+    if (part.trim().isNotEmpty) return part;
+  }
+  return fallback;
 }

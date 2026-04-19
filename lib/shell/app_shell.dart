@@ -16,21 +16,24 @@ class AppShell extends StatelessWidget {
 
   static const groups = [
     _NavGroup('Command', [_NavItem('Command', '/app/command')]),
-    _NavGroup('Pipeline', [_NavItem('Leads', '/app/pipeline')]),
-    _NavGroup('Execution', [
-      _NavItem('Inquiries', '/app/inquiries'),
+    _NavGroup('Flow', [
+      _NavItem('Leads', '/app/pipeline'),
       _NavItem('Campaigns', '/app/execution/campaigns'),
+      _NavItem('Clients', '/app/clients'),
+    ]),
+    _NavGroup('Conversations', [
+      _NavItem('Inquiries', '/app/inquiries'),
       _NavItem('Replies', '/app/execution/replies'),
       _NavItem('Meetings', '/app/execution/meetings'),
-    ]),
-    _NavGroup('Communications', [
       _NavItem('Communications', '/app/communications'),
     ]),
-    _NavGroup('Clients', [_NavItem('Clients', '/app/clients')]),
-    _NavGroup('Revenue', [_NavItem('Revenue', '/app/revenue')]),
-    _NavGroup('Deliverability', [_NavItem('Deliverability', '/app/deliverability')]),
-    _NavGroup('Records', [_NavItem('Records', '/app/records')]),
-    _NavGroup('Settings', [_NavItem('Settings', '/app/settings')]),
+    _NavGroup('System', [
+      _NavItem('Execution', '/app/execution'),
+      _NavItem('Deliverability', '/app/deliverability'),
+      _NavItem('Revenue', '/app/revenue'),
+      _NavItem('Records', '/app/records'),
+      _NavItem('Settings', '/app/settings'),
+    ]),
   ];
 
   @override
@@ -73,7 +76,7 @@ class AppShell extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Operator workspace live',
+                                'Command center live',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ),
@@ -135,7 +138,7 @@ class AppShell extends StatelessWidget {
                                     crossAxisAlignment: WrapCrossAlignment.center,
                                     children: [
                                       const _TopPill(label: 'Operator'),
-                                      const _TopPill(label: 'Today'),
+                                      const _TopPill(label: 'Live'),
                                       TextButton(
                                         onPressed: () async {
                                           await AuthSessionController.instance.clear();
@@ -183,11 +186,12 @@ class AppShell extends StatelessWidget {
   }
 }
 
-
-
 bool _matchesPath(String currentPath, String itemPath) {
   if (currentPath == itemPath) return true;
   if (itemPath == '/app/inquiries' && currentPath.startsWith('/app/inquiries/')) {
+    return true;
+  }
+  if (itemPath == '/app/execution' && currentPath.startsWith('/app/execution/')) {
     return true;
   }
   return false;
@@ -221,7 +225,7 @@ class _OperatorBrand extends StatelessWidget {
             Text('Operations', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(
-              'Opportunity, billing, and records carried in one system.',
+              'Command first. Flow, conversations, and system pressure carried from one workspace.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
             ),
           ],
