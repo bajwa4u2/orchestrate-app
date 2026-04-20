@@ -316,7 +316,7 @@ class OperatorRepository {
     int limit = 25,
   }) async {
     final json = await _apiClient.postJson(
-      '/operator/dispatch-due',
+      '/execution/dispatch-due',
       body: <String, dynamic>{'limit': limit},
       surface: ApiSurface.operator,
     );
