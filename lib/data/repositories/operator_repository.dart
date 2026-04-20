@@ -243,7 +243,7 @@ class OperatorRepository {
 
   Future<Map<String, dynamic>> activateCampaign(String campaignId) async {
     final json = await _apiClient.postJson(
-      '/operator/campaigns/$campaignId/activate',
+      '/campaigns/$campaignId/activate'
       body: const <String, dynamic>{},
       surface: ApiSurface.operator,
     );
