@@ -243,7 +243,7 @@ class OperatorRepository {
 
   Future<Map<String, dynamic>> activateCampaign(String campaignId) async {
     final json = await _apiClient.postJson(
-      '/campaigns/$campaignId/activate',
+      '/operator/campaigns/$campaignId/activate',
       body: const <String, dynamic>{},
       surface: ApiSurface.operator,
     );
@@ -252,7 +252,7 @@ class OperatorRepository {
 
   Future<Map<String, dynamic>> resolveAlert(String alertId) async {
     final json = await _apiClient.postJson(
-      '/notifications/alerts/$alertId/resolve',
+      '/operator/alerts/$alertId/resolve',
       body: const <String, dynamic>{},
       surface: ApiSurface.operator,
     );
@@ -316,7 +316,7 @@ class OperatorRepository {
     int limit = 25,
   }) async {
     final json = await _apiClient.postJson(
-      '/execution/dispatch-due',
+      '/operator/dispatch-due',
       body: <String, dynamic>{'limit': limit},
       surface: ApiSurface.operator,
     );
