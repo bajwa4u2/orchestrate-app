@@ -432,15 +432,21 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       final status = _string(result['status']).toLowerCase();
       final message = _string(result['message']);
 
-      if (_isRepresentationAuthRequired(result)) {
+      if (_isRestartCooldown(result)) {
         setState(() {
-          _restarting = false;
+          _starting = false;
+          _activationMessage = null;
         });
 
-        final shouldRetry = await _ensureRepresentationAuthorization(result);
-        if (shouldRetry && mounted) {
-          await _restartCampaign();
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              message.isEmpty
+                  ? 'Please wait before starting again.'
+                  : message,
+            ),
+          ),
+        );
         return;
       }
 
@@ -481,103 +487,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       });
     }
   }
-
-  bool _isRepresentationAuthRequired(Map<String, dynamic> result) {
-    final code = _string(result['code']).toUpperCase();
-    final status = _string(result['status']).toLowerCase();
-    return code == 'REPRESENTATION_AUTH_REQUIRED' || status == 'representation_auth_required';
-  }
-
-  Future<bool> _ensureRepresentationAuthorization(Map<String, dynamic> result) async {
-    final accepted = await _showRepresentationAuthorizationDialog(result);
-    if (!accepted || !mounted) {
-      return false;
-    }
-
-    setState(() {
-      _error = null;
-      _activationMessage = null;
-    });
-
-    final dynamic repository = _campaignRepository;
-    await repository.acceptRepresentationAuth();
-
-    if (!mounted) {
-      return false;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Authorization saved. Starting your campaign now.'),
-      ),
-    );
-
-    return true;
-  }
-
-  Future<bool> _showRepresentationAuthorizationDialog(Map<String, dynamic> result) async {
-    var agreed = false;
-    final version = _string(_asMap(result['representationAuth'])['version']);
-    final message = _string(result['message']).isEmpty
-        ? 'Before Orchestrate can start outreach on your behalf, we need your authorization to represent your business in campaign outreach.'
-        : _string(result['message']);
-
-    final accepted = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Authorize representation'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(message),
-                  const SizedBox(height: 12),
-                  const Text('• Orchestrate may contact prospects on behalf of your business.'),
-                  const SizedBox(height: 6),
-                  const Text('• Messages will clearly state they are sent on your behalf.'),
-                  const SizedBox(height: 6),
-                  const Text('• Replies will be directed to your contact email.'),
-                  if (version.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 12),
-                    Text('Authorization version: $version'),
-                  ],
-                  const SizedBox(height: 16),
-                  CheckboxListTile(
-                    value: agreed,
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    title: const Text('I authorize Orchestrate to represent my business for outreach.'),
-                    onChanged: (value) {
-                      setDialogState(() {
-                        agreed = value ?? false;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Not now'),
-                ),
-                FilledButton(
-                  onPressed: agreed ? () => Navigator.of(context).pop(true) : null,
-                  child: const Text('Agree and continue'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    return accepted ?? false;
-  }
-
   Future<void> _showPlanDialog(_PlanIssue issue) async {
     await showDialog<void>(
       context: context,
@@ -629,18 +538,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       final status = _string(result['status']).toLowerCase();
       final message = _string(result['message']);
-
-      if (_isRepresentationAuthRequired(result)) {
-        setState(() {
-          _starting = false;
-        });
-
-        final shouldRetry = await _ensureRepresentationAuthorization(result);
-        if (shouldRetry && mounted) {
-          await _startCampaign();
-        }
-        return;
-      }
 
       if (status == 'upgrade_required') {
         setState(() {
