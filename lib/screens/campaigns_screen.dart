@@ -405,7 +405,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         false;
   }
 
-  Future<void> _restartCampaign() async {
+  Future<void> _restartCampaign({bool skipConfirmation = false}) async {
     if (_countries.isEmpty) {
       _showNotice('Add at least one market before restarting.');
       return;
@@ -415,7 +415,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       return;
     }
 
-    final confirmed = await _confirmRestartCampaign();
+    final confirmed = skipConfirmation ? true : await _confirmRestartCampaign();
     if (!confirmed || !mounted) return;
 
     setState(() {
@@ -432,18 +432,28 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       final status = _string(result['status']).toLowerCase();
       final message = _string(result['message']);
 
+      if (_isRepresentationAuthRequired(result)) {
+        setState(() {
+          _restarting = false;
+        });
+
+        final shouldRetry = await _ensureRepresentationAuthorization(result);
+        if (shouldRetry && mounted) {
+          await _restartCampaign(skipConfirmation: true);
+        }
+        return;
+      }
+
       if (_isRestartCooldown(result)) {
         setState(() {
-          _starting = false;
+          _restarting = false;
           _activationMessage = null;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              message.isEmpty
-                  ? 'Please wait before starting again.'
-                  : message,
+              message.isEmpty ? 'Please wait before restarting again.' : message,
             ),
           ),
         );
@@ -487,6 +497,91 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       });
     }
   }
+
+
+  bool _isRepresentationAuthRequired(Map<String, dynamic> result) {
+    final code = _string(result['code']).toUpperCase();
+    final status = _string(result['status']).toLowerCase();
+    return code == 'REPRESENTATION_AUTH_REQUIRED' || status == 'representation_auth_required';
+  }
+
+  bool _isRestartCooldown(Map<String, dynamic> result) {
+    final code = _string(result['code']).toUpperCase();
+    final status = _string(result['status']).toLowerCase();
+    final message = _string(result['message']).toLowerCase();
+    return code == 'RESTART_COOLDOWN_ACTIVE' ||
+        status == 'cooldown' ||
+        status == 'restart_cooldown_active' ||
+        message.contains('restart cooldown');
+  }
+
+  Future<bool> _ensureRepresentationAuthorization(Map<String, dynamic> result) async {
+    final accepted = await _showRepresentationAuthorizationDialog(result);
+    if (!accepted || !mounted) return false;
+
+    try {
+      await _campaignRepository.acceptRepresentationAuth();
+      return true;
+    } catch (_) {
+      if (!mounted) return false;
+      _showNotice('We could not save your authorization right now.');
+      return false;
+    }
+  }
+
+  Future<bool> _showRepresentationAuthorizationDialog(Map<String, dynamic> result) async {
+    bool agreed = false;
+    final message = _string(result['message']);
+
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => StatefulBuilder(
+            builder: (context, setModalState) => AlertDialog(
+              title: const Text('Authorization required'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    message.isEmpty
+                        ? 'Before Orchestrate can start outreach on your behalf, we need your authorization.'
+                        : message,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('• We may contact prospects representing your business'),
+                  const Text('• Messages will clearly state they are sent on your behalf'),
+                  const Text('• Replies will go to your email'),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: agreed,
+                    onChanged: (value) {
+                      setModalState(() {
+                        agreed = value ?? false;
+                      });
+                    },
+                    title: const Text('I agree to authorize Orchestrate to represent my business'),
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Not now'),
+                ),
+                FilledButton(
+                  onPressed: agreed ? () => Navigator.of(context).pop(true) : null,
+                  child: const Text('Agree and continue'),
+                ),
+              ],
+            ),
+          ),
+        ) ??
+        false;
+  }
+
   Future<void> _showPlanDialog(_PlanIssue issue) async {
     await showDialog<void>(
       context: context,
@@ -538,6 +633,34 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       final status = _string(result['status']).toLowerCase();
       final message = _string(result['message']);
+
+      if (_isRepresentationAuthRequired(result)) {
+        setState(() {
+          _starting = false;
+        });
+
+        final accepted = await _ensureRepresentationAuthorization(result);
+        if (accepted && mounted) {
+          await _startCampaign();
+        }
+        return;
+      }
+
+      if (_isRestartCooldown(result)) {
+        setState(() {
+          _starting = false;
+          _activationMessage = null;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              message.isEmpty ? 'Please wait before starting again.' : message,
+            ),
+          ),
+        );
+        return;
+      }
 
       if (status == 'upgrade_required') {
         setState(() {
