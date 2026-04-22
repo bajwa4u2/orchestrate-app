@@ -998,20 +998,20 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         children: <Widget>[
                           _StatusChip(label: 'Sendable: ${_metricInt(_campaignMetrics['sendable'])}'),
                           _StatusChip(label: 'Queued: ${_metricInt(_campaignMetrics['queued'])}'),
-                          _StatusChip(label: 'Blocked: ${_metricInt(_campaignMetrics['blocked'])}'),
+                          _StatusChip(label: 'Blocked: ${_blockedCountFromMetrics(_campaignMetrics)}'),
                           _StatusChip(label: 'Sent today: ${_metricInt(_campaignMetrics['sentToday'])}'),
                           _StatusChip(label: 'Replies: ${_metricInt(_campaignMetrics['replies'])}'),
                           _StatusChip(label: 'Meetings: ${_metricInt(_campaignMetrics['meetings'])}'),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      if (_metricInt(_campaignMetrics['blocked']) > 0) ...<Widget>[
+                      if (_blockedCountFromMetrics(_campaignMetrics) > 0) ...<Widget>[
+                        const SizedBox(height: 12),
                         _CampaignBlockedNotice(
-                          blockedCount: _metricInt(_campaignMetrics['blocked']),
-                          blockedReasons: _asMap(_campaignMetrics['blockedReasons']),
+                          blockedCount: _blockedCountFromMetrics(_campaignMetrics),
+                          blockedReasons: _blockedReasonCountsFromMetrics(_campaignMetrics),
                         ),
-                        const SizedBox(height: 16),
                       ],
+                      const SizedBox(height: 16),
                     ],
                     SizedBox(
                       width: double.infinity,
@@ -1460,6 +1460,66 @@ class _ChipList<T> extends StatelessWidget {
   }
 }
 
+
+class _CampaignBlockedNotice extends StatelessWidget {
+  const _CampaignBlockedNotice({
+    required this.blockedCount,
+    required this.blockedReasons,
+  });
+
+  final int blockedCount;
+  final Map<String, int> blockedReasons;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final entries = blockedReasons.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.45),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'Why some outreach is paused',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            blockedCount == 1
+                ? 'One lead is paused while the system waits for stronger context before sending.'
+                : '$blockedCount leads are paused while the system waits for stronger context before sending.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (entries.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: entries
+                  .map(
+                    (entry) => Chip(
+                      label: Text('${_translateBlockedReason(entry.key)} (${entry.value})'),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _PlanIssue {
   const _PlanIssue({required this.title, required this.message});
 
@@ -1564,6 +1624,41 @@ String _humanize(String value) {
       .where((part) => part.isNotEmpty)
       .map((part) => part[0].toUpperCase() + part.substring(1).toLowerCase())
       .join(' ');
+}
+
+
+int _blockedCountFromMetrics(Map<String, dynamic> metrics) {
+  return _metricInt(metrics['blocked']);
+}
+
+Map<String, int> _blockedReasonCountsFromMetrics(Map<String, dynamic> metrics) {
+  final raw = _asMap(metrics['blockedReasons']);
+  final result = <String, int>{};
+  raw.forEach((key, value) {
+    final normalizedKey = _string(key);
+    if (normalizedKey.isEmpty) return;
+    result[normalizedKey] = _metricInt(value);
+  });
+  return result;
+}
+
+String _translateBlockedReason(String code) {
+  switch (_slug(code).toUpperCase()) {
+    case 'NO_SIGNAL':
+      return 'Waiting for stronger timing signals';
+    case 'NO_OPPORTUNITY':
+      return 'No clear opportunity identified yet';
+    case 'NO_QUALIFICATION':
+      return 'Still validating relevance before outreach';
+    case 'NO_EMAIL':
+      return 'No contact path is available yet';
+    case 'NO_REAL_CONTEXT':
+      return 'We do not have enough real business context yet';
+    case 'GENERATION_FAILED':
+      return 'Outreach is paused while the system rebuilds the message context';
+    default:
+      return _humanize(code);
+  }
 }
 
 int _metricInt(dynamic value) {
