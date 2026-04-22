@@ -119,6 +119,8 @@ class _CommandScreenState extends State<CommandScreen> {
         }
 
         final data = snapshot.data ?? const <String, dynamic>{};
+        final blocking = _asMap(data['blocking']);
+        final blockingReasonCounts = _asMap(blocking['reasonCounts']);
         final pulse = _asMap(data['pulse']);
         final totals = _asMap(pulse['totals']);
         final today = _asMap(pulse['today']);
@@ -141,6 +143,7 @@ class _CommandScreenState extends State<CommandScreen> {
           sentToday: _read(today, 'sent', fallback: '0'),
           repliesToday: _read(today, 'replies', fallback: '0'),
           bookedToday: _read(today, 'booked', fallback: '0'),
+          blockedLeads: _read(blocking, 'blocked', fallback: '0'),
           failedJobs: _read(executionPulse, 'failedJobs', fallback: '0'),
           healthyMailboxes: _read(
             deliverabilityPulse,
@@ -186,6 +189,7 @@ class _CommandScreenState extends State<CommandScreen> {
                     _MetricData(label: 'Sent today', value: summary.sentToday),
                     _MetricData(label: 'Replies today', value: summary.repliesToday),
                     _MetricData(label: 'Booked today', value: summary.bookedToday),
+                    _MetricData(label: 'Blocked leads', value: summary.blockedLeads),
                     _MetricData(label: 'Failed jobs', value: summary.failedJobs),
                     _MetricData(label: 'Healthy mailboxes', value: summary.healthyMailboxes),
                     _MetricData(label: 'Open alerts', value: summary.openAlerts),
@@ -266,6 +270,13 @@ class _CommandScreenState extends State<CommandScreen> {
                           subtitle:
                               'A compact read on client standing, campaign footprint, and mailbox health.',
                           child: _WorkspacePosture(summary: summary),
+                        ),
+                        const SizedBox(height: 18),
+                        _CardSection(
+                          title: 'Why outreach is blocked',
+                          subtitle:
+                              'Operator truth on why leads are not progressing beyond queue and readiness.',
+                          child: _BlockingSummary(reasonCounts: blockingReasonCounts),
                         ),
                         const SizedBox(height: 18),
                         _CardSection(
@@ -416,7 +427,7 @@ class _HeroStatus extends StatelessWidget {
           _HeroLine(
             title: 'Pressure',
             value:
-                '${summary.failedJobs} failed jobs · ${summary.openAlerts} open alerts',
+                '${summary.blockedLeads} blocked leads · ${summary.failedJobs} failed jobs · ${summary.openAlerts} open alerts',
           ),
           _HeroLine(
             title: 'Mailboxes',
@@ -1135,11 +1146,77 @@ class _MetricData {
   final String value;
 }
 
+
+class _BlockingSummary extends StatelessWidget {
+  const _BlockingSummary({required this.reasonCounts});
+
+  final Map<String, dynamic> reasonCounts;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = reasonCounts.entries.toList()
+      ..sort((a, b) => '${b.value}'.compareTo('${a.value}'));
+
+    if (entries.isEmpty) {
+      return Text(
+        'No blocked leads are currently visible from command.',
+        style: Theme.of(context).textTheme.bodyMedium,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int i = 0; i < entries.length; i++) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  _translateBlockReason(entries[i].key),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${entries[i].value}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
+          if (i != entries.length - 1) const Divider(height: 20),
+        ],
+      ],
+    );
+  }
+}
+
+String _translateBlockReason(String code) {
+  switch (code) {
+    case 'NO_SIGNAL':
+      return 'No signal is strong enough yet to justify outreach';
+    case 'NO_OPPORTUNITY':
+      return 'No opportunity profile is formed for the lead';
+    case 'NO_QUALIFICATION':
+      return 'Qualification has not cleared the lead for outreach';
+    case 'NO_EMAIL':
+      return 'No contact path exists for outreach';
+    case 'NO_REAL_CONTEXT':
+      return 'There is not enough business context to write truthfully';
+    case 'GENERATION_FAILED':
+      return 'Message generation failed after context was assembled';
+    default:
+      return code;
+  }
+}
+
+
 class _CommandSummary {
   const _CommandSummary({
     required this.sentToday,
     required this.repliesToday,
     required this.bookedToday,
+    required this.blockedLeads,
     required this.failedJobs,
     required this.healthyMailboxes,
     required this.degradedMailboxes,
@@ -1151,6 +1228,7 @@ class _CommandSummary {
   final String sentToday;
   final String repliesToday;
   final String bookedToday;
+  final String blockedLeads;
   final String failedJobs;
   final String healthyMailboxes;
   final String degradedMailboxes;

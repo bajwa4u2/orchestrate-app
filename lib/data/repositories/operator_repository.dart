@@ -23,7 +23,10 @@ class OperatorRepository {
       '/operator/command',
       surface: ApiSurface.operator,
     );
-    return Map<String, dynamic>.from(json as Map);
+    final workspace = Map<String, dynamic>.from(json as Map);
+    final leads = await fetchLeads();
+    workspace['blocking'] = _buildBlockingSummary(leads);
+    return workspace;
   }
 
   Future<Map<String, dynamic>> fetchRevenueOverview() async {
@@ -335,6 +338,47 @@ class OperatorRepository {
     final json = await _apiClient.getJson(path, query: query);
     final map = Map<String, dynamic>.from(json as Map);
     return (map['items'] as List? ?? const []).cast<dynamic>();
+  }
+
+
+  Map<String, dynamic> _buildBlockingSummary(List<dynamic> leads) {
+    var blocked = 0;
+    final reasonCounts = <String, int>{};
+
+    for (final item in leads) {
+      final lead = _asMap(item);
+      final reasons = _extractBlockReasons(lead);
+      if (reasons.isEmpty) continue;
+      blocked += 1;
+      for (final reason in reasons) {
+        reasonCounts.update(reason, (value) => value + 1, ifAbsent: () => 1);
+      }
+    }
+
+    final ordered = reasonCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return <String, dynamic>{
+      'blocked': blocked,
+      'reasonCounts': <String, dynamic>{
+        for (final entry in ordered) entry.key: entry.value,
+      },
+    };
+  }
+
+  List<String> _extractBlockReasons(Map<String, dynamic> lead) {
+    final metadata = _asMap(lead['metadataJson']);
+    final rootReasons = _asStringList(metadata['blockReasons']);
+    if (rootReasons.isNotEmpty) return rootReasons;
+    final messageGeneration = _asMap(metadata['messageGeneration']);
+    return _asStringList(messageGeneration['reasons']);
+  }
+
+  List<String> _asStringList(dynamic value) {
+    return (value as List? ?? const [])
+        .map((item) => '$item'.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 
   Map<String, dynamic> _asMap(dynamic value) {

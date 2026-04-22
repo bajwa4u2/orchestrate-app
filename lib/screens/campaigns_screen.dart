@@ -998,12 +998,20 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         children: <Widget>[
                           _StatusChip(label: 'Sendable: ${_metricInt(_campaignMetrics['sendable'])}'),
                           _StatusChip(label: 'Queued: ${_metricInt(_campaignMetrics['queued'])}'),
+                          _StatusChip(label: 'Blocked: ${_metricInt(_campaignMetrics['blocked'])}'),
                           _StatusChip(label: 'Sent today: ${_metricInt(_campaignMetrics['sentToday'])}'),
                           _StatusChip(label: 'Replies: ${_metricInt(_campaignMetrics['replies'])}'),
                           _StatusChip(label: 'Meetings: ${_metricInt(_campaignMetrics['meetings'])}'),
                         ],
                       ),
                       const SizedBox(height: 16),
+                      if (_metricInt(_campaignMetrics['blocked']) > 0) ...<Widget>[
+                        _CampaignBlockedNotice(
+                          blockedCount: _metricInt(_campaignMetrics['blocked']),
+                          blockedReasons: _asMap(_campaignMetrics['blockedReasons']),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ],
                     SizedBox(
                       width: double.infinity,

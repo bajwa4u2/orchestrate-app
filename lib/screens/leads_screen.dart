@@ -25,7 +25,7 @@ class LeadsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Hero(total: data.totalLeads, sendable: data.sendableLeads),
+              _Hero(total: data.totalLeads, sendable: data.sendableLeads, blocked: data.blockedLeads),
               const SizedBox(height: 18),
               _StatusRow(
                 cards: [
@@ -42,9 +42,20 @@ class LeadsScreen extends StatelessWidget {
                     label: 'Campaigns',
                     value: '${data.campaignCount}',
                   ),
+                  _StatusCardData(
+                    label: 'Blocked',
+                    value: '${data.blockedLeads}',
+                  ),
                 ],
               ),
               const SizedBox(height: 18),
+              if (data.blockedLeads > 0) ...[
+                _ExplanationPanel(
+                  title: 'Why some outreach is paused',
+                  summary: _buildClientBlockingSummary(data.blockedReasonCounts),
+                ),
+                const SizedBox(height: 18),
+              ],
               _Panel(
                 title: 'Visible leads',
                 emptyLabel: 'Lead records will appear here once sourcing begins.',
@@ -74,7 +85,9 @@ class LeadsScreen extends StatelessWidget {
 
     final rows = <_LeadRow>[];
     final campaignNames = <String>{};
+    final blockedReasonCounts = <String, int>{};
     var phoneCount = 0;
+    var blockedLeads = 0;
 
     for (final item in leads) {
       final map = _asMap(item);
@@ -85,6 +98,14 @@ class LeadsScreen extends StatelessWidget {
       }
       if (phone.isNotEmpty) {
         phoneCount += 1;
+      }
+
+      final blockReasons = _extractBlockReasons(map);
+      if (blockReasons.isNotEmpty) {
+        blockedLeads += 1;
+        for (final reason in blockReasons) {
+          blockedReasonCounts.update(reason, (value) => value + 1, ifAbsent: () => 1);
+        }
       }
 
       rows.add(
@@ -99,6 +120,7 @@ class LeadsScreen extends StatelessWidget {
           status: _title(_read(map, 'status')),
           source: _title(_read(map, 'source')),
           createdDate: _formatDate(_read(map, 'createdAt')),
+          blockReasons: blockReasons,
         ),
       );
     }
@@ -106,6 +128,8 @@ class LeadsScreen extends StatelessWidget {
     return _LeadViewData(
       totalLeads: totalLeads,
       sendableLeads: sendableLeads,
+      blockedLeads: blockedLeads,
+      blockedReasonCounts: blockedReasonCounts,
       phoneCount: phoneCount,
       campaignCount: campaignNames.length,
       rows: rows,
@@ -117,6 +141,8 @@ class _LeadViewData {
   const _LeadViewData({
     required this.totalLeads,
     required this.sendableLeads,
+    required this.blockedLeads,
+    required this.blockedReasonCounts,
     required this.phoneCount,
     required this.campaignCount,
     required this.rows,
@@ -124,6 +150,8 @@ class _LeadViewData {
 
   final int totalLeads;
   final int sendableLeads;
+  final int blockedLeads;
+  final Map<String, int> blockedReasonCounts;
   final int phoneCount;
   final int campaignCount;
   final List<_LeadRow> rows;
@@ -141,6 +169,7 @@ class _LeadRow {
     required this.status,
     required this.source,
     required this.createdDate,
+    required this.blockReasons,
   });
 
   final String name;
@@ -153,13 +182,15 @@ class _LeadRow {
   final String status;
   final String source;
   final String createdDate;
+  final List<String> blockReasons;
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.total, required this.sendable});
+  const _Hero({required this.total, required this.sendable, required this.blocked});
 
   final int total;
   final int sendable;
+  final int blocked;
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +221,9 @@ class _Hero extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             sendable == 0
-                ? 'This screen separates sourced records from sendable records so the client can see what is actually ready for outreach.'
+                ? (blocked > 0
+                    ? 'Some records are being held back while the system validates timing, relevance, and contact readiness.'
+                    : 'This screen separates sourced records from sendable records so the client can see what is actually ready for outreach.')
                 : '$sendable leads appear ready for outreach from the current client-side view.',
             style: Theme.of(
               context,
@@ -323,6 +356,8 @@ class _LeadTile extends StatelessWidget {
       _join([item.email, item.phone]),
       _join([item.location, item.campaign]),
       _join([item.status, item.source, item.createdDate]),
+      if (item.blockReasons.isNotEmpty)
+        item.blockReasons.map(_translateBlockReason).join(' · '),
     ].where((line) => line.trim().isNotEmpty).toList();
 
     return Column(
@@ -334,9 +369,11 @@ class _LeadTile extends StatelessWidget {
           Text(
             lines[i],
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: i == lines.length - 1
-                  ? AppTheme.publicMuted
-                  : AppTheme.publicText,
+              color: item.blockReasons.isNotEmpty && i == lines.length - 1
+                  ? Colors.orange.shade700
+                  : (i == lines.length - 1
+                      ? AppTheme.publicMuted
+                      : AppTheme.publicText),
             ),
           ),
         ],
@@ -344,6 +381,95 @@ class _LeadTile extends StatelessWidget {
     );
   }
 }
+
+
+class _ExplanationPanel extends StatelessWidget {
+  const _ExplanationPanel({required this.title, required this.summary});
+
+  final String title;
+  final List<String> summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (final line in summary) ...[
+            Text(
+              line,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppTheme.publicMuted,
+                  ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+List<String> _buildClientBlockingSummary(Map<String, int> counts) {
+  if (counts.isEmpty) {
+    return const <String>[];
+  }
+  final ordered = counts.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+  return ordered
+      .take(3)
+      .map((entry) => '${entry.value} lead${entry.value == 1 ? '' : 's'} ${_translateBlockReason(entry.key).toLowerCase()}')
+      .toList();
+}
+
+List<String> _extractBlockReasons(Map<String, dynamic> lead) {
+  final metadata = _asMap(lead['metadataJson']);
+  final rootReasons = _asStringList(metadata['blockReasons']);
+  if (rootReasons.isNotEmpty) return rootReasons;
+  final messageGeneration = _asMap(metadata['messageGeneration']);
+  return _asStringList(messageGeneration['reasons']);
+}
+
+List<String> _asStringList(dynamic value) {
+  return (value as List? ?? const [])
+      .map((item) => '$item'.trim())
+      .where((item) => item.isNotEmpty)
+      .toList();
+}
+
+String _translateBlockReason(String code) {
+  switch (code) {
+    case 'NO_SIGNAL':
+      return 'Waiting for stronger timing signals';
+    case 'NO_OPPORTUNITY':
+      return 'No clear opportunity has formed yet';
+    case 'NO_QUALIFICATION':
+      return 'Still validating relevance before outreach';
+    case 'NO_EMAIL':
+      return 'Missing a contact path for outreach';
+    case 'NO_REAL_CONTEXT':
+      return 'Do not yet have enough business context to reach out';
+    case 'GENERATION_FAILED':
+      return 'Message could not be prepared cleanly yet';
+    default:
+      return 'Still evaluating whether outreach should proceed';
+  }
+}
+
 
 Map<String, dynamic> _asMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;
