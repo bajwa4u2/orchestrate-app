@@ -11,7 +11,7 @@ class ControlRepository {
   final OperatorRepository _operatorRepository;
 
   Future<ControlOverview> fetchOverview() async {
-    final json = await _operatorRepository.fetchCommandOverview();
+    final json = await _operatorRepository.fetchControlOverview();
     return ControlOverview.fromJson(json);
   }
 
@@ -31,7 +31,21 @@ class ControlRepository {
   }
 
   Future<List<ResourceItem>> fetchReplies() async {
-    final items = await _operatorRepository.fetchReplies();
+    final clients = await _operatorRepository.fetchClients();
+    String? firstClientId;
+    for (final item in clients) {
+      if (item is! Map) continue;
+      final id = item['id'];
+      if (id == null) continue;
+      final value = '$id'.trim();
+      if (value.isEmpty) continue;
+      firstClientId = value;
+      break;
+    }
+
+    if (firstClientId == null) return const <ResourceItem>[];
+
+    final items = await _operatorRepository.fetchReplies(clientId: firstClientId);
     return _mapItems(items, ResourceKind.reply);
   }
 
@@ -41,41 +55,29 @@ class ControlRepository {
   }
 
   Future<HealthSnapshot> fetchHealth() async {
-    final overview = await _operatorRepository.fetchCommandOverview();
-    final today = _asMap(overview['today']);
-    final execution = _asMap(overview['execution']);
-    final alerts = _asMap(overview['alerts']);
-
+    final overview = await _operatorRepository.fetchControlOverview();
     return HealthSnapshot.fromJson({
-      'status': _read(overview, 'systemPosture', fallback: 'Live'),
-      'message': _read(overview, 'systemPhase', fallback: 'Operator workspace live'),
-      'lastCheckAt': DateTime.now().toIso8601String(),
-      'checks': [
-        {
-          'key': 'sent_today',
-          'label': 'Sent today',
-          'status': 'ok',
-          'value': _read(today, 'sent', fallback: '0'),
-        },
-        {
-          'key': 'failed_jobs',
-          'label': 'Failed jobs',
-          'status': _read(execution, 'failedJobs', fallback: '0') == '0' ? 'ok' : 'warn',
-          'value': _read(execution, 'failedJobs', fallback: '0'),
-        },
-        {
-          'key': 'open_alerts',
-          'label': 'Open alerts',
-          'status': _read(alerts, 'critical', fallback: '0') == '0' ? 'ok' : 'warn',
-          'value': _read(alerts, 'open', fallback: '0'),
-        },
-      ],
+      'status': _read(_asMap(overview['system']), 'posture', fallback: 'live'),
+      'timestamp': DateTime.now().toIso8601String(),
+      'uptime': 'control-overview',
     });
   }
 
   Future<DeliverabilityOverview> fetchDeliverabilityOverview() async {
     final json = await _operatorRepository.fetchDeliverabilityOverview();
-    return DeliverabilityOverview.fromJson(json);
+    final mailboxes = (json['mailboxes'] as List? ?? const []).length;
+    final degraded = (json['mailboxes'] as List? ?? const [])
+        .whereType<Map>()
+        .where((item) {
+          final health = '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
+          return health == 'DEGRADED' || health == 'CRITICAL';
+        })
+        .length;
+
+    return DeliverabilityOverview.fromJson({
+      'activeMailboxes': mailboxes,
+      'degradedMailboxes': degraded,
+    });
   }
 
   List<ResourceItem> _mapItems(List<dynamic> items, ResourceKind kind) {

@@ -1,52 +1,113 @@
 import '../../core/network/api_client.dart';
 
 class OperatorRepository {
-  OperatorRepository({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  OperatorRepository({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
-  Future<Map<String, dynamic>> fetchCommandOverview() async {
+  Future<Map<String, dynamic>> fetchControlOverview() async {
     final json = await _apiClient.getJson(
-      '/operator/command/overview',
+      '/control/overview',
       surface: ApiSurface.operator,
     );
-    return _asMap(json);
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  Future<Map<String, dynamic>> fetchCommandOverview() async {
+    try {
+      final json = await _apiClient.getJson(
+        '/operator/command/overview',
+        surface: ApiSurface.operator,
+      );
+      return Map<String, dynamic>.from(json as Map);
+    } catch (_) {
+      return fetchControlOverview();
+    }
   }
 
   Future<Map<String, dynamic>> fetchCommandWorkspace() async {
-    final json = await _apiClient.getJson(
-      '/operator/command',
-      surface: ApiSurface.operator,
-    );
-    final workspace = _asMap(json);
+    final control = await fetchControlOverview();
+    final clients = await fetchClients();
+    final campaigns = await fetchCampaigns();
     final leads = await fetchLeads();
-    workspace['blocking'] = _buildBlockingSummary(leads);
-    return workspace;
-  }
+    final dispatches = await fetchEmailDispatches();
+    final alerts = await fetchAlerts();
+    final inquiries = await fetchInquiries(limit: 12);
+    final deliverability = await fetchDeliverabilityOverview();
 
-  Future<Map<String, dynamic>> fetchRevenueOverview({String? clientId}) async {
-    final json = await _apiClient.getJson(
-      '/billing/overview',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
-      surface: ApiSurface.operator,
-    );
-    return _asMap(json);
-  }
-
-  Future<Map<String, dynamic>> fetchRecordsOverview({String? clientId}) async {
-    final agreements = await fetchAgreements(clientId: clientId);
-    final statements = await fetchStatements(clientId: clientId);
-    final reminders = await fetchReminders(clientId: clientId);
-    final templates = await fetchTemplates(clientId: clientId);
+    final mailboxes = (deliverability['mailboxes'] as List? ?? const []).cast<dynamic>();
+    final failedJobs = const <dynamic>[];
+    final pulseToday = _asMap(control['today']);
+    final pulseExecution = _asMap(control['execution']);
+    final pulseDeliverability = _buildDeliverabilityPulse(deliverability);
+    final pulseTotals = _asMap(control['totals']);
 
     return <String, dynamic>{
-      'summary': 'Formal records, templates, and reminders remain visible from operator control.',
-      'agreementsCount': agreements.length,
-      'statementsCount': statements.length,
-      'remindersCount': reminders.length,
-      'templatesCount': templates.length,
+      'title': 'Operator command',
+      'subtitle':
+          'Control shows live totals, inbound pressure, deliverability posture, and outbound movement from one surface.',
+      'pulse': <String, dynamic>{
+        'totals': pulseTotals,
+        'today': pulseToday,
+        'execution': pulseExecution,
+        'deliverability': pulseDeliverability,
+      },
+      'health': <String, dynamic>{
+        'summary': <String, dynamic>{
+          'open': '${_asMap(control['alerts'])['open'] ?? 0}',
+        },
+        'alerts': alerts,
+        'deliverability': deliverability,
+      },
+      'execution': <String, dynamic>{
+        'emailDispatches': dispatches,
+        'failedJobs': failedJobs,
+      },
+      'outreach': <String, dynamic>{
+        'campaigns': campaigns,
+      },
+      'clients': <String, dynamic>{
+        'items': clients,
+      },
+      'conversations': <String, dynamic>{
+        'inquiries': (inquiries['items'] as List? ?? const []).cast<dynamic>(),
+      },
+      'attention': _buildAttention(
+        alerts: alerts,
+        inquiries: (inquiries['items'] as List? ?? const []).cast<dynamic>(),
+        campaigns: campaigns,
+        deliverability: deliverability,
+      ),
+      'blocking': _buildBlockingSummary(leads),
+    };
+  }
+
+  Future<Map<String, dynamic>> fetchRevenueOverview() async {
+    final billing = await _apiClient.getJson(
+      '/billing/overview',
+      surface: ApiSurface.operator,
+    );
+    return Map<String, dynamic>.from(billing as Map);
+  }
+
+  Future<Map<String, dynamic>> fetchRecordsOverview() async {
+    final agreements = await fetchAgreements();
+    final statements = await fetchStatements();
+    final reminders = await fetchReminders();
+    final templates = await fetchTemplates();
+
+    return <String, dynamic>{
+      'agreements': agreements,
+      'statements': statements,
+      'reminders': reminders,
+      'templates': templates,
+      'totals': <String, dynamic>{
+        'agreements': agreements.length,
+        'statements': statements.length,
+        'reminders': reminders.length,
+        'templates': templates.length,
+      },
     };
   }
 
@@ -55,114 +116,82 @@ class OperatorRepository {
       '/auth/context',
       surface: ApiSurface.operator,
     );
-    return _asMap(json);
+    return Map<String, dynamic>.from(json as Map);
   }
 
   Future<Map<String, dynamic>> fetchDeliverabilityOverview({
     String? clientId,
   }) async {
+    final query = <String, String>{
+      if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
+    };
     final json = await _apiClient.getJson(
       '/deliverability/overview',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
+      query: query,
       surface: ApiSurface.operator,
     );
-    return _asMap(json);
+    return Map<String, dynamic>.from(json as Map);
   }
 
-  Future<List<dynamic>> fetchClients() => _fetchList(
-        '/clients',
-        surface: ApiSurface.operator,
-      );
+  Future<List<dynamic>> fetchClients() => _fetchItems('/clients');
 
-  Future<List<dynamic>> fetchCampaigns() => _fetchList(
-        '/campaigns',
-        surface: ApiSurface.operator,
-      );
+  Future<List<dynamic>> fetchCampaigns() => _fetchItems('/campaigns');
 
-  Future<List<dynamic>> fetchLeads() => _fetchList(
-        '/leads',
-        surface: ApiSurface.operator,
-      );
+  Future<List<dynamic>> fetchLeads() => _fetchItems('/leads');
 
-  Future<List<dynamic>> fetchReplies({String? clientId}) => _fetchList(
-        '/replies',
-        query: {
-          if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-        },
-        surface: ApiSurface.operator,
-      );
+  Future<List<dynamic>> fetchReplies({String? clientId}) {
+    if (clientId == null || clientId.trim().isEmpty) {
+      return Future.value(const <dynamic>[]);
+    }
 
-  Future<List<dynamic>> fetchMeetings({String? clientId}) => _fetchList(
-        '/meetings',
-        query: {
-          if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-        },
-        surface: ApiSurface.operator,
-      );
+    return _fetchList('/replies', query: {'clientId': clientId.trim()});
+  }
 
-  Future<List<dynamic>> fetchInvoices({String? clientId}) async {
+  Future<List<dynamic>> fetchMeetings() => _fetchItems('/meetings');
+
+  Future<List<dynamic>> fetchInvoices() async {
     final json = await _apiClient.getJson(
       '/billing/invoices',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
       surface: ApiSurface.operator,
     );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
-  Future<List<dynamic>> fetchAgreements({String? clientId}) async {
+  Future<List<dynamic>> fetchAgreements() async {
     final json = await _apiClient.getJson(
       '/agreements',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
       surface: ApiSurface.operator,
     );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
-  Future<List<dynamic>> fetchStatements({String? clientId}) async {
+  Future<List<dynamic>> fetchStatements() async {
     final json = await _apiClient.getJson(
       '/statements',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
       surface: ApiSurface.operator,
     );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
-  Future<List<dynamic>> fetchSubscriptions({String? clientId}) async {
+  Future<List<dynamic>> fetchSubscriptions() async {
     final json = await _apiClient.getJson(
       '/subscriptions',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
       surface: ApiSurface.operator,
     );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
-  Future<List<dynamic>> fetchTemplates({String? clientId}) async {
+  Future<List<dynamic>> fetchTemplates() async {
     final json = await _apiClient.getJson(
       '/templates',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
       surface: ApiSurface.operator,
     );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
-  Future<List<dynamic>> fetchEmailDispatches({String? clientId}) async {
+  Future<List<dynamic>> fetchEmailDispatches() async {
     final json = await _apiClient.getJson(
       '/emails/dispatches',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
       surface: ApiSurface.operator,
     );
     return (json as List? ?? const []).cast<dynamic>();
@@ -173,7 +202,7 @@ class OperatorRepository {
       '/notifications/alerts',
       surface: ApiSurface.operator,
     );
-    final map = _asMap(json);
+    final map = Map<String, dynamic>.from(json as Map);
     return (map['items'] as List? ?? const []).cast<dynamic>();
   }
 
@@ -183,7 +212,7 @@ class OperatorRepository {
       query: {'limit': '$limit'},
       surface: ApiSurface.operator,
     );
-    return _asMap(json);
+    return Map<String, dynamic>.from(json as Map);
   }
 
   Future<Map<String, dynamic>> fetchInquiryById(String inquiryId) async {
@@ -191,7 +220,7 @@ class OperatorRepository {
       '/operator/inquiries/$inquiryId',
       surface: ApiSurface.operator,
     );
-    return _asMap(json);
+    return Map<String, dynamic>.from(json as Map);
   }
 
   Future<List<Map<String, dynamic>>> fetchInquiryThread(String inquiryId) async {
@@ -200,7 +229,7 @@ class OperatorRepository {
       surface: ApiSurface.operator,
     );
 
-    final map = _asMap(json);
+    final map = Map<String, dynamic>.from(json as Map);
     final items = (map['messages'] as List? ?? const [])
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
@@ -302,7 +331,8 @@ class OperatorRepository {
     final json = await _apiClient.postJson(
       '/execution/leads/$leadId/queue-first-send',
       body: <String, dynamic>{
-        if (scheduledAt != null && scheduledAt.trim().isNotEmpty) 'scheduledAt': scheduledAt.trim(),
+        if (scheduledAt != null && scheduledAt.trim().isNotEmpty)
+          'scheduledAt': scheduledAt.trim(),
       },
       surface: ApiSurface.operator,
     );
@@ -316,7 +346,8 @@ class OperatorRepository {
     final json = await _apiClient.postJson(
       '/execution/leads/$leadId/queue-follow-up',
       body: <String, dynamic>{
-        if (scheduledAt != null && scheduledAt.trim().isNotEmpty) 'scheduledAt': scheduledAt.trim(),
+        if (scheduledAt != null && scheduledAt.trim().isNotEmpty)
+          'scheduledAt': scheduledAt.trim(),
       },
       surface: ApiSurface.operator,
     );
@@ -334,25 +365,85 @@ class OperatorRepository {
     return _asMap(json);
   }
 
-  Future<List<dynamic>> fetchReminders({String? clientId}) async {
+  Future<List<dynamic>> fetchReminders() async {
     final json = await _apiClient.getJson(
       '/reminders',
-      query: {
-        if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
-      },
       surface: ApiSurface.operator,
     );
     return (json as List? ?? const []).cast<dynamic>();
   }
 
-  Future<List<dynamic>> _fetchList(
-    String path, {
-    Map<String, String>? query,
-    ApiSurface surface = ApiSurface.operator,
-  }) async {
-    final json = await _apiClient.getJson(path, query: query, surface: surface);
-    final map = _asMap(json);
+  Future<List<dynamic>> _fetchItems(String path) async {
+    final json = await _apiClient.getJson(path, surface: ApiSurface.operator);
+    final map = Map<String, dynamic>.from(json as Map);
     return (map['items'] as List? ?? const []).cast<dynamic>();
+  }
+
+  Future<List<dynamic>> _fetchList(String path, {Map<String, String>? query}) async {
+    final json = await _apiClient.getJson(
+      path,
+      query: query,
+      surface: ApiSurface.operator,
+    );
+    if (json is List) return json.cast<dynamic>();
+    if (json is Map) {
+      final map = Map<String, dynamic>.from(json);
+      return (map['items'] as List? ?? const []).cast<dynamic>();
+    }
+    return const <dynamic>[];
+  }
+
+  List<dynamic> _buildAttention({
+    required List<dynamic> alerts,
+    required List<dynamic> inquiries,
+    required List<dynamic> campaigns,
+    required Map<String, dynamic> deliverability,
+  }) {
+    final items = <dynamic>[];
+    items.addAll(alerts.take(6));
+    items.addAll(inquiries.take(3));
+
+    final degradedMailboxes = (deliverability['mailboxes'] as List? ?? const [])
+        .whereType<Map>()
+        .where((item) {
+          final health = '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
+          return health == 'DEGRADED' || health == 'CRITICAL';
+        })
+        .take(3)
+        .map((item) => <String, dynamic>{
+              'title': item['email'] ?? item['mailboxEmail'] ?? 'Mailbox needs attention',
+              'severity': item['healthStatus'] ?? item['status'] ?? 'DEGRADED',
+              'status': item['status'] ?? '',
+              'source': 'deliverability',
+              'createdAt': item['updatedAt'] ?? item['createdAt'],
+            });
+    items.addAll(degradedMailboxes);
+
+    if (items.length < 6) {
+      items.addAll(campaigns.take(6 - items.length).whereType<Map>().map((item) => <String, dynamic>{
+            'title': item['name'] ?? 'Campaign',
+            'severity': item['status'] ?? 'ACTIVE',
+            'status': item['status'] ?? '',
+            'source': 'campaign',
+            'createdAt': item['createdAt'],
+            'campaignId': item['id'],
+          }));
+    }
+    return items;
+  }
+
+  Map<String, dynamic> _buildDeliverabilityPulse(Map<String, dynamic> deliverability) {
+    final mailboxes = (deliverability['mailboxes'] as List? ?? const []).whereType<Map>().toList();
+    final healthy = mailboxes.where((item) {
+      final health = '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
+      return health != 'DEGRADED' && health != 'CRITICAL';
+    }).length;
+    final degraded = mailboxes.length - healthy;
+
+    return <String, dynamic>{
+      'healthyMailboxes': healthy,
+      'degradedMailboxes': degraded,
+    };
   }
 
   Map<String, dynamic> _buildBlockingSummary(List<dynamic> leads) {
