@@ -6,10 +6,10 @@ import '../core/theme/app_theme.dart';
 import '../data/repositories/client/client_billing_repository.dart';
 import '../data/repositories/client/client_workspace_repository.dart';
 
-enum ClientSection { workspace, billing }
+enum ClientSection { home, billing }
 
-class ClientWorkspaceScreen extends StatelessWidget {
-  const ClientWorkspaceScreen({super.key, required this.section});
+class ClientHomeScreen extends StatelessWidget {
+  const ClientHomeScreen({super.key, required this.section});
   final ClientSection section;
 
   @override
@@ -83,8 +83,8 @@ class ClientWorkspaceScreen extends StatelessWidget {
         primaryEmpty: 'No invoices are visible yet.',
         secondaryTitle: 'Direct actions',
         secondaryRows: [
-          _Row(title: 'Campaign targeting', primary: 'Keep market scope in one place before new sourcing runs.', secondary: 'Countries, industries, notes, and boundaries live in campaigns.', actionLabel: 'Open campaigns', route: '/client/campaigns'),
-          _Row(title: 'Lead generation', primary: 'Lead sourcing and sendability are tracked separately from billing.', secondary: 'Use leads to see what is found, ready, and moving.', actionLabel: 'Open leads', route: '/client/leads'),
+          _Row(title: 'Campaign targeting', primary: 'Keep market scope in one place before new sourcing runs.', secondary: 'Countries, industries, notes, and boundaries live in campaigns.', actionLabel: 'Open campaigns', route: '/app/campaigns'),
+          _Row(title: 'Lead generation', primary: 'Lead sourcing and sendability are tracked separately from billing.', secondary: 'Use leads to see what is found, ready, and moving.', actionLabel: 'Open leads', route: '/app/contacts'),
         ],
         secondaryEmpty: 'No direct actions are available.',
       );
@@ -93,8 +93,8 @@ class ClientWorkspaceScreen extends StatelessWidget {
     return _ViewData(
       title: title,
       subtitle: session.normalizedSubscriptionStatus == 'active'
-          ? 'Workspace keeps the full lead generation to meeting flow visible without duplicating targeting or operator views.'
-          : 'Workspace keeps setup, billing standing, and activation readiness visible before service is fully active.',
+          ? 'Home keeps the client system visible without duplicating targeting or operator views.'
+          : 'Home keeps setup, billing standing, and activation readiness visible before service is fully active.',
       metrics: [
         _Metric('Account state', session.hasSetupCompleted ? 'Setup complete' : 'Setup incomplete'),
         _Metric('Replies', _countLabel(activity['replies'])),
@@ -103,22 +103,22 @@ class ClientWorkspaceScreen extends StatelessWidget {
       ],
       primaryTitle: 'Current flow',
       primaryRows: [
-        _Row(title: 'Campaign targeting', primary: 'Set scope, industries, and market boundaries in one place only.', secondary: 'Campaigns is now the canonical targeting surface for lead generation.', actionLabel: 'Open campaigns', route: '/client/campaigns'),
+        _Row(title: 'Campaign targeting', primary: 'Set scope, industries, and market boundaries in one place only.', secondary: 'Campaigns is now the canonical targeting surface for lead generation.', actionLabel: 'Open campaigns', route: '/app/campaigns'),
         _Row(title: 'Lead generation', primary: _join([
           '${_countValue(activity['leadCount'] ?? activity['leads'])} leads',
           '${_countValue(activity['sendableLeadCount'] ?? activity['sendableLeads'])} sendable',
-        ]), secondary: 'Use leads to review sourcing, sendability, outreach movement, and reply state.', actionLabel: 'Open leads', route: '/client/leads'),
+        ]), secondary: 'Use leads to review sourcing, sendability, outreach movement, and reply state.', actionLabel: 'Open leads', route: '/app/contacts'),
         _Row(title: 'Meetings', primary: _join([
           '${_countValue(activity['meetingCount'] ?? activity['meetings'])} meetings',
           '${_countValue(activity['handoffPending'] ?? activity['proposedMeetings'])} handoff pending',
-        ]), secondary: 'Meeting truth stays separate from lead generation so proposed and booked are not blurred.', actionLabel: 'Open meetings', route: '/client/meetings'),
+        ]), secondary: 'Meeting truth stays separate from lead generation so proposed and booked are not blurred.', actionLabel: 'Open meetings', route: '/app/activity'),
       ],
       primaryEmpty: 'No workspace movement is visible yet.',
       secondaryTitle: 'Account and support',
       secondaryRows: [
-        _Row(title: 'Billing standing', primary: _title(_read(subscription ?? const {}, 'status', fallback: session.subscriptionStatus)), secondary: 'Invoices, statements, and service standing stay under billing.', actionLabel: 'Open billing', route: '/client/billing'),
-        _Row(title: 'Account control', primary: _join([_read(client, 'websiteUrl'), _read(client, 'bookingUrl')]), secondary: 'Profile, password, and account settings stay separate from execution.', actionLabel: 'Open account', route: '/client/account'),
-        _Row(title: 'Support', primary: notifications.isEmpty ? 'Support is available whenever you need guidance.' : '${notifications.length} notices currently visible.', secondary: 'Help stays available without mixing with leads or campaigns.', actionLabel: 'Open help', route: '/client/help'),
+        _Row(title: 'Billing standing', primary: _title(_read(subscription ?? const {}, 'status', fallback: session.subscriptionStatus)), secondary: 'Invoices, statements, and service standing stay under billing.', actionLabel: 'Open billing', route: '/app/billing'),
+        _Row(title: 'Account control', primary: _join([_read(client, 'websiteUrl'), _read(client, 'bookingUrl')]), secondary: 'Profile, password, and account settings stay separate from execution.', actionLabel: 'Open account', route: '/app/account'),
+        _Row(title: 'Support', primary: notifications.isEmpty ? 'Support is available whenever you need guidance.' : '${notifications.length} notices currently visible.', secondary: 'Help stays available without mixing with leads or campaigns.', actionLabel: 'Open help', route: '/app/account'),
       ],
       secondaryEmpty: 'No account actions are visible yet.',
     );

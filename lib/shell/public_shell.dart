@@ -5,11 +5,7 @@ import '../core/brand/brand_assets.dart';
 import '../core/theme/app_theme.dart';
 
 class PublicShell extends StatelessWidget {
-  const PublicShell({
-    super.key,
-    required this.currentPath,
-    required this.child,
-  });
+  const PublicShell({super.key, required this.currentPath, required this.child});
 
   final String currentPath;
   final Widget child;
@@ -18,10 +14,13 @@ class PublicShell extends StatelessWidget {
 
   bool _shouldUsePublicChrome(String path) {
     return path == '/' ||
+        path == '/product' ||
         path == '/pricing' ||
+        path == '/about' ||
         path == '/contact' ||
-        path == '/terms' ||
-        path == '/privacy' ||
+        path == '/newsletter' ||
+        path == '/newsletter/subscribe' ||
+        path.startsWith('/auth/') ||
         path.startsWith('/legal/');
   }
 
@@ -84,7 +83,7 @@ class _PublicHeader extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final compact = constraints.maxWidth < 980;
+                final compact = constraints.maxWidth < 1080;
 
                 final brand = InkWell(
                   borderRadius: BorderRadius.circular(14),
@@ -101,9 +100,24 @@ class _PublicHeader extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _HeaderLink(
+                      label: 'Product',
+                      active: _isActive(const ['/product']),
+                      onTap: () => context.go('/product'),
+                    ),
+                    _HeaderLink(
                       label: 'Pricing',
                       active: _isActive(const ['/pricing']),
                       onTap: () => context.go('/pricing'),
+                    ),
+                    _HeaderLink(
+                      label: 'About',
+                      active: _isActive(const ['/about']),
+                      onTap: () => context.go('/about'),
+                    ),
+                    _HeaderLink(
+                      label: 'Newsletter',
+                      active: _isActive(const ['/newsletter', '/newsletter/subscribe']),
+                      onTap: () => context.go('/newsletter'),
                     ),
                     _HeaderLink(
                       label: 'Contact',
@@ -119,26 +133,22 @@ class _PublicHeader extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     OutlinedButton(
-                      onPressed: () => context.go('/login'),
+                      onPressed: () => context.go('/auth/login'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.publicText,
                         side: const BorderSide(color: AppTheme.publicLine),
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: const Text('Sign in'),
                     ),
                     FilledButton(
-                      onPressed: () => context.go('/join'),
+                      onPressed: () => context.go('/auth/join'),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.publicText,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: const Text('Join'),
                     ),
@@ -151,14 +161,9 @@ class _PublicHeader extends StatelessWidget {
                     children: [
                       brand,
                       const SizedBox(height: 14),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: nav),
-                          const SizedBox(width: 16),
-                          actions,
-                        ],
-                      ),
+                      nav,
+                      const SizedBox(height: 14),
+                      actions,
                     ],
                   );
                 }
@@ -187,22 +192,13 @@ class _PublicFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final links = [
-      _FooterLink(label: 'Terms', onTap: () => context.go('/terms')),
-      _FooterLink(label: 'Privacy', onTap: () => context.go('/privacy')),
-      _FooterLink(
-        label: 'Service Agreement',
-        onTap: () => context.go('/legal/service-agreement'),
-      ),
+      _FooterLink(label: 'Terms', onTap: () => context.go('/legal/terms')),
+      _FooterLink(label: 'Privacy', onTap: () => context.go('/legal/privacy')),
+      _FooterLink(label: 'Service Agreement', onTap: () => context.go('/legal/service-agreement')),
       _FooterLink(label: 'Billing', onTap: () => context.go('/legal/billing')),
       _FooterLink(label: 'Refund', onTap: () => context.go('/legal/refunds')),
-      _FooterLink(
-        label: 'Acceptable Use',
-        onTap: () => context.go('/legal/acceptable-use'),
-      ),
-      _FooterLink(
-        label: 'Deliverability',
-        onTap: () => context.go('/legal/deliverability'),
-      ),
+      _FooterLink(label: 'Acceptable Use', onTap: () => context.go('/legal/acceptable-use')),
+      _FooterLink(label: 'Deliverability', onTap: () => context.go('/legal/deliverability')),
     ];
 
     return Container(
@@ -230,11 +226,7 @@ class _PublicFooter extends StatelessWidget {
 }
 
 class _HeaderLink extends StatelessWidget {
-  const _HeaderLink({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
+  const _HeaderLink({required this.label, required this.active, required this.onTap});
 
   final String label;
   final bool active;
@@ -267,14 +259,16 @@ class _FooterLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.publicMuted,
+                decoration: TextDecoration.underline,
+                decorationColor: AppTheme.publicMuted.withOpacity(0.3),
               ),
         ),
       ),

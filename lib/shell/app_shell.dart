@@ -15,24 +15,18 @@ class AppShell extends StatelessWidget {
   static const double _maxContentWidth = 1320;
 
   static const groups = [
-    _NavGroup('Command', [_NavItem('Command', '/app/command')]),
-    _NavGroup('Flow', [
-      _NavItem('Leads', '/app/pipeline'),
-      _NavItem('Campaigns', '/app/execution/campaigns'),
-      _NavItem('Clients', '/app/clients'),
+    _NavGroup('Operator', [
+      _NavItem('Overview', '/ops/overview'),
+      _NavItem('Clients', '/ops/clients'),
+      _NavItem('Contacts', '/ops/contacts'),
+      _NavItem('Campaigns', '/ops/campaigns'),
     ]),
-    _NavGroup('Conversations', [
-      _NavItem('Inquiries', '/app/inquiries'),
-      _NavItem('Replies', '/app/execution/replies'),
-      _NavItem('Meetings', '/app/execution/meetings'),
-      _NavItem('Communications', '/app/communications'),
-    ]),
-    _NavGroup('System', [
-      _NavItem('Execution', '/app/execution'),
-      _NavItem('Deliverability', '/app/deliverability'),
-      _NavItem('Revenue', '/app/revenue'),
-      _NavItem('Records', '/app/records'),
-      _NavItem('Settings', '/app/settings'),
+    _NavGroup('Operations', [
+      _NavItem('Mailboxes', '/ops/mailboxes'),
+      _NavItem('Providers', '/ops/providers'),
+      _NavItem('Activity', '/ops/activity'),
+      _NavItem('Inquiries', '/ops/inquiries'),
+      _NavItem('Debug', '/ops/debug'),
     ]),
   ];
 
@@ -76,7 +70,7 @@ class AppShell extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Command center live',
+                                'Operator surface live',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ),
@@ -90,7 +84,10 @@ class AppShell extends StatelessWidget {
                           separatorBuilder: (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final group = groups[index];
-                            return _NavGroupWidget(group: group, currentPath: currentPath);
+                            return _NavGroupWidget(
+                              group: group,
+                              currentPath: currentPath,
+                            );
                           },
                         ),
                       ),
@@ -124,7 +121,10 @@ class AppShell extends StatelessWidget {
                                       _topbarTitle(currentPath),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
                                             color: AppTheme.subdued,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -188,10 +188,7 @@ class AppShell extends StatelessWidget {
 
 bool _matchesPath(String currentPath, String itemPath) {
   if (currentPath == itemPath) return true;
-  if (itemPath == '/app/inquiries' && currentPath.startsWith('/app/inquiries/')) {
-    return true;
-  }
-  if (itemPath == '/app/execution' && currentPath.startsWith('/app/execution/')) {
+  if (itemPath == '/ops/inquiries' && currentPath.startsWith('/ops/inquiries/')) {
     return true;
   }
   return false;
@@ -204,17 +201,18 @@ class _OperatorBrand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selected = _matchesPath(currentPath, '/ops/overview');
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () => context.go('/app/command'),
+      onTap: () => context.go('/ops/overview'),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 14),
         decoration: BoxDecoration(
-          color: currentPath == '/app/command' ? AppTheme.panel : Colors.transparent,
+          color: selected ? AppTheme.panel : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: currentPath == '/app/command' ? AppTheme.line : Colors.transparent,
+            color: selected ? AppTheme.line : Colors.transparent,
           ),
         ),
         child: Column(
@@ -225,8 +223,11 @@ class _OperatorBrand extends StatelessWidget {
             Text('Operations', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(
-              'Command first. Flow, conversations, and system pressure carried from one workspace.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
+              'Public, client, and operator remain separate. This shell carries operator truth only.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppTheme.muted),
             ),
           ],
         ),
@@ -269,7 +270,10 @@ class _NavGroupWidget extends StatelessWidget {
           padding: const EdgeInsets.only(left: 10, bottom: 8),
           child: Text(
             group.label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.subdued),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: AppTheme.subdued),
           ),
         ),
         for (final item in group.items) ...[

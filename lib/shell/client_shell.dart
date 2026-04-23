@@ -24,12 +24,15 @@ class _ClientShellState extends State<ClientShell> {
   static const double _maxContentWidth = 1320;
 
   static const List<_ClientNavItem> _primaryItems = [
-    _ClientNavItem(label: 'Workspace', path: '/client/workspace'),
-    _ClientNavItem(label: 'Campaigns', path: '/client/campaigns'),
-    _ClientNavItem(label: 'Leads', path: '/client/leads'),
-    _ClientNavItem(label: 'Meetings', path: '/client/meetings'),
-    _ClientNavItem(label: 'Billing', path: '/client/billing'),
-    _ClientNavItem(label: 'Account', path: '/client/account'),
+    _ClientNavItem(label: 'Home', path: '/app/home'),
+    _ClientNavItem(label: 'Contacts', path: '/app/contacts'),
+    _ClientNavItem(label: 'Campaigns', path: '/app/campaigns'),
+    _ClientNavItem(label: 'Activity', path: '/app/activity'),
+    _ClientNavItem(label: 'Mailbox', path: '/app/mailbox'),
+    _ClientNavItem(label: 'Newsletter', path: '/app/newsletter'),
+    _ClientNavItem(label: 'Branding', path: '/app/branding'),
+    _ClientNavItem(label: 'Billing', path: '/app/billing'),
+    _ClientNavItem(label: 'Account', path: '/app/account'),
   ];
 
   @override
@@ -62,62 +65,96 @@ class _ClientShellState extends State<ClientShell> {
   }
 
   String _subscriptionLabel(AuthSessionController session) {
-    final service = (_subscription?['serviceName'] ?? _subscription?['service'] ?? session.selectedPlan ?? 'Not set').toString().trim();
-    final tier = (_subscription?['tierName'] ?? _subscription?['tier'] ?? session.selectedTier ?? '').toString().trim();
+    final service = (_subscription?['serviceName'] ??
+            _subscription?['service'] ??
+            session.selectedPlan ??
+            'Not set')
+        .toString()
+        .trim();
+    final tier = (_subscription?['tierName'] ??
+            _subscription?['tier'] ??
+            session.selectedTier ??
+            '')
+        .toString()
+        .trim();
     return [service, tier].where((e) => e.isNotEmpty).join(' · ');
   }
 
   String _billingLabel(AuthSessionController session) {
-    return (_subscription?['status'] ?? session.subscriptionStatus).toString().trim().isEmpty
+    return (_subscription?['status'] ?? session.subscriptionStatus)
+            .toString()
+            .trim()
+            .isEmpty
         ? 'Unknown'
-        : (_subscription?['status'] ?? session.subscriptionStatus).toString().trim();
+        : (_subscription?['status'] ?? session.subscriptionStatus)
+            .toString()
+            .trim();
   }
 
   String _topTitle() {
     switch (widget.currentPath) {
-      case '/client/campaigns':
-        return 'Campaign targeting';
-      case '/client/leads':
-        return 'Lead generation';
-      case '/client/meetings':
-        return 'Meetings';
-      case '/client/billing':
+      case '/app/contacts':
+        return 'Contacts';
+      case '/app/campaigns':
+        return 'Campaigns';
+      case '/app/activity':
+        return 'Activity';
+      case '/app/mailbox':
+        return 'Mailbox';
+      case '/app/newsletter':
+        return 'Newsletter';
+      case '/app/branding':
+        return 'Branding';
+      case '/app/billing':
         return 'Billing';
-      case '/client/account':
+      case '/app/account':
         return 'Account';
-      case '/client/help':
-        return 'Help';
       default:
-        return 'Workspace';
+        return 'Home';
     }
   }
 
   String _topStateLine(AuthSessionController session) {
-    if (!session.emailVerified) return 'Verify the account so client access stays clear.';
-    if (!session.hasSetupCompleted) return 'Finish setup so targeting and delivery stay grounded in the right scope.';
+    if (!session.emailVerified) {
+      return 'Verify the account so client access stays clear.';
+    }
+    if (!session.hasSetupCompleted) {
+      return 'Finish setup so targeting and delivery stay grounded in the right scope.';
+    }
     if (session.normalizedSubscriptionStatus != 'active') {
-      return 'Campaign control stays visible while activation and billing are still being completed.';
+      return 'Activation and billing are still being completed, but the client system remains visible.';
     }
-    if (widget.currentPath == '/client/campaigns') {
-      return 'This is the one place for targeting, geography, and activation control.';
+
+    switch (widget.currentPath) {
+      case '/app/contacts':
+        return 'Contacts is the client memory surface for sourced records and readiness.';
+      case '/app/campaigns':
+        return 'Campaigns remains the one place for targeting, geography, and activation control.';
+      case '/app/activity':
+        return 'Activity holds execution truth across replies, meetings, and movement.';
+      case '/app/mailbox':
+        return 'Mailbox shows dispatch and reply movement without mixing it into targeting.';
+      case '/app/newsletter':
+        return 'Newsletter is reserved here so future communication stays in the client system.';
+      case '/app/branding':
+        return 'Branding remains a first-class family for identity, templates, and signatures.';
+      case '/app/billing':
+        return 'Billing stays separate from execution so service standing remains clear.';
+      case '/app/account':
+        return 'Profile, password, and client-level controls stay under account.';
+      default:
+        return 'Home keeps the client system readable without blending campaigns, activity, or billing.';
     }
-    if (widget.currentPath == '/client/leads') {
-      return 'This view keeps sourcing, sendability, and communication movement together.';
-    }
-    if (widget.currentPath == '/client/meetings') {
-      return 'Handoff, booking, and outcomes stay separate so meeting truth is visible.';
-    }
-    return 'Campaigns, leads, meetings, billing, and account control stay in view from here.';
   }
 
-  bool _isSelected(String path) {
-    return widget.currentPath == path;
-  }
+  bool _isSelected(String path) => widget.currentPath == path;
 
   @override
   Widget build(BuildContext context) {
     final session = AuthSessionController.instance;
-    final name = session.workspaceName.trim().isNotEmpty ? session.workspaceName.trim() : 'Client workspace';
+    final name = session.workspaceName.trim().isNotEmpty
+        ? session.workspaceName.trim()
+        : 'Client workspace';
     final email = session.email.trim();
 
     return Theme(
@@ -137,16 +174,25 @@ class _ClientShellState extends State<ClientShell> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       InkWell(
-                        onTap: () => context.go('/client/workspace'),
+                        onTap: () => context.go('/app/home'),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             BrandAssets.logo(context, height: 30),
                             const SizedBox(height: 16),
-                            Text(name, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                            Text(
+                              name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
                             if (email.isNotEmpty) ...[
                               const SizedBox(height: 6),
-                              Text(email, style: Theme.of(context).textTheme.bodyMedium),
+                              Text(
+                                email,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
                             ],
                           ],
                         ),
@@ -158,16 +204,12 @@ class _ClientShellState extends State<ClientShell> {
                           separatorBuilder: (_, __) => const SizedBox(height: 6),
                           itemBuilder: (context, index) {
                             final item = _primaryItems[index];
-                            final selected = _isSelected(item.path);
-                            return _NavButton(item: item, selected: selected);
+                            return _NavButton(
+                              item: item,
+                              selected: _isSelected(item.path),
+                            );
                           },
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _SecondaryButton(
-                        label: 'Help',
-                        selected: _isSelected('/client/help'),
-                        onTap: () => context.go('/client/help'),
                       ),
                       const SizedBox(height: 6),
                       TextButton(
@@ -175,7 +217,13 @@ class _ClientShellState extends State<ClientShell> {
                           await AuthSessionController.instance.clear();
                           if (context.mounted) context.go('/client/login');
                         },
-                        style: TextButton.styleFrom(alignment: Alignment.centerLeft, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
+                        style: TextButton.styleFrom(
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                        ),
                         child: const Text('Sign out'),
                       ),
                     ],
@@ -189,7 +237,9 @@ class _ClientShellState extends State<ClientShell> {
                   Container(
                     decoration: const BoxDecoration(
                       color: AppTheme.publicBackground,
-                      border: Border(bottom: BorderSide(color: AppTheme.publicLine)),
+                      border: Border(
+                        bottom: BorderSide(color: AppTheme.publicLine),
+                      ),
                     ),
                     child: SafeArea(
                       bottom: false,
@@ -198,31 +248,69 @@ class _ClientShellState extends State<ClientShell> {
                         padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
                         child: Center(
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+                            constraints: const BoxConstraints(
+                              maxWidth: _maxContentWidth,
+                            ),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
                                 final compact = constraints.maxWidth < 980;
                                 final titleBlock = Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(_topTitle(), style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700, color: AppTheme.publicText)),
+                                    Text(
+                                      _topTitle(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.publicText,
+                                          ),
+                                    ),
                                     const SizedBox(height: 6),
-                                    Text(_topStateLine(session), style: Theme.of(context).textTheme.bodyMedium),
+                                    Text(
+                                      _topStateLine(session),
+                                      style: Theme.of(context).textTheme.bodyMedium,
+                                    ),
                                   ],
                                 );
                                 final utility = Wrap(
                                   spacing: 10,
                                   runSpacing: 10,
                                   children: [
-                                    _Pill(label: 'State', value: session.hasSetupCompleted ? 'Ready for activation' : 'Setup incomplete'),
-                                    _Pill(label: 'Plan', value: _subscriptionLabel(session)),
-                                    _Pill(label: 'Billing', value: _billingLabel(session)),
+                                    _Pill(
+                                      label: 'State',
+                                      value: session.hasSetupCompleted
+                                          ? 'Setup complete'
+                                          : 'Setup incomplete',
+                                    ),
+                                    _Pill(
+                                      label: 'Plan',
+                                      value: _subscriptionLabel(session),
+                                    ),
+                                    _Pill(
+                                      label: 'Billing',
+                                      value: _billingLabel(session),
+                                    ),
                                   ],
                                 );
                                 if (compact) {
-                                  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [titleBlock, const SizedBox(height: 14), utility]);
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      titleBlock,
+                                      const SizedBox(height: 14),
+                                      utility,
+                                    ],
+                                  );
                                 }
-                                return Row(children: [Expanded(child: titleBlock), const SizedBox(width: 20), utility]);
+                                return Row(
+                                  children: [
+                                    Expanded(child: titleBlock),
+                                    const SizedBox(width: 20),
+                                    utility,
+                                  ],
+                                );
                               },
                             ),
                           ),
@@ -235,7 +323,9 @@ class _ClientShellState extends State<ClientShell> {
                       padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
                       child: Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+                          constraints: const BoxConstraints(
+                            maxWidth: _maxContentWidth,
+                          ),
                           child: widget.child,
                         ),
                       ),
@@ -253,8 +343,10 @@ class _ClientShellState extends State<ClientShell> {
 
 class _NavButton extends StatelessWidget {
   const _NavButton({required this.item, required this.selected});
+
   final _ClientNavItem item;
   final bool selected;
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -265,29 +357,13 @@ class _NavButton extends StatelessWidget {
         onTap: () => context.go(item.path),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Text(item.label, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: selected ? AppTheme.publicAccent : AppTheme.publicText, fontWeight: FontWeight.w700)),
-        ),
-      ),
-    );
-  }
-}
-
-class _SecondaryButton extends StatelessWidget {
-  const _SecondaryButton({required this.label, required this.selected, required this.onTap});
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppTheme.publicAccentSoft : Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Text(label, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: selected ? AppTheme.publicAccent : AppTheme.publicText, fontWeight: FontWeight.w700)),
+          child: Text(
+            item.label,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: selected ? AppTheme.publicAccent : AppTheme.publicText,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
         ),
       ),
     );
@@ -296,20 +372,33 @@ class _SecondaryButton extends StatelessWidget {
 
 class _Pill extends StatelessWidget {
   const _Pill({required this.label, required this.value});
+
   final String label;
   final String value;
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.publicLine)),
-      child: Text('$label: $value', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Text(
+        '$label: $value',
+        style: Theme.of(context)
+            .textTheme
+            .titleMedium
+            ?.copyWith(fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
 
 class _ClientNavItem {
   const _ClientNavItem({required this.label, required this.path});
+
   final String label;
   final String path;
 }
