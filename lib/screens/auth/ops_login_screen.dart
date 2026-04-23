@@ -85,7 +85,7 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
         workspaceName: _workspace.text.trim(),
       );
       await AuthSessionController.instance.applyAuthResponse(response);
-      if (mounted) context.go('/app/command');
+      if (mounted) context.go('/ops/overview');
     } catch (error) {
       setState(() => _error = 'We could not create operator access.');
     } finally {
@@ -99,7 +99,7 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
     try {
       final response = await AuthRepository().loginOperator(email: _email.text.trim(), password: _password.text);
       await AuthSessionController.instance.applyAuthResponse(response);
-      if (mounted) context.go('/app/command');
+      if (mounted) context.go('/ops/overview');
     } catch (error) {
       setState(() => _error = 'That operator login did not work.');
     } finally {

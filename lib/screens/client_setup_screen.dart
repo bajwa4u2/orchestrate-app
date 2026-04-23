@@ -181,7 +181,7 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
       if (!mounted) return;
       context.go(
         Uri(
-          path: '/client/subscribe',
+          path: '/app/subscribe',
           queryParameters: {
             'plan': _planCode,
             'tier': _tierCode,

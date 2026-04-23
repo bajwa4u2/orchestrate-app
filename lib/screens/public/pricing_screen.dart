@@ -108,19 +108,19 @@ class _PricingScreenState extends State<PricingScreen> {
     await session.rememberSelection(plan: _selectedPlan, tier: tierCode);
 
     final route = _route(
-      '/client/join',
+      '/auth/join',
       plan: _selectedPlan,
       tier: tierCode,
       trialRequested: _trialRequested,
     );
     final setupRoute = _route(
-      '/client/setup',
+      '/app/setup',
       plan: _selectedPlan,
       tier: tierCode,
       trialRequested: _trialRequested,
     );
     final subscribeRoute = _route(
-      '/client/subscribe',
+      '/app/subscribe',
       plan: _selectedPlan,
       tier: tierCode,
       trialRequested: _trialRequested,
@@ -136,7 +136,7 @@ class _PricingScreenState extends State<PricingScreen> {
     if (!session.emailVerified) {
       context.go(
         _route(
-          '/client/verify-email',
+          '/auth/verify-email',
           plan: _selectedPlan,
           tier: tierCode,
           trialRequested: _trialRequested,
@@ -155,7 +155,7 @@ class _PricingScreenState extends State<PricingScreen> {
       return;
     }
 
-    context.go('/client/workspace');
+    context.go('/app/home');
   }
 
   @override

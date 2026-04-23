@@ -282,7 +282,7 @@ PublicContentScreen buildHowItWorksScreen() => const PublicContentScreen(
       sideNote:
           'The point is simple: the work that starts the conversation should stay connected to the work that closes it.',
       sideActions: [
-        ContentAction(label: 'Create account', path: '/client/create-account', filled: true),
+        ContentAction(label: 'Create account', path: '/auth/join', filled: true),
       ],
       sections: [
         ContentSection(
@@ -323,7 +323,7 @@ PublicContentScreen buildPricingScreen() => const PublicContentScreen(
       sideNote:
           'Revenue includes Opportunity by design. Billing is part of the operating system, not an extra add-on.',
       sideActions: [
-        ContentAction(label: 'Create account', path: '/client/create-account', filled: true),
+        ContentAction(label: 'Create account', path: '/auth/join', filled: true),
       ],
       sections: [
         ContentSection(
@@ -361,7 +361,7 @@ PublicContentScreen buildContactScreen() => const PublicContentScreen(
           'Use this page to talk through service fit, scope, pricing, or onboarding before you move forward.',
       sideNote: 'Ready to move forward? Create your account and continue from there.',
       sideActions: [
-        ContentAction(label: 'Create account', path: '/client/create-account', filled: true),
+        ContentAction(label: 'Create account', path: '/auth/join', filled: true),
       ],
       sections: [
         ContentSection(

@@ -220,7 +220,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
       if (!mounted) return;
       final email = response['email']?.toString().trim();
-      context.go(_route('/client/verify-email', sent: true, email: email));
+      context.go(_route('/auth/verify-email', sent: true, email: email));
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = _humanize(error));
@@ -327,18 +327,18 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (!mounted) return;
     
     if (!session.emailVerified) {
-      context.go(_route('/client/verify-email', email: session.email));
+      context.go(_route('/auth/verify-email', email: session.email));
       return;
     }
     if (!session.hasSetupCompleted) {
-      context.go(_route('/client/setup'));
+      context.go(_route('/app/setup'));
       return;
     }
     if (session.normalizedSubscriptionStatus != 'active') {
-      context.go(_route('/client/subscribe'));
+      context.go(_route('/app/subscribe'));
       return;
     }
-    context.go('/client/workspace');
+    context.go('/app/home');
   }
 
   Future<void> requestPasswordReset() async {
@@ -747,7 +747,7 @@ class _AuthCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       TextButton(
-                        onPressed: () => context.go(state._route('/client/login')),
+                        onPressed: () => context.go(state._route('/auth/login')),
                         child: const Text('Sign in'),
                       ),
                     ],
@@ -813,7 +813,7 @@ class _AuthCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       TextButton(
-                        onPressed: () => context.go(state._route('/client/join')),
+                        onPressed: () => context.go(state._route('/auth/join')),
                         child: const Text('Create workspace'),
                       ),
                     ],
@@ -883,7 +883,7 @@ class _VerificationView extends StatelessWidget {
                         children: [
                           FilledButton(
                             onPressed:
-                                () => context.go(state._route('/client/login')),
+                                () => context.go(state._route('/auth/login')),
                             child: const Text('Go to sign in'),
                           ),
                           OutlinedButton(
@@ -901,7 +901,7 @@ class _VerificationView extends StatelessWidget {
                           ),
                           TextButton(
                             onPressed:
-                                () => context.go(state._route('/client/join')),
+                                () => context.go(state._route('/auth/join')),
                             child: const Text('Use another email'),
                           ),
                         ],
@@ -997,7 +997,7 @@ class _ResetView extends StatelessWidget {
                           ),
                           OutlinedButton(
                             onPressed:
-                                () => context.go(state._route('/client/login')),
+                                () => context.go(state._route('/auth/login')),
                             child: const Text('Back to sign in'),
                           ),
                         ],

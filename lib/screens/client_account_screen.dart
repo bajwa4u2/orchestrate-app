@@ -80,7 +80,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
 
     if (result == true && mounted) {
       await AuthSessionController.instance.clear();
-      if (mounted) context.go('/client/login');
+      if (mounted) context.go('/auth/login');
     }
   }
 
@@ -133,7 +133,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                   _HeroAction(
                     label: 'Help',
                     isPrimary: false,
-                    onPressed: () => context.go('/client/help'),
+                    onPressed: () => context.go('/contact'),
                   ),
                 ],
               ),

@@ -596,7 +596,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.go('/client/billing');
+              context.go('/app/billing');
             },
             child: const Text('View plans'),
           ),
@@ -1019,7 +1019,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         onPressed: (_starting || _restarting || _saving || _campaignPrimaryAction == _CampaignPrimaryAction.waiting)
                             ? null
                             : (_campaignPrimaryAction == _CampaignPrimaryAction.viewLeads
-                                ? () => context.go('/client/leads')
+                                ? () => context.go('/app/contacts')
                                 : _startCampaign),
                         icon: (_starting || _restarting || _saving)
                             ? const SizedBox(
@@ -1058,7 +1058,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                             label: Text(_restarting ? 'Restarting...' : 'Restart campaign'),
                           ),
                         TextButton.icon(
-                          onPressed: (_restarting || _starting) ? null : () => context.go('/client/workspace'),
+                          onPressed: (_restarting || _starting) ? null : () => context.go('/app/home'),
                           icon: const Icon(Icons.arrow_back),
                           label: const Text('Back to workspace'),
                         ),

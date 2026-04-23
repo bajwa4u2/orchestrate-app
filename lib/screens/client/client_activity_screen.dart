@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../../data/repositories/client/client_meetings_repository.dart';
 import '../../data/repositories/client/client_outreach_repository.dart';
 import '../../data/repositories/client/client_workspace_repository.dart';
 
@@ -35,12 +34,14 @@ class ClientActivityScreen extends StatelessWidget {
                   final stacked = constraints.maxWidth < 980;
                   final left = _Panel(
                     title: 'Reply movement',
-                    emptyLabel: 'Replies will appear here once conversations begin to move.',
+                    emptyLabel:
+                        'Replies will appear here once conversations begin to move.',
                     items: data.replyRows,
                   );
                   final right = _Panel(
-                    title: 'Meeting movement',
-                    emptyLabel: 'Meetings will appear here once handoff starts.',
+                    title: 'Meeting and mailbox readiness',
+                    emptyLabel:
+                        'Meeting handoff and mailbox readiness will appear here as execution begins to move.',
                     items: data.meetingRows,
                   );
 
@@ -69,25 +70,25 @@ class ClientActivityScreen extends StatelessWidget {
 
   Future<_ActivityViewData> _load() async {
     final outreachRepo = ClientOutreachRepository();
-    final meetingsRepo = ClientMeetingsRepository();
     final workspaceRepo = ClientWorkspaceRepository();
 
     final overview = await workspaceRepo.fetchOverview();
     final replies = await outreachRepo.fetchReplies();
-    final meetings = await meetingsRepo.fetchMeetings();
     final dispatches = await outreachRepo.fetchEmailDispatches();
 
     final activity = _asMap(overview['activity']);
     final replyRows = replies.take(10).map(_activityRowFromReply).toList();
-    final meetingRows = meetings.take(10).map(_activityRowFromMeeting).toList();
+    final meetingRows = _meetingRowsFromOverview(overview).take(10).toList();
 
     return _ActivityViewData(
-      replyCount: _countValue(activity['replies']) == 0 ? replies.length : _countValue(activity['replies']),
-      meetingCount: _countValue(activity['meetings'] ?? activity['meetingCount']) == 0
-          ? meetings.length
-          : _countValue(activity['meetings'] ?? activity['meetingCount']),
+      replyCount: _countValue(activity['replies']) == 0
+          ? replies.length
+          : _countValue(activity['replies']),
+      meetingCount: _countValue(activity['meetings'] ?? activity['meetingCount']),
       dispatchCount: dispatches.length,
-      sendableCount: _countValue(activity['sendableLeadCount'] ?? activity['sendableLeads']),
+      sendableCount: _countValue(
+        activity['sendableLeadCount'] ?? activity['sendableLeads'],
+      ),
       replyRows: replyRows,
       meetingRows: meetingRows,
     );
@@ -144,26 +145,23 @@ class _Hero extends StatelessWidget {
         children: [
           Text(
             'Activity',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(color: AppTheme.publicMuted),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
           ),
           const SizedBox(height: 10),
           Text(
-            'Execution truth across replies, meetings, and outbound movement',
-            style: Theme.of(context)
-                .textTheme
-                .headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
+            'Execution truth across replies, dispatches, and meeting handoff',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 12),
           Text(
             'Activity stays separate from targeting so you can see what has actually moved.',
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: AppTheme.publicMuted),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
           ),
         ],
       ),
@@ -203,10 +201,9 @@ class _MetricRow extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       entry.$2,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                   ],
                 ),
@@ -264,10 +261,9 @@ class _Panel extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context)
-                .textTheme
-                .headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 16),
           if (items.isEmpty)
@@ -302,10 +298,9 @@ class _Item extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             item.secondary,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: AppTheme.publicMuted),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
           ),
         ],
       ],
@@ -332,25 +327,41 @@ _ActivityRow _activityRowFromReply(dynamic raw) {
   );
 }
 
-_ActivityRow _activityRowFromMeeting(dynamic raw) {
-  final map = _asMap(raw);
-  final lead = _asMap(map['lead']);
-  return _ActivityRow(
-    title: _firstNonEmpty([
-      _read(map, 'title'),
-      _read(lead, 'companyName'),
-      _read(lead, 'fullName'),
-      'Meeting',
-    ]),
-    primary: _join([
-      _title(_read(map, 'status')),
-      _formatDateTime(_read(map, 'scheduledAt')),
-    ]),
-    secondary: _join([
-      _read(map, 'bookingUrl'),
-      _read(map, 'timezone'),
-    ]),
-  );
+List<_ActivityRow> _meetingRowsFromOverview(Map<String, dynamic> overview) {
+  final activity = _asMap(overview['activity']);
+  final execution = _asMap(overview['execution']);
+  final mailbox = _asMap(overview['mailbox']);
+  final primaryMailbox = _asMap(mailbox['primary']);
+
+  final rows = <_ActivityRow>[
+    _ActivityRow(
+      title: 'Meeting handoff',
+      primary:
+          '${_countValue(activity['meetings'] ?? activity['meetingCount'])} meetings on record',
+      secondary: _join([
+        _read(execution, 'surfaceLabel'),
+        _read(execution, 'summary'),
+      ]),
+    ),
+  ];
+
+  if (mailbox.isNotEmpty) {
+    rows.add(
+      _ActivityRow(
+        title: 'Mailbox readiness',
+        primary: mailbox['ready'] == true
+            ? 'Mailbox ready for live execution'
+            : 'Mailbox still needs attention',
+        secondary: _join([
+          _read(primaryMailbox, 'emailAddress'),
+          _title(_read(primaryMailbox, 'connectionState')),
+          _title(_read(primaryMailbox, 'healthStatus')),
+        ]),
+      ),
+    );
+  }
+
+  return rows;
 }
 
 Map<String, dynamic> _asMap(dynamic value) {
@@ -388,7 +399,8 @@ String _firstNonEmpty(List<String> values) {
   return '';
 }
 
-String _join(List<String> values) => values.where((entry) => entry.trim().isNotEmpty).join(' · ');
+String _join(List<String> values) =>
+    values.where((entry) => entry.trim().isNotEmpty).join(' · ');
 
 String _formatDateTime(String value) {
   if (value.trim().isEmpty) return '';

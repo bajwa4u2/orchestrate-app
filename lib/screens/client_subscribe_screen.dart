@@ -99,7 +99,7 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
     });
 
     final nextUri = Uri(
-      path: '/client/subscribe',
+      path: '/app/subscribe',
       queryParameters: {
         'plan': nextPlan,
         'tier': nextTier,
@@ -196,8 +196,8 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                                 trialDays: catalog?.trialDays ?? 15,
                                 activating: _subscribing,
                                 onActivate: _subscribing ? null : _activate,
-                                onReviewAccount: () => context.go('/client/account'),
-                                onReviewWorkspace: () => context.go('/client/workspace'),
+                                onReviewAccount: () => context.go('/app/account'),
+                                onReviewWorkspace: () => context.go('/app/home'),
                               );
 
                               if (stacked) {

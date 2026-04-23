@@ -215,7 +215,7 @@ class _ClientShellState extends State<ClientShell> {
                       TextButton(
                         onPressed: () async {
                           await AuthSessionController.instance.clear();
-                          if (context.mounted) context.go('/client/login');
+                          if (context.mounted) context.go('/auth/login');
                         },
                         style: TextButton.styleFrom(
                           alignment: Alignment.centerLeft,

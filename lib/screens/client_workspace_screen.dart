@@ -84,7 +84,7 @@ class ClientHomeScreen extends StatelessWidget {
         secondaryTitle: 'Direct actions',
         secondaryRows: [
           _Row(title: 'Campaign targeting', primary: 'Keep market scope in one place before new sourcing runs.', secondary: 'Countries, industries, notes, and boundaries live in campaigns.', actionLabel: 'Open campaigns', route: '/app/campaigns'),
-          _Row(title: 'Lead generation', primary: 'Lead sourcing and sendability are tracked separately from billing.', secondary: 'Use leads to see what is found, ready, and moving.', actionLabel: 'Open leads', route: '/app/contacts'),
+          _Row(title: 'Contacts and sourcing', primary: 'Lead sourcing and sendability are tracked separately from billing.', secondary: 'Use contacts to review sourced records, sendability, and outreach movement.', actionLabel: 'Open contacts', route: '/app/contacts'),
         ],
         secondaryEmpty: 'No direct actions are available.',
       );
@@ -104,14 +104,14 @@ class ClientHomeScreen extends StatelessWidget {
       primaryTitle: 'Current flow',
       primaryRows: [
         _Row(title: 'Campaign targeting', primary: 'Set scope, industries, and market boundaries in one place only.', secondary: 'Campaigns is now the canonical targeting surface for lead generation.', actionLabel: 'Open campaigns', route: '/app/campaigns'),
-        _Row(title: 'Lead generation', primary: _join([
+        _Row(title: 'Contacts and sourcing', primary: _join([
           '${_countValue(activity['leadCount'] ?? activity['leads'])} leads',
           '${_countValue(activity['sendableLeadCount'] ?? activity['sendableLeads'])} sendable',
-        ]), secondary: 'Use leads to review sourcing, sendability, outreach movement, and reply state.', actionLabel: 'Open leads', route: '/app/contacts'),
+        ]), secondary: 'Use contacts to review sourced records, sendability, outreach movement, and reply state.', actionLabel: 'Open contacts', route: '/app/contacts'),
         _Row(title: 'Meetings', primary: _join([
           '${_countValue(activity['meetingCount'] ?? activity['meetings'])} meetings',
           '${_countValue(activity['handoffPending'] ?? activity['proposedMeetings'])} handoff pending',
-        ]), secondary: 'Meeting truth stays separate from lead generation so proposed and booked are not blurred.', actionLabel: 'Open meetings', route: '/app/activity'),
+        ]), secondary: 'Activity keeps replies, dispatches, and meeting handoff visible in one place.', actionLabel: 'Open activity', route: '/app/activity'),
       ],
       primaryEmpty: 'No workspace movement is visible yet.',
       secondaryTitle: 'Account and support',
