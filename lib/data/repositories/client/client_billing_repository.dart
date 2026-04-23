@@ -37,6 +37,23 @@ class ClientBillingRepository {
     return (json as List? ?? const []).cast<dynamic>();
   }
 
+
+  Future<List<dynamic>> fetchAgreementsSafe() async {
+    try {
+      return await fetchAgreements();
+    } catch (_) {
+      return const <dynamic>[];
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchSubscriptionSafe() async {
+    try {
+      return await fetchSubscription();
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> fetchSubscription() async {
     final json = await _apiClient.getJson(
       '/billing/subscription',

@@ -1,32 +1,23 @@
 import '../../../core/network/api_client.dart';
+import 'client_mailbox_repository.dart';
 
 class ClientOutreachRepository {
   ClientOutreachRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+      : _apiClient = apiClient ?? ApiClient(),
+        _mailboxRepository = ClientMailboxRepository(apiClient: apiClient);
 
   final ApiClient _apiClient;
+  final ClientMailboxRepository _mailboxRepository;
 
   Future<List<dynamic>> fetchReplies({int limit = 12}) async {
-    final json = await _apiClient.getJson(
-      '/replies?limit=$limit',
-      surface: ApiSurface.client,
-    );
-    return (json as List? ?? const []).cast<dynamic>();
+    return _mailboxRepository.fetchRepliesSafe(limit: limit);
   }
 
   Future<List<dynamic>> fetchEmailDispatches() async {
-    final json = await _apiClient.getJson(
-      '/client/email-dispatches',
-      surface: ApiSurface.client,
-    );
-    return (json as List? ?? const []).cast<dynamic>();
+    return _mailboxRepository.fetchEmailDispatchesSafe();
   }
 
   Future<List<dynamic>> fetchNotifications() async {
-    final json = await _apiClient.getJson(
-      '/client/notifications',
-      surface: ApiSurface.client,
-    );
-    return (json as List? ?? const []).cast<dynamic>();
+    return _mailboxRepository.fetchNotificationsSafe();
   }
 }

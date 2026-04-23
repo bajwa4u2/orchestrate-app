@@ -7,30 +7,45 @@ class ClientCampaignRepository {
   final ApiClient _apiClient;
 
   Future<Map<String, dynamic>> fetchCampaignProfile() async {
-    final json = await _apiClient.getJson(
-      '/client/campaign-profile',
-      surface: ApiSurface.client,
-    );
-    final profile = Map<String, dynamic>.from(json as Map);
+    final profile = await _fetchProfile();
+    final operational = await _fetchOperationalView();
 
-    final leadsJson = await _apiClient.getJson(
-      '/client/leads',
-      surface: ApiSurface.client,
-    );
-    final leads = (leadsJson as List? ?? const [])
-        .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
-        .toList();
+    final campaign = _asMap(profile['campaign']).isNotEmpty
+        ? _asMap(profile['campaign'])
+        : _asMap(operational['campaign']);
 
-    final blocking = _buildBlockingSummary(leads);
-    final metrics = _asMap(profile['metrics']);
-    profile['metrics'] = <String, dynamic>{
-      ...metrics,
+    final metrics = <String, dynamic>{
+      ..._asMap(profile['metrics']),
+      ..._asMap(operational['metrics']),
+    };
+
+    final merged = <String, dynamic>{
+      ...profile,
+      if (campaign.isNotEmpty) 'campaign': campaign,
+      'metrics': metrics,
+      'execution': _firstMap(profile['execution'], operational['execution']),
+      'mailbox': _firstMap(profile['mailbox'], operational['mailbox']),
+      'imports': _firstMap(profile['imports'], operational['imports']),
+      'permissions': _firstMap(profile['permissions'], operational['permissions']),
+    };
+
+    final leadsJson = await _fetchListSafe('/client/leads');
+    final blocking = _buildBlockingSummary(leadsJson.map(_asMap).toList());
+    merged['metrics'] = <String, dynamic>{
+      ..._asMap(merged['metrics']),
       'blocked': blocking['blocked'],
       'blockedReasons': blocking['reasonCounts'],
     };
 
-    return profile;
+    return merged;
+  }
+
+  Future<Map<String, dynamic>> fetchCampaignProfileSafe() async {
+    try {
+      return await fetchCampaignProfile();
+    } catch (_) {
+      return const <String, dynamic>{};
+    }
   }
 
   Future<Map<String, dynamic>> updateCampaignProfile({
@@ -71,6 +86,33 @@ class ClientCampaignRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<Map<String, dynamic>> _fetchProfile() async {
+    try {
+      final json = await _apiClient.getJson('/clients/me/campaign-overview', surface: ApiSurface.client);
+      return _asMap(json);
+    } catch (_) {
+      final json = await _apiClient.getJson('/client/campaign-profile', surface: ApiSurface.client);
+      return _asMap(json);
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchOperationalView() async {
+    try {
+      final json = await _apiClient.getJson('/client/campaign-profile/operational-view', surface: ApiSurface.client);
+      return _asMap(json);
+    } catch (_) {
+      return const <String, dynamic>{};
+    }
+  }
+
+  Future<List<dynamic>> _fetchListSafe(String path) async {
+    try {
+      final json = await _apiClient.getJson(path, surface: ApiSurface.client);
+      return json is List ? json : const <dynamic>[];
+    } catch (_) {
+      return const <dynamic>[];
+    }
+  }
 
   Map<String, dynamic> _buildBlockingSummary(List<Map<String, dynamic>> leads) {
     var blocked = 0;
@@ -111,6 +153,12 @@ class ClientCampaignRepository {
         .toList();
   }
 
+  Map<String, dynamic> _firstMap(dynamic first, dynamic second) {
+    final firstMap = _asMap(first);
+    if (firstMap.isNotEmpty) return firstMap;
+    return _asMap(second);
+  }
+
   Map<String, dynamic> _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) {
@@ -118,5 +166,4 @@ class ClientCampaignRepository {
     }
     return <String, dynamic>{};
   }
-
 }

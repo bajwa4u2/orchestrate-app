@@ -77,7 +77,9 @@ class AuthRepository {
       if (workspaceName != null && workspaceName.trim().isNotEmpty)
         'workspaceName': workspaceName.trim(),
     });
-    return Map<String, dynamic>.from(json as Map);
+    final payload = Map<String, dynamic>.from(json as Map);
+    await AuthSessionController.instance.applyAuthResponse(payload);
+    return payload;
   }
 
   Future<Map<String, dynamic>> loginOperator({
@@ -88,7 +90,9 @@ class AuthRepository {
       'email': email,
       'password': password,
     });
-    return Map<String, dynamic>.from(json as Map);
+    final payload = Map<String, dynamic>.from(json as Map);
+    await AuthSessionController.instance.applyAuthResponse(payload);
+    return payload;
   }
 
   Future<Map<String, dynamic>> currentSession() async {

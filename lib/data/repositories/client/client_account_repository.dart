@@ -74,3 +74,14 @@ class ClientAccountRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 }
+
+
+extension ClientAccountRepositorySafe on ClientAccountRepository {
+  Future<Map<String, dynamic>> fetchClientProfileSafe() async {
+    try {
+      return await fetchClientProfile();
+    } catch (_) {
+      return const <String, dynamic>{};
+    }
+  }
+}
