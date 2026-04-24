@@ -14,7 +14,7 @@ class ClientActivityRepository {
     final mailboxRepository = ClientMailboxRepository(apiClient: _apiClient);
 
     final results = await Future.wait<dynamic>([
-      campaignRepository.fetchCampaignProfileSafe(),
+      campaignRepository.fetchCampaignProfile(),
       contactsRepository.fetchContactsSafe(),
       mailboxRepository.fetchRepliesSafe(limit: 50),
       mailboxRepository.fetchEmailDispatchesSafe(),

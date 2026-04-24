@@ -30,7 +30,7 @@ class ClientHomeRepository {
       accountRepository.fetchClientProfileSafe(),
       billingRepository.fetchSubscriptionSafe(),
       billingRepository.fetchAgreementsSafe(),
-      campaignRepository.fetchCampaignProfileSafe(),
+      campaignRepository.fetchCampaignProfile(),
       contactsRepository.fetchContactsSafe(),
       mailboxRepository.fetchRepliesSafe(limit: 50),
       mailboxRepository.fetchEmailDispatchesSafe(),
