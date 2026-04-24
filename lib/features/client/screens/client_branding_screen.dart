@@ -14,9 +14,9 @@ class ClientBrandingScreen extends StatelessWidget {
         children: const [
           _HoldingSurface(
             eyebrow: 'Branding',
-            title: 'Identity, templates, and signatures stay reserved here',
+            title: 'Brand controls are not enabled yet',
             body:
-                'Branding is a first-class family in the client system. The advanced controls can land here later, while the route and ownership stay fixed now instead of drifting back into campaigns or account settings.',
+                'Identity, templates, and signatures will appear here when they are available for this account. Your campaign and account settings remain separate.',
           ),
         ],
       ),
@@ -25,7 +25,8 @@ class ClientBrandingScreen extends StatelessWidget {
 }
 
 class _HoldingSurface extends StatelessWidget {
-  const _HoldingSurface({required this.eyebrow, required this.title, required this.body});
+  const _HoldingSurface(
+      {required this.eyebrow, required this.title, required this.body});
 
   final String eyebrow;
   final String title;
@@ -38,7 +39,7 @@ class _HoldingSurface extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(

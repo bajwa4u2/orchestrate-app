@@ -94,7 +94,7 @@ class _PublicHeader extends StatelessWidget {
                 final compact = constraints.maxWidth < 1080;
 
                 final brand = InkWell(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                   onTap: () => context.go('/'),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
@@ -113,7 +113,7 @@ class _PublicHeader extends StatelessWidget {
                       onTap: () => context.go('/how-it-works'),
                     ),
                     _HeaderLink(
-                      label: 'AI',
+                      label: 'Governance',
                       active: _isActive(const ['/ai-governed-revenue']),
                       onTap: () => context.go('/ai-governed-revenue'),
                     ),
@@ -138,7 +138,7 @@ class _PublicHeader extends StatelessWidget {
                       onTap: () => context.go('/about'),
                     ),
                     _HeaderLink(
-                      label: 'Newsletter',
+                      label: 'Updates',
                       active: _isActive(
                           const ['/newsletter', '/newsletter/subscribe']),
                       onTap: () => context.go('/newsletter'),
@@ -164,7 +164,8 @@ class _PublicHeader extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 14),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radius)),
                       ),
                       child: const Text('Sign in'),
                     ),
@@ -176,7 +177,8 @@ class _PublicHeader extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 14),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radius)),
                       ),
                       child: const Text('Join'),
                     ),

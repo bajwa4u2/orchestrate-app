@@ -13,10 +13,10 @@ class ClientNewsletterScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
           _HoldingSurface(
-            eyebrow: 'Newsletter',
-            title: 'Audience and issue controls are reserved here',
+            eyebrow: 'Updates',
+            title: 'Audience controls are not enabled yet',
             body:
-                'This surface is intentionally present now so newsletter remains part of both public and client systems. Builder-grade controls can be connected here without inventing fake campaign or mailbox logic today.',
+                'Audience, issue, and preference controls will appear here when they are available for this account. No communication records are shown until the service is connected.',
           ),
         ],
       ),
@@ -25,7 +25,8 @@ class ClientNewsletterScreen extends StatelessWidget {
 }
 
 class _HoldingSurface extends StatelessWidget {
-  const _HoldingSurface({required this.eyebrow, required this.title, required this.body});
+  const _HoldingSurface(
+      {required this.eyebrow, required this.title, required this.body});
 
   final String eyebrow;
   final String title;
@@ -38,7 +39,7 @@ class _HoldingSurface extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(

@@ -45,7 +45,7 @@ class OperatorShell extends StatelessWidget {
       _NavItem('Sources', '/operator/sources', Icons.travel_explore_outlined),
       _NavItem('Deliverability', '/operator/deliverability',
           Icons.health_and_safety_outlined),
-      _NavItem('Emails', '/operator/emails', Icons.mail_outline),
+      _NavItem('Email operations', '/operator/emails', Icons.mail_outline),
     ]),
     _NavGroup('Business', [
       _NavItem('Clients', '/operator/clients', Icons.business_outlined),
@@ -56,7 +56,7 @@ class OperatorShell extends StatelessWidget {
       _NavItem('Support', '/operator/support', Icons.support_agent_outlined),
       _NavItem('Activity', '/operator/activity', Icons.history_outlined),
       _NavItem('Analytics', '/operator/analytics', Icons.query_stats_outlined),
-      _NavItem('Diagnostics', '/ops/debug', Icons.tune_outlined),
+      _NavItem('System checks', '/ops/debug', Icons.tune_outlined),
     ]),
   ];
 
@@ -85,7 +85,7 @@ class OperatorShell extends StatelessWidget {
                             horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
                           color: AppTheme.panel,
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(AppTheme.radius),
                           border: Border.all(color: AppTheme.line),
                         ),
                         child: Row(
@@ -101,7 +101,7 @@ class OperatorShell extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Command center live',
+                                'Operating status live',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ),
@@ -243,14 +243,14 @@ class _OperatorBrand extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = _matchesPath(currentPath, '/ops/overview');
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppTheme.radius),
       onTap: () => context.go('/ops/overview'),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 14),
         decoration: BoxDecoration(
           color: selected ? AppTheme.panel : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppTheme.radius),
           border: Border.all(
             color: selected ? AppTheme.line : Colors.transparent,
           ),
@@ -260,7 +260,8 @@ class _OperatorBrand extends StatelessWidget {
           children: [
             BrandAssets.operatorLockup(context),
             const SizedBox(height: 14),
-            Text('Operations', style: Theme.of(context).textTheme.titleLarge),
+            Text('Command center',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(
               'Control, recovery, and system visibility for live revenue operations.',
@@ -287,7 +288,7 @@ class _TopPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.line),
       ),
       child: Text(label, style: Theme.of(context).textTheme.titleMedium),
@@ -336,17 +337,17 @@ class _ShellNavButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppTheme.radius),
       child: InkWell(
         onTap: () => context.go(item.path),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
             color: selected ? AppTheme.panelRaised : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppTheme.radius),
             border: Border.all(
                 color: selected ? AppTheme.lineSoft : Colors.transparent),
           ),

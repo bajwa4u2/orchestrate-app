@@ -283,19 +283,19 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Product',
-            title: 'From lead to meeting, with structure that does not drift.',
+            title: 'From target market to qualified meeting, with control.',
             subtitle:
-                'Orchestrate separates public trust, client control, and operator execution so revenue work stays legible.',
+                'Orchestrate helps teams define the right market, source opportunities, run outreach, follow up, and move qualified interest toward meetings.',
             sections: [
               ContentSection(
                 title: 'What the system does',
                 body:
-                    'The product is built to handle targeting, outreach movement, follow-up, and meeting handoff without confusing those surfaces with billing, support, or operator governance.',
+                    'The product connects campaign scope, lead sourcing, outreach, replies, meetings, billing, and support without turning client work into an operator console.',
               ),
               ContentSection(
-                title: 'How the frontend is organized',
+                title: 'How the workspace is organized',
                 body:
-                    'Public explains the product. Client manages its own working system. Operator carries execution, inquiries, providers, and debug reality.',
+                    'Public pages explain the offer. Client workspaces show service standing and next steps. Operator tools manage execution, inquiries, providers, and system checks.',
               ),
             ],
           ),
@@ -309,12 +309,11 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Campaign journey',
-            title:
-                'Lead source to meeting, governed by system execution truth.',
+            title: 'Lead source to meeting, governed at each step.',
             subtitle:
-                'Orchestrate presents the journey without pretending public pages know operational data that only the system owns.',
+                'Orchestrate keeps the full journey readable while showing live operational records only after sign in.',
             sideNote:
-                'Public explains the system. Client and operator routes show live system state after authentication.',
+                'Clients see client-safe service progress. Operators see the deeper controls needed to run the work.',
             sideActions: [
               ContentAction(
                   label: 'Review pricing', path: '/pricing', filled: true),
@@ -326,10 +325,10 @@ final router = GoRouter(
                 body:
                     'The client provides account, market, targeting, and representation details before outbound work is activated.',
                 points: [
-                  'Setup state',
-                  'campaign profile',
-                  'targeting boundaries',
-                  'representation authorization'
+                  'Setup status',
+                  'Campaign profile',
+                  'Targeting boundaries',
+                  'Representation authorization'
                 ],
               ),
               ContentSection(
@@ -337,10 +336,10 @@ final router = GoRouter(
                 body:
                     'Provider-flexible sourcing feeds lead records that can be checked for reachability, qualification, and readiness.',
                 points: [
-                  'provider status',
-                  'source runs',
-                  'lead records',
-                  'reachability and qualification where selected'
+                  'Provider readiness',
+                  'Source runs',
+                  'Lead records',
+                  'Reachability and qualification where selected'
                 ],
               ),
               ContentSection(
@@ -348,11 +347,11 @@ final router = GoRouter(
                 body:
                     'Execution jobs, dispatches, reply handling, and meeting handoff remain system-governed and operator-visible.',
                 points: [
-                  'email dispatches',
-                  'first sends',
-                  'follow-ups',
-                  'reply classification',
-                  'meeting handoff'
+                  'Email dispatches',
+                  'First sends',
+                  'Follow-ups',
+                  'Reply classification',
+                  'Meeting handoff'
                 ],
               ),
             ],
@@ -380,17 +379,17 @@ final router = GoRouter(
               ContentSection(
                 title: 'Governed assistance',
                 body:
-                    'The system exposes AI capability status, trust status, readiness, evaluation sets, authority decisions, diagnosis, and generation actions for operator-controlled use.',
+                    'Operators can review AI capability status, trust status, readiness, evaluation sets, authority decisions, diagnosis, and generation actions.',
               ),
               ContentSection(
                 title: 'Client-safe trust',
                 body:
-                    'Clients see operational summaries and clear blocked or pending states. Raw AI decision and enforcement internals remain operator surfaces unless a client-safe system capability is added.',
+                    'Clients see operational summaries and clear blocked or pending states. Detailed AI decision and enforcement records stay in operator tools unless a client-safe summary is available.',
               ),
               ContentSection(
                 title: 'Service truth',
                 body:
-                    'The frontend reads AI status from system capabilities and reports missing decision-log read capabilities as gaps instead of inventing AI activity.',
+                    'AI status is shown from real system records. When a record type is not enabled, the workspace says so plainly.',
               ),
             ],
           ),
@@ -417,7 +416,7 @@ final router = GoRouter(
               ContentSection(
                 title: 'Operational posture',
                 body:
-                    'Operators can inspect providers and campaign-specific source runs where the system exposes them. Clients see sourced leads and readiness without provider internals.',
+                    'Operators can inspect providers and campaign-specific source runs where available. Clients see sourced leads and readiness without provider internals.',
               ),
             ],
           ),
@@ -447,7 +446,7 @@ final router = GoRouter(
               ContentSection(
                 title: 'Deliverability posture',
                 body:
-                    'The system models domains, mailboxes, policies, suppressions, bounces, complaints, and mailbox health.',
+                    'The system tracks domains, mailboxes, policies, suppressions, bounces, complaints, and mailbox health.',
               ),
               ContentSection(
                 title: 'Authorization and records',
@@ -480,19 +479,19 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'About',
-            title: 'A revenue system built with clearer boundaries.',
+            title: 'A revenue system with clear operating boundaries.',
             subtitle:
                 'The structure matters because products drift when public messaging, client work, and operator control are mixed together.',
             sections: [
               ContentSection(
                 title: 'Why the separation matters',
                 body:
-                    'Public should explain. Client should control its own system. Operator should manage execution truth. That boundary is now carried directly in the frontend constitution.',
+                    'Public pages explain the product. Client workspaces show account-specific progress and next steps. Operator tools manage the deeper execution layer.',
               ),
               ContentSection(
                 title: 'What stays fixed',
                 body:
-                    'Contacts remains the client memory surface, campaigns remains execution setup, and activity remains execution truth.',
+                    'Campaigns hold targeting and activation. Leads show sourced records. Outreach, replies, and meetings carry service progress forward.',
               ),
             ],
           ),
@@ -512,21 +511,20 @@ final router = GoRouter(
         child: PublicShell(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
-            eyebrow: 'Newsletter',
-            title:
-                'Newsletter belongs in the public system and the client system.',
+            eyebrow: 'Updates',
+            title: 'Product updates and revenue operations notes.',
             subtitle:
-                'Public subscription and client management remain separate on purpose.',
+                'Public updates are separate from client account controls, so account work stays clean after sign in.',
             sections: [
               ContentSection(
-                title: 'Public side',
+                title: 'Public updates',
                 body:
-                    'This is where subscription starts, without pretending to be part of the client workspace.',
+                    'Visitors can follow product updates and revenue operations notes from the public site.',
               ),
               ContentSection(
-                title: 'Client side',
+                title: 'Client communications',
                 body:
-                    'Audience, issues, and settings remain owned by the client shell once those controls are expanded.',
+                    'Account-specific communication settings appear inside the client workspace when enabled.',
               ),
             ],
             sideActions: [
@@ -545,15 +543,15 @@ final router = GoRouter(
         child: PublicShell(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
-            eyebrow: 'Newsletter',
-            title: 'Subscription entry is reserved here.',
+            eyebrow: 'Updates',
+            title: 'Update subscription is not enabled yet.',
             subtitle:
-                'This public route stays in place so newsletter does not drift into the wrong system while the final subscribe experience is still being completed.',
+                'This account does not have a public updates form connected yet.',
             sections: [
               ContentSection(
                 title: 'Status',
                 body:
-                    'The route is live and intentionally reserved. The final subscription form can land here without reworking the public IA again.',
+                    'Use the contact form for now. Update subscriptions can be enabled here when the service is connected.',
               ),
             ],
           ),

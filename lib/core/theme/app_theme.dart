@@ -1,34 +1,39 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const background = Color(0xFF07101F);
-  static const sidebar = Color(0xFF08101D);
-  static const panel = Color(0xFF0D172A);
-  static const panelRaised = Color(0xFF101D34);
-  static const panelSoft = Color(0xFF0F1A2E);
-  static const line = Color(0xFF182742);
-  static const lineSoft = Color(0xFF223252);
+  static const background = Color(0xFF090D14);
+  static const sidebar = Color(0xFF0B1018);
+  static const panel = Color(0xFF101722);
+  static const panelRaised = Color(0xFF151F2E);
+  static const panelSoft = Color(0xFF121B28);
+  static const line = Color(0xFF263244);
+  static const lineSoft = Color(0xFF334155);
   static const text = Color(0xFFF5F7FB);
-  static const muted = Color(0xFF95A4C2);
-  static const subdued = Color(0xFF70809F);
-  static const accent = Color(0xFF72B7FF);
-  static const accentSoft = Color(0xFF16304D);
-  static const amber = Color(0xFFF4BF63);
-  static const rose = Color(0xFFE67777);
-  static const emerald = Color(0xFF48C08F);
+  static const muted = Color(0xFFBAC5D6);
+  static const subdued = Color(0xFF8795AA);
+  static const accent = Color(0xFF6FD3C3);
+  static const accentSoft = Color(0xFF143A36);
+  static const amber = Color(0xFFE5B454);
+  static const rose = Color(0xFFE06F72);
+  static const emerald = Color(0xFF51C38E);
 
   // Added for the new inquiry screens so they compile cleanly
   static const slate = Color(0xFF6B7280);
   static const border = Color(0xFFE5E7EB);
 
-  static const publicBackground = Color(0xFFF6F7F4);
+  static const publicBackground = Color(0xFFF7F8FA);
   static const publicSurface = Color(0xFFFFFFFF);
-  static const publicSurfaceSoft = Color(0xFFF0F2EE);
-  static const publicLine = Color(0xFFE1E5DE);
-  static const publicText = Color(0xFF111827);
-  static const publicMuted = Color(0xFF5C6675);
-  static const publicAccent = Color(0xFF1F4ED8);
-  static const publicAccentSoft = Color(0xFFE7EDFF);
+  static const publicSurfaceSoft = Color(0xFFF1F4F7);
+  static const publicLine = Color(0xFFDDE3EA);
+  static const publicText = Color(0xFF10151F);
+  static const publicMuted = Color(0xFF5F6B7A);
+  static const publicAccent = Color(0xFF176B5D);
+  static const publicAccentSoft = Color(0xFFE6F4F1);
+  static const publicAmberSoft = Color(0xFFFFF4D8);
+  static const publicRoseSoft = Color(0xFFFFECEC);
+
+  static const radius = 8.0;
+  static const radiusLarge = 12.0;
 
   static ThemeData get darkTheme {
     final scheme = const ColorScheme.dark(
@@ -48,14 +53,14 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           color: text,
           height: 1.04,
-          letterSpacing: -1.1,
+          letterSpacing: 0,
         ),
         headlineMedium: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w700,
           color: text,
           height: 1.12,
-          letterSpacing: -0.45,
+          letterSpacing: 0,
         ),
         titleLarge: TextStyle(
           fontSize: 17,
@@ -88,8 +93,24 @@ class AppTheme {
         color: panel,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(radius),
           side: const BorderSide(color: line),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         ),
       ),
     );
@@ -113,14 +134,14 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           color: publicText,
           height: 1.02,
-          letterSpacing: -1.6,
+          letterSpacing: 0,
         ),
         headlineMedium: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w700,
           color: publicText,
           height: 1.12,
-          letterSpacing: -0.55,
+          letterSpacing: 0,
         ),
         titleLarge: TextStyle(
           fontSize: 18,
@@ -153,24 +174,49 @@ class AppTheme {
         color: publicSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(radius),
           side: const BorderSide(color: publicLine),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: publicSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(radius),
           borderSide: const BorderSide(color: publicLine),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(radius),
           borderSide: const BorderSide(color: publicLine),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(radius),
           borderSide: const BorderSide(color: publicAccent, width: 1.2),
         ),
       ),

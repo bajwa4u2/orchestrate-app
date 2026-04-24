@@ -81,11 +81,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   Future<void> _readRouteContext() async {
     final uri = GoRouterState.of(context).uri;
-    _selectedPlan =
-        _normalized(uri.queryParameters['plan']) ??
+    _selectedPlan = _normalized(uri.queryParameters['plan']) ??
         AuthSessionController.instance.selectedPlan;
-    _selectedTier =
-        _normalized(uri.queryParameters['tier']) ??
+    _selectedTier = _normalized(uri.queryParameters['tier']) ??
         AuthSessionController.instance.selectedTier;
     _selectedTrial = _normalized(uri.queryParameters['trial']);
 
@@ -208,8 +206,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         email: _email.text.trim(),
         password: _password.text,
         companyName: _company.text.trim(),
-        websiteUrl:
-            _website.text.trim().isEmpty ? null : _website.text.trim(),
+        websiteUrl: _website.text.trim().isEmpty ? null : _website.text.trim(),
       );
 
       await AuthSessionController.instance.clear();
@@ -284,11 +281,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       final email = account.email.trim();
       final fullName = account.displayName?.trim();
 
-      debugPrint('Google account email: $email');
-      debugPrint('Google accessToken present: ${accessToken != null && accessToken.isNotEmpty}');
-      debugPrint('Google idToken present: ${idToken != null && idToken.isNotEmpty}');
-      debugPrint('Google idToken length: ${idToken?.length ?? 0}');
-
       if ((idToken == null || idToken.isEmpty) &&
           (accessToken == null || accessToken.isEmpty)) {
         throw Exception(
@@ -303,10 +295,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         fullName: fullName == null || fullName.isEmpty ? null : fullName,
       );
       await _completeClientAccess(response);
-    } catch (error, stackTrace) {
-      debugPrint('Google login failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
-
+    } catch (error) {
       if (!mounted) return;
       setState(() => _error = _humanize(error));
     } finally {
@@ -317,15 +306,12 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   Future<void> _completeClientAccess(Map<String, dynamic> response) async {
     final session = AuthSessionController.instance;
 
-    debugPrint('AFTER LOGIN token: ${session.token}');
-    debugPrint('AFTER LOGIN clientId: ${session.clientId}');
-
     await AuthSessionController.instance.rememberSelection(
       plan: _selectedPlan,
       tier: _selectedTier,
     );
     if (!mounted) return;
-    
+
     if (!session.emailVerified) {
       context.go(_route('/auth/verify-email', email: session.email));
       return;
@@ -614,7 +600,10 @@ class _AuthCard extends StatelessWidget {
                     : 'Sign in to your workspace',
                 style: Theme.of(
                   context,
-                ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                )
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Text(
@@ -634,18 +623,16 @@ class _AuthCard extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed:
-                        (state._busy || state._googleBusy)
-                            ? null
-                            : state.loginWithGoogle,
-                    icon:
-                        state._googleBusy
-                            ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : const Icon(Icons.login_outlined),
+                    onPressed: (state._busy || state._googleBusy)
+                        ? null
+                        : state.loginWithGoogle,
+                    icon: state._googleBusy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.login_outlined),
                     label: Text(
                       state._googleBusy
                           ? 'Opening Google...'
@@ -662,8 +649,8 @@ class _AuthCard extends StatelessWidget {
                       child: Text(
                         'or',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.publicMuted,
-                        ),
+                              color: AppTheme.publicMuted,
+                            ),
                       ),
                     ),
                     const Expanded(child: Divider(height: 1)),
@@ -695,11 +682,9 @@ class _AuthCard extends StatelessWidget {
                   label: 'Password',
                   obscure: state._obscurePassword,
                   suffixIcon: IconButton(
-                    onPressed:
-                        () => state.setState(
-                          () =>
-                              state._obscurePassword = !state._obscurePassword,
-                        ),
+                    onPressed: () => state.setState(
+                      () => state._obscurePassword = !state._obscurePassword,
+                    ),
                     icon: Icon(
                       state._obscurePassword
                           ? Icons.visibility_off_outlined
@@ -713,12 +698,10 @@ class _AuthCard extends StatelessWidget {
                   label: 'Confirm password',
                   obscure: state._obscureConfirmPassword,
                   suffixIcon: IconButton(
-                    onPressed:
-                        () => state.setState(
-                          () =>
-                              state._obscureConfirmPassword =
-                                  !state._obscureConfirmPassword,
-                        ),
+                    onPressed: () => state.setState(
+                      () => state._obscureConfirmPassword =
+                          !state._obscureConfirmPassword,
+                    ),
                     icon: Icon(
                       state._obscureConfirmPassword
                           ? Icons.visibility_off_outlined
@@ -747,7 +730,8 @@ class _AuthCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       TextButton(
-                        onPressed: () => context.go(state._route('/auth/login')),
+                        onPressed: () =>
+                            context.go(state._route('/auth/login')),
                         child: const Text('Sign in'),
                       ),
                     ],
@@ -765,11 +749,9 @@ class _AuthCard extends StatelessWidget {
                   label: 'Password',
                   obscure: state._obscurePassword,
                   suffixIcon: IconButton(
-                    onPressed:
-                        () => state.setState(
-                          () =>
-                              state._obscurePassword = !state._obscurePassword,
-                        ),
+                    onPressed: () => state.setState(
+                      () => state._obscurePassword = !state._obscurePassword,
+                    ),
                     icon: Icon(
                       state._obscurePassword
                           ? Icons.visibility_off_outlined
@@ -781,10 +763,9 @@ class _AuthCard extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
-                    onPressed:
-                        state._requestingReset
-                            ? null
-                            : state.requestPasswordReset,
+                    onPressed: state._requestingReset
+                        ? null
+                        : state.requestPasswordReset,
                     child: Text(
                       state._requestingReset
                           ? 'Sending reset email...'
@@ -858,7 +839,9 @@ class _VerificationView extends StatelessWidget {
                       const SizedBox(height: 20),
                       Text(
                         'Confirm your email',
-                        style: Theme.of(context).textTheme.headlineSmall
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 10),
@@ -869,8 +852,8 @@ class _VerificationView extends StatelessWidget {
                         style: Theme.of(
                           context,
                         ).textTheme.bodyLarge?.copyWith(
-                          color: AppTheme.publicMuted,
-                        ),
+                              color: AppTheme.publicMuted,
+                            ),
                       ),
                       const SizedBox(height: 20),
                       if (state._message != null)
@@ -882,17 +865,16 @@ class _VerificationView extends StatelessWidget {
                         runSpacing: 12,
                         children: [
                           FilledButton(
-                            onPressed:
-                                () => context.go(state._route('/auth/login')),
+                            onPressed: () =>
+                                context.go(state._route('/auth/login')),
                             child: const Text('Go to sign in'),
                           ),
                           OutlinedButton(
-                            onPressed:
-                                state._verificationEmail == null ||
-                                        state._resendingVerification ||
-                                        state._busy
-                                    ? null
-                                    : state.resendVerification,
+                            onPressed: state._verificationEmail == null ||
+                                    state._resendingVerification ||
+                                    state._busy
+                                ? null
+                                : state.resendVerification,
                             child: Text(
                               state._resendingVerification
                                   ? 'Sending...'
@@ -900,8 +882,8 @@ class _VerificationView extends StatelessWidget {
                             ),
                           ),
                           TextButton(
-                            onPressed:
-                                () => context.go(state._route('/auth/join')),
+                            onPressed: () =>
+                                context.go(state._route('/auth/join')),
                             child: const Text('Use another email'),
                           ),
                         ],
@@ -948,7 +930,9 @@ class _ResetView extends StatelessWidget {
                       const SizedBox(height: 20),
                       Text(
                         'Create a new password',
-                        style: Theme.of(context).textTheme.headlineSmall
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 10),
@@ -957,8 +941,8 @@ class _ResetView extends StatelessWidget {
                         style: Theme.of(
                           context,
                         ).textTheme.bodyLarge?.copyWith(
-                          color: AppTheme.publicMuted,
-                        ),
+                              color: AppTheme.publicMuted,
+                            ),
                       ),
                       const SizedBox(height: 20),
                       if (state._message != null)
@@ -970,11 +954,10 @@ class _ResetView extends StatelessWidget {
                         label: 'New password',
                         obscure: state._obscureResetPassword,
                         suffixIcon: IconButton(
-                          onPressed:
-                              () => state.setState(
-                                () => state._obscureResetPassword =
-                                    !state._obscureResetPassword,
-                              ),
+                          onPressed: () => state.setState(
+                            () => state._obscureResetPassword =
+                                !state._obscureResetPassword,
+                          ),
                           icon: Icon(
                             state._obscureResetPassword
                                 ? Icons.visibility_off_outlined
@@ -996,8 +979,8 @@ class _ResetView extends StatelessWidget {
                             ),
                           ),
                           OutlinedButton(
-                            onPressed:
-                                () => context.go(state._route('/auth/login')),
+                            onPressed: () =>
+                                context.go(state._route('/auth/login')),
                             child: const Text('Back to sign in'),
                           ),
                         ],
@@ -1039,19 +1022,18 @@ class _Field extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscure,
-      validator:
-          required
-              ? (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '$label is required.';
-                }
-                if (label.toLowerCase().contains('email') &&
-                    !value.contains('@')) {
-                  return 'Enter a valid email address.';
-                }
-                return null;
+      validator: required
+          ? (value) {
+              if (value == null || value.trim().isEmpty) {
+                return '$label is required.';
               }
-              : null,
+              if (label.toLowerCase().contains('email') &&
+                  !value.contains('@')) {
+                return 'Enter a valid email address.';
+              }
+              return null;
+            }
+          : null,
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,

@@ -167,13 +167,13 @@ class _Hero extends StatelessWidget {
             runSpacing: 10,
             children: [
               _Pill(
-                label: '$sourceCount live data sources checked',
+                label: '$sourceCount system checks',
                 dark: dark,
               ),
               _Pill(
                 label: pendingCount == 0
-                    ? 'All configured sources responded'
-                    : '$pendingCount capability checks need setup',
+                    ? 'Configured records responded'
+                    : '$pendingCount checks need setup',
                 dark: dark,
               ),
             ],
@@ -197,6 +197,9 @@ class _SurfacePanel extends StatelessWidget {
         snapshots.where((snapshot) => snapshot.available).toList();
     final rows = available.expand(_rowsForSnapshot).take(18).toList();
     final gaps = snapshots.where((snapshot) => !snapshot.available).toList();
+    final statusColor = gaps.isEmpty
+        ? (dark ? AppTheme.emerald : AppTheme.publicAccent)
+        : AppTheme.amber;
 
     return Container(
       width: double.infinity,
@@ -205,11 +208,32 @@ class _SurfacePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(section.section.title,
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(section.section.description,
-              style: Theme.of(context).textTheme.bodyMedium),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                margin: const EdgeInsets.only(top: 8, right: 10),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(section.section.title,
+                        style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: 8),
+                    Text(section.section.description,
+                        style: Theme.of(context).textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 18),
           Wrap(
             spacing: 8,
@@ -225,28 +249,19 @@ class _SurfacePanel extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           if (rows.isEmpty)
-            Text(section.section.emptyLabel,
-                style: Theme.of(context).textTheme.bodyMedium)
+            _EmptyState(label: section.section.emptyLabel, dark: dark)
           else
-            for (int i = 0; i < rows.length; i++) ...[
-              _DataRowView(row: rows[i], dark: dark),
-              if (i != rows.length - 1)
-                Divider(
-                    height: 22,
-                    color: dark ? AppTheme.line : AppTheme.publicLine),
-            ],
+            _DataGrid(rows: rows, dark: dark),
           if (gaps.isNotEmpty) ...[
             const SizedBox(height: 18),
-            Text(
-              section.section.gapLabel ?? 'Capability not available',
-              style: Theme.of(context).textTheme.titleLarge,
+            _GapPanel(
+              title: section.section.gapLabel ?? 'Setup required',
+              gaps: [
+                for (final gap in gaps)
+                  '${_endpointLabel(section.section, gap.path)}: ${_cleanReason(gap.reason, gap.statusCode)}',
+              ],
+              dark: dark,
             ),
-            const SizedBox(height: 10),
-            for (final gap in gaps)
-              Text(
-                '${_endpointLabel(section.section, gap.path)}: ${_cleanReason(gap.reason, gap.statusCode)}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
           ],
         ],
       ),
@@ -344,6 +359,105 @@ class _DataRowView extends StatelessWidget {
   }
 }
 
+class _DataGrid extends StatelessWidget {
+  const _DataGrid({required this.rows, required this.dark});
+
+  final List<_DataRow> rows;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth > 980 ? 2 : 1;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final row in rows)
+              SizedBox(
+                width: columns == 1
+                    ? constraints.maxWidth
+                    : (constraints.maxWidth - 12) / 2,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: dark
+                        ? AppTheme.panelRaised
+                        : AppTheme.publicSurfaceSoft,
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
+                    border: Border.all(
+                      color: dark ? AppTheme.line : AppTheme.publicLine,
+                    ),
+                  ),
+                  child: _DataRowView(row: row, dark: dark),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.label, required this.dark});
+
+  final String label;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: dark ? AppTheme.panelRaised : AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: dark ? AppTheme.line : AppTheme.publicLine),
+      ),
+      child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+    );
+  }
+}
+
+class _GapPanel extends StatelessWidget {
+  const _GapPanel({
+    required this.title,
+    required this.gaps,
+    required this.dark,
+  });
+
+  final String title;
+  final List<String> gaps;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: dark ? AppTheme.accentSoft : AppTheme.publicAmberSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border:
+            Border.all(color: dark ? AppTheme.lineSoft : AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 10),
+          for (final gap in gaps) ...[
+            Text(gap, style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 6),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _Pill extends StatelessWidget {
   const _Pill({required this.label, required this.dark});
 
@@ -356,7 +470,7 @@ class _Pill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: dark ? AppTheme.panelRaised : AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: dark ? AppTheme.line : AppTheme.publicLine),
       ),
       child: Text(label, style: Theme.of(context).textTheme.titleMedium),
@@ -380,7 +494,7 @@ class _LoadingBlock extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: base,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: line),
       ),
       child: Column(
@@ -424,7 +538,7 @@ class _SkeletonLine extends StatelessWidget {
           height: height,
           decoration: BoxDecoration(
             color: fill,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppTheme.radius),
           ),
         );
       },
@@ -495,7 +609,7 @@ class _DataRow {
 BoxDecoration _box(bool dark) {
   return BoxDecoration(
     color: dark ? AppTheme.panel : Colors.white,
-    borderRadius: BorderRadius.circular(24),
+    borderRadius: BorderRadius.circular(AppTheme.radius),
     border: Border.all(color: dark ? AppTheme.line : AppTheme.publicLine),
   );
 }
@@ -565,7 +679,7 @@ String _cleanReason(String? reason, int? statusCode) {
   final text = (reason ?? '').trim();
   if (text.isEmpty) return 'Not yet configured';
   if (text.contains('Cannot GET') || text.contains('404')) {
-    return 'Capability not available';
+    return 'Not enabled';
   }
   if (text.contains('Unauthorized') || text.contains('401')) {
     return 'Not enabled for this account';
@@ -574,7 +688,9 @@ String _cleanReason(String? reason, int? statusCode) {
       .replaceAll('endpoint', 'capability')
       .replaceAll('Endpoint', 'Capability')
       .replaceAll('API', 'system')
-      .replaceAll('payload', 'record');
+      .replaceAll('payload', 'record')
+      .replaceAll('backend', 'system')
+      .replaceAll('Backend', 'System');
 }
 
 String _formatValue(String value) {

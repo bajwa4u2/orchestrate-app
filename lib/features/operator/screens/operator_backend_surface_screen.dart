@@ -140,7 +140,8 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               description:
                   'Run and dispatch capabilities exist as action controls; a read capability is not exposed.',
               endpoints: [],
-              emptyLabel: 'Job browsing is not enabled. Use dispatch controls from the command board.',
+              emptyLabel:
+                  'Job browsing is not enabled. Use dispatch controls from the command board.',
               gapLabel: 'Jobs list not enabled',
             ),
           ],
@@ -155,7 +156,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
             BackendSurfaceSection(
               title: 'Worker registry status',
               description:
-                  'Registered workers are system runtime truth, but no read capability is exposed to the frontend.',
+                  'Registered workers are system runtime truth, but no read capability is exposed for this view.',
               endpoints: [],
               emptyLabel: 'Worker registry browsing is not enabled.',
               gapLabel: 'Worker registry not enabled',
@@ -184,7 +185,8 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               title: 'Queue list status',
               description: 'No read capability is present.',
               endpoints: [],
-              emptyLabel: 'Queue browsing is not enabled. Use dispatch controls from the command board.',
+              emptyLabel:
+                  'Queue browsing is not enabled. Use dispatch controls from the command board.',
               gapLabel: 'Queue list not enabled',
             ),
           ],
@@ -292,7 +294,8 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               description:
                   'Signal detection, signal reads, and adaptation runs require a campaign id right now.',
               endpoints: [],
-              emptyLabel: 'Aggregate signal browsing is not enabled. Select a campaign for signal review.',
+              emptyLabel:
+                  'Aggregate signal browsing is not enabled. Select a campaign for signal review.',
               gapLabel: 'Aggregate signals not enabled',
             ),
           ],
@@ -407,8 +410,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               description:
                   'A dedicated audit/activity stream is not exposed for browsing yet.',
               endpoints: [],
-              emptyLabel:
-                  'Audit and activity stream browsing is not enabled.',
+              emptyLabel: 'Audit and activity stream browsing is not enabled.',
               gapLabel: 'Audit stream not enabled',
             ),
           ],

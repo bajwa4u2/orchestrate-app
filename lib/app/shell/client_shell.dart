@@ -48,7 +48,7 @@ class _ClientShellState extends State<ClientShell> {
         path: '/client/billing',
         icon: Icons.credit_card_outlined),
     _ClientNavItem(
-        label: 'Documents',
+        label: 'Records',
         path: '/client/agreements',
         icon: Icons.description_outlined),
     _ClientNavItem(
@@ -143,7 +143,7 @@ class _ClientShellState extends State<ClientShell> {
       case '/client/agreements':
       case '/client/statements':
       case '/client/reminders':
-        return 'Documents';
+        return 'Records';
       case '/client/notifications':
         return 'Notifications';
       case '/client/support':
@@ -220,7 +220,7 @@ class _ClientShellState extends State<ClientShell> {
       case '/app/mailbox':
         return 'Mailbox shows dispatch and reply movement without mixing it into targeting.';
       case '/app/newsletter':
-        return 'Newsletter is reserved here so future communication stays in the client system.';
+        return 'Newsletter controls appear here when they are enabled for this account.';
       case '/app/branding':
         return 'Branding remains a first-class family for identity, templates, and signatures.';
       case '/app/billing':
@@ -464,9 +464,9 @@ class _NavButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected ? AppTheme.publicAccentSoft : Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppTheme.radius),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         onTap: () => context.go(item.path),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -511,7 +511,7 @@ class _Pill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Text(

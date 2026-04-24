@@ -15,7 +15,8 @@ class OperatorDebugScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(child: Text('Debug surface could not load right now.'));
+          return const Center(
+              child: Text('System checks could not load right now.'));
         }
         final data = snapshot.data!;
         return SingleChildScrollView(
@@ -27,23 +28,23 @@ class OperatorDebugScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: AppTheme.publicLine),
+                  color: AppTheme.panel,
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                  border: Border.all(color: AppTheme.line),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Debug',
+                      'System checks',
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
-                          ?.copyWith(color: AppTheme.publicMuted),
+                          ?.copyWith(color: AppTheme.subdued),
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Request context and command signal',
+                      'Context and command signal',
                       style: Theme.of(context)
                           .textTheme
                           .headlineSmall
@@ -51,14 +52,15 @@ class OperatorDebugScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'This surface keeps low-level operator reality separate from the main workspace.',
+                      'This view keeps operational context and command signals separate from the primary command center.',
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 18),
-              _Panel(title: 'Resolved auth context', rows: data.contextRows),
+              _Panel(
+                  title: 'Resolved operator context', rows: data.contextRows),
               const SizedBox(height: 18),
               _Panel(title: 'Command overview markers', rows: data.commandRows),
             ],
@@ -74,8 +76,13 @@ class OperatorDebugScreen extends StatelessWidget {
     final command = await repo.fetchCommandOverview();
 
     return _DebugViewData(
-      contextRows: context.entries.map((entry) => '${entry.key}: ${entry.value}').toList(),
-      commandRows: command.entries.take(12).map((entry) => '${entry.key}: ${entry.value}').toList(),
+      contextRows: context.entries
+          .map((entry) => '${_label(entry.key)}: ${entry.value}')
+          .toList(),
+      commandRows: command.entries
+          .take(12)
+          .map((entry) => '${_label(entry.key)}: ${entry.value}')
+          .toList(),
     );
   }
 }
@@ -99,9 +106,9 @@ class _Panel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppTheme.publicLine),
+        color: AppTheme.panel,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +122,8 @@ class _Panel extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (rows.isEmpty)
-            Text('Nothing is visible here right now.', style: Theme.of(context).textTheme.bodyMedium)
+            Text('Nothing is visible here right now.',
+                style: Theme.of(context).textTheme.bodyMedium)
           else
             for (int i = 0; i < rows.length; i++) ...[
               Text(rows[i], style: Theme.of(context).textTheme.bodyMedium),
@@ -125,4 +133,14 @@ class _Panel extends StatelessWidget {
       ),
     );
   }
+}
+
+String _label(String key) {
+  return key
+      .replaceAllMapped(
+        RegExp(r'([a-z])([A-Z])'),
+        (match) => '${match[1]} ${match[2]}',
+      )
+      .replaceAll('_', ' ')
+      .toLowerCase();
 }
