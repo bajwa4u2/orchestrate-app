@@ -90,7 +90,7 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(30, 30, 30, 32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: LayoutBuilder(
@@ -118,7 +118,7 @@ class _Hero extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
-                  'Revenue execution that can source, send, follow up, and hand off without losing control.',
+                  'More qualified conversations, fewer missed follow-ups, and a clearer path from target market to meetings.',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontSize: stacked ? 38 : 52,
                         height: 1.04,
@@ -129,7 +129,7 @@ class _Hero extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
-                  'Orchestrate combines lead sourcing, outreach execution, follow-up, reply handling, meeting handoff, deliverability posture, and revenue records in one service workspace.',
+                  'Orchestrate helps your business define a target market, source opportunities, run outreach, handle follow-up, manage replies, and move qualified interest toward booked meetings.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.publicMuted,
                       ),
@@ -150,10 +150,10 @@ class _Hero extends StatelessWidget {
                         vertical: 16,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppTheme.radius),
                       ),
                     ),
-                    child: const Text('Review pricing'),
+                    child: const Text('View pricing'),
                   ),
                   OutlinedButton(
                     onPressed: () => context.go('/contact'),
@@ -165,7 +165,7 @@ class _Hero extends StatelessWidget {
                         vertical: 16,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppTheme.radius),
                       ),
                     ),
                     child: const Text('Talk through fit'),
@@ -214,7 +214,7 @@ class _HeroPanel extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -223,7 +223,7 @@ class _HeroPanel extends StatelessWidget {
           _Signal(
             title: 'Execution pipeline',
             body:
-                'Targeting, sourcing, outreach, follow-ups, replies, and meetings stay connected to one operating record from intake to handoff.',
+                'Targeting, sourcing, outreach, follow-ups, replies, and meetings stay connected to one service record from intake to handoff.',
           ),
           SizedBox(height: 14),
           _Signal(
@@ -270,15 +270,15 @@ class _SystemStrip extends StatelessWidget {
     final items = const [
       _StripItem(
         'Clear buying path',
-        'Plans, scope, intake, and service readiness are visible before account setup.',
+        'Plans, service fit, intake, and service readiness are visible before account setup.',
       ),
       _StripItem(
         'Client control',
-        'Verification, setup, subscription, campaign scope, and billing stay tied to real account state.',
+        'Verification, setup, subscription, campaign service fit, and billing stay tied to real account state.',
       ),
       _StripItem(
         'Execution',
-        'Outreach, follow-up, replies, and meetings stay inside one operating line.',
+        'Outreach, follow-up, replies, and meetings stay inside one service journey.',
       ),
       _StripItem(
         'Business continuity',
@@ -328,7 +328,7 @@ class _StripCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -351,7 +351,7 @@ class _JourneySection extends StatelessWidget {
     final stages = const [
       _JourneyStage(
         '1',
-        'Choose the operating lane',
+        'Choose your service path',
         'Start with Opportunity for outbound execution or Revenue when billing continuity also matters.',
       ),
       _JourneyStage(
@@ -361,7 +361,7 @@ class _JourneySection extends StatelessWidget {
       ),
       _JourneyStage(
         '3',
-        'Define sourcing and execution scope',
+        'Define sourcing and outreach preferences',
         'Markets, regions, industries, offer context, and representation boundaries become execution input.',
       ),
       _JourneyStage(
@@ -381,7 +381,7 @@ class _JourneySection extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -437,7 +437,7 @@ class _CapabilitySection extends StatelessWidget {
       _Capability(
         title: 'Sourcing that is not vendor-locked',
         body:
-            'Provider-flexible sourcing starts from target scope instead of a single static list.',
+            'Provider-flexible sourcing starts from target market instead of a single static list.',
       ),
       _Capability(
         title: 'Execution with follow-through',
@@ -461,7 +461,7 @@ class _CapabilitySection extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -522,7 +522,7 @@ class _CapabilityCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -554,7 +554,7 @@ class _JourneyCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -587,7 +587,7 @@ class _TruthSection extends StatelessWidget {
         final left = _TruthCard(
           title: 'What this product is',
           body:
-              'A managed operating system for outbound execution and revenue continuity, built to carry the work forward after the first message.',
+              'A managed service workspace for outbound execution and revenue continuity, built to carry the work forward after the first message.',
         );
         final right = _TruthCard(
           title: 'What this product is not',
@@ -626,7 +626,7 @@ class _TruthCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -671,19 +671,19 @@ class _PlansSection extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose the operating lane',
+            'Choose your service path',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Text(
-            'Each lane can begin with a 15-day start period before monthly billing begins.',
+            'Each option can begin with a 15-day start period before monthly billing begins.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -739,7 +739,7 @@ class _PlanPeekCard extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -771,7 +771,7 @@ class _ClosingSection extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: LayoutBuilder(
@@ -781,7 +781,7 @@ class _ClosingSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Ready to define scope properly?',
+                'Ready to set up your target market?',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 12),
@@ -807,7 +807,7 @@ class _ClosingSection extends StatelessWidget {
             children: [
               FilledButton(
                 onPressed: () => context.go('/pricing?trial=15d'),
-                child: const Text('Review pricing'),
+                child: const Text('View pricing'),
               ),
               OutlinedButton(
                 onPressed: () => context.go('/contact'),

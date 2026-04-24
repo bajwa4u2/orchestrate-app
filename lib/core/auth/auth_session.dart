@@ -40,13 +40,17 @@ class AuthSessionController extends ChangeNotifier {
   }
 
   String? get setupSelectedPlan {
-    final value = ((_session?['setupSelectedPlan'] ?? _session?['selectedPlan']) as String?)?.trim();
+    final value = ((_session?['setupSelectedPlan'] ?? _session?['selectedPlan'])
+            as String?)
+        ?.trim();
     if (value == null || value.isEmpty) return null;
     return _normalizePlan(value);
   }
 
   String? get setupSelectedTier {
-    final value = ((_session?['setupSelectedTier'] ?? _session?['selectedTier']) as String?)?.trim();
+    final value = ((_session?['setupSelectedTier'] ?? _session?['selectedTier'])
+            as String?)
+        ?.trim();
     if (value == null || value.isEmpty) return null;
     return _normalizeTier(value);
   }
@@ -56,12 +60,14 @@ class AuthSessionController extends ChangeNotifier {
   String? get selectedTier => commercialTier ?? setupSelectedTier;
 
   String? get selectedPlanDisplay => _buildPlanDisplay(
-    plan: commercialPlan ?? setupSelectedPlan,
-    tier: commercialTier ?? setupSelectedTier,
-  );
+        plan: commercialPlan ?? setupSelectedPlan,
+        tier: commercialTier ?? setupSelectedTier,
+      );
 
-  String get subscriptionStatus => (_session?['subscriptionStatus'] as String?) ?? 'none';
-  String get normalizedSubscriptionStatus => subscriptionStatus.trim().toLowerCase();
+  String get subscriptionStatus =>
+      (_session?['subscriptionStatus'] as String?) ?? 'none';
+  String get normalizedSubscriptionStatus =>
+      subscriptionStatus.trim().toLowerCase();
 
   Map<String, dynamic>? get setupDraft {
     final raw = _session?['setupDraft'];
@@ -77,7 +83,10 @@ class AuthSessionController extends ChangeNotifier {
 
   Future<void> init() async {
     if (_ready) return;
-    if (_session != null && (((_session?['token'] as String?)?.isNotEmpty ?? false) || ((_session?['organizationId'] as String?)?.isNotEmpty ?? false) || ((_session?['clientId'] as String?)?.isNotEmpty ?? false))) {
+    if (_session != null &&
+        (((_session?['token'] as String?)?.isNotEmpty ?? false) ||
+            ((_session?['organizationId'] as String?)?.isNotEmpty ?? false) ||
+            ((_session?['clientId'] as String?)?.isNotEmpty ?? false))) {
       _ready = true;
       notifyListeners();
       return;
@@ -113,24 +122,23 @@ class AuthSessionController extends ChangeNotifier {
     final commercial = _mapOf(payload['commercial'] ?? payload['subscription']);
     final client = _mapOf(payload['client']);
 
-    final newSurface =
-        _readString(session, const ['surface']) ?? previous['surface']?.toString() ?? 'client';
-    final nextToken =
-        payload['token']?.toString().trim() ??
+    final newSurface = _readString(session, const ['surface']) ??
+        previous['surface']?.toString() ??
+        'client';
+    final nextToken = payload['token']?.toString().trim() ??
         _readString(session, const ['token', 'accessToken']) ??
         _readString(client, const ['token', 'accessToken']) ??
         payload['accessToken']?.toString().trim();
 
     final resolvedOrganizationId =
         _readString(workspace, const ['organizationId']) ??
-        _readString(session, const ['organizationId']) ??
-        _readString(client, const ['organizationId']) ??
-        payload['organizationId']?.toString() ??
-        previous['organizationId']?.toString() ??
-        '';
+            _readString(session, const ['organizationId']) ??
+            _readString(client, const ['organizationId']) ??
+            payload['organizationId']?.toString() ??
+            previous['organizationId']?.toString() ??
+            '';
 
-    final resolvedClientId =
-        _readString(session, const ['clientId']) ??
+    final resolvedClientId = _readString(session, const ['clientId']) ??
         _readString(client, const ['id', 'clientId']) ??
         _readString(workspace, const ['clientId']) ??
         _readString(user, const ['clientId']) ??
@@ -145,15 +153,22 @@ class AuthSessionController extends ChangeNotifier {
       'surface': newSurface,
       'organizationId': resolvedOrganizationId,
       'clientId': resolvedClientId,
-      'memberRole': _readString(session, const ['memberRole']) ?? previous['memberRole']?.toString() ?? '',
-      'email': _readString(user, const ['email']) ?? previous['email']?.toString() ?? '',
-      'fullName': _readString(user, const ['fullName', 'name']) ?? previous['fullName']?.toString() ?? '',
+      'memberRole': _readString(session, const ['memberRole']) ??
+          previous['memberRole']?.toString() ??
+          '',
+      'email': _readString(user, const ['email']) ??
+          previous['email']?.toString() ??
+          '',
+      'fullName': _readString(user, const ['fullName', 'name']) ??
+          previous['fullName']?.toString() ??
+          '',
       'emailVerified': user.containsKey('emailVerified')
           ? user['emailVerified'] == true
           : previous['emailVerified'] == true,
       'workspaceName': _readString(workspace, const ['displayName', 'name']) ??
           _readString(client, const ['displayName', 'legalName']) ??
-          previous['workspaceName']?.toString() ?? '',
+          previous['workspaceName']?.toString() ??
+          '',
       'setupCompleted': user['setupCompleted'] == true ||
           setup['setupCompleted'] == true ||
           client['setupCompleted'] == true ||
@@ -173,10 +188,12 @@ class AuthSessionController extends ChangeNotifier {
             previous['selectedTier']?.toString(),
       ),
       'commercialPlan': _normalizePlan(
-        _readString(commercial, const ['service', 'lane']) ?? previous['commercialPlan']?.toString(),
+        _readString(commercial, const ['service', 'lane']) ??
+            previous['commercialPlan']?.toString(),
       ),
       'commercialTier': _normalizeTier(
-        _readString(commercial, const ['tier']) ?? previous['commercialTier']?.toString(),
+        _readString(commercial, const ['tier']) ??
+            previous['commercialTier']?.toString(),
       ),
       'subscriptionStatus': (_readString(commercial, const ['status']) ??
               _readString(user, const ['subscriptionStatus']) ??
@@ -220,13 +237,17 @@ class AuthSessionController extends ChangeNotifier {
           _session!['selectedTier']?.toString(),
     );
     _session!['commercialPlan'] = _normalizePlan(
-      _readString(commercial, const ['service', 'lane']) ?? _session!['commercialPlan']?.toString(),
+      _readString(commercial, const ['service', 'lane']) ??
+          _session!['commercialPlan']?.toString(),
     );
     _session!['commercialTier'] = _normalizeTier(
-      _readString(commercial, const ['tier']) ?? _session!['commercialTier']?.toString(),
+      _readString(commercial, const ['tier']) ??
+          _session!['commercialTier']?.toString(),
     );
     _session!['subscriptionStatus'] =
-        (_readString(client, const ['subscriptionStatus']) ?? _session!['subscriptionStatus'] ?? 'none')
+        (_readString(client, const ['subscriptionStatus']) ??
+                _session!['subscriptionStatus'] ??
+                'none')
             .toLowerCase();
     _session!['setup'] = client['setup'];
 
@@ -322,7 +343,9 @@ String? _normalizePlan(String? value) {
 String? _normalizeTier(String? value) {
   final text = value?.trim().toLowerCase();
   if (text == 'focused') return 'focused';
-  if (text == 'multi' || text == 'multi-market' || text == 'multi_market') return 'multi';
+  if (text == 'multi' || text == 'multi-market' || text == 'multi_market') {
+    return 'multi';
+  }
   if (text == 'precision') return 'precision';
   return null;
 }

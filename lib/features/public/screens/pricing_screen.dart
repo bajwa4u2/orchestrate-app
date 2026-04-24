@@ -58,7 +58,7 @@ class _PricingScreenState extends State<PricingScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Pricing could not be loaded right now.';
+        _error = 'Pricing could not be loaded at the moment.';
       });
     }
   }
@@ -260,19 +260,19 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose the lane first, then the coverage depth.',
+            'Choose what you want Orchestrate to handle.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Text(
-            'Pricing follows the operating scope you want active from day one. Start with Opportunity or Revenue, then choose how wide and how precise the coverage needs to be.',
+            'Start with outreach, or add revenue follow-through when billing records, reminders, statements, and documents need to stay connected.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -286,7 +286,7 @@ class _Hero extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: AppTheme.publicAccentSoft,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppTheme.radius),
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
@@ -318,15 +318,15 @@ class _PlanSwitch extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Row(
         children: [
           Expanded(
             child: _PlanButton(
-              title: 'Opportunity',
-              subtitle: 'Outbound execution through meetings',
+              title: 'Start with outreach',
+              subtitle: 'Sourcing, outreach, follow-up, replies, and meetings',
               selected: selectedPlan == 'opportunity',
               onTap: () => onChanged('opportunity'),
             ),
@@ -334,8 +334,8 @@ class _PlanSwitch extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _PlanButton(
-              title: 'Revenue',
-              subtitle: 'Outbound plus billing continuity',
+              title: 'Add revenue follow-through',
+              subtitle: 'Outreach plus billing, documents, and reminders',
               selected: selectedPlan == 'revenue',
               onTap: () => onChanged('revenue'),
             ),
@@ -363,13 +363,13 @@ class _PlanButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppTheme.radius),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: selected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppTheme.radius),
           border: Border.all(
             color: selected ? AppTheme.publicText : Colors.transparent,
           ),
@@ -404,7 +404,7 @@ class _TrialToggle extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Row(
@@ -455,7 +455,7 @@ class _TierCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(
           color: highlight ? AppTheme.publicText : AppTheme.publicLine,
         ),
@@ -537,11 +537,11 @@ class _TierCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppTheme.publicSurfaceSoft,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppTheme.radius),
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
-                '$trialDays-day start period selected for this tier.',
+                '$trialDays-day start period selected for this plan.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
@@ -556,11 +556,13 @@ class _TierCard extends StatelessWidget {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                 ),
               ),
               child: Text(
-                trialRequested ? 'Continue with ${plan.label}' : 'Choose ${plan.label}',
+                trialRequested
+                    ? 'Continue with ${plan.label}'
+                    : 'Start with this plan',
               ),
             ),
           ),
@@ -601,14 +603,14 @@ class _CapabilityMatrix extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Coverage guide',
+            'Choose your coverage level',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 16),
@@ -617,7 +619,7 @@ class _CapabilityMatrix extends StatelessWidget {
             child: DataTable(
               headingTextStyle: Theme.of(context).textTheme.titleMedium,
               columns: const [
-                DataColumn(label: Text('Capability')),
+                DataColumn(label: Text('Decision')),
                 DataColumn(label: Text('Focused')),
                 DataColumn(label: Text('Multi-Market')),
                 DataColumn(label: Text('Precision')),
@@ -650,7 +652,7 @@ class _SupportAssistCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: LayoutBuilder(
@@ -661,12 +663,12 @@ class _SupportAssistCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Need help choosing the right lane?',
+                'Need help choosing the right option?',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 10),
               Text(
-                'Use guidance if the fit is unclear. Pricing should remain the primary path. Support is here when scope, setup, or billing questions need a direct conversation.',
+                'Use guidance if the fit is unclear. Pricing should remain the primary path. Support is here when service fit, setup, or billing questions need a direct conversation.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppTheme.publicMuted,
                     ),
@@ -707,7 +709,7 @@ class _SupportAssistCard extends StatelessWidget {
                     vertical: 14,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
                   ),
                 ),
                 child: const Text('Get guidance'),
@@ -722,7 +724,7 @@ class _SupportAssistCard extends StatelessWidget {
                     vertical: 14,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
                   ),
                 ),
                 child: const Text('Open contact'),
@@ -773,7 +775,7 @@ class _Footnote extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -812,7 +814,7 @@ class _ErrorCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -852,10 +854,10 @@ _TierContent _tierContent(String tier) {
     case 'multi':
       return const _TierContent(
         summary:
-            'For operators expanding across countries while keeping one operating posture.',
+            'For businesses expanding across countries while keeping one service path.',
         items: [
           'Multiple countries and multiple regions',
-          'Broader market scope across one operating model',
+          'Broader market coverage across one service path',
           'Good fit for distributed teams and cross-market coverage',
         ],
       );

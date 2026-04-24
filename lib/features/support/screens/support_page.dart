@@ -142,13 +142,15 @@ class _SupportPageHeader extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              publicMode ? 'Start the conversation' : 'Continue the conversation',
+              publicMode
+                  ? 'Start the conversation'
+                  : 'Continue the conversation',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 10),
             Text(
               publicMode
-                  ? 'Use this page when you want a direct support conversation about fit, setup, billing, scope, or an issue that needs clarification.'
+                  ? 'Use this page when you want a direct support conversation about fit, setup, billing, service fit, or an issue that needs clarification.'
                   : 'Use this page when you want to continue the same support conversation with your current account context already in place.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: scheme.onSurface.withValues(alpha: 0.72),

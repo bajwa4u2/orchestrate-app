@@ -38,15 +38,14 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
     switch (surface) {
       case ClientBackendSurface.outreach:
         return const _ClientSpec(
-          eyebrow: 'Client outreach',
-          title: 'Outreach queue, sent mail, and follow-up truth',
+          eyebrow: 'Outreach',
+          title: 'Outreach, sent messages, and follow-up',
           subtitle:
-              'This client-safe view reads dispatch and reply capabilities directly. If queued or follow-up data is not exposed separately, the gap is shown instead of inferred.',
+              'This view shows outreach records your account can see: sent messages, replies, and follow-up progress when available.',
           sections: [
             BackendSurfaceSection(
               title: 'Dispatches and sent work',
-              description:
-                  'Client-visible outbound dispatches from the system.',
+              description: 'Sent outreach visible for this account.',
               endpoints: [
                 BackendEndpoint('/client/email-dispatches',
                     label: 'dispatches'),
@@ -65,12 +64,12 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No replies are visible yet.',
             ),
             BackendSurfaceSection(
-              title: 'Capability boundary',
+              title: 'Follow-up availability',
               description:
-                  'Separate client-safe queue and follow-up list capabilities are not exposed right now.',
+                  'Separate queued and follow-up lists are not available for your account yet.',
               endpoints: [],
               emptyLabel:
-                  'Queue and follow-up stages are available to operators through execution controls, but no dedicated client list capability is exposed.',
+                  'Follow-up records will appear here after your service starts and records are available for your account.',
             ),
           ],
         );
@@ -128,11 +127,10 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
           sections: [
             BackendSurfaceSection(
               title: 'Receipt status',
-              description:
-                  'Operator billing receipts exist, but client-safe receipt browsing is not enabled for this account yet.',
+              description: 'Receipts are not available for this account yet.',
               endpoints: [],
-              emptyLabel: 'Client receipt browsing is not enabled.',
-              gapLabel: 'Client-safe receipts not enabled',
+              emptyLabel: 'Client receipt browsing is not available.',
+              gapLabel: 'Receipts not available',
             ),
           ],
         );
@@ -206,12 +204,12 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
           eyebrow: 'Client support',
           title: 'Support and account help',
           subtitle:
-              'Support intake is an action capability. Existing support conversations are not exposed as a client list capability right now.',
+              'Use support to ask setup, billing, campaign, or service questions. Conversation lists will appear here when available.',
           sections: [
             BackendSurfaceSection(
-              title: 'Support capability boundary',
+              title: 'Support service availability',
               description:
-                  'Support intake and session replies are available. A client support thread list is not enabled yet.',
+                  'Support is available from the workspace. No support thread list is available for this account yet.',
               endpoints: [],
               emptyLabel:
                   'Use the support action in this workspace to start or continue a support conversation.',
@@ -223,7 +221,7 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
           eyebrow: 'Client settings',
           title: 'Account, setup, and representation authorization',
           subtitle:
-              'Settings surfaces account profile, setup state, and authorization truth from system capabilities.',
+              'Settings shows account profile, setup state, and authorization records when available.',
           sections: [
             BackendSurfaceSection(
               title: 'Client profile and setup',
@@ -237,10 +235,10 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
             BackendSurfaceSection(
               title: 'Representation authorization',
               description:
-                  'The system supports accepting representation authorization; no separate read-only authorization capability is exposed.',
+                  'Representation authorization is captured during campaign activation and reflected when available.',
               endpoints: [],
               emptyLabel:
-                  'Representation authorization is controlled by action capability and reflected in profile or campaign data when system returns it.',
+                  'Representation authorization will appear after your campaign requires or records it.',
             ),
           ],
         );
@@ -265,12 +263,12 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No AI trust summary data is visible yet.',
             ),
             BackendSurfaceSection(
-              title: 'AI governance data boundary',
+              title: 'AI summary availability',
               description:
-                  'The system exposes AI governance to operators. No dedicated client-safe AI decision summary capability is present.',
+                  'Detailed AI governance stays operator-only. Client-safe summaries appear here when available.',
               endpoints: [],
               emptyLabel:
-                  'Client-safe AI governance should remain summarized from campaign state until a dedicated capability exists.',
+                  'AI trust details will appear after your service has available client-safe records.',
             ),
           ],
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/operator_repository.dart';
 
 class CommandScreen extends StatefulWidget {
@@ -85,8 +86,9 @@ class _CommandScreenState extends State<CommandScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.16),
-                    borderRadius: BorderRadius.circular(24),
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
                     border: Border.all(
                       color: theme.colorScheme.outline.withOpacity(0.16),
                     ),
@@ -95,7 +97,7 @@ class _CommandScreenState extends State<CommandScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Command could not load right now.',
+                        'Command could not load at the moment.',
                         style: theme.textTheme.titleLarge,
                         textAlign: TextAlign.center,
                       ),
@@ -156,8 +158,10 @@ class _CommandScreenState extends State<CommandScreen> {
             fallback: _read(deliverability, 'degradedMailboxes', fallback: '0'),
           ),
           totalClients: _read(totals, 'clients', fallback: '${clients.length}'),
-          totalCampaigns: _read(totals, 'campaigns', fallback: '${campaigns.length}'),
-          openAlerts: _read(healthSummary, 'open', fallback: '${_asList(health['alerts']).length}'),
+          totalCampaigns:
+              _read(totals, 'campaigns', fallback: '${campaigns.length}'),
+          openAlerts: _read(healthSummary, 'open',
+              fallback: '${_asList(health['alerts']).length}'),
         );
 
         return RefreshIndicator(
@@ -187,12 +191,19 @@ class _CommandScreenState extends State<CommandScreen> {
                 _MetricGrid(
                   metrics: [
                     _MetricData(label: 'Sent today', value: summary.sentToday),
-                    _MetricData(label: 'Replies today', value: summary.repliesToday),
-                    _MetricData(label: 'Booked today', value: summary.bookedToday),
-                    _MetricData(label: 'Blocked leads', value: summary.blockedLeads),
-                    _MetricData(label: 'Failed jobs', value: summary.failedJobs),
-                    _MetricData(label: 'Healthy mailboxes', value: summary.healthyMailboxes),
-                    _MetricData(label: 'Open alerts', value: summary.openAlerts),
+                    _MetricData(
+                        label: 'Replies today', value: summary.repliesToday),
+                    _MetricData(
+                        label: 'Booked today', value: summary.bookedToday),
+                    _MetricData(
+                        label: 'Blocked leads', value: summary.blockedLeads),
+                    _MetricData(
+                        label: 'Failed jobs', value: summary.failedJobs),
+                    _MetricData(
+                        label: 'Healthy mailboxes',
+                        value: summary.healthyMailboxes),
+                    _MetricData(
+                        label: 'Open alerts', value: summary.openAlerts),
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -276,7 +287,8 @@ class _CommandScreenState extends State<CommandScreen> {
                           title: 'Why outreach is blocked',
                           subtitle:
                               'Operator truth on why leads are not progressing beyond queue and readiness.',
-                          child: _BlockingSummary(reasonCounts: blockingReasonCounts),
+                          child: _BlockingSummary(
+                              reasonCounts: blockingReasonCounts),
                         ),
                         const SizedBox(height: 18),
                         _CardSection(
@@ -348,7 +360,7 @@ class _CommandHero extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(
           color: theme.colorScheme.outline.withOpacity(0.18),
         ),
@@ -409,7 +421,7 @@ class _HeroStatus extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withOpacity(0.24),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(
           color: theme.colorScheme.outline.withOpacity(0.12),
         ),
@@ -475,7 +487,6 @@ class _HeroLine extends StatelessWidget {
   }
 }
 
-
 class _TopActions extends StatelessWidget {
   const _TopActions({
     required this.onRefresh,
@@ -514,7 +525,11 @@ class _MetricGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final crossAxisCount = width >= 1200 ? 6 : width >= 820 ? 3 : 2;
+        final crossAxisCount = width >= 1200
+            ? 6
+            : width >= 820
+                ? 3
+                : 2;
 
         return GridView.builder(
           itemCount: metrics.length,
@@ -546,7 +561,7 @@ class _MetricTile extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.18),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: theme.colorScheme.outline.withOpacity(0.16)),
       ),
       child: Column(
@@ -615,7 +630,7 @@ class _CardSection extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: theme.colorScheme.outline.withOpacity(0.16)),
       ),
       child: Column(
@@ -646,7 +661,8 @@ class _AttentionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const _EmptyState(message: 'Nothing urgent is open right now.');
+      return const _EmptyState(
+          message: 'Nothing urgent is open at the moment.');
     }
 
     return Column(
@@ -665,7 +681,9 @@ class _AttentionList extends StatelessWidget {
           );
         }
 
-        if (kind == 'campaign' && id.isNotEmpty && _read(item, 'status') != 'ACTIVE') {
+        if (kind == 'campaign' &&
+            id.isNotEmpty &&
+            _read(item, 'status') != 'ACTIVE') {
           actions.add(
             TextButton(
               onPressed: () => onActivateCampaign(id),
@@ -922,7 +940,8 @@ class _WorkspacePosture extends StatelessWidget {
         ),
         _StatusRow(
           title: 'Failure pressure',
-          subtitle: '${summary.failedJobs} failed jobs and ${summary.openAlerts} open alerts',
+          subtitle:
+              '${summary.failedJobs} failed jobs and ${summary.openAlerts} open alerts',
         ),
         _StatusRow(
           title: 'Mailbox posture',
@@ -1006,7 +1025,7 @@ class _ActionRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: tone.background,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: tone.border),
       ),
       child: Column(
@@ -1103,7 +1122,7 @@ class _StatusRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: theme.colorScheme.outline.withOpacity(0.12)),
       ),
       child: Column(
@@ -1145,7 +1164,6 @@ class _MetricData {
   final String label;
   final String value;
 }
-
 
 class _BlockingSummary extends StatelessWidget {
   const _BlockingSummary({required this.reasonCounts});
@@ -1209,7 +1227,6 @@ String _translateBlockReason(String code) {
       return code;
   }
 }
-
 
 class _CommandSummary {
   const _CommandSummary({

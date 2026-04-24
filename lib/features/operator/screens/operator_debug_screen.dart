@@ -16,7 +16,7 @@ class OperatorDebugScreen extends StatelessWidget {
         }
         if (snapshot.hasError || snapshot.data == null) {
           return const Center(
-              child: Text('System checks could not load right now.'));
+              child: Text('System checks could not load at the moment.'));
         }
         final data = snapshot.data!;
         return SingleChildScrollView(
@@ -122,7 +122,7 @@ class _Panel extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (rows.isEmpty)
-            Text('Nothing is visible here right now.',
+            Text('Nothing is visible here at the moment.',
                 style: Theme.of(context).textTheme.bodyMedium)
           else
             for (int i = 0; i < rows.length; i++) ...[

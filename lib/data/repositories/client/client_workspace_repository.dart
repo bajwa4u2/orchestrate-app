@@ -15,16 +15,17 @@ class ClientWorkspaceRepository {
       return Map<String, dynamic>.from(json as Map);
     } catch (_) {
       final profile = await _safeGetMap('/clients/me/profile');
-      final campaignOverview = await _safeGetMap('/clients/me/campaign-overview');
-      final campaignReadOverview = await _safeGetMap('/client/campaign/overview');
+      final campaignOverview =
+          await _safeGetMap('/clients/me/campaign-overview');
+      final campaignReadOverview =
+          await _safeGetMap('/client/campaign/overview');
       final notifications = await _safeGetList('/client/notifications');
       final emailDispatches = await _safeGetList('/client/email-dispatches');
       final leads = await _safeGetList('/client/leads');
       final replies = await _safeGetList('/replies');
 
-      final mergedCampaignOverview = campaignOverview.isNotEmpty
-          ? campaignOverview
-          : campaignReadOverview;
+      final mergedCampaignOverview =
+          campaignOverview.isNotEmpty ? campaignOverview : campaignReadOverview;
       final mailbox = _asMap(mergedCampaignOverview['mailbox']);
       final imports = _asMap(mergedCampaignOverview['imports']);
       final permissions = _asMap(mergedCampaignOverview['permissions']);
@@ -33,7 +34,9 @@ class ClientWorkspaceRepository {
 
       return <String, dynamic>{
         'client': _mergeMaps(
-          _asMap(profile['profile']).isNotEmpty ? _asMap(profile['profile']) : profile,
+          _asMap(profile['profile']).isNotEmpty
+              ? _asMap(profile['profile'])
+              : profile,
           <String, dynamic>{
             if (campaign.isNotEmpty) 'campaigns': [campaign],
           },
@@ -42,11 +45,13 @@ class ClientWorkspaceRepository {
           'leadCount': leads.length,
           'contactCount': _countFrom(profile, 'contactCount'),
           'channelCount': _countFrom(profile, 'channelCount'),
-          'sendableLeadCount': _countFrom(mergedCampaignOverview, 'sendableLeadCount'),
+          'sendableLeadCount':
+              _countFrom(mergedCampaignOverview, 'sendableLeadCount'),
           'replies': replies.length,
           'meetings': _countFrom(mergedCampaignOverview, 'meetingCount'),
           'meetingCount': _countFrom(mergedCampaignOverview, 'meetingCount'),
-          'handoffPending': _countFrom(mergedCampaignOverview, 'handoffPending'),
+          'handoffPending':
+              _countFrom(mergedCampaignOverview, 'handoffPending'),
         },
         'communications': <String, dynamic>{
           'openNotifications': notifications.length,
@@ -123,6 +128,7 @@ int _countFrom(Map<String, dynamic> map, String key) {
   return 0;
 }
 
-Map<String, dynamic> _mergeMaps(Map<String, dynamic> left, Map<String, dynamic> right) {
+Map<String, dynamic> _mergeMaps(
+    Map<String, dynamic> left, Map<String, dynamic> right) {
   return <String, dynamic>{...left, ...right};
 }

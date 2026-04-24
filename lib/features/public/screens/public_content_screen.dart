@@ -36,7 +36,7 @@ class PublicContentScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: AppTheme.publicSurface,
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
                     border: Border.all(color: AppTheme.publicLine),
                   ),
                   child: LayoutBuilder(
@@ -46,14 +46,18 @@ class PublicContentScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: AppTheme.publicAccentSoft,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
                               eyebrow,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
                                     color: AppTheme.publicAccent,
                                   ),
                             ),
@@ -63,10 +67,13 @@ class PublicContentScreen extends StatelessWidget {
                             constraints: const BoxConstraints(maxWidth: 720),
                             child: Text(
                               title,
-                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineLarge
+                                  ?.copyWith(
                                     fontSize: stacked ? 52 : 44,
                                     height: 1.04,
-                                    letterSpacing: -1.1,
+                                    letterSpacing: 0,
                                   ),
                             ),
                           ),
@@ -75,7 +82,10 @@ class PublicContentScreen extends StatelessWidget {
                             constraints: const BoxConstraints(maxWidth: 720),
                             child: Text(
                               subtitle,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
                                     color: AppTheme.publicMuted,
                                   ),
                             ),
@@ -165,13 +175,14 @@ class _SectionCard extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(section.title, style: Theme.of(context).textTheme.headlineMedium),
+          Text(section.title,
+              style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
             section.body,
@@ -183,7 +194,7 @@ class _SectionCard extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: AppTheme.publicAccentSoft,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(AppTheme.radius),
               ),
               child: Text(
                 section.highlight!,
@@ -240,7 +251,7 @@ class _SidePanel extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -263,7 +274,7 @@ class _SidePanel extends StatelessWidget {
                 backgroundColor: AppTheme.publicText,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                 ),
               ),
               child: Text(primaryAction.label),
@@ -282,7 +293,8 @@ PublicContentScreen buildHowItWorksScreen() => const PublicContentScreen(
       sideNote:
           'The point is simple: the work that starts the conversation should stay connected to the work that closes it.',
       sideActions: [
-        ContentAction(label: 'Create account', path: '/auth/join', filled: true),
+        ContentAction(
+            label: 'Create account', path: '/auth/join', filled: true),
       ],
       sections: [
         ContentSection(
@@ -298,7 +310,7 @@ PublicContentScreen buildHowItWorksScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Outreach and follow-up stay controlled',
           body:
-              'Campaigns, replies, and meeting booking stay inside the same operating system. The point is not just to send messages. It is to keep momentum visible until real conversations turn into meetings.',
+              'Campaigns, replies, and meeting booking stay inside the same service workspace. The point is not just to send messages. It is to keep momentum visible until real conversations turn into meetings.',
           highlight:
               'Outreach is not finished when the first message is sent. The follow-through is part of the product.',
         ),
@@ -308,7 +320,7 @@ PublicContentScreen buildHowItWorksScreen() => const PublicContentScreen(
               'When the work moves forward, invoices, reminders, payment tracking, statements, and records can stay tied to the same client relationship. That keeps the business trail intact after meetings are booked.',
           points: [
             'Client access stays separate from operator access.',
-            'Deliverability stays visible as an operating responsibility.',
+            'Deliverability stays visible as an service responsibility.',
             'Statements, receipts, agreements, and history remain attached to the account.',
           ],
         ),
@@ -317,18 +329,20 @@ PublicContentScreen buildHowItWorksScreen() => const PublicContentScreen(
 
 PublicContentScreen buildPricingScreen() => const PublicContentScreen(
       eyebrow: 'Pricing',
-      title: 'Two plans, clear scope',
+      title: 'Two plans, clear plan fit',
       subtitle:
           'Orchestrate is structured around two service levels so businesses can choose whether they need outbound execution only or outbound execution plus billing support.',
       sideNote:
-          'Revenue includes Opportunity by design. Billing is part of the operating system, not an extra add-on.',
+          'Revenue includes Opportunity by design. Billing is part of the service workspace, not an extra add-on.',
       sideActions: [
-        ContentAction(label: 'Create account', path: '/auth/join', filled: true),
+        ContentAction(
+            label: 'Create account', path: '/auth/join', filled: true),
       ],
       sections: [
         ContentSection(
           title: 'Opportunity',
-          body: 'For businesses that want leads, outreach, follow-up, and meetings handled with structure.',
+          body:
+              'For businesses that want leads, outreach, follow-up, and meetings handled with structure.',
           points: [
             'Lead sourcing and targeting',
             'Outbound outreach execution',
@@ -349,25 +363,27 @@ PublicContentScreen buildPricingScreen() => const PublicContentScreen(
             'Agreements and billing support tied to service delivery',
           ],
           highlight:
-              'Revenue is the fuller operating model because it carries the work from outreach into actual money movement and accountability.',
+              'Revenue is the fuller service model because it carries the work from outreach into actual money movement and accountability.',
         ),
       ],
     );
 
 PublicContentScreen buildContactScreen() => const PublicContentScreen(
       eyebrow: 'Contact',
-      title: 'Talk through fit, scope, and next steps',
+      title: 'Talk through fit, service fit, and next steps',
       subtitle:
-          'Use this page to talk through service fit, scope, pricing, or onboarding before you move forward.',
-      sideNote: 'Ready to move forward? Create your account and continue from there.',
+          'Use this page to talk through service fit, service fit, pricing, or onboarding before you move forward.',
+      sideNote:
+          'Ready to move forward? Create your account and continue from there.',
       sideActions: [
-        ContentAction(label: 'Create account', path: '/auth/join', filled: true),
+        ContentAction(
+            label: 'Create account', path: '/auth/join', filled: true),
       ],
       sections: [
         ContentSection(
           title: 'When to use this page',
           body:
-              'Use contact when you want a direct business conversation before onboarding. This page is for clarifying fit, scope, pricing, and next steps.',
+              'Use contact when you want a direct business conversation before onboarding. This page is for clarifying fit, service fit, pricing, and next steps.',
           points: [
             'You want to confirm whether the service fits your business.',
             'You want to understand Opportunity versus Revenue.',
@@ -378,14 +394,14 @@ PublicContentScreen buildContactScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Client entry stays open',
           body:
-              'Businesses can create a client account directly. Registration starts a controlled progression into verification, onboarding, qualification, and activation.',
+              'Businesses can create a client account directly. Registration starts a clear progression into verification, onboarding, qualification, and activation.',
           highlight:
-              'Account creation is the beginning of the pipeline, not unrestricted access to the whole system.',
+              'Account creation is the beginning of the pipeline, not full access before setup.',
         ),
         ContentSection(
           title: 'Operator access stays controlled',
           body:
-              'Operator access is not part of public self-serve sign-up. It is provisioned deliberately because the operator side carries execution responsibility across outreach, billing, deliverability, and records.',
+              'Operator access is not part of public self-serve sign-up. It is provisioned deliberately because the operator workspace carries execution responsibility across outreach, billing, deliverability, and records.',
         ),
       ],
     );
@@ -394,7 +410,7 @@ PublicContentScreen buildTermsScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',
       title: 'Terms of use',
       subtitle:
-          'These terms govern access to the public site, operator workspace, client access surfaces, and related services provided through Orchestrate.',
+          'These terms govern access to the public site, operator workspace, client access areas, and related services provided through Orchestrate.',
       sections: [
         ContentSection(
           title: 'Use of the service',
@@ -409,7 +425,7 @@ PublicContentScreen buildTermsScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Service boundaries',
           body:
-              'Orchestrate provides structured support for outreach, follow-up, meetings, billing administration, reminders, records, and related operating functions. It does not guarantee recipient response, booked meetings, customer payment, or uninterrupted third-party system behavior.',
+              'Orchestrate provides structured support for outreach, follow-up, meetings, billing administration, reminders, records, and related service functions. It does not guarantee recipient response, booked meetings, customer payment, or uninterrupted third-party system behavior.',
           highlight:
               'External systems, recipient behavior, data quality, and client responsiveness remain variables outside direct control.',
         ),
@@ -459,7 +475,7 @@ PublicContentScreen buildBillingPolicyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Service tiers',
           body:
-              'Orchestrate is structured around Opportunity and Revenue. Revenue includes Opportunity and extends the service into billing administration, reminders, statements, agreements, and payment accountability surfaces.',
+              'Orchestrate is structured around Opportunity and Revenue. Revenue includes Opportunity and extends the service into billing administration, reminders, statements, agreements, and payment accountability records.',
         ),
         ContentSection(
           title: 'Billing cycle and charges',
@@ -469,14 +485,14 @@ PublicContentScreen buildBillingPolicyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Late payment posture',
           body:
-              'Late payment may result in reminder escalation, service pause, restricted access, or withholding of certain operating functions until account status is brought current.',
+              'Late payment may result in reminder escalation, service pause, restricted access, or withholding of certain service functions until account status is brought current.',
           highlight:
               'Billing administration support does not erase the client’s own responsibility for payment obligations owed to Orchestrate.',
         ),
         ContentSection(
           title: 'Client billing support',
           body:
-              'Where the Revenue tier includes billing support for the client’s customers, Orchestrate acts as a structured operating intermediary. It does not become the underlying contractual counterparty between the client and the customer unless expressly agreed in writing.',
+              'Where the Revenue tier includes billing support for the client’s customers, Orchestrate acts as a structured service intermediary. It does not become the underlying contractual counterparty between the client and the customer unless expressly agreed in writing.',
         ),
       ],
     );
@@ -500,7 +516,7 @@ PublicContentScreen buildRefundPolicyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'What is not a refund trigger by itself',
           body:
-              'Low reply rates, low meeting conversion, customer non-payment, spam filtering, slow internal client response, or recipient silence are not by themselves grounds for refund because they depend on variables outside direct platform control.',
+              'Low reply rates, low meeting conversion, customer non-payment, spam filtering, slow client response, or recipient silence are not by themselves grounds for refund because they depend on variables outside direct platform control.',
         ),
       ],
     );
@@ -533,12 +549,12 @@ PublicContentScreen buildServiceAgreementScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',
       title: 'Service agreement',
       subtitle:
-          'The service agreement defines the actual operating relationship between Orchestrate and the client once scope is accepted.',
+          'The service agreement defines the actual service relationship between Orchestrate and the client once service fit is accepted.',
       sections: [
         ContentSection(
           title: 'What the agreement should establish',
           body:
-              'The agreement should state service scope, tier, billing cadence, deliverables, account visibility, communication posture, reminder handling, records responsibility, and any limits or exclusions that shape the working relationship.',
+              'The agreement should state service service fit, plan, billing cadence, deliverables, account visibility, communication posture, reminder handling, records responsibility, and any limits or exclusions that shape the working relationship.',
         ),
         ContentSection(
           title: 'Why it matters here',

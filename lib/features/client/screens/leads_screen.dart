@@ -16,7 +16,7 @@ class LeadsScreen extends StatelessWidget {
         }
         if (snapshot.hasError || snapshot.data == null) {
           return const Center(
-            child: Text('Lead generation could not load right now.'),
+            child: Text('Lead records could not load at the moment.'),
           );
         }
         final data = snapshot.data!;
@@ -25,7 +25,10 @@ class LeadsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Hero(total: data.totalLeads, sendable: data.sendableLeads, blocked: data.blockedLeads),
+              _Hero(
+                  total: data.totalLeads,
+                  sendable: data.sendableLeads,
+                  blocked: data.blockedLeads),
               const SizedBox(height: 18),
               _StatusRow(
                 cards: [
@@ -52,13 +55,15 @@ class LeadsScreen extends StatelessWidget {
               if (data.blockedLeads > 0) ...[
                 _ExplanationPanel(
                   title: 'Why some outreach is paused',
-                  summary: _buildClientBlockingSummary(data.blockedReasonCounts),
+                  summary:
+                      _buildClientBlockingSummary(data.blockedReasonCounts),
                 ),
                 const SizedBox(height: 18),
               ],
               _Panel(
                 title: 'Visible leads',
-                emptyLabel: 'Lead records will appear here once sourcing begins.',
+                emptyLabel:
+                    'Lead records will appear here once sourcing begins.',
                 items: data.rows,
               ),
             ],
@@ -104,7 +109,8 @@ class LeadsScreen extends StatelessWidget {
       if (blockReasons.isNotEmpty) {
         blockedLeads += 1;
         for (final reason in blockReasons) {
-          blockedReasonCounts.update(reason, (value) => value + 1, ifAbsent: () => 1);
+          blockedReasonCounts.update(reason, (value) => value + 1,
+              ifAbsent: () => 1);
         }
       }
 
@@ -186,7 +192,8 @@ class _LeadRow {
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.total, required this.sendable, required this.blocked});
+  const _Hero(
+      {required this.total, required this.sendable, required this.blocked});
 
   final int total;
   final int sendable;
@@ -199,7 +206,7 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -213,10 +220,12 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            total == 0 ? 'No leads are visible yet' : '$total leads currently visible',
+            total == 0
+                ? 'No leads are visible yet'
+                : '$total leads currently visible',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 12),
           Text(
@@ -285,7 +294,7 @@ class _StatusTile extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -318,7 +327,7 @@ class _Panel extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -327,8 +336,8 @@ class _Panel extends StatelessWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 16),
           if (items.isEmpty)
@@ -369,19 +378,18 @@ class _LeadTile extends StatelessWidget {
           Text(
             lines[i],
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: item.blockReasons.isNotEmpty && i == lines.length - 1
-                  ? Colors.orange.shade700
-                  : (i == lines.length - 1
-                      ? AppTheme.publicMuted
-                      : AppTheme.publicText),
-            ),
+                  color: item.blockReasons.isNotEmpty && i == lines.length - 1
+                      ? Colors.orange.shade700
+                      : (i == lines.length - 1
+                          ? AppTheme.publicMuted
+                          : AppTheme.publicText),
+                ),
           ),
         ],
       ],
     );
   }
 }
-
 
 class _ExplanationPanel extends StatelessWidget {
   const _ExplanationPanel({required this.title, required this.summary});
@@ -396,7 +404,7 @@ class _ExplanationPanel extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -405,8 +413,8 @@ class _ExplanationPanel extends StatelessWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 12),
           for (final line in summary) ...[
@@ -432,7 +440,8 @@ List<String> _buildClientBlockingSummary(Map<String, int> counts) {
     ..sort((a, b) => b.value.compareTo(a.value));
   return ordered
       .take(3)
-      .map((entry) => '${entry.value} lead${entry.value == 1 ? '' : 's'} ${_translateBlockReason(entry.key).toLowerCase()}')
+      .map((entry) =>
+          '${entry.value} lead${entry.value == 1 ? '' : 's'} ${_translateBlockReason(entry.key).toLowerCase()}')
       .toList();
 }
 
@@ -469,7 +478,6 @@ String _translateBlockReason(String code) {
       return 'Still evaluating whether outreach should proceed';
   }
 }
-
 
 Map<String, dynamic> _asMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;

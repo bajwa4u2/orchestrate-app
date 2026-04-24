@@ -7,7 +7,8 @@ import '../auth/auth_session.dart';
 enum ApiSurface { public, client, operator }
 
 class ApiClient {
-  ApiClient({http.Client? httpClient}) : _httpClient = httpClient ?? http.Client();
+  ApiClient({http.Client? httpClient})
+      : _httpClient = httpClient ?? http.Client();
 
   final http.Client _httpClient;
 
@@ -18,7 +19,9 @@ class ApiClient {
 
   Uri _uri(String path, [Map<String, String>? query]) {
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    final base = _baseUrl.endsWith('/') ? _baseUrl.substring(0, _baseUrl.length - 1) : _baseUrl;
+    final base = _baseUrl.endsWith('/')
+        ? _baseUrl.substring(0, _baseUrl.length - 1)
+        : _baseUrl;
     return Uri.parse('$base/$cleanPath').replace(
       queryParameters: query == null || query.isEmpty ? null : query,
     );

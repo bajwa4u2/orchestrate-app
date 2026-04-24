@@ -11,7 +11,8 @@ class SupportFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.60),
+          color:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.60),
         );
 
     return Padding(

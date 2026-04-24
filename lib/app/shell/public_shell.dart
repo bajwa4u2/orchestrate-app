@@ -109,13 +109,13 @@ class _PublicHeader extends StatelessWidget {
                   children: [
                     _HeaderLink(
                       label: 'Product',
-                      active: _isActive(const ['/product', '/how-it-works']),
-                      onTap: () => context.go('/how-it-works'),
+                      active: _isActive(const ['/product']),
+                      onTap: () => context.go('/product'),
                     ),
                     _HeaderLink(
-                      label: 'Governance',
-                      active: _isActive(const ['/ai-governed-revenue']),
-                      onTap: () => context.go('/ai-governed-revenue'),
+                      label: 'How it works',
+                      active: _isActive(const ['/how-it-works']),
+                      onTap: () => context.go('/how-it-works'),
                     ),
                     _HeaderLink(
                       label: 'Sourcing',
@@ -131,17 +131,6 @@ class _PublicHeader extends StatelessWidget {
                       label: 'Pricing',
                       active: _isActive(const ['/pricing']),
                       onTap: () => context.go('/pricing'),
-                    ),
-                    _HeaderLink(
-                      label: 'About',
-                      active: _isActive(const ['/about']),
-                      onTap: () => context.go('/about'),
-                    ),
-                    _HeaderLink(
-                      label: 'Updates',
-                      active: _isActive(
-                          const ['/newsletter', '/newsletter/subscribe']),
-                      onTap: () => context.go('/newsletter'),
                     ),
                     _HeaderLink(
                       label: 'Contact',
@@ -180,7 +169,7 @@ class _PublicHeader extends StatelessWidget {
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radius)),
                       ),
-                      child: const Text('Join'),
+                      child: const Text('Start setup'),
                     ),
                   ],
                 );
@@ -221,22 +210,6 @@ class _PublicFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final links = [
-      _FooterLink(label: 'Terms', onTap: () => context.go('/legal/terms')),
-      _FooterLink(label: 'Privacy', onTap: () => context.go('/legal/privacy')),
-      _FooterLink(
-          label: 'Service Agreement',
-          onTap: () => context.go('/legal/service-agreement')),
-      _FooterLink(label: 'Billing', onTap: () => context.go('/legal/billing')),
-      _FooterLink(label: 'Refund', onTap: () => context.go('/legal/refunds')),
-      _FooterLink(
-          label: 'Acceptable Use',
-          onTap: () => context.go('/legal/acceptable-use')),
-      _FooterLink(
-          label: 'Deliverability',
-          onTap: () => context.go('/legal/deliverability')),
-    ];
-
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -249,14 +222,116 @@ class _PublicFooter extends StatelessWidget {
           child: ConstrainedBox(
             constraints:
                 const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 18,
-              runSpacing: 8,
-              children: links,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final groups = [
+                  _FooterGroup(
+                    title: 'Product',
+                    links: [
+                      _FooterLink(
+                          label: 'Product',
+                          onTap: () => context.go('/product')),
+                      _FooterLink(
+                          label: 'How it works',
+                          onTap: () => context.go('/how-it-works')),
+                      _FooterLink(
+                          label: 'Sourcing',
+                          onTap: () => context.go('/lead-sourcing')),
+                      _FooterLink(
+                          label: 'Trust',
+                          onTap: () => context.go('/trust-compliance')),
+                    ],
+                  ),
+                  _FooterGroup(
+                    title: 'Start',
+                    links: [
+                      _FooterLink(
+                          label: 'Pricing',
+                          onTap: () => context.go('/pricing')),
+                      _FooterLink(
+                          label: 'Start setup',
+                          onTap: () => context.go('/auth/join')),
+                      _FooterLink(
+                          label: 'Contact',
+                          onTap: () => context.go('/contact')),
+                    ],
+                  ),
+                  _FooterGroup(
+                    title: 'Legal',
+                    links: [
+                      _FooterLink(
+                          label: 'Terms',
+                          onTap: () => context.go('/legal/terms')),
+                      _FooterLink(
+                          label: 'Privacy',
+                          onTap: () => context.go('/legal/privacy')),
+                      _FooterLink(
+                          label: 'Service Agreement',
+                          onTap: () => context.go('/legal/service-agreement')),
+                      _FooterLink(
+                          label: 'Billing',
+                          onTap: () => context.go('/legal/billing')),
+                      _FooterLink(
+                          label: 'Refunds',
+                          onTap: () => context.go('/legal/refunds')),
+                    ],
+                  ),
+                  _FooterGroup(
+                    title: 'Trust',
+                    links: [
+                      _FooterLink(
+                          label: 'Acceptable Use',
+                          onTap: () => context.go('/legal/acceptable-use')),
+                      _FooterLink(
+                          label: 'Deliverability',
+                          onTap: () => context.go('/legal/deliverability')),
+                    ],
+                  ),
+                ];
+                return Wrap(
+                  alignment: constraints.maxWidth < 720
+                      ? WrapAlignment.start
+                      : WrapAlignment.spaceBetween,
+                  spacing: 28,
+                  runSpacing: 18,
+                  children: groups,
+                );
+              },
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FooterGroup extends StatelessWidget {
+  const _FooterGroup({required this.title, required this.links});
+
+  final String title;
+  final List<Widget> links;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 220,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: AppTheme.publicText),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            direction: Axis.vertical,
+            spacing: 4,
+            children: links,
+          ),
+        ],
       ),
     );
   }
@@ -279,7 +354,8 @@ class _HeaderLink extends StatelessWidget {
         backgroundColor:
             active ? AppTheme.publicSurfaceSoft : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radius)),
         textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: active ? FontWeight.w600 : FontWeight.w500,
             ),

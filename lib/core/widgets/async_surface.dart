@@ -70,7 +70,7 @@ class _LoadingBar extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         color: AppTheme.panelSoft,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.line.withOpacity(0.6)),
       ),
     );

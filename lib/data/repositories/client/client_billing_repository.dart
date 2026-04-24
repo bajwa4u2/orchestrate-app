@@ -8,8 +8,8 @@ class ClientBillingRepository {
   final ApiClient _apiClient;
 
   Future<List<dynamic>> fetchInvoices() async {
-    final json =
-        await _apiClient.getJson('/client/invoices', surface: ApiSurface.client);
+    final json = await _apiClient.getJson('/client/invoices',
+        surface: ApiSurface.client);
     return (json as List? ?? const []).cast<dynamic>();
   }
 
@@ -36,7 +36,6 @@ class ClientBillingRepository {
     );
     return (json as List? ?? const []).cast<dynamic>();
   }
-
 
   Future<List<dynamic>> fetchAgreementsSafe() async {
     try {
@@ -69,7 +68,8 @@ class ClientBillingRepository {
     return PricingConfig.fromApi(Map<String, dynamic>.from(json as Map));
   }
 
-  Future<Map<String, dynamic>> createSubscription(String plan, String tier) async {
+  Future<Map<String, dynamic>> createSubscription(
+      String plan, String tier) async {
     final normalizedPlan = plan.trim().toLowerCase();
     final normalizedTier = tier.trim().toLowerCase();
 

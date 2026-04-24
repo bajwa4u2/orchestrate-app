@@ -93,14 +93,18 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
         title: 'Invoices',
         value: _formatCurrency(invoicesIssuedAmount),
         suffix: 'issued',
-        detail: paymentsDueAmount > 0 ? '${_formatCurrency(paymentsDueAmount)} due' : 'Issued inside the same flow',
+        detail: paymentsDueAmount > 0
+            ? '${_formatCurrency(paymentsDueAmount)} due'
+            : 'Issued inside the same flow',
         tone: _FlowTone.strong,
       ),
       _FlowCard(
         title: 'Payments',
         value: _formatCurrency(paymentsClearedAmount),
         suffix: 'cleared',
-        detail: paymentsDueAmount > 0 ? '${_formatCurrency(paymentsDueAmount)} open' : 'Settlement carried forward',
+        detail: paymentsDueAmount > 0
+            ? '${_formatCurrency(paymentsDueAmount)} open'
+            : 'Settlement carried forward',
         tone: _FlowTone.strongest,
       ),
     ];
@@ -242,12 +246,24 @@ class _FlowCard extends StatelessWidget {
         children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
-          Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(value,
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text(suffix, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted)),
+          Text(suffix,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppTheme.publicMuted)),
           if (detail != null && detail!.trim().isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(detail!, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+            Text(detail!,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppTheme.publicMuted)),
           ],
         ],
       ),
@@ -276,8 +292,11 @@ class _EmptyState extends StatelessWidget {
       height: 120,
       child: Center(
         child: Text(
-          'Live overview is not available right now.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+          'Live overview is not available at the moment.',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: AppTheme.publicMuted),
           textAlign: TextAlign.center,
         ),
       ),

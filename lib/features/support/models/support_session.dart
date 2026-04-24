@@ -35,13 +35,16 @@ class SupportSession {
     Object? caseId = _unset,
   }) {
     return SupportSession(
-      sessionId: identical(sessionId, _unset) ? this.sessionId : sessionId as String?,
+      sessionId:
+          identical(sessionId, _unset) ? this.sessionId : sessionId as String?,
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       publicMode: publicMode ?? this.publicMode,
       status: identical(status, _unset) ? this.status : status as String?,
-      category: identical(category, _unset) ? this.category : category as String?,
-      priority: identical(priority, _unset) ? this.priority : priority as String?,
+      category:
+          identical(category, _unset) ? this.category : category as String?,
+      priority:
+          identical(priority, _unset) ? this.priority : priority as String?,
       caseCreated: caseCreated ?? this.caseCreated,
       caseId: identical(caseId, _unset) ? this.caseId : caseId as String?,
     );

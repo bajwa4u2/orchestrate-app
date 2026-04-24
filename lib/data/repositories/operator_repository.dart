@@ -36,7 +36,8 @@ class OperatorRepository {
     final inquiries = await fetchInquiries(limit: 12);
     final deliverability = await fetchDeliverabilityOverview();
 
-    final mailboxes = (deliverability['mailboxes'] as List? ?? const []).cast<dynamic>();
+    final mailboxes =
+        (deliverability['mailboxes'] as List? ?? const []).cast<dynamic>();
     final failedJobs = const <dynamic>[];
     final pulseToday = _asMap(control['today']);
     final pulseExecution = _asMap(control['execution']);
@@ -123,7 +124,8 @@ class OperatorRepository {
     String? clientId,
   }) async {
     final query = <String, String>{
-      if (clientId != null && clientId.trim().isNotEmpty) 'clientId': clientId.trim(),
+      if (clientId != null && clientId.trim().isNotEmpty)
+        'clientId': clientId.trim(),
     };
     final json = await _apiClient.getJson(
       '/deliverability/overview',
@@ -223,7 +225,8 @@ class OperatorRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
-  Future<List<Map<String, dynamic>>> fetchInquiryThread(String inquiryId) async {
+  Future<List<Map<String, dynamic>>> fetchInquiryThread(
+      String inquiryId) async {
     final json = await _apiClient.getJson(
       '/operator/inquiries/$inquiryId/thread',
       surface: ApiSurface.operator,
@@ -406,7 +409,8 @@ class OperatorRepository {
     return (map['items'] as List? ?? const []).cast<dynamic>();
   }
 
-  Future<List<dynamic>> _fetchList(String path, {Map<String, String>? query}) async {
+  Future<List<dynamic>> _fetchList(String path,
+      {Map<String, String>? query}) async {
     final json = await _apiClient.getJson(
       path,
       query: query,
@@ -433,12 +437,15 @@ class OperatorRepository {
     final degradedMailboxes = (deliverability['mailboxes'] as List? ?? const [])
         .whereType<Map>()
         .where((item) {
-          final health = '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
+          final health =
+              '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
           return health == 'DEGRADED' || health == 'CRITICAL';
         })
         .take(3)
         .map((item) => <String, dynamic>{
-              'title': item['email'] ?? item['mailboxEmail'] ?? 'Mailbox needs attention',
+              'title': item['email'] ??
+                  item['mailboxEmail'] ??
+                  'Mailbox needs attention',
               'severity': item['healthStatus'] ?? item['status'] ?? 'DEGRADED',
               'status': item['status'] ?? '',
               'source': 'deliverability',
@@ -447,22 +454,29 @@ class OperatorRepository {
     items.addAll(degradedMailboxes);
 
     if (items.length < 6) {
-      items.addAll(campaigns.take(6 - items.length).whereType<Map>().map((item) => <String, dynamic>{
-            'title': item['name'] ?? 'Campaign',
-            'severity': item['status'] ?? 'ACTIVE',
-            'status': item['status'] ?? '',
-            'source': 'campaign',
-            'createdAt': item['createdAt'],
-            'campaignId': item['id'],
-          }));
+      items.addAll(campaigns
+          .take(6 - items.length)
+          .whereType<Map>()
+          .map((item) => <String, dynamic>{
+                'title': item['name'] ?? 'Campaign',
+                'severity': item['status'] ?? 'ACTIVE',
+                'status': item['status'] ?? '',
+                'source': 'campaign',
+                'createdAt': item['createdAt'],
+                'campaignId': item['id'],
+              }));
     }
     return items;
   }
 
-  Map<String, dynamic> _buildDeliverabilityPulse(Map<String, dynamic> deliverability) {
-    final mailboxes = (deliverability['mailboxes'] as List? ?? const []).whereType<Map>().toList();
+  Map<String, dynamic> _buildDeliverabilityPulse(
+      Map<String, dynamic> deliverability) {
+    final mailboxes = (deliverability['mailboxes'] as List? ?? const [])
+        .whereType<Map>()
+        .toList();
     final healthy = mailboxes.where((item) {
-      final health = '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
+      final health =
+          '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
       return health != 'DEGRADED' && health != 'CRITICAL';
     }).length;
     final degraded = mailboxes.length - healthy;

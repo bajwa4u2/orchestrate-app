@@ -81,10 +81,12 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
             _normalizedTier(nestedScope['mode']?.toString()) ??
             _tierCode;
 
-        _industryCode = _firstIndustryCode(payloadSetup, sessionDraft) ?? _industryCode;
+        _industryCode =
+            _firstIndustryCode(payloadSetup, sessionDraft) ?? _industryCode;
         _marketNotes.text = _firstNotes(payloadSetup, sessionDraft) ?? '';
 
-        final loadedCountries = _countryCodesFromSetup(payloadSetup, sessionDraft);
+        final loadedCountries =
+            _countryCodesFromSetup(payloadSetup, sessionDraft);
         final loadedRegions = _regionCodesFromSetup(payloadSetup, sessionDraft);
         final loadedMetros = _metroLabelsFromSetup(payloadSetup, sessionDraft);
 
@@ -116,7 +118,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
           _metroNames.addAll(_asStringList(draft?['metros']));
         }
         _industryCode = _industryCode ?? draft?['industryCode']?.toString();
-        _marketNotes.text = draft?['marketNotes']?.toString() ?? _marketNotes.text;
+        _marketNotes.text =
+            draft?['marketNotes']?.toString() ?? _marketNotes.text;
         _applyTierRules();
         _loading = false;
       });
@@ -136,7 +139,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
     final industries = _buildIndustriesPayload();
 
     if (countries.isEmpty || regions.isEmpty || industries.isEmpty) {
-      setState(() => _error = 'Complete your market coverage before continuing.');
+      setState(
+          () => _error = 'Complete your market coverage before continuing.');
       return;
     }
 
@@ -193,7 +197,7 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'We could not save your setup right now.';
+        _error = 'We could not save your setup at the moment.';
       });
     }
   }
@@ -230,8 +234,11 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
         .toList();
   }
 
-  List<Map<String, String>> _buildMetrosPayload(List<Map<String, String>> regions) {
-    if (_metroNames.isEmpty || regions.isEmpty) return const <Map<String, String>>[];
+  List<Map<String, String>> _buildMetrosPayload(
+      List<Map<String, String>> regions) {
+    if (_metroNames.isEmpty || regions.isEmpty) {
+      return const <Map<String, String>>[];
+    }
 
     final primaryRegion = regions.first;
     final countryCode = primaryRegion['countryCode']!;
@@ -329,13 +336,13 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
       return 'Choose your industry before continuing.';
     }
     if (_tierCode == 'focused' && _countryCodes.length != 1) {
-      return 'Focused setup covers one country at a time.';
+      return 'Focused coverage covers one country at a time.';
     }
     if (_tierCode == 'multi' && _countryCodes.length < 2) {
-      return 'Multi setup should include at least two countries.';
+      return 'Multi-market coverage should include at least two countries.';
     }
     if (_tierCode == 'precision' && _metroNames.isEmpty) {
-      return 'Precision setup needs at least one city or metro.';
+      return 'Precision coverage needs at least one city or metro.';
     }
     return null;
   }
@@ -347,7 +354,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
       'countries': _selectedCountryLabels().join(', '),
       'regions': _selectedRegionLabels().join(', '),
       'metros': _metroNames.isEmpty ? 'Not added' : _metroNames.join(', '),
-      'industry': GlobalSetupOptions.industryByCode(_industryCode)?.label ?? 'Not selected',
+      'industry': GlobalSetupOptions.industryByCode(_industryCode)?.label ??
+          'Not selected',
     };
   }
 
@@ -359,7 +367,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
 
   List<String> _selectedRegionLabels() {
     return _sortedSelectedRegions()
-        .map((region) => '${region.label} (${GlobalSetupOptions.countryByCode(region.code.split('-').first)?.label ?? region.code.split('-').first})')
+        .map((region) =>
+            '${region.label} (${GlobalSetupOptions.countryByCode(region.code.split('-').first)?.label ?? region.code.split('-').first})')
         .toList();
   }
 
@@ -405,10 +414,12 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
     for (final countryCode in _sortedCountryCodes()) {
       final country = GlobalSetupOptions.countryByCode(countryCode);
       final label = country?.label ?? countryCode;
-      final regions = List<GeoRegionOption>.from(GlobalSetupOptions.regionsForCountry(countryCode))
+      final regions = List<GeoRegionOption>.from(
+          GlobalSetupOptions.regionsForCountry(countryCode))
         ..sort((a, b) => a.label.compareTo(b.label));
       if (regions.isNotEmpty) {
-        groups.add(_GroupedRegion(countryCode: countryCode, countryLabel: label, regions: regions));
+        groups.add(_GroupedRegion(
+            countryCode: countryCode, countryLabel: label, regions: regions));
       }
     }
     return groups;
@@ -428,7 +439,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
       }
     }
     final filtered = suggestions
-        .where((item) => !_metroNames.any((selected) => selected.toLowerCase() == item.toLowerCase()))
+        .where((item) => !_metroNames
+            .any((selected) => selected.toLowerCase() == item.toLowerCase()))
         .toList()
       ..sort();
     return filtered.take(18).toList();
@@ -463,14 +475,17 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
                           selectedCountries: _selectedCountryLabels(),
                           selectedRegions: _selectedRegionLabels(),
                           selectedMetros: _metroNames,
-                          industryLabel: GlobalSetupOptions.industryByCode(_industryCode)?.label,
+                          industryLabel:
+                              GlobalSetupOptions.industryByCode(_industryCode)
+                                  ?.label,
                           marketNotes: _marketNotes,
                           error: _error,
                           saving: _saving,
                           onPlanChanged: _updatePlan,
                           onTierChanged: _updateTier,
                           onChooseCountries: () async {
-                            final result = await showModalBottomSheet<Set<String>>(
+                            final result =
+                                await showModalBottomSheet<Set<String>>(
                               context: context,
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,
@@ -491,7 +506,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
                           onChooseRegions: _countryCodes.isEmpty
                               ? null
                               : () async {
-                                  final result = await showModalBottomSheet<Set<String>>(
+                                  final result =
+                                      await showModalBottomSheet<Set<String>>(
                                     context: context,
                                     isScrollControlled: true,
                                     backgroundColor: Colors.transparent,
@@ -513,7 +529,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
                           metroSuggestions: _metroSuggestions(),
                           onRemoveMetro: _removeMetro,
                           industryCode: _industryCode,
-                          onIndustryChanged: (value) => setState(() => _industryCode = value),
+                          onIndustryChanged: (value) =>
+                              setState(() => _industryCode = value),
                           onContinue: _saving ? null : _save,
                         );
                         final review = _ReviewCard(
@@ -576,17 +593,21 @@ class _SetupIntro extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Set up how Orchestrate should operate for you', style: Theme.of(context).textTheme.headlineMedium),
+          Text('Set up your managed service workspace',
+              style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'Choose the service, define the market coverage, and review the exact scope before you move to checkout.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
+            'Choose your lane, target customers, target locations, offer context, and authorization before checkout.',
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(color: AppTheme.publicMuted),
           ),
           const SizedBox(height: 18),
           Wrap(
@@ -595,7 +616,8 @@ class _SetupIntro extends StatelessWidget {
             children: [
               _IntroPill(label: 'Service: $laneLabel'),
               _IntroPill(label: 'Coverage: $tierLabel'),
-              if (trial == '15d') const _IntroPill(label: '15-day start period selected'),
+              if (trial == '15d')
+                const _IntroPill(label: '15-day start period selected'),
             ],
           ),
         ],
@@ -655,7 +677,7 @@ class _BuilderCard extends StatelessWidget {
       elevation: 0,
       color: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         side: const BorderSide(color: AppTheme.publicLine),
       ),
       child: Padding(
@@ -663,11 +685,18 @@ class _BuilderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Build your operating scope', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+            Text('Build your business setup',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             Text(
-              'This is the scope Orchestrate will use when your workspace goes live.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
+              'This is the target market Orchestrate will use when your service starts.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(color: AppTheme.publicMuted),
             ),
             const SizedBox(height: 20),
             if (error != null) ...[
@@ -693,7 +722,7 @@ class _BuilderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 22),
-            _SectionTitle(title: '2. How broad is your operation?'),
+            _SectionTitle(title: '2. How much market coverage do you need?'),
             const SizedBox(height: 10),
             _ChoiceGrid(
               children: [
@@ -721,12 +750,16 @@ class _BuilderCard extends StatelessWidget {
             _SectionTitle(title: '3. Where should we operate?'),
             const SizedBox(height: 12),
             _SelectionField(
-              label: tierCode == 'focused' ? 'Primary country' : 'Countries to include',
+              label: tierCode == 'focused'
+                  ? 'Primary country'
+                  : 'Countries to include',
               helper: tierCode == 'focused'
                   ? 'Choose one country for this setup.'
                   : 'Search and select the countries you want covered.',
               values: selectedCountries,
-              buttonLabel: selectedCountries.isEmpty ? 'Choose countries' : 'Update countries',
+              buttonLabel: selectedCountries.isEmpty
+                  ? 'Choose countries'
+                  : 'Update countries',
               onPressed: onChooseCountries,
             ),
             const SizedBox(height: 14),
@@ -734,7 +767,8 @@ class _BuilderCard extends StatelessWidget {
               label: 'Regions to cover',
               helper: 'Add the regions you want Orchestrate to work in.',
               values: selectedRegions,
-              buttonLabel: selectedRegions.isEmpty ? 'Choose regions' : 'Update regions',
+              buttonLabel:
+                  selectedRegions.isEmpty ? 'Choose regions' : 'Update regions',
               onPressed: onChooseRegions,
               enabled: onChooseRegions != null,
             ),
@@ -779,7 +813,9 @@ class _BuilderCard extends StatelessWidget {
               width: double.infinity,
               child: FilledButton(
                 onPressed: onContinue,
-                child: Text(saving ? 'Saving your setup...' : 'Review setup and continue'),
+                child: Text(saving
+                    ? 'Saving your setup...'
+                    : 'Review setup and continue'),
               ),
             ),
           ],
@@ -806,7 +842,7 @@ class _ReviewCard extends StatelessWidget {
       elevation: 0,
       color: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         side: const BorderSide(color: AppTheme.publicLine),
       ),
       child: Padding(
@@ -814,11 +850,18 @@ class _ReviewCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Review your setup', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+            Text('Review your setup',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             Text(
-              'Checkout should match the scope you defined here.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
+              'Checkout should match the target market and servicePath you defined here.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(color: AppTheme.publicMuted),
             ),
             const SizedBox(height: 18),
             for (final entry in summary.entries) ...[
@@ -831,21 +874,30 @@ class _ReviewCard extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppTheme.publicSurfaceSoft,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(AppTheme.radius),
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('What this setup supports', style: Theme.of(context).textTheme.titleMedium),
+                  Text('What happens next',
+                      style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  Text(tierDescription, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted)),
+                  Text(tierDescription,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: AppTheme.publicMuted)),
                 ],
               ),
             ),
             if (!canContinue) ...[
               const SizedBox(height: 16),
-              Text('We are saving your setup now.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+              Text('We are saving your setup now.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppTheme.publicMuted)),
             ],
           ],
         ),
@@ -888,13 +940,14 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
     final query = _search.text.trim().toLowerCase();
     final items = GlobalSetupOptions.countries.where((country) {
       if (query.isEmpty) return true;
-      return country.label.toLowerCase().contains(query) || country.code.toLowerCase().contains(query);
+      return country.label.toLowerCase().contains(query) ||
+          country.code.toLowerCase().contains(query);
     }).toList();
 
     return _PickerSheetScaffold(
       title: widget.singleSelect ? 'Choose your country' : 'Choose countries',
       subtitle: widget.singleSelect
-          ? 'Focused setup works with one country at a time.'
+          ? 'Focused coverage works with one country at a time.'
           : 'Search and select the countries you want covered.',
       search: _search,
       child: ListView.separated(
@@ -970,7 +1023,8 @@ class _RegionPickerSheetState extends State<_RegionPickerSheet> {
           for (final group in widget.groups) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Text(group.countryLabel, style: Theme.of(context).textTheme.titleMedium),
+              child: Text(group.countryLabel,
+                  style: Theme.of(context).textTheme.titleMedium),
             ),
             for (final region in group.regions)
               if (query.isEmpty ||
@@ -1025,7 +1079,7 @@ class _PickerSheetScaffold extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16, 24, 16, bottom + 16),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         child: SafeArea(
           top: false,
           child: SizedBox(
@@ -1037,9 +1091,14 @@ class _PickerSheetScaffold extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: Theme.of(context).textTheme.headlineSmall),
+                      Text(title,
+                          style: Theme.of(context).textTheme.headlineSmall),
                       const SizedBox(height: 8),
-                      Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted)),
+                      Text(subtitle,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppTheme.publicMuted)),
                       const SizedBox(height: 14),
                       TextField(
                         controller: search,
@@ -1096,22 +1155,27 @@ class _MetroField extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            precisionMode ? 'Cities or metros to target' : 'Cities or metros to include',
+            precisionMode
+                ? 'Cities or metros to target'
+                : 'Cities or metros to include',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
             precisionMode
-                ? 'Add the local markets you want covered. Precision setup requires at least one.'
+                ? 'Add the local markets you want covered. Precision coverage requires at least one.'
                 : 'Optional. Add local markets when you want tighter targeting.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: AppTheme.publicMuted),
           ),
           const SizedBox(height: 12),
           Row(
@@ -1149,7 +1213,11 @@ class _MetroField extends StatelessWidget {
           ],
           if (suggestions.isNotEmpty) ...[
             const SizedBox(height: 14),
-            Text('Suggestions from selected markets', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+            Text('Suggestions from selected markets',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppTheme.publicMuted)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -1192,7 +1260,7 @@ class _SelectionField extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -1200,10 +1268,18 @@ class _SelectionField extends StatelessWidget {
         children: [
           Text(label, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text(helper, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted)),
+          Text(helper,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppTheme.publicMuted)),
           const SizedBox(height: 12),
           if (values.isEmpty)
-            Text('Nothing selected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted))
+            Text('Nothing selected yet.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppTheme.publicMuted))
           else
             Wrap(
               spacing: 8,
@@ -1274,13 +1350,13 @@ class _ChoiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(AppTheme.radius),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: selected ? Colors.white : AppTheme.publicSurfaceSoft,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(AppTheme.radius),
           border: Border.all(
             color: selected ? AppTheme.publicText : AppTheme.publicLine,
             width: selected ? 1.4 : 1,
@@ -1291,7 +1367,11 @@ class _ChoiceCard extends StatelessWidget {
           children: [
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted)),
+            Text(subtitle,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppTheme.publicMuted)),
           ],
         ),
       ),
@@ -1312,8 +1392,9 @@ class _SetupBanner extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: error ? const Color(0xFFFBEAEA) : AppTheme.publicAccentSoft,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: error ? const Color(0xFFE6B7B7) : AppTheme.publicLine),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(
+            color: error ? const Color(0xFFE6B7B7) : AppTheme.publicLine),
       ),
       child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
     );
@@ -1327,7 +1408,11 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700));
+    return Text(title,
+        style: Theme.of(context)
+            .textTheme
+            .titleLarge
+            ?.copyWith(fontWeight: FontWeight.w700));
   }
 }
 
@@ -1361,7 +1446,11 @@ class _ReviewRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+        Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: AppTheme.publicMuted)),
         const SizedBox(height: 4),
         Text(value, style: Theme.of(context).textTheme.titleMedium),
       ],
@@ -1398,20 +1487,29 @@ Map<String, dynamic> _asMap(dynamic value) {
 
 List<String> _asStringList(dynamic value) {
   if (value is List) {
-    return value.whereType<String>().map((item) => item.trim()).where((item) => item.isNotEmpty).toList();
+    return value
+        .whereType<String>()
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
   if (value is String && value.trim().isNotEmpty) {
     try {
       final parsed = jsonDecode(value);
       if (parsed is List) {
-        return parsed.whereType<String>().map((item) => item.trim()).where((item) => item.isNotEmpty).toList();
+        return parsed
+            .whereType<String>()
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList();
       }
     } catch (_) {}
   }
   return <String>[];
 }
 
-List<String> _countryCodesFromSetup(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+List<String> _countryCodesFromSetup(
+    Map<String, dynamic> setup, Map<String, dynamic> draft) {
   final countries = setup['countries'];
   if (countries is List && countries.isNotEmpty) {
     return countries
@@ -1428,7 +1526,8 @@ List<String> _countryCodesFromSetup(Map<String, dynamic> setup, Map<String, dyna
       .toList();
 }
 
-List<String> _regionCodesFromSetup(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+List<String> _regionCodesFromSetup(
+    Map<String, dynamic> setup, Map<String, dynamic> draft) {
   final regions = setup['regions'];
   if (regions is List && regions.isNotEmpty) {
     return regions
@@ -1445,7 +1544,8 @@ List<String> _regionCodesFromSetup(Map<String, dynamic> setup, Map<String, dynam
       .toList();
 }
 
-List<String> _metroLabelsFromSetup(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+List<String> _metroLabelsFromSetup(
+    Map<String, dynamic> setup, Map<String, dynamic> draft) {
   final metros = setup['metros'];
   if (metros is List && metros.isNotEmpty) {
     return metros
@@ -1462,7 +1562,8 @@ List<String> _metroLabelsFromSetup(Map<String, dynamic> setup, Map<String, dynam
       .toList();
 }
 
-String? _firstIndustryCode(Map<String, dynamic> setup, Map<String, dynamic> draft) {
+String? _firstIndustryCode(
+    Map<String, dynamic> setup, Map<String, dynamic> draft) {
   final industries = setup['industries'];
   if (industries is List && industries.isNotEmpty) {
     final first = _asMap(industries.first)['code']?.toString().trim();
@@ -1490,7 +1591,9 @@ String? _normalizedLane(dynamic value) {
 String? _normalizedTier(dynamic value) {
   final text = value?.toString().trim().toLowerCase();
   if (text == 'focused') return 'focused';
-  if (text == 'multi' || text == 'multi-market' || text == 'multi_market') return 'multi';
+  if (text == 'multi' || text == 'multi-market' || text == 'multi_market') {
+    return 'multi';
+  }
   if (text == 'precision') return 'precision';
   return null;
 }

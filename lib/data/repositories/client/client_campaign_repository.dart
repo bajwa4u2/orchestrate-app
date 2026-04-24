@@ -14,7 +14,8 @@ class ClientCampaignRepository {
     );
     final profile = Map<String, dynamic>.from(profileJson as Map);
 
-    final operationalView = await _safeGetMap('/client/campaign-profile/operational-view');
+    final operationalView =
+        await _safeGetMap('/client/campaign-profile/operational-view');
     final leadsJson = await _safeGetList('/client/leads');
     final leads = leadsJson
         .whereType<Map>()
@@ -38,10 +39,14 @@ class ClientCampaignRepository {
         'blocked': blocking['blocked'],
         'blockedReasons': blocking['reasonCounts'],
       },
-      if (profile['execution'] == null && overviewExecution.isNotEmpty) 'execution': overviewExecution,
-      if (profile['mailbox'] == null && overviewMailbox.isNotEmpty) 'mailbox': overviewMailbox,
-      if (profile['imports'] == null && overviewImports.isNotEmpty) 'imports': overviewImports,
-      if (profile['permissions'] == null && overviewPermissions.isNotEmpty) 'permissions': overviewPermissions,
+      if (profile['execution'] == null && overviewExecution.isNotEmpty)
+        'execution': overviewExecution,
+      if (profile['mailbox'] == null && overviewMailbox.isNotEmpty)
+        'mailbox': overviewMailbox,
+      if (profile['imports'] == null && overviewImports.isNotEmpty)
+        'imports': overviewImports,
+      if (profile['permissions'] == null && overviewPermissions.isNotEmpty)
+        'permissions': overviewPermissions,
     };
   }
 

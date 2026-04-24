@@ -167,13 +167,13 @@ class _Hero extends StatelessWidget {
             runSpacing: 10,
             children: [
               _Pill(
-                label: '$sourceCount system checks',
+                label: '$sourceCount record sources',
                 dark: dark,
               ),
               _Pill(
                 label: pendingCount == 0
-                    ? 'Configured records responded'
-                    : '$pendingCount checks need setup',
+                    ? 'Records available'
+                    : '$pendingCount sources need setup',
                 dark: dark,
               ),
             ],
@@ -235,6 +235,8 @@ class _SurfacePanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
+          _SectionLabel(label: 'Status', dark: dark),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -242,12 +244,15 @@ class _SurfacePanel extends StatelessWidget {
               for (final snapshot in snapshots)
                 _Pill(
                   label:
-                      '${_endpointLabel(section.section, snapshot.path)}: ${snapshot.available ? 'available' : 'not enabled'}',
+                      '${_endpointLabel(section.section, snapshot.path)}: ${snapshot.available ? 'available' : 'not available'}',
                   dark: dark,
                 ),
             ],
           ),
           const SizedBox(height: 18),
+          _SectionLabel(
+              label: rows.isEmpty ? 'Insight' : 'Records', dark: dark),
+          const SizedBox(height: 8),
           if (rows.isEmpty)
             _EmptyState(label: section.section.emptyLabel, dark: dark)
           else
@@ -255,7 +260,7 @@ class _SurfacePanel extends StatelessWidget {
           if (gaps.isNotEmpty) ...[
             const SizedBox(height: 18),
             _GapPanel(
-              title: section.section.gapLabel ?? 'Setup required',
+              title: section.section.gapLabel ?? 'Next action',
               gaps: [
                 for (final gap in gaps)
                   '${_endpointLabel(section.section, gap.path)}: ${_cleanReason(gap.reason, gap.statusCode)}',
@@ -322,6 +327,24 @@ class _SurfacePanel extends StatelessWidget {
   }
 }
 
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label, required this.dark});
+
+  final String label;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: dark ? AppTheme.subdued : AppTheme.publicMuted,
+            fontWeight: FontWeight.w700,
+          ),
+    );
+  }
+}
+
 class _DataRowView extends StatelessWidget {
   const _DataRowView({required this.row, required this.dark});
 
@@ -348,12 +371,15 @@ class _DataRowView extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 6),
-        Text(
-          row.source,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: dark ? AppTheme.subdued : AppTheme.publicMuted,
-              ),
-        ),
+        if (dark) ...[
+          const SizedBox(height: 6),
+          Text(
+            row.source,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.subdued,
+                ),
+          ),
+        ],
       ],
     );
   }
@@ -671,18 +697,18 @@ String _cleanReason(String? reason, int? statusCode) {
     return 'Not available for this account';
   }
   if (statusCode == 404) {
-    return 'Capability not enabled';
+    return 'Not available for this account yet';
   }
   if (statusCode != null && statusCode >= 500) {
     return 'Operating status could not be loaded';
   }
   final text = (reason ?? '').trim();
-  if (text.isEmpty) return 'Not yet configured';
+  if (text.isEmpty) return 'Not available for this account yet';
   if (text.contains('Cannot GET') || text.contains('404')) {
-    return 'Not enabled';
+    return 'Not available for this account yet';
   }
   if (text.contains('Unauthorized') || text.contains('401')) {
-    return 'Not enabled for this account';
+    return 'Not available for this account';
   }
   return text
       .replaceAll('endpoint', 'capability')

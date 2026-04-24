@@ -2,7 +2,8 @@ import '../../core/network/api_client.dart';
 import '../../core/config/pricing_config.dart';
 
 class PublicRepository {
-  PublicRepository({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  PublicRepository({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
@@ -28,7 +29,8 @@ class PublicRepository {
       body: {
         'name': name.trim(),
         'email': email.trim(),
-        if (company != null && company.trim().isNotEmpty) 'company': company.trim(),
+        if (company != null && company.trim().isNotEmpty)
+          'company': company.trim(),
         'inquiryType': inquiryType.trim(),
         'message': message.trim(),
       },
@@ -50,8 +52,10 @@ class PublicRepository {
       'message': message.trim(),
       if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
       if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
-      if (company != null && company.trim().isNotEmpty) 'company': company.trim(),
-      if (sourcePage != null && sourcePage.trim().isNotEmpty) 'sourcePage': sourcePage.trim(),
+      if (company != null && company.trim().isNotEmpty)
+        'company': company.trim(),
+      if (sourcePage != null && sourcePage.trim().isNotEmpty)
+        'sourcePage': sourcePage.trim(),
       if (inquiryTypeHint != null && inquiryTypeHint.trim().isNotEmpty)
         'inquiryTypeHint': inquiryTypeHint.trim(),
       if (context != null && context.isNotEmpty) 'context': context,

@@ -6,13 +6,15 @@ import 'client_contacts_repository.dart';
 import 'client_mailbox_repository.dart';
 
 class ClientHomeRepository {
-  ClientHomeRepository({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ClientHomeRepository({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
   Future<Map<String, dynamic>> fetchHome() async {
     try {
-      final json = await _apiClient.getJson('/client/overview', surface: ApiSurface.client);
+      final json = await _apiClient.getJson('/client/overview',
+          surface: ApiSurface.client);
       return _asMap(json);
     } catch (_) {
       return _composeFromCoreSources();

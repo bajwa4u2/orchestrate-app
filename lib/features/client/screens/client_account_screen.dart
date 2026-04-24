@@ -16,7 +16,8 @@ class ClientAccountScreen extends StatefulWidget {
 }
 
 class _ClientAccountScreenState extends State<ClientAccountScreen> {
-  final ClientWorkspaceRepository _workspaceRepository = ClientWorkspaceRepository();
+  final ClientWorkspaceRepository _workspaceRepository =
+      ClientWorkspaceRepository();
   final ClientAccountRepository _accountRepository = ClientAccountRepository();
   final ClientBillingRepository _billingRepository = ClientBillingRepository();
 
@@ -75,7 +76,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _DeactivateAccountDialog(repository: _accountRepository),
+      builder: (context) =>
+          _DeactivateAccountDialog(repository: _accountRepository),
     );
 
     if (result == true && mounted) {
@@ -94,7 +96,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
         }
 
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(child: Text('This area could not load right now.'));
+          return const Center(
+              child: Text('This area could not load at the moment.'));
         }
 
         final data = snapshot.data!;
@@ -104,7 +107,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
         final client = _asMap(data.overview['client']);
         final billing = _asMap(data.overview['billing']);
 
-        final workspaceName = _displayIdentity(profile, fallback: _displayIdentity(client));
+        final workspaceName =
+            _displayIdentity(profile, fallback: _displayIdentity(client));
         final planLabel = _resolvedPlanLabel(subscription, session);
         final billingStatus = _title(
           _read(subscription, 'status', fallback: session.subscriptionStatus),
@@ -113,7 +117,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
         final periodEnd = _read(subscription, 'currentPeriodEnd');
         final websiteUrl = _read(profile, 'websiteUrl');
         final bookingUrl = _read(profile, 'bookingUrl');
-        final outstanding = _centsToMoney(_intValue(billing['outstandingCents']), currency);
+        final outstanding =
+            _centsToMoney(_intValue(billing['outstandingCents']), currency);
 
         return SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 28),
@@ -140,7 +145,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
               const SizedBox(height: 18),
               _MetricStrip(
                 metrics: [
-                  _MetricData(label: 'Account state', value: _accountState(session)),
+                  _MetricData(
+                      label: 'Account state', value: _accountState(session)),
                   _MetricData(label: 'Plan', value: planLabel),
                   _MetricData(label: 'Billing', value: billingStatus),
                   _MetricData(
@@ -163,7 +169,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                           _read(profile, 'brandName'),
                         ]),
                         secondary: _joinNonEmpty([
-                          _read(profile, 'primaryEmail', fallback: session.email),
+                          _read(profile, 'primaryEmail',
+                              fallback: session.email),
                           _read(profile, 'primaryTimezone'),
                         ]),
                         actionLabel: 'Edit profile',
@@ -215,7 +222,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                       ),
                       _RowData(
                         title: 'Support and account closure',
-                        primary: 'Help stays available directly from the client side.',
+                        primary:
+                            'Help stays available directly from the client side.',
                         secondary:
                             'If you need to stop the account, use the closure action here rather than leaving the workspace unclear.',
                         actionLabel: 'Deactivate account',
@@ -288,7 +296,8 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
     _websiteUrl = TextEditingController(text: _read(p, 'websiteUrl'));
     _bookingUrl = TextEditingController(text: _read(p, 'bookingUrl'));
     _timezone = TextEditingController(text: _read(p, 'primaryTimezone'));
-    _currency = TextEditingController(text: _read(p, 'currencyCode', fallback: 'USD'));
+    _currency =
+        TextEditingController(text: _read(p, 'currencyCode', fallback: 'USD'));
     _headline = TextEditingController(text: _read(p, 'welcomeHeadline'));
   }
 
@@ -335,7 +344,7 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'Profile could not be updated right now.';
+        _error = 'Profile could not be updated at the moment.';
       });
     }
   }
@@ -344,7 +353,8 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radius)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
         child: Padding(
@@ -353,10 +363,11 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Edit profile', style: Theme.of(context).textTheme.headlineSmall),
+                Text('Edit profile',
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 8),
                 Text(
-                  'Keep the client identity and public links current without leaving the account surface.',
+                  'Keep your business identity, public links, time zone, and billing defaults current.',
                   style: Theme.of(context)
                       .textTheme
                       .bodyLarge
@@ -364,23 +375,25 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
                 ),
                 const SizedBox(height: 20),
                 _FormRow(
-                  left: _Field(controller: _displayName, label: 'Display name'),
-                  right: _Field(controller: _legalName, label: 'Legal name'),
+                  left: _Field(controller: _legalName, label: 'Business name'),
+                  right: _Field(
+                      controller: _displayName, label: 'Public display name'),
                 ),
                 const SizedBox(height: 14),
                 _FormRow(
                   left: _Field(controller: _brandName, label: 'Brand name'),
-                  right: _Field(controller: _timezone, label: 'Primary timezone'),
+                  right: _Field(controller: _timezone, label: 'Time zone'),
                 ),
                 const SizedBox(height: 14),
                 _FormRow(
-                  left: _Field(controller: _websiteUrl, label: 'Website URL'),
-                  right: _Field(controller: _bookingUrl, label: 'Booking URL'),
+                  left: _Field(controller: _websiteUrl, label: 'Website'),
+                  right: _Field(controller: _bookingUrl, label: 'Booking link'),
                 ),
                 const SizedBox(height: 14),
                 _FormRow(
-                  left: _Field(controller: _currency, label: 'Currency code'),
-                  right: _Field(controller: _headline, label: 'Welcome headline'),
+                  left: _Field(controller: _currency, label: 'Currency'),
+                  right: _Field(
+                      controller: _headline, label: 'Workspace headline'),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 14),
@@ -397,7 +410,9 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+                      onPressed: _saving
+                          ? null
+                          : () => Navigator.of(context).pop(false),
                       child: const Text('Cancel'),
                     ),
                     const SizedBox(width: 10),
@@ -422,7 +437,8 @@ class _DeactivateAccountDialog extends StatefulWidget {
   final ClientAccountRepository repository;
 
   @override
-  State<_DeactivateAccountDialog> createState() => _DeactivateAccountDialogState();
+  State<_DeactivateAccountDialog> createState() =>
+      _DeactivateAccountDialogState();
 }
 
 class _DeactivateAccountDialogState extends State<_DeactivateAccountDialog> {
@@ -460,7 +476,7 @@ class _DeactivateAccountDialogState extends State<_DeactivateAccountDialog> {
       if (!mounted) return;
       setState(() {
         _working = false;
-        _error = 'The account could not be deactivated right now.';
+        _error = 'The account could not be deactivated at the moment.';
       });
     }
   }
@@ -468,17 +484,19 @@ class _DeactivateAccountDialogState extends State<_DeactivateAccountDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radius)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Deactivate account', style: Theme.of(context).textTheme.headlineSmall),
+            Text('Deactivate account',
+                style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
-              'This closes the client account from the account surface instead of leaving access in an unclear state.',
+              'This closes the client account from the account area instead of leaving access in an unclear state.',
               style: Theme.of(context)
                   .textTheme
                   .bodyLarge
@@ -510,7 +528,8 @@ class _DeactivateAccountDialogState extends State<_DeactivateAccountDialog> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: _working ? null : () => Navigator.of(context).pop(false),
+                  onPressed:
+                      _working ? null : () => Navigator.of(context).pop(false),
                   child: const Text('Cancel'),
                 ),
                 const SizedBox(width: 10),
@@ -547,7 +566,7 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: LayoutBuilder(
@@ -585,8 +604,10 @@ class _Hero extends StatelessWidget {
             children: [
               for (final action in actions)
                 action.isPrimary
-                    ? FilledButton(onPressed: action.onPressed, child: Text(action.label))
-                    : OutlinedButton(onPressed: action.onPressed, child: Text(action.label)),
+                    ? FilledButton(
+                        onPressed: action.onPressed, child: Text(action.label))
+                    : OutlinedButton(
+                        onPressed: action.onPressed, child: Text(action.label)),
             ],
           );
 
@@ -599,7 +620,11 @@ class _Hero extends StatelessWidget {
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [Expanded(child: text), const SizedBox(width: 24), actionRow],
+            children: [
+              Expanded(child: text),
+              const SizedBox(width: 24),
+              actionRow
+            ],
           );
         },
       ),
@@ -663,7 +688,7 @@ class _MetricTile extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -696,7 +721,7 @@ class _Panel extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -798,7 +823,11 @@ class _FormRow extends StatelessWidget {
           );
         }
         return Row(
-          children: [Expanded(child: left), const SizedBox(width: 14), Expanded(child: right)],
+          children: [
+            Expanded(child: left),
+            const SizedBox(width: 14),
+            Expanded(child: right)
+          ],
         );
       },
     );
@@ -863,7 +892,8 @@ String _resolvedPlanLabel(
   if (explicit.isNotEmpty) return explicit;
 
   final livePlan = _composePlanLabel(
-    plan: _read(subscription, 'service', fallback: _read(subscription, 'lane')),
+    plan: _read(subscription, 'service',
+        fallback: _read(subscription, 'service path')),
     tier: _read(subscription, 'tier'),
   );
   if (livePlan.isNotEmpty) return livePlan;
@@ -895,11 +925,14 @@ String _title(String value) {
   if (text.isEmpty) return '';
   return text
       .split(RegExp(r'[\s_-]+'))
-      .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map((part) => part.isEmpty
+          ? part
+          : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
       .join(' ');
 }
 
-String _displayIdentity(Map<String, dynamic> map, {String fallback = 'Client workspace'}) {
+String _displayIdentity(Map<String, dynamic> map,
+    {String fallback = 'Client workspace'}) {
   final candidates = [
     _read(map, 'displayName'),
     _read(map, 'brandName'),

@@ -35,9 +35,12 @@ class PricingPlanOption {
       label: _readLabel(json),
       amountCents: _readInt(json['amountCents']),
       displayPrice: _readDisplayPrice(json),
-      currencyCode: ((json['currencyCode'] ?? json['currency'] ?? 'USD').toString()).toUpperCase(),
+      currencyCode:
+          ((json['currencyCode'] ?? json['currency'] ?? 'USD').toString())
+              .toUpperCase(),
       interval: (json['interval'] ?? 'month').toString().trim().toLowerCase(),
-      description: json['description']?.toString() ?? json['summary']?.toString(),
+      description:
+          json['description']?.toString() ?? json['summary']?.toString(),
       code: json['code']?.toString(),
       name: json['name']?.toString(),
       trialDays: json['trialDays'] == null ? null : _readInt(json['trialDays']),
@@ -97,16 +100,20 @@ class PricingCatalog {
 
   static PricingCatalog fromMap(Map<String, dynamic> json) {
     final grouped = Map<String, dynamic>.from(
-      (json['grouped'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
+      (json['grouped'] as Map?)?.cast<String, dynamic>() ??
+          const <String, dynamic>{},
     );
 
     final flatPlans = ((json['plans'] as List?) ?? const [])
         .whereType<Map>()
-        .map((item) => PricingPlanOption.fromMap(Map<String, dynamic>.from(item)))
+        .map((item) =>
+            PricingPlanOption.fromMap(Map<String, dynamic>.from(item)))
         .toList();
 
-    final opportunityPlans = _readGroupedPlans(grouped['opportunity'], lane: 'opportunity', fallback: flatPlans);
-    final revenuePlans = _readGroupedPlans(grouped['revenue'], lane: 'revenue', fallback: flatPlans);
+    final opportunityPlans = _readGroupedPlans(grouped['opportunity'],
+        lane: 'opportunity', fallback: flatPlans);
+    final revenuePlans = _readGroupedPlans(grouped['revenue'],
+        lane: 'revenue', fallback: flatPlans);
 
     final mergedPlans = <PricingPlanOption>[
       ...opportunityPlans,
@@ -117,7 +124,8 @@ class PricingCatalog {
       trialDays: _readInt(json['trialDays'] ?? 15),
       opportunity: _sortByTier(opportunityPlans),
       revenue: _sortByTier(revenuePlans),
-      plans: _sortByLaneAndTier(mergedPlans.isNotEmpty ? mergedPlans : flatPlans),
+      plans:
+          _sortByLaneAndTier(mergedPlans.isNotEmpty ? mergedPlans : flatPlans),
     );
   }
 
@@ -128,7 +136,8 @@ class PricingCatalog {
   }) {
     final items = ((raw as List?) ?? const [])
         .whereType<Map>()
-        .map((item) => PricingPlanOption.fromMap(Map<String, dynamic>.from(item)))
+        .map((item) =>
+            PricingPlanOption.fromMap(Map<String, dynamic>.from(item)))
         .toList();
 
     if (items.isNotEmpty) return items;
@@ -139,20 +148,23 @@ class PricingCatalog {
 class PricingConfig {
   const PricingConfig._();
 
-  static PricingCatalog fromApi(Map<String, dynamic> json) => PricingCatalog.fromMap(json);
+  static PricingCatalog fromApi(Map<String, dynamic> json) =>
+      PricingCatalog.fromMap(json);
 
   static int getPrice(PricingCatalog catalog, String lane, String tier) {
     return catalog.find(lane, tier)?.displayPrice ?? 0;
   }
 
-  static String getPriceLabel(PricingCatalog catalog, String lane, String tier) {
+  static String getPriceLabel(
+      PricingCatalog catalog, String lane, String tier) {
     final option = catalog.find(lane, tier);
     return option?.priceLabel ?? '\$0';
   }
 }
 
 extension _IterablePlanOptionX on Iterable<PricingPlanOption> {
-  PricingPlanOption? firstWhereOrNull(bool Function(PricingPlanOption element) test) {
+  PricingPlanOption? firstWhereOrNull(
+      bool Function(PricingPlanOption element) test) {
     for (final element in this) {
       if (test(element)) return element;
     }
@@ -168,7 +180,9 @@ int _readInt(dynamic value) {
 
 String _normalizeTier(String value) {
   final normalized = value.trim().toLowerCase();
-  if (normalized == 'multi-market' || normalized == 'multi_market') return 'multi';
+  if (normalized == 'multi-market' || normalized == 'multi_market') {
+    return 'multi';
+  }
   return normalized;
 }
 
@@ -197,7 +211,8 @@ List<PricingPlanOption> _sortByLaneAndTier(List<PricingPlanOption> items) {
 
   final list = List<PricingPlanOption>.from(items);
   list.sort((a, b) {
-    final laneCompare = (laneOrder[a.lane] ?? 99).compareTo(laneOrder[b.lane] ?? 99);
+    final laneCompare =
+        (laneOrder[a.lane] ?? 99).compareTo(laneOrder[b.lane] ?? 99);
     if (laneCompare != 0) return laneCompare;
     return (tierOrder[a.tier] ?? 99).compareTo(tierOrder[b.tier] ?? 99);
   });

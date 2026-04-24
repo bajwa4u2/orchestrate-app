@@ -26,7 +26,9 @@ class SupportMessage {
     return SupportMessage(
       role: 'system',
       content: (json['reply'] ?? '').toString(),
-      followUps: (json['questions'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[],
+      followUps:
+          (json['questions'] as List?)?.map((e) => e.toString()).toList() ??
+              const <String>[],
       isEscalated: status == 'escalated',
       status: status,
       category: json['category']?.toString(),

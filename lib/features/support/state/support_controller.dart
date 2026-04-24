@@ -59,7 +59,8 @@ class SupportController extends ChangeNotifier {
             );
 
       final systemMessage = SupportMessage.fromIntakeResponse(data);
-      final updated = List<SupportMessage>.from(nextMessages)..add(systemMessage);
+      final updated = List<SupportMessage>.from(nextMessages)
+        ..add(systemMessage);
 
       _session = _session.copyWith(
         sessionId: data['sessionId']?.toString() ?? _session.sessionId,
@@ -77,7 +78,8 @@ class SupportController extends ChangeNotifier {
         ..add(
           const SupportMessage(
             role: 'system',
-            content: 'We couldn’t process this right now. Please try again.',
+            content:
+                'We couldn’t process this at the moment. Please try again.',
           ),
         );
 

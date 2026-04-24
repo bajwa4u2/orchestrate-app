@@ -16,7 +16,8 @@ class ClientActivityScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(child: Text('Activity could not load right now.'));
+          return const Center(
+              child: Text('Activity could not load at the moment.'));
         }
         final data = snapshot.data!;
 
@@ -84,7 +85,8 @@ class ClientActivityScreen extends StatelessWidget {
       replyCount: _countValue(activity['replies']) == 0
           ? replies.length
           : _countValue(activity['replies']),
-      meetingCount: _countValue(activity['meetings'] ?? activity['meetingCount']),
+      meetingCount:
+          _countValue(activity['meetings'] ?? activity['meetingCount']),
       dispatchCount: dispatches.length,
       sendableCount: _countValue(
         activity['sendableLeadCount'] ?? activity['sendableLeads'],
@@ -137,7 +139,7 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -191,13 +193,14 @@ class _MetricRow extends StatelessWidget {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                   border: Border.all(color: AppTheme.publicLine),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(entry.$1, style: Theme.of(context).textTheme.bodyMedium),
+                    Text(entry.$1,
+                        style: Theme.of(context).textTheme.bodyMedium),
                     const SizedBox(height: 10),
                     Text(
                       entry.$2,
@@ -253,7 +256,7 @@ class _Panel extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -388,7 +391,8 @@ String _title(String value) {
   return value
       .split(RegExp(r'[_\s-]+'))
       .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map((part) =>
+          '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
       .join(' ');
 }
 
@@ -408,7 +412,8 @@ String _formatDateTime(String value) {
   if (parsed == null) return value;
   final local = parsed.toLocal();
   final minute = local.minute.toString().padLeft(2, '0');
-  final hour = local.hour == 0 ? 12 : (local.hour > 12 ? local.hour - 12 : local.hour);
+  final hour =
+      local.hour == 0 ? 12 : (local.hour > 12 ? local.hour - 12 : local.hour);
   final suffix = local.hour >= 12 ? 'PM' : 'AM';
   return '${_monthName(local.month)} ${local.day}, ${local.year} · $hour:$minute $suffix';
 }

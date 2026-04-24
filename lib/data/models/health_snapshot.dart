@@ -1,5 +1,6 @@
 class HealthSnapshot {
-  HealthSnapshot({required this.status, required this.timestamp, required this.uptime});
+  HealthSnapshot(
+      {required this.status, required this.timestamp, required this.uptime});
 
   final String status;
   final String timestamp;

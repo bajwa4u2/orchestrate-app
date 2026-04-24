@@ -173,62 +173,62 @@ class _ClientShellState extends State<ClientShell> {
 
   String _topStateLine(AuthSessionController session) {
     if (!session.emailVerified) {
-      return 'Verify the account so client access stays clear.';
+      return 'Confirm your email to open your workspace.';
     }
     if (!session.hasSetupCompleted) {
-      return 'Finish setup so targeting and delivery stay grounded in the right scope.';
+      return 'Finish setup so your target market and service preferences are ready.';
     }
     if (session.normalizedSubscriptionStatus != 'active') {
-      return 'Activation and billing are still being completed, but the client system remains visible.';
+      return 'Complete billing to keep service records and campaign activation moving.';
     }
 
     switch (widget.currentPath) {
       case '/client/overview':
-        return 'Setup, subscription, campaign movement, and client-safe trust signals stay in one view.';
+        return 'Setup, campaign movement, outreach, replies, meetings, billing, and support stay readable in one workspace.';
       case '/client/setup':
-        return 'Setup captures the system-owned account and campaign readiness state.';
+        return 'Setup captures your business profile, target customers, market, offer, and authorization.';
       case '/client/campaign':
       case '/client/campaign/targeting':
-        return 'Campaign holds profile, targeting, authorization, and activation state.';
+        return 'Campaign shows target market, authorization, status, and the next safe action.';
       case '/client/leads':
-        return 'Leads shows sourced records and readiness without inventing pipeline movement.';
+        return 'Leads show whether records are sourced, ready, contacted, or still waiting.';
       case '/client/outreach':
-        return 'Outreach shows queued, sent, and follow-up visibility when those records are available.';
+        return 'Outreach shows queued, sent, follow-up, and reply movement when records are available.';
       case '/client/replies':
-        return 'Replies show real inbound outcomes from system records.';
+        return 'Replies show real inbound outcomes from your outreach.';
       case '/client/meetings':
-        return 'Meetings stay tied to reply and handoff truth.';
+        return 'Meetings stay tied to replies and handoff progress.';
       case '/client/billing':
       case '/client/invoices':
       case '/client/receipts':
       case '/client/agreements':
       case '/client/statements':
       case '/client/reminders':
-        return 'Billing and formal records stay separate from execution.';
+        return 'Billing, documents, and service records stay easy to review.';
       case '/client/notifications':
-        return 'Notifications show account notices available for this workspace.';
+        return 'Notifications show account notices available for your workspace.';
       case '/client/support':
-        return 'Support uses client account context for intake and follow-up.';
+        return 'Support uses your account context for setup, billing, and service questions.';
       case '/client/settings':
-        return 'Settings shows account, setup, and authorization truth.';
+        return 'Settings shows account details, setup status, and authorization.';
       case '/app/contacts':
-        return 'Contacts is the client memory surface for sourced records and readiness.';
+        return 'Contacts show sourced records and readiness.';
       case '/app/campaigns':
-        return 'Campaigns remains the one place for targeting, geography, and activation control.';
+        return 'Campaigns is the place for target market, geography, and activation.';
       case '/app/activity':
-        return 'Activity holds execution truth across replies, meetings, and movement.';
+        return 'Activity shows replies, meetings, and outreach movement.';
       case '/app/mailbox':
-        return 'Mailbox shows dispatch and reply movement without mixing it into targeting.';
+        return 'Mailbox shows sent outreach and reply movement.';
       case '/app/newsletter':
-        return 'Newsletter controls appear here when they are enabled for this account.';
+        return 'Update controls will appear here when available for your account.';
       case '/app/branding':
-        return 'Branding remains a first-class family for identity, templates, and signatures.';
+        return 'Brand controls will appear here when available for your account.';
       case '/app/billing':
-        return 'Billing stays separate from execution so service standing remains clear.';
+        return 'Billing stays clear so service standing is easy to review.';
       case '/app/account':
-        return 'Profile, password, and client-level controls stay under account.';
+        return 'Profile, password, billing links, and account controls stay here.';
       default:
-        return 'Home keeps the client system readable without blending campaigns, activity, or billing.';
+        return 'Home shows what is happening now, what is ready, what needs action, and what happens next.';
     }
   }
 

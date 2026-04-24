@@ -5,7 +5,8 @@ class SetupOption {
 }
 
 class GeoRegionOption {
-  const GeoRegionOption({required this.code, required this.label, required this.type});
+  const GeoRegionOption(
+      {required this.code, required this.label, required this.type});
   final String code;
   final String label;
   final String type;
@@ -36,15 +37,19 @@ class GlobalSetupOptions {
     SetupOption(code: 'events_hospitality', label: 'Events & Hospitality'),
     SetupOption(code: 'fashion_apparel', label: 'Fashion & Apparel'),
     SetupOption(code: 'food_beverage', label: 'Food & Beverage'),
-    SetupOption(code: 'government_public_sector', label: 'Government & Public Sector'),
+    SetupOption(
+        code: 'government_public_sector', label: 'Government & Public Sector'),
     SetupOption(code: 'healthcare_medical', label: 'Healthcare & Medical'),
     SetupOption(code: 'home_services', label: 'Home Services'),
     SetupOption(code: 'hr_recruiting', label: 'HR & Recruiting'),
-    SetupOption(code: 'industrial_manufacturing', label: 'Industrial Manufacturing'),
+    SetupOption(
+        code: 'industrial_manufacturing', label: 'Industrial Manufacturing'),
     SetupOption(code: 'insurance', label: 'Insurance'),
     SetupOption(code: 'legal_services', label: 'Legal Services'),
-    SetupOption(code: 'logistics_supply_chain', label: 'Logistics & Supply Chain'),
-    SetupOption(code: 'marketing_advertising', label: 'Marketing & Advertising'),
+    SetupOption(
+        code: 'logistics_supply_chain', label: 'Logistics & Supply Chain'),
+    SetupOption(
+        code: 'marketing_advertising', label: 'Marketing & Advertising'),
     SetupOption(code: 'media_entertainment', label: 'Media & Entertainment'),
     SetupOption(code: 'nonprofit', label: 'Nonprofit'),
     SetupOption(code: 'oil_gas_mining', label: 'Oil, Gas & Mining'),
@@ -58,7 +63,8 @@ class GlobalSetupOptions {
     SetupOption(code: 'telecommunications', label: 'Telecommunications'),
     SetupOption(code: 'transportation', label: 'Transportation'),
     SetupOption(code: 'travel_tourism', label: 'Travel & Tourism'),
-    SetupOption(code: 'wholesale_distribution', label: 'Wholesale & Distribution'),
+    SetupOption(
+        code: 'wholesale_distribution', label: 'Wholesale & Distribution'),
     SetupOption(code: 'other', label: 'Other'),
   ];
   static const countries = <SetupOption>[
@@ -247,7 +253,8 @@ class GlobalSetupOptions {
     SetupOption(code: 'RW', label: 'Rwanda'),
     SetupOption(code: 'RE', label: 'Réunion'),
     SetupOption(code: 'BL', label: 'Saint Barthélemy'),
-    SetupOption(code: 'SH', label: 'Saint Helena, Ascension and Tristan da Cunha'),
+    SetupOption(
+        code: 'SH', label: 'Saint Helena, Ascension and Tristan da Cunha'),
     SetupOption(code: 'KN', label: 'Saint Kitts and Nevis'),
     SetupOption(code: 'LC', label: 'Saint Lucia'),
     SetupOption(code: 'MF', label: 'Saint Martin (French part)'),
@@ -268,7 +275,8 @@ class GlobalSetupOptions {
     SetupOption(code: 'SB', label: 'Solomon Islands'),
     SetupOption(code: 'SO', label: 'Somalia'),
     SetupOption(code: 'ZA', label: 'South Africa'),
-    SetupOption(code: 'GS', label: 'South Georgia and the South Sandwich Islands'),
+    SetupOption(
+        code: 'GS', label: 'South Georgia and the South Sandwich Islands'),
     SetupOption(code: 'SS', label: 'South Sudan'),
     SetupOption(code: 'ES', label: 'Spain'),
     SetupOption(code: 'LK', label: 'Sri Lanka'),
@@ -313,8 +321,19 @@ class GlobalSetupOptions {
     SetupOption(code: 'AX', label: 'Åland Islands'),
   ];
   static const planScopes = <String, List<String>>{
-    'opportunity': <String>['lead_generation', 'outreach', 'follow_up', 'meeting_booking'],
-    'revenue': <String>['lead_generation', 'outreach', 'follow_up', 'meeting_booking', 'billing_collections'],
+    'opportunity': <String>[
+      'lead_generation',
+      'outreach',
+      'follow_up',
+      'meeting_booking'
+    ],
+    'revenue': <String>[
+      'lead_generation',
+      'outreach',
+      'follow_up',
+      'meeting_booking',
+      'billing_collections'
+    ],
   };
   static const regionLabelByCountry = <String, String>{
     'AD': 'Parish',
@@ -572,10 +591,12 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'AD-07', label: 'Andorra la Vella', type: 'Parish'),
       GeoRegionOption(code: 'AD-02', label: 'Canillo', type: 'Parish'),
       GeoRegionOption(code: 'AD-03', label: 'Encamp', type: 'Parish'),
-      GeoRegionOption(code: 'AD-08', label: 'Escaldes-Engordany', type: 'Parish'),
+      GeoRegionOption(
+          code: 'AD-08', label: 'Escaldes-Engordany', type: 'Parish'),
       GeoRegionOption(code: 'AD-04', label: 'La Massana', type: 'Parish'),
       GeoRegionOption(code: 'AD-05', label: 'Ordino', type: 'Parish'),
-      GeoRegionOption(code: 'AD-06', label: 'Sant Julià de Lòria', type: 'Parish'),
+      GeoRegionOption(
+          code: 'AD-06', label: 'Sant Julià de Lòria', type: 'Parish'),
     ],
     'AE': <GeoRegionOption>[
       GeoRegionOption(code: 'AE-AZ', label: 'Abū Z̧aby', type: 'Emirate'),
@@ -664,7 +685,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'AO-BGU', label: 'Benguela', type: 'Province'),
       GeoRegionOption(code: 'AO-BIE', label: 'Bié', type: 'Province'),
       GeoRegionOption(code: 'AO-CAB', label: 'Cabinda', type: 'Province'),
-      GeoRegionOption(code: 'AO-CCU', label: 'Cuando Cubango', type: 'Province'),
+      GeoRegionOption(
+          code: 'AO-CCU', label: 'Cuando Cubango', type: 'Province'),
       GeoRegionOption(code: 'AO-CNO', label: 'Cuanza-Norte', type: 'Province'),
       GeoRegionOption(code: 'AO-CUS', label: 'Cuanza-Sul', type: 'Province'),
       GeoRegionOption(code: 'AO-CNN', label: 'Cunene', type: 'Province'),
@@ -684,7 +706,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'AR-K', label: 'Catamarca', type: 'Province'),
       GeoRegionOption(code: 'AR-H', label: 'Chaco', type: 'Province'),
       GeoRegionOption(code: 'AR-U', label: 'Chubut', type: 'Province'),
-      GeoRegionOption(code: 'AR-C', label: 'Ciudad Autónoma de Buenos Aires', type: 'City'),
+      GeoRegionOption(
+          code: 'AR-C', label: 'Ciudad Autónoma de Buenos Aires', type: 'City'),
       GeoRegionOption(code: 'AR-W', label: 'Corrientes', type: 'Province'),
       GeoRegionOption(code: 'AR-X', label: 'Córdoba', type: 'Province'),
       GeoRegionOption(code: 'AR-E', label: 'Entre Ríos', type: 'Province'),
@@ -701,8 +724,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'AR-D', label: 'San Luis', type: 'Province'),
       GeoRegionOption(code: 'AR-Z', label: 'Santa Cruz', type: 'Province'),
       GeoRegionOption(code: 'AR-S', label: 'Santa Fe', type: 'Province'),
-      GeoRegionOption(code: 'AR-G', label: 'Santiago del Estero', type: 'Province'),
-      GeoRegionOption(code: 'AR-V', label: 'Tierra del Fuego', type: 'Province'),
+      GeoRegionOption(
+          code: 'AR-G', label: 'Santiago del Estero', type: 'Province'),
+      GeoRegionOption(
+          code: 'AR-V', label: 'Tierra del Fuego', type: 'Province'),
       GeoRegionOption(code: 'AR-T', label: 'Tucumán', type: 'Province'),
     ],
     'AT': <GeoRegionOption>[
@@ -717,9 +742,13 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'AT-9', label: 'Wien', type: 'State'),
     ],
     'AU': <GeoRegionOption>[
-      GeoRegionOption(code: 'AU-ACT', label: 'Australian Capital Territory', type: 'Territory'),
+      GeoRegionOption(
+          code: 'AU-ACT',
+          label: 'Australian Capital Territory',
+          type: 'Territory'),
       GeoRegionOption(code: 'AU-NSW', label: 'New South Wales', type: 'State'),
-      GeoRegionOption(code: 'AU-NT', label: 'Northern Territory', type: 'Territory'),
+      GeoRegionOption(
+          code: 'AU-NT', label: 'Northern Territory', type: 'Territory'),
       GeoRegionOption(code: 'AU-QLD', label: 'Queensland', type: 'State'),
       GeoRegionOption(code: 'AU-SA', label: 'South Australia', type: 'State'),
       GeoRegionOption(code: 'AU-TAS', label: 'Tasmania', type: 'State'),
@@ -758,7 +787,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'AZ-MAS', label: 'Masallı', type: 'Rayon'),
       GeoRegionOption(code: 'AZ-MI', label: 'Mingəçevir', type: 'Municipality'),
       GeoRegionOption(code: 'AZ-NA', label: 'Naftalan', type: 'Municipality'),
-      GeoRegionOption(code: 'AZ-NX', label: 'Naxçıvan', type: 'Autonomous Republic'),
+      GeoRegionOption(
+          code: 'AZ-NX', label: 'Naxçıvan', type: 'Autonomous Republic'),
       GeoRegionOption(code: 'AZ-NEF', label: 'Neftçala', type: 'Rayon'),
       GeoRegionOption(code: 'AZ-OGU', label: 'Oğuz', type: 'Rayon'),
       GeoRegionOption(code: 'AZ-QAX', label: 'Qax', type: 'Rayon'),
@@ -799,9 +829,16 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'AZ-SKR', label: 'Şəmkir', type: 'Rayon'),
     ],
     'BA': <GeoRegionOption>[
-      GeoRegionOption(code: 'BA-BRC', label: 'Brčko distrikt', type: 'District With Special Status'),
-      GeoRegionOption(code: 'BA-BIH', label: 'Federacija Bosne i Hercegovine', type: 'Entity'),
-      GeoRegionOption(code: 'BA-SRP', label: 'Republika Srpska', type: 'Entity'),
+      GeoRegionOption(
+          code: 'BA-BRC',
+          label: 'Brčko distrikt',
+          type: 'District With Special Status'),
+      GeoRegionOption(
+          code: 'BA-BIH',
+          label: 'Federacija Bosne i Hercegovine',
+          type: 'Entity'),
+      GeoRegionOption(
+          code: 'BA-SRP', label: 'Republika Srpska', type: 'Entity'),
     ],
     'BB': <GeoRegionOption>[
       GeoRegionOption(code: 'BB-01', label: 'Christ Church', type: 'Parish'),
@@ -827,12 +864,17 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BD-G', label: 'Sylhet', type: 'Division'),
     ],
     'BE': <GeoRegionOption>[
-      GeoRegionOption(code: 'BE-BRU', label: 'Bruxelles-Capitale, Région de', type: 'Region'),
+      GeoRegionOption(
+          code: 'BE-BRU',
+          label: 'Bruxelles-Capitale, Région de',
+          type: 'Region'),
       GeoRegionOption(code: 'BE-VLG', label: 'Vlaams Gewest', type: 'Region'),
-      GeoRegionOption(code: 'BE-WAL', label: 'wallonne, Région', type: 'Region'),
+      GeoRegionOption(
+          code: 'BE-WAL', label: 'wallonne, Région', type: 'Region'),
     ],
     'BF': <GeoRegionOption>[
-      GeoRegionOption(code: 'BF-01', label: 'Boucle du Mouhoun', type: 'Region'),
+      GeoRegionOption(
+          code: 'BF-01', label: 'Boucle du Mouhoun', type: 'Region'),
       GeoRegionOption(code: 'BF-02', label: 'Cascades', type: 'Region'),
       GeoRegionOption(code: 'BF-03', label: 'Centre', type: 'Region'),
       GeoRegionOption(code: 'BF-04', label: 'Centre-Est', type: 'Region'),
@@ -867,7 +909,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BG-20', label: 'Sliven', type: 'District'),
       GeoRegionOption(code: 'BG-21', label: 'Smolyan', type: 'District'),
       GeoRegionOption(code: 'BG-23', label: 'Sofia', type: 'District'),
-      GeoRegionOption(code: 'BG-22', label: 'Sofia (stolitsa)', type: 'District'),
+      GeoRegionOption(
+          code: 'BG-22', label: 'Sofia (stolitsa)', type: 'District'),
       GeoRegionOption(code: 'BG-24', label: 'Stara Zagora', type: 'District'),
       GeoRegionOption(code: 'BG-25', label: 'Targovishte', type: 'District'),
       GeoRegionOption(code: 'BG-03', label: 'Varna', type: 'District'),
@@ -877,15 +920,19 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BG-28', label: 'Yambol', type: 'District'),
     ],
     'BH': <GeoRegionOption>[
-      GeoRegionOption(code: 'BH-14', label: 'Al Janūbīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'BH-14', label: 'Al Janūbīyah', type: 'Governorate'),
       GeoRegionOption(code: 'BH-15', label: 'Al Muḩarraq', type: 'Governorate'),
       GeoRegionOption(code: 'BH-13', label: 'Al ‘Āşimah', type: 'Governorate'),
-      GeoRegionOption(code: 'BH-17', label: 'Ash Shamālīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'BH-17', label: 'Ash Shamālīyah', type: 'Governorate'),
     ],
     'BI': <GeoRegionOption>[
       GeoRegionOption(code: 'BI-BB', label: 'Bubanza', type: 'Province'),
-      GeoRegionOption(code: 'BI-BM', label: 'Bujumbura Mairie', type: 'Province'),
-      GeoRegionOption(code: 'BI-BL', label: 'Bujumbura Rural', type: 'Province'),
+      GeoRegionOption(
+          code: 'BI-BM', label: 'Bujumbura Mairie', type: 'Province'),
+      GeoRegionOption(
+          code: 'BI-BL', label: 'Bujumbura Rural', type: 'Province'),
       GeoRegionOption(code: 'BI-BR', label: 'Bururi', type: 'Province'),
       GeoRegionOption(code: 'BI-CA', label: 'Cankuzo', type: 'Province'),
       GeoRegionOption(code: 'BI-CI', label: 'Cibitoke', type: 'Province'),
@@ -934,9 +981,12 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BO-T', label: 'Tarija', type: 'Department'),
     ],
     'BQ': <GeoRegionOption>[
-      GeoRegionOption(code: 'BQ-BO', label: 'Bonaire', type: 'Special Municipality'),
-      GeoRegionOption(code: 'BQ-SA', label: 'Saba', type: 'Special Municipality'),
-      GeoRegionOption(code: 'BQ-SE', label: 'Sint Eustatius', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'BQ-BO', label: 'Bonaire', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'BQ-SA', label: 'Saba', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'BQ-SE', label: 'Sint Eustatius', type: 'Special Municipality'),
     ],
     'BR': <GeoRegionOption>[
       GeoRegionOption(code: 'BR-AC', label: 'Acre', type: 'State'),
@@ -945,19 +995,22 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BR-AM', label: 'Amazonas', type: 'State'),
       GeoRegionOption(code: 'BR-BA', label: 'Bahia', type: 'State'),
       GeoRegionOption(code: 'BR-CE', label: 'Ceará', type: 'State'),
-      GeoRegionOption(code: 'BR-DF', label: 'Distrito Federal', type: 'Federal District'),
+      GeoRegionOption(
+          code: 'BR-DF', label: 'Distrito Federal', type: 'Federal District'),
       GeoRegionOption(code: 'BR-ES', label: 'Espírito Santo', type: 'State'),
       GeoRegionOption(code: 'BR-GO', label: 'Goiás', type: 'State'),
       GeoRegionOption(code: 'BR-MA', label: 'Maranhão', type: 'State'),
       GeoRegionOption(code: 'BR-MT', label: 'Mato Grosso', type: 'State'),
-      GeoRegionOption(code: 'BR-MS', label: 'Mato Grosso do Sul', type: 'State'),
+      GeoRegionOption(
+          code: 'BR-MS', label: 'Mato Grosso do Sul', type: 'State'),
       GeoRegionOption(code: 'BR-MG', label: 'Minas Gerais', type: 'State'),
       GeoRegionOption(code: 'BR-PR', label: 'Paraná', type: 'State'),
       GeoRegionOption(code: 'BR-PB', label: 'Paraíba', type: 'State'),
       GeoRegionOption(code: 'BR-PA', label: 'Pará', type: 'State'),
       GeoRegionOption(code: 'BR-PE', label: 'Pernambuco', type: 'State'),
       GeoRegionOption(code: 'BR-PI', label: 'Piauí', type: 'State'),
-      GeoRegionOption(code: 'BR-RN', label: 'Rio Grande do Norte', type: 'State'),
+      GeoRegionOption(
+          code: 'BR-RN', label: 'Rio Grande do Norte', type: 'State'),
       GeoRegionOption(code: 'BR-RS', label: 'Rio Grande do Sul', type: 'State'),
       GeoRegionOption(code: 'BR-RJ', label: 'Rio de Janeiro', type: 'State'),
       GeoRegionOption(code: 'BR-RO', label: 'Rondônia', type: 'State'),
@@ -975,10 +1028,16 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BS-CI', label: 'Cat Island', type: 'District'),
       GeoRegionOption(code: 'BS-CO', label: 'Central Abaco', type: 'District'),
       GeoRegionOption(code: 'BS-CS', label: 'Central Andros', type: 'District'),
-      GeoRegionOption(code: 'BS-CE', label: 'Central Eleuthera', type: 'District'),
-      GeoRegionOption(code: 'BS-FP', label: 'City of Freeport', type: 'District'),
-      GeoRegionOption(code: 'BS-CK', label: 'Crooked Island and Long Cay', type: 'District'),
-      GeoRegionOption(code: 'BS-EG', label: 'East Grand Bahama', type: 'District'),
+      GeoRegionOption(
+          code: 'BS-CE', label: 'Central Eleuthera', type: 'District'),
+      GeoRegionOption(
+          code: 'BS-FP', label: 'City of Freeport', type: 'District'),
+      GeoRegionOption(
+          code: 'BS-CK',
+          label: 'Crooked Island and Long Cay',
+          type: 'District'),
+      GeoRegionOption(
+          code: 'BS-EG', label: 'East Grand Bahama', type: 'District'),
       GeoRegionOption(code: 'BS-EX', label: 'Exuma', type: 'District'),
       GeoRegionOption(code: 'BS-GC', label: 'Grand Cay', type: 'District'),
       GeoRegionOption(code: 'BS-HI', label: 'Harbour Island', type: 'District'),
@@ -987,19 +1046,23 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BS-LI', label: 'Long Island', type: 'District'),
       GeoRegionOption(code: 'BS-MC', label: 'Mangrove Cay', type: 'District'),
       GeoRegionOption(code: 'BS-MG', label: 'Mayaguana', type: 'District'),
-      GeoRegionOption(code: 'BS-MI', label: 'Moore\'s Island', type: 'District'),
+      GeoRegionOption(
+          code: 'BS-MI', label: 'Moore\'s Island', type: 'District'),
       GeoRegionOption(code: 'BS-NP', label: 'New Providence', type: 'Island'),
       GeoRegionOption(code: 'BS-NO', label: 'North Abaco', type: 'District'),
       GeoRegionOption(code: 'BS-NS', label: 'North Andros', type: 'District'),
-      GeoRegionOption(code: 'BS-NE', label: 'North Eleuthera', type: 'District'),
+      GeoRegionOption(
+          code: 'BS-NE', label: 'North Eleuthera', type: 'District'),
       GeoRegionOption(code: 'BS-RI', label: 'Ragged Island', type: 'District'),
       GeoRegionOption(code: 'BS-RC', label: 'Rum Cay', type: 'District'),
       GeoRegionOption(code: 'BS-SS', label: 'San Salvador', type: 'District'),
       GeoRegionOption(code: 'BS-SO', label: 'South Abaco', type: 'District'),
       GeoRegionOption(code: 'BS-SA', label: 'South Andros', type: 'District'),
-      GeoRegionOption(code: 'BS-SE', label: 'South Eleuthera', type: 'District'),
+      GeoRegionOption(
+          code: 'BS-SE', label: 'South Eleuthera', type: 'District'),
       GeoRegionOption(code: 'BS-SW', label: 'Spanish Wells', type: 'District'),
-      GeoRegionOption(code: 'BS-WG', label: 'West Grand Bahama', type: 'District'),
+      GeoRegionOption(
+          code: 'BS-WG', label: 'West Grand Bahama', type: 'District'),
     ],
     'BT': <GeoRegionOption>[
       GeoRegionOption(code: 'BT-33', label: 'Bumthang', type: 'District'),
@@ -1012,7 +1075,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BT-11', label: 'Paro', type: 'District'),
       GeoRegionOption(code: 'BT-43', label: 'Pema Gatshel', type: 'District'),
       GeoRegionOption(code: 'BT-23', label: 'Punakha', type: 'District'),
-      GeoRegionOption(code: 'BT-45', label: 'Samdrup Jongkhar', type: 'District'),
+      GeoRegionOption(
+          code: 'BT-45', label: 'Samdrup Jongkhar', type: 'District'),
       GeoRegionOption(code: 'BT-14', label: 'Samtse', type: 'District'),
       GeoRegionOption(code: 'BT-31', label: 'Sarpang', type: 'District'),
       GeoRegionOption(code: 'BT-15', label: 'Thimphu', type: 'District'),
@@ -1020,7 +1084,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BT-41', label: 'Trashigang', type: 'District'),
       GeoRegionOption(code: 'BT-32', label: 'Trongsa', type: 'District'),
       GeoRegionOption(code: 'BT-21', label: 'Tsirang', type: 'District'),
-      GeoRegionOption(code: 'BT-24', label: 'Wangdue Phodrang', type: 'District'),
+      GeoRegionOption(
+          code: 'BT-24', label: 'Wangdue Phodrang', type: 'District'),
       GeoRegionOption(code: 'BT-34', label: 'Zhemgang', type: 'District'),
     ],
     'BW': <GeoRegionOption>[
@@ -1042,13 +1107,19 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'BW-ST', label: 'Sowa Town', type: 'Town'),
     ],
     'BY': <GeoRegionOption>[
-      GeoRegionOption(code: 'BY-BR', label: 'Bresckaja voblasć', type: 'Oblast'),
-      GeoRegionOption(code: 'BY-HO', label: 'Gomel\'skaja oblast\'', type: 'Oblast'),
+      GeoRegionOption(
+          code: 'BY-BR', label: 'Bresckaja voblasć', type: 'Oblast'),
+      GeoRegionOption(
+          code: 'BY-HO', label: 'Gomel\'skaja oblast\'', type: 'Oblast'),
       GeoRegionOption(code: 'BY-HM', label: 'Gorod Minsk', type: 'City'),
-      GeoRegionOption(code: 'BY-HR', label: 'Grodnenskaja oblast\'', type: 'Oblast'),
-      GeoRegionOption(code: 'BY-MA', label: 'Mahilioŭskaja voblasć', type: 'Oblast'),
-      GeoRegionOption(code: 'BY-MI', label: 'Minskaja oblast\'', type: 'Oblast'),
-      GeoRegionOption(code: 'BY-VI', label: 'Viciebskaja voblasć', type: 'Oblast'),
+      GeoRegionOption(
+          code: 'BY-HR', label: 'Grodnenskaja oblast\'', type: 'Oblast'),
+      GeoRegionOption(
+          code: 'BY-MA', label: 'Mahilioŭskaja voblasć', type: 'Oblast'),
+      GeoRegionOption(
+          code: 'BY-MI', label: 'Minskaja oblast\'', type: 'Oblast'),
+      GeoRegionOption(
+          code: 'BY-VI', label: 'Viciebskaja voblasć', type: 'Oblast'),
     ],
     'BZ': <GeoRegionOption>[
       GeoRegionOption(code: 'BZ-BZ', label: 'Belize', type: 'District'),
@@ -1060,15 +1131,19 @@ class GlobalSetupOptions {
     ],
     'CA': <GeoRegionOption>[
       GeoRegionOption(code: 'CA-AB', label: 'Alberta', type: 'Province'),
-      GeoRegionOption(code: 'CA-BC', label: 'British Columbia', type: 'Province'),
+      GeoRegionOption(
+          code: 'CA-BC', label: 'British Columbia', type: 'Province'),
       GeoRegionOption(code: 'CA-MB', label: 'Manitoba', type: 'Province'),
       GeoRegionOption(code: 'CA-NB', label: 'New Brunswick', type: 'Province'),
-      GeoRegionOption(code: 'CA-NL', label: 'Newfoundland and Labrador', type: 'Province'),
-      GeoRegionOption(code: 'CA-NT', label: 'Northwest Territories', type: 'Territory'),
+      GeoRegionOption(
+          code: 'CA-NL', label: 'Newfoundland and Labrador', type: 'Province'),
+      GeoRegionOption(
+          code: 'CA-NT', label: 'Northwest Territories', type: 'Territory'),
       GeoRegionOption(code: 'CA-NS', label: 'Nova Scotia', type: 'Province'),
       GeoRegionOption(code: 'CA-NU', label: 'Nunavut', type: 'Territory'),
       GeoRegionOption(code: 'CA-ON', label: 'Ontario', type: 'Province'),
-      GeoRegionOption(code: 'CA-PE', label: 'Prince Edward Island', type: 'Province'),
+      GeoRegionOption(
+          code: 'CA-PE', label: 'Prince Edward Island', type: 'Province'),
       GeoRegionOption(code: 'CA-QC', label: 'Quebec', type: 'Province'),
       GeoRegionOption(code: 'CA-SK', label: 'Saskatchewan', type: 'Province'),
       GeoRegionOption(code: 'CA-YT', label: 'Yukon', type: 'Territory'),
@@ -1102,29 +1177,38 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'CD-EQ', label: 'Équateur', type: 'Province'),
     ],
     'CF': <GeoRegionOption>[
-      GeoRegionOption(code: 'CF-BB', label: 'Bamingui-Bangoran', type: 'Prefecture'),
+      GeoRegionOption(
+          code: 'CF-BB', label: 'Bamingui-Bangoran', type: 'Prefecture'),
       GeoRegionOption(code: 'CF-BGF', label: 'Bangui', type: 'Commune'),
       GeoRegionOption(code: 'CF-BK', label: 'Basse-Kotto', type: 'Prefecture'),
-      GeoRegionOption(code: 'CF-KB', label: 'Gribingui', type: 'Economic Prefecture'),
+      GeoRegionOption(
+          code: 'CF-KB', label: 'Gribingui', type: 'Economic Prefecture'),
       GeoRegionOption(code: 'CF-HM', label: 'Haut-Mbomou', type: 'Prefecture'),
       GeoRegionOption(code: 'CF-HK', label: 'Haute-Kotto', type: 'Prefecture'),
-      GeoRegionOption(code: 'CF-HS', label: 'Haute-Sangha / Mambéré-Kadéï', type: 'Prefecture'),
-      GeoRegionOption(code: 'CF-KG', label: 'Kémo-Gribingui', type: 'Prefecture'),
+      GeoRegionOption(
+          code: 'CF-HS',
+          label: 'Haute-Sangha / Mambéré-Kadéï',
+          type: 'Prefecture'),
+      GeoRegionOption(
+          code: 'CF-KG', label: 'Kémo-Gribingui', type: 'Prefecture'),
       GeoRegionOption(code: 'CF-LB', label: 'Lobaye', type: 'Prefecture'),
       GeoRegionOption(code: 'CF-MB', label: 'Mbomou', type: 'Prefecture'),
       GeoRegionOption(code: 'CF-NM', label: 'Nana-Mambéré', type: 'Prefecture'),
-      GeoRegionOption(code: 'CF-MP', label: 'Ombella-Mpoko', type: 'Prefecture'),
+      GeoRegionOption(
+          code: 'CF-MP', label: 'Ombella-Mpoko', type: 'Prefecture'),
       GeoRegionOption(code: 'CF-UK', label: 'Ouaka', type: 'Prefecture'),
       GeoRegionOption(code: 'CF-AC', label: 'Ouham', type: 'Prefecture'),
       GeoRegionOption(code: 'CF-OP', label: 'Ouham-Pendé', type: 'Prefecture'),
-      GeoRegionOption(code: 'CF-SE', label: 'Sangha', type: 'Economic Prefecture'),
+      GeoRegionOption(
+          code: 'CF-SE', label: 'Sangha', type: 'Economic Prefecture'),
       GeoRegionOption(code: 'CF-VK', label: 'Vakaga', type: 'Prefecture'),
     ],
     'CG': <GeoRegionOption>[
       GeoRegionOption(code: 'CG-11', label: 'Bouenza', type: 'Department'),
       GeoRegionOption(code: 'CG-BZV', label: 'Brazzaville', type: 'Department'),
       GeoRegionOption(code: 'CG-8', label: 'Cuvette', type: 'Department'),
-      GeoRegionOption(code: 'CG-15', label: 'Cuvette-Ouest', type: 'Department'),
+      GeoRegionOption(
+          code: 'CG-15', label: 'Cuvette-Ouest', type: 'Department'),
       GeoRegionOption(code: 'CG-5', label: 'Kouilou', type: 'Department'),
       GeoRegionOption(code: 'CG-7', label: 'Likouala', type: 'Department'),
       GeoRegionOption(code: 'CG-2', label: 'Lékoumou', type: 'Department'),
@@ -1136,8 +1220,10 @@ class GlobalSetupOptions {
     ],
     'CH': <GeoRegionOption>[
       GeoRegionOption(code: 'CH-AG', label: 'Aargau', type: 'Canton'),
-      GeoRegionOption(code: 'CH-AR', label: 'Appenzell Ausserrhoden', type: 'Canton'),
-      GeoRegionOption(code: 'CH-AI', label: 'Appenzell Innerrhoden', type: 'Canton'),
+      GeoRegionOption(
+          code: 'CH-AR', label: 'Appenzell Ausserrhoden', type: 'Canton'),
+      GeoRegionOption(
+          code: 'CH-AI', label: 'Appenzell Innerrhoden', type: 'Canton'),
       GeoRegionOption(code: 'CH-BL', label: 'Basel-Landschaft', type: 'Canton'),
       GeoRegionOption(code: 'CH-BS', label: 'Basel-Stadt', type: 'Canton'),
       GeoRegionOption(code: 'CH-BE', label: 'Berne', type: 'Canton'),
@@ -1163,7 +1249,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'CH-ZH', label: 'Zürich', type: 'Canton'),
     ],
     'CI': <GeoRegionOption>[
-      GeoRegionOption(code: 'CI-AB', label: 'Abidjan', type: 'Autonomous District'),
+      GeoRegionOption(
+          code: 'CI-AB', label: 'Abidjan', type: 'Autonomous District'),
       GeoRegionOption(code: 'CI-BS', label: 'Bas-Sassandra', type: 'District'),
       GeoRegionOption(code: 'CI-CM', label: 'Comoé', type: 'District'),
       GeoRegionOption(code: 'CI-DN', label: 'Denguélé', type: 'District'),
@@ -1171,27 +1258,40 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'CI-LC', label: 'Lacs', type: 'District'),
       GeoRegionOption(code: 'CI-LG', label: 'Lagunes', type: 'District'),
       GeoRegionOption(code: 'CI-MG', label: 'Montagnes', type: 'District'),
-      GeoRegionOption(code: 'CI-SM', label: 'Sassandra-Marahoué', type: 'District'),
+      GeoRegionOption(
+          code: 'CI-SM', label: 'Sassandra-Marahoué', type: 'District'),
       GeoRegionOption(code: 'CI-SV', label: 'Savanes', type: 'District'),
-      GeoRegionOption(code: 'CI-VB', label: 'Vallée du Bandama', type: 'District'),
+      GeoRegionOption(
+          code: 'CI-VB', label: 'Vallée du Bandama', type: 'District'),
       GeoRegionOption(code: 'CI-WR', label: 'Woroba', type: 'District'),
-      GeoRegionOption(code: 'CI-YM', label: 'Yamoussoukro', type: 'Autonomous District'),
+      GeoRegionOption(
+          code: 'CI-YM', label: 'Yamoussoukro', type: 'Autonomous District'),
       GeoRegionOption(code: 'CI-ZZ', label: 'Zanzan', type: 'District'),
     ],
     'CL': <GeoRegionOption>[
-      GeoRegionOption(code: 'CL-AI', label: 'Aisén del General Carlos Ibañez del Campo', type: 'Region'),
+      GeoRegionOption(
+          code: 'CL-AI',
+          label: 'Aisén del General Carlos Ibañez del Campo',
+          type: 'Region'),
       GeoRegionOption(code: 'CL-AN', label: 'Antofagasta', type: 'Region'),
-      GeoRegionOption(code: 'CL-AP', label: 'Arica y Parinacota', type: 'Region'),
+      GeoRegionOption(
+          code: 'CL-AP', label: 'Arica y Parinacota', type: 'Region'),
       GeoRegionOption(code: 'CL-AT', label: 'Atacama', type: 'Region'),
       GeoRegionOption(code: 'CL-BI', label: 'Biobío', type: 'Region'),
       GeoRegionOption(code: 'CL-CO', label: 'Coquimbo', type: 'Region'),
       GeoRegionOption(code: 'CL-AR', label: 'La Araucanía', type: 'Region'),
-      GeoRegionOption(code: 'CL-LI', label: 'Libertador General Bernardo O\'Higgins', type: 'Region'),
+      GeoRegionOption(
+          code: 'CL-LI',
+          label: 'Libertador General Bernardo O\'Higgins',
+          type: 'Region'),
       GeoRegionOption(code: 'CL-LL', label: 'Los Lagos', type: 'Region'),
       GeoRegionOption(code: 'CL-LR', label: 'Los Ríos', type: 'Region'),
       GeoRegionOption(code: 'CL-MA', label: 'Magallanes', type: 'Region'),
       GeoRegionOption(code: 'CL-ML', label: 'Maule', type: 'Region'),
-      GeoRegionOption(code: 'CL-RM', label: 'Región Metropolitana de Santiago', type: 'Region'),
+      GeoRegionOption(
+          code: 'CL-RM',
+          label: 'Región Metropolitana de Santiago',
+          type: 'Region'),
       GeoRegionOption(code: 'CL-TA', label: 'Tarapacá', type: 'Region'),
       GeoRegionOption(code: 'CL-VS', label: 'Valparaíso', type: 'Region'),
       GeoRegionOption(code: 'CL-NB', label: 'Ñuble', type: 'Region'),
@@ -1210,36 +1310,52 @@ class GlobalSetupOptions {
     ],
     'CN': <GeoRegionOption>[
       GeoRegionOption(code: 'CN-AH', label: 'Anhui Sheng', type: 'Province'),
-      GeoRegionOption(code: 'CN-BJ', label: 'Beijing Shi', type: 'Municipality'),
-      GeoRegionOption(code: 'CN-CQ', label: 'Chongqing Shi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'CN-BJ', label: 'Beijing Shi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'CN-CQ', label: 'Chongqing Shi', type: 'Municipality'),
       GeoRegionOption(code: 'CN-FJ', label: 'Fujian Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-GS', label: 'Gansu Sheng', type: 'Province'),
-      GeoRegionOption(code: 'CN-GD', label: 'Guangdong Sheng', type: 'Province'),
-      GeoRegionOption(code: 'CN-GX', label: 'Guangxi Zhuangzu Zizhiqu', type: 'Region'),
+      GeoRegionOption(
+          code: 'CN-GD', label: 'Guangdong Sheng', type: 'Province'),
+      GeoRegionOption(
+          code: 'CN-GX', label: 'Guangxi Zhuangzu Zizhiqu', type: 'Region'),
       GeoRegionOption(code: 'CN-GZ', label: 'Guizhou Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-HI', label: 'Hainan Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-HE', label: 'Hebei Sheng', type: 'Province'),
-      GeoRegionOption(code: 'CN-HL', label: 'Heilongjiang Sheng', type: 'Province'),
+      GeoRegionOption(
+          code: 'CN-HL', label: 'Heilongjiang Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-HA', label: 'Henan Sheng', type: 'Province'),
-      GeoRegionOption(code: 'CN-HK', label: 'Hong Kong SAR', type: 'Special Administrative Region'),
+      GeoRegionOption(
+          code: 'CN-HK',
+          label: 'Hong Kong SAR',
+          type: 'Special Administrative Region'),
       GeoRegionOption(code: 'CN-HB', label: 'Hubei Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-HN', label: 'Hunan Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-JS', label: 'Jiangsu Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-JX', label: 'Jiangxi Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-JL', label: 'Jilin Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-LN', label: 'Liaoning Sheng', type: 'Province'),
-      GeoRegionOption(code: 'CN-MO', label: 'Macao SAR', type: 'Special Administrative Region'),
-      GeoRegionOption(code: 'CN-NM', label: 'Nei Mongol Zizhiqu', type: 'Region'),
-      GeoRegionOption(code: 'CN-NX', label: 'Ningxia Huizu Zizhiqu', type: 'Region'),
+      GeoRegionOption(
+          code: 'CN-MO',
+          label: 'Macao SAR',
+          type: 'Special Administrative Region'),
+      GeoRegionOption(
+          code: 'CN-NM', label: 'Nei Mongol Zizhiqu', type: 'Region'),
+      GeoRegionOption(
+          code: 'CN-NX', label: 'Ningxia Huizu Zizhiqu', type: 'Region'),
       GeoRegionOption(code: 'CN-QH', label: 'Qinghai Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-SN', label: 'Shaanxi Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-SD', label: 'Shandong Sheng', type: 'Province'),
-      GeoRegionOption(code: 'CN-SH', label: 'Shanghai Shi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'CN-SH', label: 'Shanghai Shi', type: 'Municipality'),
       GeoRegionOption(code: 'CN-SX', label: 'Shanxi Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-SC', label: 'Sichuan Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-TW', label: 'Taiwan Sheng', type: 'Province'),
-      GeoRegionOption(code: 'CN-TJ', label: 'Tianjin Shi', type: 'Municipality'),
-      GeoRegionOption(code: 'CN-XJ', label: 'Xinjiang Uygur Zizhiqu', type: 'Region'),
+      GeoRegionOption(
+          code: 'CN-TJ', label: 'Tianjin Shi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'CN-XJ', label: 'Xinjiang Uygur Zizhiqu', type: 'Region'),
       GeoRegionOption(code: 'CN-XZ', label: 'Xizang Zizhiqu', type: 'Region'),
       GeoRegionOption(code: 'CN-YN', label: 'Yunnan Sheng', type: 'Province'),
       GeoRegionOption(code: 'CN-ZJ', label: 'Zhejiang Sheng', type: 'Province'),
@@ -1257,9 +1373,13 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'CO-CAU', label: 'Cauca', type: 'Department'),
       GeoRegionOption(code: 'CO-CES', label: 'Cesar', type: 'Department'),
       GeoRegionOption(code: 'CO-CHO', label: 'Chocó', type: 'Department'),
-      GeoRegionOption(code: 'CO-CUN', label: 'Cundinamarca', type: 'Department'),
+      GeoRegionOption(
+          code: 'CO-CUN', label: 'Cundinamarca', type: 'Department'),
       GeoRegionOption(code: 'CO-COR', label: 'Córdoba', type: 'Department'),
-      GeoRegionOption(code: 'CO-DC', label: 'Distrito Capital de Bogotá', type: 'Capital District'),
+      GeoRegionOption(
+          code: 'CO-DC',
+          label: 'Distrito Capital de Bogotá',
+          type: 'Capital District'),
       GeoRegionOption(code: 'CO-GUA', label: 'Guainía', type: 'Department'),
       GeoRegionOption(code: 'CO-GUV', label: 'Guaviare', type: 'Department'),
       GeoRegionOption(code: 'CO-HUI', label: 'Huila', type: 'Department'),
@@ -1267,15 +1387,20 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'CO-MAG', label: 'Magdalena', type: 'Department'),
       GeoRegionOption(code: 'CO-MET', label: 'Meta', type: 'Department'),
       GeoRegionOption(code: 'CO-NAR', label: 'Nariño', type: 'Department'),
-      GeoRegionOption(code: 'CO-NSA', label: 'Norte de Santander', type: 'Department'),
+      GeoRegionOption(
+          code: 'CO-NSA', label: 'Norte de Santander', type: 'Department'),
       GeoRegionOption(code: 'CO-PUT', label: 'Putumayo', type: 'Department'),
       GeoRegionOption(code: 'CO-QUI', label: 'Quindío', type: 'Department'),
       GeoRegionOption(code: 'CO-RIS', label: 'Risaralda', type: 'Department'),
-      GeoRegionOption(code: 'CO-SAP', label: 'San Andrés, Providencia y Santa Catalina', type: 'Department'),
+      GeoRegionOption(
+          code: 'CO-SAP',
+          label: 'San Andrés, Providencia y Santa Catalina',
+          type: 'Department'),
       GeoRegionOption(code: 'CO-SAN', label: 'Santander', type: 'Department'),
       GeoRegionOption(code: 'CO-SUC', label: 'Sucre', type: 'Department'),
       GeoRegionOption(code: 'CO-TOL', label: 'Tolima', type: 'Department'),
-      GeoRegionOption(code: 'CO-VAC', label: 'Valle del Cauca', type: 'Department'),
+      GeoRegionOption(
+          code: 'CO-VAC', label: 'Valle del Cauca', type: 'Department'),
       GeoRegionOption(code: 'CO-VAU', label: 'Vaupés', type: 'Department'),
       GeoRegionOption(code: 'CO-VID', label: 'Vichada', type: 'Department'),
     ],
@@ -1296,19 +1421,30 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'CU-12', label: 'Granma', type: 'Province'),
       GeoRegionOption(code: 'CU-14', label: 'Guantánamo', type: 'Province'),
       GeoRegionOption(code: 'CU-11', label: 'Holguín', type: 'Province'),
-      GeoRegionOption(code: 'CU-99', label: 'Isla de la Juventud', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'CU-99',
+          label: 'Isla de la Juventud',
+          type: 'Special Municipality'),
       GeoRegionOption(code: 'CU-03', label: 'La Habana', type: 'Province'),
       GeoRegionOption(code: 'CU-10', label: 'Las Tunas', type: 'Province'),
       GeoRegionOption(code: 'CU-04', label: 'Matanzas', type: 'Province'),
       GeoRegionOption(code: 'CU-16', label: 'Mayabeque', type: 'Province'),
       GeoRegionOption(code: 'CU-01', label: 'Pinar del Río', type: 'Province'),
-      GeoRegionOption(code: 'CU-07', label: 'Sancti Spíritus', type: 'Province'),
-      GeoRegionOption(code: 'CU-13', label: 'Santiago de Cuba', type: 'Province'),
+      GeoRegionOption(
+          code: 'CU-07', label: 'Sancti Spíritus', type: 'Province'),
+      GeoRegionOption(
+          code: 'CU-13', label: 'Santiago de Cuba', type: 'Province'),
       GeoRegionOption(code: 'CU-05', label: 'Villa Clara', type: 'Province'),
     ],
     'CV': <GeoRegionOption>[
-      GeoRegionOption(code: 'CV-B', label: 'Ilhas de Barlavento', type: 'Geographical Region'),
-      GeoRegionOption(code: 'CV-S', label: 'Ilhas de Sotavento', type: 'Geographical Region'),
+      GeoRegionOption(
+          code: 'CV-B',
+          label: 'Ilhas de Barlavento',
+          type: 'Geographical Region'),
+      GeoRegionOption(
+          code: 'CV-S',
+          label: 'Ilhas de Sotavento',
+          type: 'Geographical Region'),
     ],
     'CY': <GeoRegionOption>[
       GeoRegionOption(code: 'CY-04', label: 'Ammochostos', type: 'District'),
@@ -1319,17 +1455,21 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'CY-02', label: 'Lemesos', type: 'District'),
     ],
     'CZ': <GeoRegionOption>[
-      GeoRegionOption(code: 'CZ-64', label: 'Jihomoravský kraj', type: 'Region'),
+      GeoRegionOption(
+          code: 'CZ-64', label: 'Jihomoravský kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-31', label: 'Jihočeský kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-41', label: 'Karlovarský kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-63', label: 'Kraj Vysočina', type: 'Region'),
-      GeoRegionOption(code: 'CZ-52', label: 'Královéhradecký kraj', type: 'Region'),
+      GeoRegionOption(
+          code: 'CZ-52', label: 'Královéhradecký kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-51', label: 'Liberecký kraj', type: 'Region'),
-      GeoRegionOption(code: 'CZ-80', label: 'Moravskoslezský kraj', type: 'Region'),
+      GeoRegionOption(
+          code: 'CZ-80', label: 'Moravskoslezský kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-71', label: 'Olomoucký kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-53', label: 'Pardubický kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-32', label: 'Plzeňský kraj', type: 'Region'),
-      GeoRegionOption(code: 'CZ-10', label: 'Praha, Hlavní město', type: 'Capital City'),
+      GeoRegionOption(
+          code: 'CZ-10', label: 'Praha, Hlavní město', type: 'Capital City'),
       GeoRegionOption(code: 'CZ-20', label: 'Středočeský kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-72', label: 'Zlínský kraj', type: 'Region'),
       GeoRegionOption(code: 'CZ-42', label: 'Ústecký kraj', type: 'Region'),
@@ -1342,9 +1482,11 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'DE-HB', label: 'Bremen', type: 'Land'),
       GeoRegionOption(code: 'DE-HH', label: 'Hamburg', type: 'Land'),
       GeoRegionOption(code: 'DE-HE', label: 'Hessen', type: 'Land'),
-      GeoRegionOption(code: 'DE-MV', label: 'Mecklenburg-Vorpommern', type: 'Land'),
+      GeoRegionOption(
+          code: 'DE-MV', label: 'Mecklenburg-Vorpommern', type: 'Land'),
       GeoRegionOption(code: 'DE-NI', label: 'Niedersachsen', type: 'Land'),
-      GeoRegionOption(code: 'DE-NW', label: 'Nordrhein-Westfalen', type: 'Land'),
+      GeoRegionOption(
+          code: 'DE-NW', label: 'Nordrhein-Westfalen', type: 'Land'),
       GeoRegionOption(code: 'DE-RP', label: 'Rheinland-Pfalz', type: 'Land'),
       GeoRegionOption(code: 'DE-SL', label: 'Saarland', type: 'Land'),
       GeoRegionOption(code: 'DE-SN', label: 'Sachsen', type: 'Land'),
@@ -1400,8 +1542,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'DZ-05', label: 'Batna', type: 'Province'),
       GeoRegionOption(code: 'DZ-07', label: 'Biskra', type: 'Province'),
       GeoRegionOption(code: 'DZ-09', label: 'Blida', type: 'Province'),
-      GeoRegionOption(code: 'DZ-50', label: 'Bordj Badji Mokhtar', type: 'Province'),
-      GeoRegionOption(code: 'DZ-34', label: 'Bordj Bou Arréridj', type: 'Province'),
+      GeoRegionOption(
+          code: 'DZ-50', label: 'Bordj Badji Mokhtar', type: 'Province'),
+      GeoRegionOption(
+          code: 'DZ-34', label: 'Bordj Bou Arréridj', type: 'Province'),
       GeoRegionOption(code: 'DZ-10', label: 'Bouira', type: 'Province'),
       GeoRegionOption(code: 'DZ-35', label: 'Boumerdès', type: 'Province'),
       GeoRegionOption(code: 'DZ-08', label: 'Béchar', type: 'Province'),
@@ -1472,10 +1616,14 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'EC-Y', label: 'Pastaza', type: 'Province'),
       GeoRegionOption(code: 'EC-P', label: 'Pichincha', type: 'Province'),
       GeoRegionOption(code: 'EC-SE', label: 'Santa Elena', type: 'Province'),
-      GeoRegionOption(code: 'EC-SD', label: 'Santo Domingo de los Tsáchilas', type: 'Province'),
+      GeoRegionOption(
+          code: 'EC-SD',
+          label: 'Santo Domingo de los Tsáchilas',
+          type: 'Province'),
       GeoRegionOption(code: 'EC-U', label: 'Sucumbíos', type: 'Province'),
       GeoRegionOption(code: 'EC-T', label: 'Tungurahua', type: 'Province'),
-      GeoRegionOption(code: 'EC-Z', label: 'Zamora Chinchipe', type: 'Province'),
+      GeoRegionOption(
+          code: 'EC-Z', label: 'Zamora Chinchipe', type: 'Province'),
     ],
     'EE': <GeoRegionOption>[
       GeoRegionOption(code: 'EE-37', label: 'Harjumaa', type: 'County'),
@@ -1495,76 +1643,145 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'EE-87', label: 'Võrumaa', type: 'County'),
     ],
     'EG': <GeoRegionOption>[
-      GeoRegionOption(code: 'EG-DK', label: 'Ad Daqahlīyah', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-BA', label: 'Al Baḩr al Aḩmar', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-DK', label: 'Ad Daqahlīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-BA', label: 'Al Baḩr al Aḩmar', type: 'Governorate'),
       GeoRegionOption(code: 'EG-BH', label: 'Al Buḩayrah', type: 'Governorate'),
       GeoRegionOption(code: 'EG-FYM', label: 'Al Fayyūm', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-GH', label: 'Al Gharbīyah', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-ALX', label: 'Al Iskandarīyah', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-IS', label: 'Al Ismā\'īlīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-GH', label: 'Al Gharbīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-ALX', label: 'Al Iskandarīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-IS', label: 'Al Ismā\'īlīyah', type: 'Governorate'),
       GeoRegionOption(code: 'EG-GZ', label: 'Al Jīzah', type: 'Governorate'),
       GeoRegionOption(code: 'EG-MN', label: 'Al Minyā', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-MNF', label: 'Al Minūfīyah', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-KB', label: 'Al Qalyūbīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-MNF', label: 'Al Minūfīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-KB', label: 'Al Qalyūbīyah', type: 'Governorate'),
       GeoRegionOption(code: 'EG-C', label: 'Al Qāhirah', type: 'Governorate'),
       GeoRegionOption(code: 'EG-LX', label: 'Al Uqşur', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-WAD', label: 'Al Wādī al Jadīd', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-WAD', label: 'Al Wādī al Jadīd', type: 'Governorate'),
       GeoRegionOption(code: 'EG-SUZ', label: 'As Suways', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-SHR', label: 'Ash Sharqīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-SHR', label: 'Ash Sharqīyah', type: 'Governorate'),
       GeoRegionOption(code: 'EG-ASN', label: 'Aswān', type: 'Governorate'),
       GeoRegionOption(code: 'EG-AST', label: 'Asyūţ', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-BNS', label: 'Banī Suwayf', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-BNS', label: 'Banī Suwayf', type: 'Governorate'),
       GeoRegionOption(code: 'EG-PTS', label: 'Būr Sa‘īd', type: 'Governorate'),
       GeoRegionOption(code: 'EG-DT', label: 'Dumyāţ', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-JS', label: 'Janūb Sīnā\'', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-KFS', label: 'Kafr ash Shaykh', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-JS', label: 'Janūb Sīnā\'', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-KFS', label: 'Kafr ash Shaykh', type: 'Governorate'),
       GeoRegionOption(code: 'EG-MT', label: 'Maţrūḩ', type: 'Governorate'),
       GeoRegionOption(code: 'EG-KN', label: 'Qinā', type: 'Governorate'),
-      GeoRegionOption(code: 'EG-SIN', label: 'Shamāl Sīnā\'', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'EG-SIN', label: 'Shamāl Sīnā\'', type: 'Governorate'),
       GeoRegionOption(code: 'EG-SHG', label: 'Sūhāj', type: 'Governorate'),
     ],
     'ER': <GeoRegionOption>[
       GeoRegionOption(code: 'ER-MA', label: 'Al Awsaţ', type: 'Region'),
       GeoRegionOption(code: 'ER-DU', label: 'Al Janūbī', type: 'Region'),
       GeoRegionOption(code: 'ER-AN', label: 'Ansabā', type: 'Region'),
-      GeoRegionOption(code: 'ER-DK', label: 'Debubawi K’eyyĭḥ Baḥri', type: 'Region'),
+      GeoRegionOption(
+          code: 'ER-DK', label: 'Debubawi K’eyyĭḥ Baḥri', type: 'Region'),
       GeoRegionOption(code: 'ER-GB', label: 'Gash-Barka', type: 'Region'),
-      GeoRegionOption(code: 'ER-SK', label: 'Semienawi K’eyyĭḥ Baḥri', type: 'Region'),
+      GeoRegionOption(
+          code: 'ER-SK', label: 'Semienawi K’eyyĭḥ Baḥri', type: 'Region'),
     ],
     'ES': <GeoRegionOption>[
-      GeoRegionOption(code: 'ES-AN', label: 'Andalucía', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-AR', label: 'Aragón', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-AS', label: 'Asturias, Principado de', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-CN', label: 'Canarias', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-CB', label: 'Cantabria', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-CL', label: 'Castilla y León', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-CM', label: 'Castilla-La Mancha', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-CT', label: 'Catalunya [Cataluña]', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-CE', label: 'Ceuta', type: 'Autonomous City In North Africa'),
-      GeoRegionOption(code: 'ES-PV', label: 'Euskal Herria', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-EX', label: 'Extremadura', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-GA', label: 'Galicia [Galicia]', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-IB', label: 'Illes Balears [Islas Baleares]', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-RI', label: 'La Rioja', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-MD', label: 'Madrid, Comunidad de', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-ML', label: 'Melilla', type: 'Autonomous City In North Africa'),
-      GeoRegionOption(code: 'ES-MC', label: 'Murcia, Región de', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-NC', label: 'Nafarroako Foru Komunitatea*', type: 'Autonomous Community'),
-      GeoRegionOption(code: 'ES-VC', label: 'Valenciana, Comunidad', type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-AN', label: 'Andalucía', type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-AR', label: 'Aragón', type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-AS',
+          label: 'Asturias, Principado de',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-CN', label: 'Canarias', type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-CB', label: 'Cantabria', type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-CL',
+          label: 'Castilla y León',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-CM',
+          label: 'Castilla-La Mancha',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-CT',
+          label: 'Catalunya [Cataluña]',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-CE',
+          label: 'Ceuta',
+          type: 'Autonomous City In North Africa'),
+      GeoRegionOption(
+          code: 'ES-PV', label: 'Euskal Herria', type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-EX', label: 'Extremadura', type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-GA',
+          label: 'Galicia [Galicia]',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-IB',
+          label: 'Illes Balears [Islas Baleares]',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-RI', label: 'La Rioja', type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-MD',
+          label: 'Madrid, Comunidad de',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-ML',
+          label: 'Melilla',
+          type: 'Autonomous City In North Africa'),
+      GeoRegionOption(
+          code: 'ES-MC',
+          label: 'Murcia, Región de',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-NC',
+          label: 'Nafarroako Foru Komunitatea*',
+          type: 'Autonomous Community'),
+      GeoRegionOption(
+          code: 'ES-VC',
+          label: 'Valenciana, Comunidad',
+          type: 'Autonomous Community'),
     ],
     'ET': <GeoRegionOption>[
-      GeoRegionOption(code: 'ET-AA', label: 'Addis Ababa', type: 'Administration'),
+      GeoRegionOption(
+          code: 'ET-AA', label: 'Addis Ababa', type: 'Administration'),
       GeoRegionOption(code: 'ET-AF', label: 'Afar', type: 'Regional State'),
       GeoRegionOption(code: 'ET-AM', label: 'Amara', type: 'Regional State'),
-      GeoRegionOption(code: 'ET-BE', label: 'Benshangul-Gumaz', type: 'Regional State'),
-      GeoRegionOption(code: 'ET-DD', label: 'Dire Dawa', type: 'Administration'),
-      GeoRegionOption(code: 'ET-GA', label: 'Gambela Peoples', type: 'Regional State'),
-      GeoRegionOption(code: 'ET-HA', label: 'Harari People', type: 'Regional State'),
+      GeoRegionOption(
+          code: 'ET-BE', label: 'Benshangul-Gumaz', type: 'Regional State'),
+      GeoRegionOption(
+          code: 'ET-DD', label: 'Dire Dawa', type: 'Administration'),
+      GeoRegionOption(
+          code: 'ET-GA', label: 'Gambela Peoples', type: 'Regional State'),
+      GeoRegionOption(
+          code: 'ET-HA', label: 'Harari People', type: 'Regional State'),
       GeoRegionOption(code: 'ET-OR', label: 'Oromia', type: 'Regional State'),
       GeoRegionOption(code: 'ET-SI', label: 'Sidama', type: 'Regional State'),
       GeoRegionOption(code: 'ET-SO', label: 'Somali', type: 'Regional State'),
-      GeoRegionOption(code: 'ET-SN', label: 'Southern Nations, Nationalities and Peoples', type: 'Regional State'),
-      GeoRegionOption(code: 'ET-SW', label: 'Southwest Ethiopia Peoples', type: 'Regional State'),
+      GeoRegionOption(
+          code: 'ET-SN',
+          label: 'Southern Nations, Nationalities and Peoples',
+          type: 'Regional State'),
+      GeoRegionOption(
+          code: 'ET-SW',
+          label: 'Southwest Ethiopia Peoples',
+          type: 'Regional State'),
       GeoRegionOption(code: 'ET-TI', label: 'Tigrai', type: 'Regional State'),
     ],
     'FI': <GeoRegionOption>[
@@ -1581,7 +1798,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'FI-11', label: 'Pirkanmaa', type: 'Region'),
       GeoRegionOption(code: 'FI-12', label: 'Pohjanmaa', type: 'Region'),
       GeoRegionOption(code: 'FI-13', label: 'Pohjois-Karjala', type: 'Region'),
-      GeoRegionOption(code: 'FI-14', label: 'Pohjois-Pohjanmaa', type: 'Region'),
+      GeoRegionOption(
+          code: 'FI-14', label: 'Pohjois-Pohjanmaa', type: 'Region'),
       GeoRegionOption(code: 'FI-15', label: 'Pohjois-Savo', type: 'Region'),
       GeoRegionOption(code: 'FI-16', label: 'Päijät-Häme', type: 'Region'),
       GeoRegionOption(code: 'FI-17', label: 'Satakunta', type: 'Region'),
@@ -1602,32 +1820,95 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'FM-YAP', label: 'Yap', type: 'State'),
     ],
     'FR': <GeoRegionOption>[
-      GeoRegionOption(code: 'FR-ARA', label: 'Auvergne-Rhône-Alpes', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-BFC', label: 'Bourgogne-Franche-Comté', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-BRE', label: 'Bretagne', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-CVL', label: 'Centre-Val de Loire', type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-ARA',
+          label: 'Auvergne-Rhône-Alpes',
+          type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-BFC',
+          label: 'Bourgogne-Franche-Comté',
+          type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-BRE', label: 'Bretagne', type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-CVL',
+          label: 'Centre-Val de Loire',
+          type: 'Metropolitan Region'),
       GeoRegionOption(code: 'FR-CP', label: 'Clipperton', type: 'Dependency'),
-      GeoRegionOption(code: 'FR-20R', label: 'Corse', type: 'Metropolitan Collectivity With Special Status'),
-      GeoRegionOption(code: 'FR-GES', label: 'Grand-Est', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-971', label: 'Guadeloupe', type: 'Overseas Departmental Collectivity'),
-      GeoRegionOption(code: 'FR-973', label: 'Guyane (française)', type: 'Overseas Unique Territorial Collectivity'),
-      GeoRegionOption(code: 'FR-HDF', label: 'Hauts-de-France', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-974', label: 'La Réunion', type: 'Overseas Departmental Collectivity'),
-      GeoRegionOption(code: 'FR-972', label: 'Martinique', type: 'Overseas Unique Territorial Collectivity'),
-      GeoRegionOption(code: 'FR-976', label: 'Mayotte', type: 'Overseas Departmental Collectivity'),
-      GeoRegionOption(code: 'FR-NOR', label: 'Normandie', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-NAQ', label: 'Nouvelle-Aquitaine', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-NC', label: 'Nouvelle-Calédonie', type: 'Overseas Collectivity With Special Status'),
-      GeoRegionOption(code: 'FR-OCC', label: 'Occitanie', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-PDL', label: 'Pays-de-la-Loire', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-PF', label: 'Polynésie française', type: 'Overseas Collectivity'),
-      GeoRegionOption(code: 'FR-PAC', label: 'Provence-Alpes-Côte-d’Azur', type: 'Metropolitan Region'),
-      GeoRegionOption(code: 'FR-BL', label: 'Saint-Barthélemy', type: 'Overseas Collectivity'),
-      GeoRegionOption(code: 'FR-MF', label: 'Saint-Martin', type: 'Overseas Collectivity'),
-      GeoRegionOption(code: 'FR-PM', label: 'Saint-Pierre-et-Miquelon', type: 'Overseas Collectivity'),
-      GeoRegionOption(code: 'FR-TF', label: 'Terres australes françaises', type: 'Overseas Territory'),
-      GeoRegionOption(code: 'FR-WF', label: 'Wallis-et-Futuna', type: 'Overseas Collectivity'),
-      GeoRegionOption(code: 'FR-IDF', label: 'Île-de-France', type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-20R',
+          label: 'Corse',
+          type: 'Metropolitan Collectivity With Special Status'),
+      GeoRegionOption(
+          code: 'FR-GES', label: 'Grand-Est', type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-971',
+          label: 'Guadeloupe',
+          type: 'Overseas Departmental Collectivity'),
+      GeoRegionOption(
+          code: 'FR-973',
+          label: 'Guyane (française)',
+          type: 'Overseas Unique Territorial Collectivity'),
+      GeoRegionOption(
+          code: 'FR-HDF',
+          label: 'Hauts-de-France',
+          type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-974',
+          label: 'La Réunion',
+          type: 'Overseas Departmental Collectivity'),
+      GeoRegionOption(
+          code: 'FR-972',
+          label: 'Martinique',
+          type: 'Overseas Unique Territorial Collectivity'),
+      GeoRegionOption(
+          code: 'FR-976',
+          label: 'Mayotte',
+          type: 'Overseas Departmental Collectivity'),
+      GeoRegionOption(
+          code: 'FR-NOR', label: 'Normandie', type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-NAQ',
+          label: 'Nouvelle-Aquitaine',
+          type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-NC',
+          label: 'Nouvelle-Calédonie',
+          type: 'Overseas Collectivity With Special Status'),
+      GeoRegionOption(
+          code: 'FR-OCC', label: 'Occitanie', type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-PDL',
+          label: 'Pays-de-la-Loire',
+          type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-PF',
+          label: 'Polynésie française',
+          type: 'Overseas Collectivity'),
+      GeoRegionOption(
+          code: 'FR-PAC',
+          label: 'Provence-Alpes-Côte-d’Azur',
+          type: 'Metropolitan Region'),
+      GeoRegionOption(
+          code: 'FR-BL',
+          label: 'Saint-Barthélemy',
+          type: 'Overseas Collectivity'),
+      GeoRegionOption(
+          code: 'FR-MF', label: 'Saint-Martin', type: 'Overseas Collectivity'),
+      GeoRegionOption(
+          code: 'FR-PM',
+          label: 'Saint-Pierre-et-Miquelon',
+          type: 'Overseas Collectivity'),
+      GeoRegionOption(
+          code: 'FR-TF',
+          label: 'Terres australes françaises',
+          type: 'Overseas Territory'),
+      GeoRegionOption(
+          code: 'FR-WF',
+          label: 'Wallis-et-Futuna',
+          type: 'Overseas Collectivity'),
+      GeoRegionOption(
+          code: 'FR-IDF', label: 'Île-de-France', type: 'Metropolitan Region'),
     ],
     'GA': <GeoRegionOption>[
       GeoRegionOption(code: 'GA-1', label: 'Estuaire', type: 'Province'),
@@ -1642,9 +1923,11 @@ class GlobalSetupOptions {
     ],
     'GB': <GeoRegionOption>[
       GeoRegionOption(code: 'GB-ENG', label: 'England', type: 'Country'),
-      GeoRegionOption(code: 'GB-NIR', label: 'Northern Ireland', type: 'Province'),
+      GeoRegionOption(
+          code: 'GB-NIR', label: 'Northern Ireland', type: 'Province'),
       GeoRegionOption(code: 'GB-SCT', label: 'Scotland', type: 'Country'),
-      GeoRegionOption(code: 'GB-WLS', label: 'Wales [Cymru GB-CYM]', type: 'Country'),
+      GeoRegionOption(
+          code: 'GB-WLS', label: 'Wales [Cymru GB-CYM]', type: 'Country'),
     ],
     'GD': <GeoRegionOption>[
       GeoRegionOption(code: 'GD-01', label: 'Saint Andrew', type: 'Parish'),
@@ -1653,19 +1936,30 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'GD-04', label: 'Saint John', type: 'Parish'),
       GeoRegionOption(code: 'GD-05', label: 'Saint Mark', type: 'Parish'),
       GeoRegionOption(code: 'GD-06', label: 'Saint Patrick', type: 'Parish'),
-      GeoRegionOption(code: 'GD-10', label: 'Southern Grenadine Islands', type: 'Dependency'),
+      GeoRegionOption(
+          code: 'GD-10',
+          label: 'Southern Grenadine Islands',
+          type: 'Dependency'),
     ],
     'GE': <GeoRegionOption>[
-      GeoRegionOption(code: 'GE-AB', label: 'Abkhazia', type: 'Autonomous Republic'),
-      GeoRegionOption(code: 'GE-AJ', label: 'Ajaria', type: 'Autonomous Republic'),
+      GeoRegionOption(
+          code: 'GE-AB', label: 'Abkhazia', type: 'Autonomous Republic'),
+      GeoRegionOption(
+          code: 'GE-AJ', label: 'Ajaria', type: 'Autonomous Republic'),
       GeoRegionOption(code: 'GE-GU', label: 'Guria', type: 'Region'),
       GeoRegionOption(code: 'GE-IM', label: 'Imereti', type: 'Region'),
       GeoRegionOption(code: 'GE-KA', label: 'K\'akheti', type: 'Region'),
       GeoRegionOption(code: 'GE-KK', label: 'Kvemo Kartli', type: 'Region'),
-      GeoRegionOption(code: 'GE-MM', label: 'Mtskheta-Mtianeti', type: 'Region'),
-      GeoRegionOption(code: 'GE-RL', label: 'Rach\'a-Lechkhumi-Kvemo Svaneti', type: 'Region'),
-      GeoRegionOption(code: 'GE-SZ', label: 'Samegrelo-Zemo Svaneti', type: 'Region'),
-      GeoRegionOption(code: 'GE-SJ', label: 'Samtskhe-Javakheti', type: 'Region'),
+      GeoRegionOption(
+          code: 'GE-MM', label: 'Mtskheta-Mtianeti', type: 'Region'),
+      GeoRegionOption(
+          code: 'GE-RL',
+          label: 'Rach\'a-Lechkhumi-Kvemo Svaneti',
+          type: 'Region'),
+      GeoRegionOption(
+          code: 'GE-SZ', label: 'Samegrelo-Zemo Svaneti', type: 'Region'),
+      GeoRegionOption(
+          code: 'GE-SJ', label: 'Samtskhe-Javakheti', type: 'Region'),
       GeoRegionOption(code: 'GE-SK', label: 'Shida Kartli', type: 'Region'),
       GeoRegionOption(code: 'GE-TB', label: 'Tbilisi', type: 'City'),
     ],
@@ -1688,11 +1982,18 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'GH-WN', label: 'Western North', type: 'Region'),
     ],
     'GL': <GeoRegionOption>[
-      GeoRegionOption(code: 'GL-AV', label: 'Avannaata Kommunia', type: 'Municipality'),
-      GeoRegionOption(code: 'GL-KU', label: 'Kommune Kujalleq', type: 'Municipality'),
-      GeoRegionOption(code: 'GL-QT', label: 'Kommune Qeqertalik', type: 'Municipality'),
-      GeoRegionOption(code: 'GL-SM', label: 'Kommuneqarfik Sermersooq', type: 'Municipality'),
-      GeoRegionOption(code: 'GL-QE', label: 'Qeqqata Kommunia', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'GL-AV', label: 'Avannaata Kommunia', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'GL-KU', label: 'Kommune Kujalleq', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'GL-QT', label: 'Kommune Qeqertalik', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'GL-SM',
+          label: 'Kommuneqarfik Sermersooq',
+          type: 'Municipality'),
+      GeoRegionOption(
+          code: 'GL-QE', label: 'Qeqqata Kommunia', type: 'Municipality'),
     ],
     'GM': <GeoRegionOption>[
       GeoRegionOption(code: 'GM-B', label: 'Banjul', type: 'City'),
@@ -1703,61 +2004,94 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'GM-W', label: 'Western', type: 'Division'),
     ],
     'GN': <GeoRegionOption>[
-      GeoRegionOption(code: 'GN-B', label: 'Boké', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GN-B', label: 'Boké', type: 'Administrative Region'),
       GeoRegionOption(code: 'GN-C', label: 'Conakry', type: 'Governorate'),
-      GeoRegionOption(code: 'GN-F', label: 'Faranah', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GN-K', label: 'Kankan', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GN-D', label: 'Kindia', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GN-L', label: 'Labé', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GN-M', label: 'Mamou', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GN-N', label: 'Nzérékoré', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GN-F', label: 'Faranah', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GN-K', label: 'Kankan', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GN-D', label: 'Kindia', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GN-L', label: 'Labé', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GN-M', label: 'Mamou', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GN-N', label: 'Nzérékoré', type: 'Administrative Region'),
     ],
     'GQ': <GeoRegionOption>[
-      GeoRegionOption(code: 'GQ-C', label: 'Région Continentale', type: 'Region'),
+      GeoRegionOption(
+          code: 'GQ-C', label: 'Région Continentale', type: 'Region'),
       GeoRegionOption(code: 'GQ-I', label: 'Région Insulaire', type: 'Region'),
     ],
     'GR': <GeoRegionOption>[
-      GeoRegionOption(code: 'GR-A', label: 'Anatolikí Makedonía kai Thráki', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-I', label: 'Attikí', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-G', label: 'Dytikí Elláda', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-C', label: 'Dytikí Makedonía', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-F', label: 'Ionía Nísia', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-B', label: 'Kentrikí Makedonía', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-M', label: 'Kríti', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-L', label: 'Nótio Aigaío', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-J', label: 'Pelopónnisos', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-H', label: 'Stereá Elláda', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-E', label: 'Thessalía', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-K', label: 'Vóreio Aigaío', type: 'Administrative Region'),
-      GeoRegionOption(code: 'GR-69', label: 'Ágion Óros', type: 'Self-Governed Part'),
-      GeoRegionOption(code: 'GR-D', label: 'Ípeiros', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-A',
+          label: 'Anatolikí Makedonía kai Thráki',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-I', label: 'Attikí', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-G', label: 'Dytikí Elláda', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-C',
+          label: 'Dytikí Makedonía',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-F', label: 'Ionía Nísia', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-B',
+          label: 'Kentrikí Makedonía',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-M', label: 'Kríti', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-L', label: 'Nótio Aigaío', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-J', label: 'Pelopónnisos', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-H', label: 'Stereá Elláda', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-E', label: 'Thessalía', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-K', label: 'Vóreio Aigaío', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'GR-69', label: 'Ágion Óros', type: 'Self-Governed Part'),
+      GeoRegionOption(
+          code: 'GR-D', label: 'Ípeiros', type: 'Administrative Region'),
     ],
     'GT': <GeoRegionOption>[
       GeoRegionOption(code: 'GT-16', label: 'Alta Verapaz', type: 'Department'),
       GeoRegionOption(code: 'GT-15', label: 'Baja Verapaz', type: 'Department'),
-      GeoRegionOption(code: 'GT-04', label: 'Chimaltenango', type: 'Department'),
+      GeoRegionOption(
+          code: 'GT-04', label: 'Chimaltenango', type: 'Department'),
       GeoRegionOption(code: 'GT-20', label: 'Chiquimula', type: 'Department'),
       GeoRegionOption(code: 'GT-02', label: 'El Progreso', type: 'Department'),
       GeoRegionOption(code: 'GT-05', label: 'Escuintla', type: 'Department'),
       GeoRegionOption(code: 'GT-01', label: 'Guatemala', type: 'Department'),
-      GeoRegionOption(code: 'GT-13', label: 'Huehuetenango', type: 'Department'),
+      GeoRegionOption(
+          code: 'GT-13', label: 'Huehuetenango', type: 'Department'),
       GeoRegionOption(code: 'GT-18', label: 'Izabal', type: 'Department'),
       GeoRegionOption(code: 'GT-21', label: 'Jalapa', type: 'Department'),
       GeoRegionOption(code: 'GT-22', label: 'Jutiapa', type: 'Department'),
       GeoRegionOption(code: 'GT-17', label: 'Petén', type: 'Department'),
-      GeoRegionOption(code: 'GT-09', label: 'Quetzaltenango', type: 'Department'),
+      GeoRegionOption(
+          code: 'GT-09', label: 'Quetzaltenango', type: 'Department'),
       GeoRegionOption(code: 'GT-14', label: 'Quiché', type: 'Department'),
       GeoRegionOption(code: 'GT-11', label: 'Retalhuleu', type: 'Department'),
       GeoRegionOption(code: 'GT-03', label: 'Sacatepéquez', type: 'Department'),
       GeoRegionOption(code: 'GT-12', label: 'San Marcos', type: 'Department'),
       GeoRegionOption(code: 'GT-06', label: 'Santa Rosa', type: 'Department'),
       GeoRegionOption(code: 'GT-07', label: 'Sololá', type: 'Department'),
-      GeoRegionOption(code: 'GT-10', label: 'Suchitepéquez', type: 'Department'),
+      GeoRegionOption(
+          code: 'GT-10', label: 'Suchitepéquez', type: 'Department'),
       GeoRegionOption(code: 'GT-08', label: 'Totonicapán', type: 'Department'),
       GeoRegionOption(code: 'GT-19', label: 'Zacapa', type: 'Department'),
     ],
     'GW': <GeoRegionOption>[
-      GeoRegionOption(code: 'GW-BS', label: 'Bissau', type: 'Autonomous Sector'),
+      GeoRegionOption(
+          code: 'GW-BS', label: 'Bissau', type: 'Autonomous Sector'),
       GeoRegionOption(code: 'GW-L', label: 'Leste', type: 'Province'),
       GeoRegionOption(code: 'GW-N', label: 'Norte', type: 'Province'),
       GeoRegionOption(code: 'GW-S', label: 'Sul', type: 'Province'),
@@ -1766,13 +2100,20 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'GY-BA', label: 'Barima-Waini', type: 'Region'),
       GeoRegionOption(code: 'GY-CU', label: 'Cuyuni-Mazaruni', type: 'Region'),
       GeoRegionOption(code: 'GY-DE', label: 'Demerara-Mahaica', type: 'Region'),
-      GeoRegionOption(code: 'GY-EB', label: 'East Berbice-Corentyne', type: 'Region'),
-      GeoRegionOption(code: 'GY-ES', label: 'Essequibo Islands-West Demerara', type: 'Region'),
+      GeoRegionOption(
+          code: 'GY-EB', label: 'East Berbice-Corentyne', type: 'Region'),
+      GeoRegionOption(
+          code: 'GY-ES',
+          label: 'Essequibo Islands-West Demerara',
+          type: 'Region'),
       GeoRegionOption(code: 'GY-MA', label: 'Mahaica-Berbice', type: 'Region'),
-      GeoRegionOption(code: 'GY-PM', label: 'Pomeroon-Supenaam', type: 'Region'),
+      GeoRegionOption(
+          code: 'GY-PM', label: 'Pomeroon-Supenaam', type: 'Region'),
       GeoRegionOption(code: 'GY-PT', label: 'Potaro-Siparuni', type: 'Region'),
-      GeoRegionOption(code: 'GY-UD', label: 'Upper Demerara-Berbice', type: 'Region'),
-      GeoRegionOption(code: 'GY-UT', label: 'Upper Takutu-Upper Essequibo', type: 'Region'),
+      GeoRegionOption(
+          code: 'GY-UD', label: 'Upper Demerara-Berbice', type: 'Region'),
+      GeoRegionOption(
+          code: 'GY-UT', label: 'Upper Takutu-Upper Essequibo', type: 'Region'),
     ],
     'HN': <GeoRegionOption>[
       GeoRegionOption(code: 'HN-AT', label: 'Atlántida', type: 'Department'),
@@ -1782,40 +2123,76 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'HN-CP', label: 'Copán', type: 'Department'),
       GeoRegionOption(code: 'HN-CR', label: 'Cortés', type: 'Department'),
       GeoRegionOption(code: 'HN-EP', label: 'El Paraíso', type: 'Department'),
-      GeoRegionOption(code: 'HN-FM', label: 'Francisco Morazán', type: 'Department'),
-      GeoRegionOption(code: 'HN-GD', label: 'Gracias a Dios', type: 'Department'),
+      GeoRegionOption(
+          code: 'HN-FM', label: 'Francisco Morazán', type: 'Department'),
+      GeoRegionOption(
+          code: 'HN-GD', label: 'Gracias a Dios', type: 'Department'),
       GeoRegionOption(code: 'HN-IN', label: 'Intibucá', type: 'Department'),
-      GeoRegionOption(code: 'HN-IB', label: 'Islas de la Bahía', type: 'Department'),
+      GeoRegionOption(
+          code: 'HN-IB', label: 'Islas de la Bahía', type: 'Department'),
       GeoRegionOption(code: 'HN-LP', label: 'La Paz', type: 'Department'),
       GeoRegionOption(code: 'HN-LE', label: 'Lempira', type: 'Department'),
       GeoRegionOption(code: 'HN-OC', label: 'Ocotepeque', type: 'Department'),
       GeoRegionOption(code: 'HN-OL', label: 'Olancho', type: 'Department'),
-      GeoRegionOption(code: 'HN-SB', label: 'Santa Bárbara', type: 'Department'),
+      GeoRegionOption(
+          code: 'HN-SB', label: 'Santa Bárbara', type: 'Department'),
       GeoRegionOption(code: 'HN-VA', label: 'Valle', type: 'Department'),
       GeoRegionOption(code: 'HN-YO', label: 'Yoro', type: 'Department'),
     ],
     'HR': <GeoRegionOption>[
-      GeoRegionOption(code: 'HR-07', label: 'Bjelovarsko-bilogorska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-12', label: 'Brodsko-posavska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-19', label: 'Dubrovačko-neretvanska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-07',
+          label: 'Bjelovarsko-bilogorska županija',
+          type: 'County'),
+      GeoRegionOption(
+          code: 'HR-12', label: 'Brodsko-posavska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-19',
+          label: 'Dubrovačko-neretvanska županija',
+          type: 'County'),
       GeoRegionOption(code: 'HR-21', label: 'Grad Zagreb', type: 'City'),
-      GeoRegionOption(code: 'HR-18', label: 'Istarska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-04', label: 'Karlovačka županija', type: 'County'),
-      GeoRegionOption(code: 'HR-06', label: 'Koprivničko-križevačka županija', type: 'County'),
-      GeoRegionOption(code: 'HR-02', label: 'Krapinsko-zagorska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-09', label: 'Ličko-senjska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-20', label: 'Međimurska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-14', label: 'Osječko-baranjska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-11', label: 'Požeško-slavonska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-08', label: 'Primorsko-goranska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-03', label: 'Sisačko-moslavačka županija', type: 'County'),
-      GeoRegionOption(code: 'HR-17', label: 'Splitsko-dalmatinska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-05', label: 'Varaždinska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-10', label: 'Virovitičko-podravska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-16', label: 'Vukovarsko-srijemska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-13', label: 'Zadarska županija', type: 'County'),
-      GeoRegionOption(code: 'HR-01', label: 'Zagrebačka županija', type: 'County'),
-      GeoRegionOption(code: 'HR-15', label: 'Šibensko-kninska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-18', label: 'Istarska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-04', label: 'Karlovačka županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-06',
+          label: 'Koprivničko-križevačka županija',
+          type: 'County'),
+      GeoRegionOption(
+          code: 'HR-02', label: 'Krapinsko-zagorska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-09', label: 'Ličko-senjska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-20', label: 'Međimurska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-14', label: 'Osječko-baranjska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-11', label: 'Požeško-slavonska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-08', label: 'Primorsko-goranska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-03', label: 'Sisačko-moslavačka županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-17',
+          label: 'Splitsko-dalmatinska županija',
+          type: 'County'),
+      GeoRegionOption(
+          code: 'HR-05', label: 'Varaždinska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-10',
+          label: 'Virovitičko-podravska županija',
+          type: 'County'),
+      GeoRegionOption(
+          code: 'HR-16',
+          label: 'Vukovarsko-srijemska županija',
+          type: 'County'),
+      GeoRegionOption(
+          code: 'HR-13', label: 'Zadarska županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-01', label: 'Zagrebačka županija', type: 'County'),
+      GeoRegionOption(
+          code: 'HR-15', label: 'Šibensko-kninska županija', type: 'County'),
     ],
     'HT': <GeoRegionOption>[
       GeoRegionOption(code: 'HT-AR', label: 'Artibonite', type: 'Department'),
@@ -1831,57 +2208,96 @@ class GlobalSetupOptions {
     ],
     'HU': <GeoRegionOption>[
       GeoRegionOption(code: 'HU-BA', label: 'Baranya', type: 'County'),
-      GeoRegionOption(code: 'HU-BZ', label: 'Borsod-Abaúj-Zemplén', type: 'County'),
+      GeoRegionOption(
+          code: 'HU-BZ', label: 'Borsod-Abaúj-Zemplén', type: 'County'),
       GeoRegionOption(code: 'HU-BU', label: 'Budapest', type: 'Capital City'),
       GeoRegionOption(code: 'HU-BK', label: 'Bács-Kiskun', type: 'County'),
       GeoRegionOption(code: 'HU-BE', label: 'Békés', type: 'County'),
-      GeoRegionOption(code: 'HU-BC', label: 'Békéscsaba', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-BC', label: 'Békéscsaba', type: 'City With County Rights'),
       GeoRegionOption(code: 'HU-CS', label: 'Csongrád-Csanád', type: 'County'),
-      GeoRegionOption(code: 'HU-DE', label: 'Debrecen', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-DU', label: 'Dunaújváros', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-EG', label: 'Eger', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-DE', label: 'Debrecen', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-DU', label: 'Dunaújváros', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-EG', label: 'Eger', type: 'City With County Rights'),
       GeoRegionOption(code: 'HU-FE', label: 'Fejér', type: 'County'),
-      GeoRegionOption(code: 'HU-GY', label: 'Győr', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-GS', label: 'Győr-Moson-Sopron', type: 'County'),
+      GeoRegionOption(
+          code: 'HU-GY', label: 'Győr', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-GS', label: 'Győr-Moson-Sopron', type: 'County'),
       GeoRegionOption(code: 'HU-HB', label: 'Hajdú-Bihar', type: 'County'),
       GeoRegionOption(code: 'HU-HE', label: 'Heves', type: 'County'),
-      GeoRegionOption(code: 'HU-HV', label: 'Hódmezővásárhely', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-JN', label: 'Jász-Nagykun-Szolnok', type: 'County'),
-      GeoRegionOption(code: 'HU-KV', label: 'Kaposvár', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-KM', label: 'Kecskemét', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-KE', label: 'Komárom-Esztergom', type: 'County'),
-      GeoRegionOption(code: 'HU-MI', label: 'Miskolc', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-NK', label: 'Nagykanizsa', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-NY', label: 'Nyíregyháza', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-HV',
+          label: 'Hódmezővásárhely',
+          type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-JN', label: 'Jász-Nagykun-Szolnok', type: 'County'),
+      GeoRegionOption(
+          code: 'HU-KV', label: 'Kaposvár', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-KM', label: 'Kecskemét', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-KE', label: 'Komárom-Esztergom', type: 'County'),
+      GeoRegionOption(
+          code: 'HU-MI', label: 'Miskolc', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-NK', label: 'Nagykanizsa', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-NY', label: 'Nyíregyháza', type: 'City With County Rights'),
       GeoRegionOption(code: 'HU-NO', label: 'Nógrád', type: 'County'),
       GeoRegionOption(code: 'HU-PE', label: 'Pest', type: 'County'),
-      GeoRegionOption(code: 'HU-PS', label: 'Pécs', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-ST', label: 'Salgótarján', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-PS', label: 'Pécs', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-ST', label: 'Salgótarján', type: 'City With County Rights'),
       GeoRegionOption(code: 'HU-SO', label: 'Somogy', type: 'County'),
-      GeoRegionOption(code: 'HU-SN', label: 'Sopron', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-SZ', label: 'Szabolcs-Szatmár-Bereg', type: 'County'),
-      GeoRegionOption(code: 'HU-SD', label: 'Szeged', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-SS', label: 'Szekszárd', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-SK', label: 'Szolnok', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-SH', label: 'Szombathely', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-SF', label: 'Székesfehérvár', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-TB', label: 'Tatabánya', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-SN', label: 'Sopron', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-SZ', label: 'Szabolcs-Szatmár-Bereg', type: 'County'),
+      GeoRegionOption(
+          code: 'HU-SD', label: 'Szeged', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-SS', label: 'Szekszárd', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-SK', label: 'Szolnok', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-SH', label: 'Szombathely', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-SF',
+          label: 'Székesfehérvár',
+          type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-TB', label: 'Tatabánya', type: 'City With County Rights'),
       GeoRegionOption(code: 'HU-TO', label: 'Tolna', type: 'County'),
       GeoRegionOption(code: 'HU-VA', label: 'Vas', type: 'County'),
       GeoRegionOption(code: 'HU-VE', label: 'Veszprém', type: 'County'),
-      GeoRegionOption(code: 'HU-VM', label: 'Veszprém', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-VM', label: 'Veszprém', type: 'City With County Rights'),
       GeoRegionOption(code: 'HU-ZA', label: 'Zala', type: 'County'),
-      GeoRegionOption(code: 'HU-ZE', label: 'Zalaegerszeg', type: 'City With County Rights'),
-      GeoRegionOption(code: 'HU-ER', label: 'Érd', type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-ZE',
+          label: 'Zalaegerszeg',
+          type: 'City With County Rights'),
+      GeoRegionOption(
+          code: 'HU-ER', label: 'Érd', type: 'City With County Rights'),
     ],
     'ID': <GeoRegionOption>[
       GeoRegionOption(code: 'ID-JW', label: 'Jawa', type: 'Geographical Unit'),
-      GeoRegionOption(code: 'ID-KA', label: 'Kalimantan', type: 'Geographical Unit'),
-      GeoRegionOption(code: 'ID-ML', label: 'Maluku', type: 'Geographical Unit'),
-      GeoRegionOption(code: 'ID-NU', label: 'Nusa Tenggara', type: 'Geographical Unit'),
+      GeoRegionOption(
+          code: 'ID-KA', label: 'Kalimantan', type: 'Geographical Unit'),
+      GeoRegionOption(
+          code: 'ID-ML', label: 'Maluku', type: 'Geographical Unit'),
+      GeoRegionOption(
+          code: 'ID-NU', label: 'Nusa Tenggara', type: 'Geographical Unit'),
       GeoRegionOption(code: 'ID-PP', label: 'Papua', type: 'Geographical Unit'),
-      GeoRegionOption(code: 'ID-SL', label: 'Sulawesi', type: 'Geographical Unit'),
-      GeoRegionOption(code: 'ID-SM', label: 'Sumatera', type: 'Geographical Unit'),
+      GeoRegionOption(
+          code: 'ID-SL', label: 'Sulawesi', type: 'Geographical Unit'),
+      GeoRegionOption(
+          code: 'ID-SM', label: 'Sumatera', type: 'Geographical Unit'),
     ],
     'IE': <GeoRegionOption>[
       GeoRegionOption(code: 'IE-C', label: 'Connaught', type: 'Province'),
@@ -1898,25 +2314,34 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'IL-TA', label: 'Tall Abīb', type: 'District'),
     ],
     'IN': <GeoRegionOption>[
-      GeoRegionOption(code: 'IN-AN', label: 'Andaman and Nicobar Islands', type: 'Union Territory'),
+      GeoRegionOption(
+          code: 'IN-AN',
+          label: 'Andaman and Nicobar Islands',
+          type: 'Union Territory'),
       GeoRegionOption(code: 'IN-AP', label: 'Andhra Pradesh', type: 'State'),
       GeoRegionOption(code: 'IN-AR', label: 'Arunāchal Pradesh', type: 'State'),
       GeoRegionOption(code: 'IN-AS', label: 'Assam', type: 'State'),
       GeoRegionOption(code: 'IN-BR', label: 'Bihār', type: 'State'),
-      GeoRegionOption(code: 'IN-CH', label: 'Chandīgarh', type: 'Union Territory'),
+      GeoRegionOption(
+          code: 'IN-CH', label: 'Chandīgarh', type: 'Union Territory'),
       GeoRegionOption(code: 'IN-CG', label: 'Chhattīsgarh', type: 'State'),
       GeoRegionOption(code: 'IN-DL', label: 'Delhi', type: 'Union Territory'),
-      GeoRegionOption(code: 'IN-DH', label: 'Dādra and Nagar Haveli and Damān and Diu', type: 'Union Territory'),
+      GeoRegionOption(
+          code: 'IN-DH',
+          label: 'Dādra and Nagar Haveli and Damān and Diu',
+          type: 'Union Territory'),
       GeoRegionOption(code: 'IN-GA', label: 'Goa', type: 'State'),
       GeoRegionOption(code: 'IN-GJ', label: 'Gujarāt', type: 'State'),
       GeoRegionOption(code: 'IN-HR', label: 'Haryāna', type: 'State'),
       GeoRegionOption(code: 'IN-HP', label: 'Himāchal Pradesh', type: 'State'),
-      GeoRegionOption(code: 'IN-JK', label: 'Jammu and Kashmīr', type: 'Union Territory'),
+      GeoRegionOption(
+          code: 'IN-JK', label: 'Jammu and Kashmīr', type: 'Union Territory'),
       GeoRegionOption(code: 'IN-JH', label: 'Jhārkhand', type: 'State'),
       GeoRegionOption(code: 'IN-KA', label: 'Karnātaka', type: 'State'),
       GeoRegionOption(code: 'IN-KL', label: 'Kerala', type: 'State'),
       GeoRegionOption(code: 'IN-LA', label: 'Ladākh', type: 'Union Territory'),
-      GeoRegionOption(code: 'IN-LD', label: 'Lakshadweep', type: 'Union Territory'),
+      GeoRegionOption(
+          code: 'IN-LD', label: 'Lakshadweep', type: 'Union Territory'),
       GeoRegionOption(code: 'IN-MP', label: 'Madhya Pradesh', type: 'State'),
       GeoRegionOption(code: 'IN-MH', label: 'Mahārāshtra', type: 'State'),
       GeoRegionOption(code: 'IN-MN', label: 'Manipur', type: 'State'),
@@ -1924,7 +2349,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'IN-MZ', label: 'Mizoram', type: 'State'),
       GeoRegionOption(code: 'IN-NL', label: 'Nāgāland', type: 'State'),
       GeoRegionOption(code: 'IN-OD', label: 'Odisha', type: 'State'),
-      GeoRegionOption(code: 'IN-PY', label: 'Puducherry', type: 'Union Territory'),
+      GeoRegionOption(
+          code: 'IN-PY', label: 'Puducherry', type: 'Union Territory'),
       GeoRegionOption(code: 'IN-PB', label: 'Punjab', type: 'State'),
       GeoRegionOption(code: 'IN-RJ', label: 'Rājasthān', type: 'State'),
       GeoRegionOption(code: 'IN-SK', label: 'Sikkim', type: 'State'),
@@ -1939,25 +2365,29 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'IQ-AN', label: 'Al Anbār', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-BA', label: 'Al Başrah', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-MU', label: 'Al Muthanná', type: 'Governorate'),
-      GeoRegionOption(code: 'IQ-QA', label: 'Al Qādisīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'IQ-QA', label: 'Al Qādisīyah', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-NA', label: 'An Najaf', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-BG', label: 'Baghdād', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-BB', label: 'Bābil', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-DQ', label: 'Dhī Qār', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-DI', label: 'Diyālá', type: 'Governorate'),
-      GeoRegionOption(code: 'IQ-KR', label: 'Herêm-î Kurdistan', type: 'Region'),
+      GeoRegionOption(
+          code: 'IQ-KR', label: 'Herêm-î Kurdistan', type: 'Region'),
       GeoRegionOption(code: 'IQ-KA', label: 'Karbalā’', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-KI', label: 'Kirkūk', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-MA', label: 'Maysān', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-NI', label: 'Nīnawá', type: 'Governorate'),
       GeoRegionOption(code: 'IQ-WA', label: 'Wāsiţ', type: 'Governorate'),
-      GeoRegionOption(code: 'IQ-SD', label: 'Şalāḩ ad Dīn', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'IQ-SD', label: 'Şalāḩ ad Dīn', type: 'Governorate'),
     ],
     'IR': <GeoRegionOption>[
       GeoRegionOption(code: 'IR-30', label: 'Alborz', type: 'Province'),
       GeoRegionOption(code: 'IR-24', label: 'Ardabīl', type: 'Province'),
       GeoRegionOption(code: 'IR-18', label: 'Būshehr', type: 'Province'),
-      GeoRegionOption(code: 'IR-14', label: 'Chahār Maḩāl va Bakhtīārī', type: 'Province'),
+      GeoRegionOption(
+          code: 'IR-14', label: 'Chahār Maḩāl va Bakhtīārī', type: 'Province'),
       GeoRegionOption(code: 'IR-10', label: 'Eşfahān', type: 'Province'),
       GeoRegionOption(code: 'IR-07', label: 'Fārs', type: 'Province'),
       GeoRegionOption(code: 'IR-27', label: 'Golestān', type: 'Province'),
@@ -1966,11 +2396,15 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'IR-22', label: 'Hormozgān', type: 'Province'),
       GeoRegionOption(code: 'IR-08', label: 'Kermān', type: 'Province'),
       GeoRegionOption(code: 'IR-05', label: 'Kermānshāh', type: 'Province'),
-      GeoRegionOption(code: 'IR-29', label: 'Khorāsān-e Jonūbī', type: 'Province'),
-      GeoRegionOption(code: 'IR-09', label: 'Khorāsān-e Raẕavī', type: 'Province'),
-      GeoRegionOption(code: 'IR-28', label: 'Khorāsān-e Shomālī', type: 'Province'),
+      GeoRegionOption(
+          code: 'IR-29', label: 'Khorāsān-e Jonūbī', type: 'Province'),
+      GeoRegionOption(
+          code: 'IR-09', label: 'Khorāsān-e Raẕavī', type: 'Province'),
+      GeoRegionOption(
+          code: 'IR-28', label: 'Khorāsān-e Shomālī', type: 'Province'),
       GeoRegionOption(code: 'IR-06', label: 'Khūzestān', type: 'Province'),
-      GeoRegionOption(code: 'IR-17', label: 'Kohgīlūyeh va Bowyer Aḩmad', type: 'Province'),
+      GeoRegionOption(
+          code: 'IR-17', label: 'Kohgīlūyeh va Bowyer Aḩmad', type: 'Province'),
       GeoRegionOption(code: 'IR-12', label: 'Kordestān', type: 'Province'),
       GeoRegionOption(code: 'IR-15', label: 'Lorestān', type: 'Province'),
       GeoRegionOption(code: 'IR-00', label: 'Markazī', type: 'Province'),
@@ -1978,12 +2412,15 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'IR-26', label: 'Qazvīn', type: 'Province'),
       GeoRegionOption(code: 'IR-25', label: 'Qom', type: 'Province'),
       GeoRegionOption(code: 'IR-20', label: 'Semnān', type: 'Province'),
-      GeoRegionOption(code: 'IR-11', label: 'Sīstān va Balūchestān', type: 'Province'),
+      GeoRegionOption(
+          code: 'IR-11', label: 'Sīstān va Balūchestān', type: 'Province'),
       GeoRegionOption(code: 'IR-23', label: 'Tehrān', type: 'Province'),
       GeoRegionOption(code: 'IR-21', label: 'Yazd', type: 'Province'),
       GeoRegionOption(code: 'IR-19', label: 'Zanjān', type: 'Province'),
-      GeoRegionOption(code: 'IR-04', label: 'Āz̄ārbāyjān-e Ghārbī', type: 'Province'),
-      GeoRegionOption(code: 'IR-03', label: 'Āz̄ārbāyjān-e Shārqī', type: 'Province'),
+      GeoRegionOption(
+          code: 'IR-04', label: 'Āz̄ārbāyjān-e Ghārbī', type: 'Province'),
+      GeoRegionOption(
+          code: 'IR-03', label: 'Āz̄ārbāyjān-e Shārqī', type: 'Province'),
       GeoRegionOption(code: 'IR-16', label: 'Īlām', type: 'Province'),
     ],
     'IS': <GeoRegionOption>[
@@ -2002,7 +2439,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'IT-78', label: 'Calabria', type: 'Region'),
       GeoRegionOption(code: 'IT-72', label: 'Campania', type: 'Region'),
       GeoRegionOption(code: 'IT-45', label: 'Emilia-Romagna', type: 'Region'),
-      GeoRegionOption(code: 'IT-36', label: 'Friuli Venezia Giulia', type: 'Region'),
+      GeoRegionOption(
+          code: 'IT-36', label: 'Friuli Venezia Giulia', type: 'Region'),
       GeoRegionOption(code: 'IT-62', label: 'Lazio', type: 'Region'),
       GeoRegionOption(code: 'IT-42', label: 'Liguria', type: 'Region'),
       GeoRegionOption(code: 'IT-25', label: 'Lombardia', type: 'Region'),
@@ -2013,7 +2451,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'IT-88', label: 'Sardegna', type: 'Region'),
       GeoRegionOption(code: 'IT-82', label: 'Sicilia', type: 'Region'),
       GeoRegionOption(code: 'IT-52', label: 'Toscana', type: 'Region'),
-      GeoRegionOption(code: 'IT-32', label: 'Trentino-Alto Adige', type: 'Region'),
+      GeoRegionOption(
+          code: 'IT-32', label: 'Trentino-Alto Adige', type: 'Region'),
       GeoRegionOption(code: 'IT-55', label: 'Umbria', type: 'Region'),
       GeoRegionOption(code: 'IT-23', label: 'Val d\'Aoste', type: 'Region'),
       GeoRegionOption(code: 'IT-34', label: 'Veneto', type: 'Region'),
@@ -2149,17 +2588,21 @@ class GlobalSetupOptions {
     'KG': <GeoRegionOption>[
       GeoRegionOption(code: 'KG-B', label: 'Batken', type: 'Region'),
       GeoRegionOption(code: 'KG-GB', label: 'Bishkek Shaary', type: 'City'),
-      GeoRegionOption(code: 'KG-C', label: 'Chuyskaya oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KG-J', label: 'Dzhalal-Abadskaya oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KG-C', label: 'Chuyskaya oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KG-J', label: 'Dzhalal-Abadskaya oblast\'', type: 'Region'),
       GeoRegionOption(code: 'KG-GO', label: 'Gorod Osh', type: 'City'),
-      GeoRegionOption(code: 'KG-Y', label: 'Issyk-Kul\'skaja oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KG-Y', label: 'Issyk-Kul\'skaja oblast\'', type: 'Region'),
       GeoRegionOption(code: 'KG-N', label: 'Naryn', type: 'Region'),
       GeoRegionOption(code: 'KG-O', label: 'Osh', type: 'Region'),
       GeoRegionOption(code: 'KG-T', label: 'Talas', type: 'Region'),
     ],
     'KH': <GeoRegionOption>[
       GeoRegionOption(code: 'KH-2', label: 'Baat Dambang', type: 'Province'),
-      GeoRegionOption(code: 'KH-1', label: 'Banteay Mean Choăy', type: 'Province'),
+      GeoRegionOption(
+          code: 'KH-1', label: 'Banteay Mean Choăy', type: 'Province'),
       GeoRegionOption(code: 'KH-23', label: 'Kaeb', type: 'Province'),
       GeoRegionOption(code: 'KH-3', label: 'Kampong Chaam', type: 'Province'),
       GeoRegionOption(code: 'KH-4', label: 'Kampong Chhnang', type: 'Province'),
@@ -2170,9 +2613,11 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'KH-9', label: 'Kaoh Kong', type: 'Province'),
       GeoRegionOption(code: 'KH-10', label: 'Kracheh', type: 'Province'),
       GeoRegionOption(code: 'KH-11', label: 'Mondol Kiri', type: 'Province'),
-      GeoRegionOption(code: 'KH-22', label: 'Otdar Mean Chey', type: 'Province'),
+      GeoRegionOption(
+          code: 'KH-22', label: 'Otdar Mean Chey', type: 'Province'),
       GeoRegionOption(code: 'KH-24', label: 'Pailin', type: 'Province'),
-      GeoRegionOption(code: 'KH-12', label: 'Phnom Penh', type: 'Autonomous Municipality'),
+      GeoRegionOption(
+          code: 'KH-12', label: 'Phnom Penh', type: 'Autonomous Municipality'),
       GeoRegionOption(code: 'KH-15', label: 'Pousaat', type: 'Province'),
       GeoRegionOption(code: 'KH-18', label: 'Preah Sihanouk', type: 'Province'),
       GeoRegionOption(code: 'KH-13', label: 'Preah Vihear', type: 'Province'),
@@ -2185,9 +2630,18 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'KH-25', label: 'Tbong Khmum', type: 'Province'),
     ],
     'KI': <GeoRegionOption>[
-      GeoRegionOption(code: 'KI-G', label: 'Gilbert Islands', type: 'Group Of Islands (20 Inhabited Islands)'),
-      GeoRegionOption(code: 'KI-L', label: 'Line Islands', type: 'Group Of Islands (20 Inhabited Islands)'),
-      GeoRegionOption(code: 'KI-P', label: 'Phoenix Islands', type: 'Group Of Islands (20 Inhabited Islands)'),
+      GeoRegionOption(
+          code: 'KI-G',
+          label: 'Gilbert Islands',
+          type: 'Group Of Islands (20 Inhabited Islands)'),
+      GeoRegionOption(
+          code: 'KI-L',
+          label: 'Line Islands',
+          type: 'Group Of Islands (20 Inhabited Islands)'),
+      GeoRegionOption(
+          code: 'KI-P',
+          label: 'Phoenix Islands',
+          type: 'Group Of Islands (20 Inhabited Islands)'),
     ],
     'KM': <GeoRegionOption>[
       GeoRegionOption(code: 'KM-A', label: 'Anjouan', type: 'Island'),
@@ -2204,61 +2658,108 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'KP-08', label: 'Hamgyǒng-namdo', type: 'Province'),
       GeoRegionOption(code: 'KP-06', label: 'Hwanghae-bukto', type: 'Province'),
       GeoRegionOption(code: 'KP-05', label: 'Hwanghae-namdo', type: 'Province'),
-      GeoRegionOption(code: 'KP-15', label: 'Kaeseong', type: 'Metropolitan City'),
+      GeoRegionOption(
+          code: 'KP-15', label: 'Kaeseong', type: 'Metropolitan City'),
       GeoRegionOption(code: 'KP-07', label: 'Kangweonto', type: 'Province'),
-      GeoRegionOption(code: 'KP-14', label: 'Nampho', type: 'Metropolitan City'),
-      GeoRegionOption(code: 'KP-03', label: 'P\'yǒngan-bukto', type: 'Province'),
-      GeoRegionOption(code: 'KP-02', label: 'P\'yǒngan-namdo', type: 'Province'),
-      GeoRegionOption(code: 'KP-01', label: 'P\'yǒngyang', type: 'Capital City'),
+      GeoRegionOption(
+          code: 'KP-14', label: 'Nampho', type: 'Metropolitan City'),
+      GeoRegionOption(
+          code: 'KP-03', label: 'P\'yǒngan-bukto', type: 'Province'),
+      GeoRegionOption(
+          code: 'KP-02', label: 'P\'yǒngan-namdo', type: 'Province'),
+      GeoRegionOption(
+          code: 'KP-01', label: 'P\'yǒngyang', type: 'Capital City'),
       GeoRegionOption(code: 'KP-13', label: 'Raseon', type: 'Special City'),
       GeoRegionOption(code: 'KP-10', label: 'Ryanggang-do', type: 'Province'),
     ],
     'KR': <GeoRegionOption>[
-      GeoRegionOption(code: 'KR-26', label: 'Busan-gwangyeoksi', type: 'Metropolitan City'),
-      GeoRegionOption(code: 'KR-43', label: 'Chungcheongbuk-do', type: 'Province'),
-      GeoRegionOption(code: 'KR-44', label: 'Chungcheongnam-do', type: 'Province'),
-      GeoRegionOption(code: 'KR-27', label: 'Daegu-gwangyeoksi', type: 'Metropolitan City'),
-      GeoRegionOption(code: 'KR-30', label: 'Daejeon-gwangyeoksi', type: 'Metropolitan City'),
-      GeoRegionOption(code: 'KR-42', label: 'Gangwon-teukbyeoljachido', type: 'Special Self-Governing Province'),
-      GeoRegionOption(code: 'KR-29', label: 'Gwangju-gwangyeoksi', type: 'Metropolitan City'),
+      GeoRegionOption(
+          code: 'KR-26', label: 'Busan-gwangyeoksi', type: 'Metropolitan City'),
+      GeoRegionOption(
+          code: 'KR-43', label: 'Chungcheongbuk-do', type: 'Province'),
+      GeoRegionOption(
+          code: 'KR-44', label: 'Chungcheongnam-do', type: 'Province'),
+      GeoRegionOption(
+          code: 'KR-27', label: 'Daegu-gwangyeoksi', type: 'Metropolitan City'),
+      GeoRegionOption(
+          code: 'KR-30',
+          label: 'Daejeon-gwangyeoksi',
+          type: 'Metropolitan City'),
+      GeoRegionOption(
+          code: 'KR-42',
+          label: 'Gangwon-teukbyeoljachido',
+          type: 'Special Self-Governing Province'),
+      GeoRegionOption(
+          code: 'KR-29',
+          label: 'Gwangju-gwangyeoksi',
+          type: 'Metropolitan City'),
       GeoRegionOption(code: 'KR-41', label: 'Gyeonggi-do', type: 'Province'),
-      GeoRegionOption(code: 'KR-47', label: 'Gyeongsangbuk-do', type: 'Province'),
-      GeoRegionOption(code: 'KR-48', label: 'Gyeongsangnam-do', type: 'Province'),
-      GeoRegionOption(code: 'KR-28', label: 'Incheon-gwangyeoksi', type: 'Metropolitan City'),
-      GeoRegionOption(code: 'KR-49', label: 'Jeju-teukbyeoljachido', type: 'Special Self-Governing Province'),
+      GeoRegionOption(
+          code: 'KR-47', label: 'Gyeongsangbuk-do', type: 'Province'),
+      GeoRegionOption(
+          code: 'KR-48', label: 'Gyeongsangnam-do', type: 'Province'),
+      GeoRegionOption(
+          code: 'KR-28',
+          label: 'Incheon-gwangyeoksi',
+          type: 'Metropolitan City'),
+      GeoRegionOption(
+          code: 'KR-49',
+          label: 'Jeju-teukbyeoljachido',
+          type: 'Special Self-Governing Province'),
       GeoRegionOption(code: 'KR-45', label: 'Jeollabuk-do', type: 'Province'),
       GeoRegionOption(code: 'KR-46', label: 'Jeollanam-do', type: 'Province'),
-      GeoRegionOption(code: 'KR-50', label: 'Sejong', type: 'Special Self-Governing City'),
-      GeoRegionOption(code: 'KR-11', label: 'Seoul-teukbyeolsi', type: 'Special City'),
-      GeoRegionOption(code: 'KR-31', label: 'Ulsan-gwangyeoksi', type: 'Metropolitan City'),
+      GeoRegionOption(
+          code: 'KR-50', label: 'Sejong', type: 'Special Self-Governing City'),
+      GeoRegionOption(
+          code: 'KR-11', label: 'Seoul-teukbyeolsi', type: 'Special City'),
+      GeoRegionOption(
+          code: 'KR-31', label: 'Ulsan-gwangyeoksi', type: 'Metropolitan City'),
     ],
     'KW': <GeoRegionOption>[
       GeoRegionOption(code: 'KW-AH', label: 'Al Aḩmadī', type: 'Governorate'),
-      GeoRegionOption(code: 'KW-FA', label: 'Al Farwānīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'KW-FA', label: 'Al Farwānīyah', type: 'Governorate'),
       GeoRegionOption(code: 'KW-JA', label: 'Al Jahrā’', type: 'Governorate'),
       GeoRegionOption(code: 'KW-KU', label: 'Al ‘Āşimah', type: 'Governorate'),
-      GeoRegionOption(code: 'KW-MU', label: 'Mubārak al Kabīr', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'KW-MU', label: 'Mubārak al Kabīr', type: 'Governorate'),
       GeoRegionOption(code: 'KW-HA', label: 'Ḩawallī', type: 'Governorate'),
     ],
     'KZ': <GeoRegionOption>[
-      GeoRegionOption(code: 'KZ-10', label: 'Abajskaja oblast’', type: 'Region'),
-      GeoRegionOption(code: 'KZ-11', label: 'Akmolinskaja oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KZ-15', label: 'Aktjubinskaja oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KZ-19', label: 'Almatinskaja oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-10', label: 'Abajskaja oblast’', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-11', label: 'Akmolinskaja oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-15', label: 'Aktjubinskaja oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-19', label: 'Almatinskaja oblast\'', type: 'Region'),
       GeoRegionOption(code: 'KZ-75', label: 'Almaty', type: 'City'),
       GeoRegionOption(code: 'KZ-71', label: 'Astana', type: 'City'),
-      GeoRegionOption(code: 'KZ-23', label: 'Atyrauskaja oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KZ-27', label: 'Batys Qazaqstan oblysy', type: 'Region'),
-      GeoRegionOption(code: 'KZ-35', label: 'Karagandinskaja oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KZ-39', label: 'Kostanajskaja oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KZ-43', label: 'Kyzylordinskaja oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KZ-47', label: 'Mangghystaū oblysy', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-23', label: 'Atyrauskaja oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-27', label: 'Batys Qazaqstan oblysy', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-35', label: 'Karagandinskaja oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-39', label: 'Kostanajskaja oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-43', label: 'Kyzylordinskaja oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-47', label: 'Mangghystaū oblysy', type: 'Region'),
       GeoRegionOption(code: 'KZ-55', label: 'Pavlodar oblysy', type: 'Region'),
-      GeoRegionOption(code: 'KZ-59', label: 'Severo-Kazahstanskaja oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KZ-63', label: 'Shyghys Qazaqstan oblysy', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-59',
+          label: 'Severo-Kazahstanskaja oblast\'',
+          type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-63', label: 'Shyghys Qazaqstan oblysy', type: 'Region'),
       GeoRegionOption(code: 'KZ-79', label: 'Shymkent', type: 'City'),
-      GeoRegionOption(code: 'KZ-61', label: 'Turkestankaya oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'KZ-62', label: 'Ulytauskaja oblast’', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-61', label: 'Turkestankaya oblast\'', type: 'Region'),
+      GeoRegionOption(
+          code: 'KZ-62', label: 'Ulytauskaja oblast’', type: 'Region'),
       GeoRegionOption(code: 'KZ-31', label: 'Zhambyl oblysy', type: 'Region'),
       GeoRegionOption(code: 'KZ-33', label: 'Zhetisū oblysy', type: 'Region'),
     ],
@@ -2286,11 +2787,14 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'LB-AK', label: 'Aakkâr', type: 'Governorate'),
       GeoRegionOption(code: 'LB-BI', label: 'Al Biqā‘', type: 'Governorate'),
       GeoRegionOption(code: 'LB-JA', label: 'Al Janūb', type: 'Governorate'),
-      GeoRegionOption(code: 'LB-NA', label: 'An Nabaţīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'LB-NA', label: 'An Nabaţīyah', type: 'Governorate'),
       GeoRegionOption(code: 'LB-AS', label: 'Ash Shimāl', type: 'Governorate'),
-      GeoRegionOption(code: 'LB-BH', label: 'Baalbek-Hermel', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'LB-BH', label: 'Baalbek-Hermel', type: 'Governorate'),
       GeoRegionOption(code: 'LB-BA', label: 'Bayrūt', type: 'Governorate'),
-      GeoRegionOption(code: 'LB-JL', label: 'Jabal Lubnān', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'LB-JL', label: 'Jabal Lubnān', type: 'Governorate'),
     ],
     'LC': <GeoRegionOption>[
       GeoRegionOption(code: 'LC-01', label: 'Anse la Raye', type: 'District'),
@@ -2318,15 +2822,23 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'LI-11', label: 'Vaduz', type: 'Commune'),
     ],
     'LK': <GeoRegionOption>[
-      GeoRegionOption(code: 'LK-2', label: 'Central Province', type: 'Province'),
-      GeoRegionOption(code: 'LK-5', label: 'Eastern Province', type: 'Province'),
-      GeoRegionOption(code: 'LK-7', label: 'North Central Province', type: 'Province'),
-      GeoRegionOption(code: 'LK-6', label: 'North Western Province', type: 'Province'),
-      GeoRegionOption(code: 'LK-4', label: 'Northern Province', type: 'Province'),
-      GeoRegionOption(code: 'LK-9', label: 'Sabaragamuwa Province', type: 'Province'),
-      GeoRegionOption(code: 'LK-3', label: 'Southern Province', type: 'Province'),
+      GeoRegionOption(
+          code: 'LK-2', label: 'Central Province', type: 'Province'),
+      GeoRegionOption(
+          code: 'LK-5', label: 'Eastern Province', type: 'Province'),
+      GeoRegionOption(
+          code: 'LK-7', label: 'North Central Province', type: 'Province'),
+      GeoRegionOption(
+          code: 'LK-6', label: 'North Western Province', type: 'Province'),
+      GeoRegionOption(
+          code: 'LK-4', label: 'Northern Province', type: 'Province'),
+      GeoRegionOption(
+          code: 'LK-9', label: 'Sabaragamuwa Province', type: 'Province'),
+      GeoRegionOption(
+          code: 'LK-3', label: 'Southern Province', type: 'Province'),
       GeoRegionOption(code: 'LK-8', label: 'Uva Province', type: 'Province'),
-      GeoRegionOption(code: 'LK-1', label: 'Western Province', type: 'Province'),
+      GeoRegionOption(
+          code: 'LK-1', label: 'Western Province', type: 'Province'),
     ],
     'LR': <GeoRegionOption>[
       GeoRegionOption(code: 'LR-BM', label: 'Bomi', type: 'County'),
@@ -2358,16 +2870,23 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'LS-K', label: 'Thaba-Tseka', type: 'District'),
     ],
     'LT': <GeoRegionOption>[
-      GeoRegionOption(code: 'LT-AL', label: 'Alytaus apskritis', type: 'County'),
+      GeoRegionOption(
+          code: 'LT-AL', label: 'Alytaus apskritis', type: 'County'),
       GeoRegionOption(code: 'LT-KU', label: 'Kauno apskritis', type: 'County'),
-      GeoRegionOption(code: 'LT-KL', label: 'Klaipėdos apskritis', type: 'County'),
-      GeoRegionOption(code: 'LT-MR', label: 'Marijampolės apskritis', type: 'County'),
-      GeoRegionOption(code: 'LT-PN', label: 'Panevėžio apskritis', type: 'County'),
-      GeoRegionOption(code: 'LT-TA', label: 'Tauragės apskritis', type: 'County'),
+      GeoRegionOption(
+          code: 'LT-KL', label: 'Klaipėdos apskritis', type: 'County'),
+      GeoRegionOption(
+          code: 'LT-MR', label: 'Marijampolės apskritis', type: 'County'),
+      GeoRegionOption(
+          code: 'LT-PN', label: 'Panevėžio apskritis', type: 'County'),
+      GeoRegionOption(
+          code: 'LT-TA', label: 'Tauragės apskritis', type: 'County'),
       GeoRegionOption(code: 'LT-TE', label: 'Telšių apskritis', type: 'County'),
       GeoRegionOption(code: 'LT-UT', label: 'Utenos apskritis', type: 'County'),
-      GeoRegionOption(code: 'LT-VL', label: 'Vilniaus apskritis', type: 'County'),
-      GeoRegionOption(code: 'LT-SA', label: 'Šiaulių apskritis', type: 'County'),
+      GeoRegionOption(
+          code: 'LT-VL', label: 'Vilniaus apskritis', type: 'County'),
+      GeoRegionOption(
+          code: 'LT-SA', label: 'Šiaulių apskritis', type: 'County'),
     ],
     'LU': <GeoRegionOption>[
       GeoRegionOption(code: 'LU-CA', label: 'Capellen', type: 'Canton'),
@@ -2384,61 +2903,102 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'LU-WI', label: 'Wiltz', type: 'Canton'),
     ],
     'LV': <GeoRegionOption>[
-      GeoRegionOption(code: 'LV-002', label: 'Aizkraukles novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-007', label: 'Alūksnes novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-111', label: 'Augšdaugavas novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-015', label: 'Balvu novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-016', label: 'Bauskas novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-022', label: 'Cēsu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-002', label: 'Aizkraukles novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-007', label: 'Alūksnes novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-111', label: 'Augšdaugavas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-015', label: 'Balvu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-016', label: 'Bauskas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-022', label: 'Cēsu novads', type: 'Municipality'),
       GeoRegionOption(code: 'LV-DGV', label: 'Daugavpils', type: 'State City'),
-      GeoRegionOption(code: 'LV-112', label: 'Dienvidkurzemes Novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-026', label: 'Dobeles novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-033', label: 'Gulbenes novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-112',
+          label: 'Dienvidkurzemes Novads',
+          type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-026', label: 'Dobeles novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-033', label: 'Gulbenes novads', type: 'Municipality'),
       GeoRegionOption(code: 'LV-JEL', label: 'Jelgava', type: 'State City'),
-      GeoRegionOption(code: 'LV-041', label: 'Jelgavas novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-042', label: 'Jēkabpils novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-041', label: 'Jelgavas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-042', label: 'Jēkabpils novads', type: 'Municipality'),
       GeoRegionOption(code: 'LV-JUR', label: 'Jūrmala', type: 'State City'),
-      GeoRegionOption(code: 'LV-047', label: 'Krāslavas novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-050', label: 'Kuldīgas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-047', label: 'Krāslavas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-050', label: 'Kuldīgas novads', type: 'Municipality'),
       GeoRegionOption(code: 'LV-LPX', label: 'Liepāja', type: 'State City'),
-      GeoRegionOption(code: 'LV-054', label: 'Limbažu novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-058', label: 'Ludzas novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-056', label: 'Līvānu novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-059', label: 'Madonas novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-062', label: 'Mārupes novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-067', label: 'Ogres novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-068', label: 'Olaines novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-073', label: 'Preiļu novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-080', label: 'Ropažu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-054', label: 'Limbažu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-058', label: 'Ludzas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-056', label: 'Līvānu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-059', label: 'Madonas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-062', label: 'Mārupes novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-067', label: 'Ogres novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-068', label: 'Olaines novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-073', label: 'Preiļu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-080', label: 'Ropažu novads', type: 'Municipality'),
       GeoRegionOption(code: 'LV-REZ', label: 'Rēzekne', type: 'State City'),
-      GeoRegionOption(code: 'LV-077', label: 'Rēzeknes novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-077', label: 'Rēzeknes novads', type: 'Municipality'),
       GeoRegionOption(code: 'LV-RIX', label: 'Rīga', type: 'State City'),
-      GeoRegionOption(code: 'LV-087', label: 'Salaspils novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-088', label: 'Saldus novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-089', label: 'Saulkrastu novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-091', label: 'Siguldas novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-094', label: 'Smiltenes novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-097', label: 'Talsu novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-099', label: 'Tukuma novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-101', label: 'Valkas novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-113', label: 'Valmieras Novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-102', label: 'Varakļānu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-087', label: 'Salaspils novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-088', label: 'Saldus novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-089', label: 'Saulkrastu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-091', label: 'Siguldas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-094', label: 'Smiltenes novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-097', label: 'Talsu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-099', label: 'Tukuma novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-101', label: 'Valkas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-113', label: 'Valmieras Novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-102', label: 'Varakļānu novads', type: 'Municipality'),
       GeoRegionOption(code: 'LV-VEN', label: 'Ventspils', type: 'State City'),
-      GeoRegionOption(code: 'LV-106', label: 'Ventspils novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-011', label: 'Ādažu novads', type: 'Municipality'),
-      GeoRegionOption(code: 'LV-052', label: 'Ķekavas novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-106', label: 'Ventspils novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-011', label: 'Ādažu novads', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'LV-052', label: 'Ķekavas novads', type: 'Municipality'),
     ],
     'LY': <GeoRegionOption>[
       GeoRegionOption(code: 'LY-BU', label: 'Al Buţnān', type: 'Popularate'),
-      GeoRegionOption(code: 'LY-JA', label: 'Al Jabal al Akhḑar', type: 'Popularate'),
-      GeoRegionOption(code: 'LY-JG', label: 'Al Jabal al Gharbī', type: 'Popularate'),
+      GeoRegionOption(
+          code: 'LY-JA', label: 'Al Jabal al Akhḑar', type: 'Popularate'),
+      GeoRegionOption(
+          code: 'LY-JG', label: 'Al Jabal al Gharbī', type: 'Popularate'),
       GeoRegionOption(code: 'LY-JI', label: 'Al Jafārah', type: 'Popularate'),
       GeoRegionOption(code: 'LY-JU', label: 'Al Jufrah', type: 'Popularate'),
       GeoRegionOption(code: 'LY-KF', label: 'Al Kufrah', type: 'Popularate'),
       GeoRegionOption(code: 'LY-MJ', label: 'Al Marj', type: 'Popularate'),
       GeoRegionOption(code: 'LY-MB', label: 'Al Marqab', type: 'Popularate'),
       GeoRegionOption(code: 'LY-WA', label: 'Al Wāḩāt', type: 'Popularate'),
-      GeoRegionOption(code: 'LY-NQ', label: 'An Nuqāţ al Khams', type: 'Popularate'),
+      GeoRegionOption(
+          code: 'LY-NQ', label: 'An Nuqāţ al Khams', type: 'Popularate'),
       GeoRegionOption(code: 'LY-ZA', label: 'Az Zāwiyah', type: 'Popularate'),
       GeoRegionOption(code: 'LY-BA', label: 'Banghāzī', type: 'Popularate'),
       GeoRegionOption(code: 'LY-DR', label: 'Darnah', type: 'Popularate'),
@@ -2448,23 +3008,36 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'LY-NL', label: 'Nālūt', type: 'Popularate'),
       GeoRegionOption(code: 'LY-SB', label: 'Sabhā', type: 'Popularate'),
       GeoRegionOption(code: 'LY-SR', label: 'Surt', type: 'Popularate'),
-      GeoRegionOption(code: 'LY-WD', label: 'Wādī al Ḩayāt', type: 'Popularate'),
-      GeoRegionOption(code: 'LY-WS', label: 'Wādī ash Shāţi’', type: 'Popularate'),
+      GeoRegionOption(
+          code: 'LY-WD', label: 'Wādī al Ḩayāt', type: 'Popularate'),
+      GeoRegionOption(
+          code: 'LY-WS', label: 'Wādī ash Shāţi’', type: 'Popularate'),
       GeoRegionOption(code: 'LY-TB', label: 'Ţarābulus', type: 'Popularate'),
     ],
     'MA': <GeoRegionOption>[
-      GeoRegionOption(code: 'MA-05', label: 'Béni Mellal-Khénifra', type: 'Region'),
-      GeoRegionOption(code: 'MA-06', label: 'Casablanca-Settat', type: 'Region'),
-      GeoRegionOption(code: 'MA-12', label: 'Dakhla-Oued Ed-Dahab (EH)', type: 'Region'),
+      GeoRegionOption(
+          code: 'MA-05', label: 'Béni Mellal-Khénifra', type: 'Region'),
+      GeoRegionOption(
+          code: 'MA-06', label: 'Casablanca-Settat', type: 'Region'),
+      GeoRegionOption(
+          code: 'MA-12', label: 'Dakhla-Oued Ed-Dahab (EH)', type: 'Region'),
       GeoRegionOption(code: 'MA-08', label: 'Drâa-Tafilalet', type: 'Region'),
       GeoRegionOption(code: 'MA-03', label: 'Fès-Meknès', type: 'Region'),
-      GeoRegionOption(code: 'MA-10', label: 'Guelmim-Oued Noun (EH-partial)', type: 'Region'),
+      GeoRegionOption(
+          code: 'MA-10',
+          label: 'Guelmim-Oued Noun (EH-partial)',
+          type: 'Region'),
       GeoRegionOption(code: 'MA-02', label: 'L\'Oriental', type: 'Region'),
-      GeoRegionOption(code: 'MA-11', label: 'Laâyoune-Sakia El Hamra (EH-partial)', type: 'Region'),
+      GeoRegionOption(
+          code: 'MA-11',
+          label: 'Laâyoune-Sakia El Hamra (EH-partial)',
+          type: 'Region'),
       GeoRegionOption(code: 'MA-07', label: 'Marrakech-Safi', type: 'Region'),
-      GeoRegionOption(code: 'MA-04', label: 'Rabat-Salé-Kénitra', type: 'Region'),
+      GeoRegionOption(
+          code: 'MA-04', label: 'Rabat-Salé-Kénitra', type: 'Region'),
       GeoRegionOption(code: 'MA-09', label: 'Souss-Massa', type: 'Region'),
-      GeoRegionOption(code: 'MA-01', label: 'Tanger-Tétouan-Al Hoceïma', type: 'Region'),
+      GeoRegionOption(
+          code: 'MA-01', label: 'Tanger-Tétouan-Al Hoceïma', type: 'Region'),
     ],
     'MC': <GeoRegionOption>[
       GeoRegionOption(code: 'MC-FO', label: 'Fontvieille', type: 'Quarter'),
@@ -2483,7 +3056,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MC-SR', label: 'Saint-Roman', type: 'Quarter'),
       GeoRegionOption(code: 'MC-SD', label: 'Sainte-Dévote', type: 'Quarter'),
       GeoRegionOption(code: 'MC-SP', label: 'Spélugues', type: 'Quarter'),
-      GeoRegionOption(code: 'MC-VR', label: 'Vallon de la Rousse', type: 'Quarter'),
+      GeoRegionOption(
+          code: 'MC-VR', label: 'Vallon de la Rousse', type: 'Quarter'),
     ],
     'MD': <GeoRegionOption>[
       GeoRegionOption(code: 'MD-AN', label: 'Anenii Noi', type: 'District'),
@@ -2505,7 +3079,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MD-FL', label: 'Florești', type: 'District'),
       GeoRegionOption(code: 'MD-FA', label: 'Fălești', type: 'District'),
       GeoRegionOption(code: 'MD-GL', label: 'Glodeni', type: 'District'),
-      GeoRegionOption(code: 'MD-GA', label: 'Găgăuzia, Unitatea teritorială autonomă (UTAG)', type: 'Autonomous Territorial Unit'),
+      GeoRegionOption(
+          code: 'MD-GA',
+          label: 'Găgăuzia, Unitatea teritorială autonomă (UTAG)',
+          type: 'Autonomous Territorial Unit'),
       GeoRegionOption(code: 'MD-HI', label: 'Hîncești', type: 'District'),
       GeoRegionOption(code: 'MD-IA', label: 'Ialoveni', type: 'District'),
       GeoRegionOption(code: 'MD-LE', label: 'Leova', type: 'District'),
@@ -2516,7 +3093,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MD-RI', label: 'Rîșcani', type: 'District'),
       GeoRegionOption(code: 'MD-SO', label: 'Soroca', type: 'District'),
       GeoRegionOption(code: 'MD-ST', label: 'Strășeni', type: 'District'),
-      GeoRegionOption(code: 'MD-SN', label: 'Stînga Nistrului, unitatea teritorială din', type: 'Territorial Unit'),
+      GeoRegionOption(
+          code: 'MD-SN',
+          label: 'Stînga Nistrului, unitatea teritorială din',
+          type: 'Territorial Unit'),
       GeoRegionOption(code: 'MD-SI', label: 'Sîngerei', type: 'District'),
       GeoRegionOption(code: 'MD-TA', label: 'Taraclia', type: 'District'),
       GeoRegionOption(code: 'MD-TE', label: 'Telenești', type: 'District'),
@@ -2525,15 +3105,19 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MD-SV', label: 'Ștefan Vodă', type: 'District'),
     ],
     'ME': <GeoRegionOption>[
-      GeoRegionOption(code: 'ME-01', label: 'Andrijevica', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'ME-01', label: 'Andrijevica', type: 'Municipality'),
       GeoRegionOption(code: 'ME-02', label: 'Bar', type: 'Municipality'),
       GeoRegionOption(code: 'ME-03', label: 'Berane', type: 'Municipality'),
-      GeoRegionOption(code: 'ME-04', label: 'Bijelo Polje', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'ME-04', label: 'Bijelo Polje', type: 'Municipality'),
       GeoRegionOption(code: 'ME-05', label: 'Budva', type: 'Municipality'),
       GeoRegionOption(code: 'ME-06', label: 'Cetinje', type: 'Municipality'),
-      GeoRegionOption(code: 'ME-07', label: 'Danilovgrad', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'ME-07', label: 'Danilovgrad', type: 'Municipality'),
       GeoRegionOption(code: 'ME-22', label: 'Gusinje', type: 'Municipality'),
-      GeoRegionOption(code: 'ME-08', label: 'Herceg-Novi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'ME-08', label: 'Herceg-Novi', type: 'Municipality'),
       GeoRegionOption(code: 'ME-09', label: 'Kolašin', type: 'Municipality'),
       GeoRegionOption(code: 'ME-10', label: 'Kotor', type: 'Municipality'),
       GeoRegionOption(code: 'ME-11', label: 'Mojkovac', type: 'Municipality'),
@@ -2560,11 +3144,14 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MG-U', label: 'Toliara', type: 'Province'),
     ],
     'MH': <GeoRegionOption>[
-      GeoRegionOption(code: 'MH-L', label: 'Ralik chain', type: 'Chain (Of Islands)'),
-      GeoRegionOption(code: 'MH-T', label: 'Ratak chain', type: 'Chain (Of Islands)'),
+      GeoRegionOption(
+          code: 'MH-L', label: 'Ralik chain', type: 'Chain (Of Islands)'),
+      GeoRegionOption(
+          code: 'MH-T', label: 'Ratak chain', type: 'Chain (Of Islands)'),
     ],
     'MK': <GeoRegionOption>[
-      GeoRegionOption(code: 'MK-801', label: 'Aerodrom †', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-801', label: 'Aerodrom †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-802', label: 'Aračinovo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-201', label: 'Berovo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-501', label: 'Bitola', type: 'Municipality'),
@@ -2573,18 +3160,23 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MK-402', label: 'Bosilovo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-602', label: 'Brvenica', type: 'Municipality'),
       GeoRegionOption(code: 'MK-803', label: 'Butel †', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-313', label: 'Centar Župa', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-313', label: 'Centar Župa', type: 'Municipality'),
       GeoRegionOption(code: 'MK-814', label: 'Centar †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-303', label: 'Debar', type: 'Municipality'),
       GeoRegionOption(code: 'MK-304', label: 'Debrca', type: 'Municipality'),
       GeoRegionOption(code: 'MK-203', label: 'Delčevo', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-502', label: 'Demir Hisar', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-103', label: 'Demir Kapija', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-502', label: 'Demir Hisar', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-103', label: 'Demir Kapija', type: 'Municipality'),
       GeoRegionOption(code: 'MK-406', label: 'Dojran', type: 'Municipality'),
       GeoRegionOption(code: 'MK-503', label: 'Dolneni', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-804', label: 'Gazi Baba †', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-804', label: 'Gazi Baba †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-405', label: 'Gevgelija', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-805', label: 'Gjorče Petrov †', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-805', label: 'Gjorče Petrov †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-604', label: 'Gostivar', type: 'Municipality'),
       GeoRegionOption(code: 'MK-102', label: 'Gradsko', type: 'Municipality'),
       GeoRegionOption(code: 'MK-807', label: 'Ilinden', type: 'Municipality'),
@@ -2592,20 +3184,26 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MK-205', label: 'Karbinci', type: 'Municipality'),
       GeoRegionOption(code: 'MK-808', label: 'Karpoš †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-104', label: 'Kavadarci', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-809', label: 'Kisela Voda †', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-809', label: 'Kisela Voda †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-307', label: 'Kičevo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-407', label: 'Konče', type: 'Municipality'),
       GeoRegionOption(code: 'MK-206', label: 'Kočani', type: 'Municipality'),
       GeoRegionOption(code: 'MK-701', label: 'Kratovo', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-702', label: 'Kriva Palanka', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-504', label: 'Krivogaštani', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-702', label: 'Kriva Palanka', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-504', label: 'Krivogaštani', type: 'Municipality'),
       GeoRegionOption(code: 'MK-505', label: 'Kruševo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-703', label: 'Kumanovo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-704', label: 'Lipkovo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-105', label: 'Lozovo', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-207', label: 'Makedonska Kamenica', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-308', label: 'Makedonski Brod', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-607', label: 'Mavrovo i Rostuše', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-207', label: 'Makedonska Kamenica', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-308', label: 'Makedonski Brod', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-607', label: 'Mavrovo i Rostuše', type: 'Municipality'),
       GeoRegionOption(code: 'MK-506', label: 'Mogila', type: 'Municipality'),
       GeoRegionOption(code: 'MK-106', label: 'Negotino', type: 'Municipality'),
       GeoRegionOption(code: 'MK-507', label: 'Novaci', type: 'Municipality'),
@@ -2622,11 +3220,14 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MK-107', label: 'Rosoman', type: 'Municipality'),
       GeoRegionOption(code: 'MK-811', label: 'Saraj †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-812', label: 'Sopište', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-706', label: 'Staro Nagoričane', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-706', label: 'Staro Nagoričane', type: 'Municipality'),
       GeoRegionOption(code: 'MK-312', label: 'Struga', type: 'Municipality'),
       GeoRegionOption(code: 'MK-410', label: 'Strumica', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-813', label: 'Studeničani', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-108', label: 'Sveti Nikole', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-813', label: 'Studeničani', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-108', label: 'Sveti Nikole', type: 'Municipality'),
       GeoRegionOption(code: 'MK-608', label: 'Tearce', type: 'Municipality'),
       GeoRegionOption(code: 'MK-609', label: 'Tetovo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-403', label: 'Valandovo', type: 'Municipality'),
@@ -2635,14 +3236,18 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MK-301', label: 'Vevčani', type: 'Municipality'),
       GeoRegionOption(code: 'MK-202', label: 'Vinica', type: 'Municipality'),
       GeoRegionOption(code: 'MK-603', label: 'Vrapčište', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-806', label: 'Zelenikovo', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-806', label: 'Zelenikovo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-204', label: 'Zrnovci', type: 'Municipality'),
       GeoRegionOption(code: 'MK-815', label: 'Čair †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-109', label: 'Čaška', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-210', label: 'Češinovo-Obleševo', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-816', label: 'Čučer-Sandevo', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-210', label: 'Češinovo-Obleševo', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-816', label: 'Čučer-Sandevo', type: 'Municipality'),
       GeoRegionOption(code: 'MK-211', label: 'Štip', type: 'Municipality'),
-      GeoRegionOption(code: 'MK-817', label: 'Šuto Orizari †', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'MK-817', label: 'Šuto Orizari †', type: 'Municipality'),
       GeoRegionOption(code: 'MK-605', label: 'Želino', type: 'Municipality'),
     ],
     'ML': <GeoRegionOption>[
@@ -2668,7 +3273,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MM-03', label: 'Magway', type: 'Region'),
       GeoRegionOption(code: 'MM-04', label: 'Mandalay', type: 'Region'),
       GeoRegionOption(code: 'MM-15', label: 'Mon', type: 'State'),
-      GeoRegionOption(code: 'MM-18', label: 'Nay Pyi Taw', type: 'Union Territory'),
+      GeoRegionOption(
+          code: 'MM-18', label: 'Nay Pyi Taw', type: 'Union Territory'),
       GeoRegionOption(code: 'MM-16', label: 'Rakhine', type: 'State'),
       GeoRegionOption(code: 'MM-01', label: 'Sagaing', type: 'Region'),
       GeoRegionOption(code: 'MM-17', label: 'Shan', type: 'State'),
@@ -2703,7 +3309,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MR-07', label: 'Adrar', type: 'Region'),
       GeoRegionOption(code: 'MR-03', label: 'Assaba', type: 'Region'),
       GeoRegionOption(code: 'MR-05', label: 'Brakna', type: 'Region'),
-      GeoRegionOption(code: 'MR-08', label: 'Dakhlet Nouâdhibou', type: 'Region'),
+      GeoRegionOption(
+          code: 'MR-08', label: 'Dakhlet Nouâdhibou', type: 'Region'),
       GeoRegionOption(code: 'MR-04', label: 'Gorgol', type: 'Region'),
       GeoRegionOption(code: 'MR-10', label: 'Guidimaka', type: 'Region'),
       GeoRegionOption(code: 'MR-01', label: 'Hodh ech Chargui', type: 'Region'),
@@ -2720,15 +3327,18 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MT-01', label: 'Attard', type: 'Local Council'),
       GeoRegionOption(code: 'MT-02', label: 'Balzan', type: 'Local Council'),
       GeoRegionOption(code: 'MT-03', label: 'Birgu', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-04', label: 'Birkirkara', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-05', label: 'Birżebbuġa', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-04', label: 'Birkirkara', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-05', label: 'Birżebbuġa', type: 'Local Council'),
       GeoRegionOption(code: 'MT-06', label: 'Bormla', type: 'Local Council'),
       GeoRegionOption(code: 'MT-07', label: 'Dingli', type: 'Local Council'),
       GeoRegionOption(code: 'MT-08', label: 'Fgura', type: 'Local Council'),
       GeoRegionOption(code: 'MT-09', label: 'Floriana', type: 'Local Council'),
       GeoRegionOption(code: 'MT-10', label: 'Fontana', type: 'Local Council'),
       GeoRegionOption(code: 'MT-11', label: 'Gudja', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-13', label: 'Għajnsielem', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-13', label: 'Għajnsielem', type: 'Local Council'),
       GeoRegionOption(code: 'MT-14', label: 'Għarb', type: 'Local Council'),
       GeoRegionOption(code: 'MT-15', label: 'Għargħur', type: 'Local Council'),
       GeoRegionOption(code: 'MT-16', label: 'Għasri', type: 'Local Council'),
@@ -2742,8 +3352,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MT-24', label: 'Lija', type: 'Local Council'),
       GeoRegionOption(code: 'MT-25', label: 'Luqa', type: 'Local Council'),
       GeoRegionOption(code: 'MT-26', label: 'Marsa', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-27', label: 'Marsaskala', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-28', label: 'Marsaxlokk', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-27', label: 'Marsaskala', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-28', label: 'Marsaxlokk', type: 'Local Council'),
       GeoRegionOption(code: 'MT-29', label: 'Mdina', type: 'Local Council'),
       GeoRegionOption(code: 'MT-30', label: 'Mellieħa', type: 'Local Council'),
       GeoRegionOption(code: 'MT-32', label: 'Mosta', type: 'Local Council'),
@@ -2760,20 +3372,29 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MT-42', label: 'Qala', type: 'Local Council'),
       GeoRegionOption(code: 'MT-43', label: 'Qormi', type: 'Local Council'),
       GeoRegionOption(code: 'MT-44', label: 'Qrendi', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-45', label: 'Rabat Gozo', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-46', label: 'Rabat Malta', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-45', label: 'Rabat Gozo', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-46', label: 'Rabat Malta', type: 'Local Council'),
       GeoRegionOption(code: 'MT-47', label: 'Safi', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-49', label: 'Saint John', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-48', label: 'Saint Julian\'s', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-50', label: 'Saint Lawrence', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-53', label: 'Saint Lucia\'s', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-51', label: 'Saint Paul\'s Bay', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-49', label: 'Saint John', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-48', label: 'Saint Julian\'s', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-50', label: 'Saint Lawrence', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-53', label: 'Saint Lucia\'s', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-51', label: 'Saint Paul\'s Bay', type: 'Local Council'),
       GeoRegionOption(code: 'MT-52', label: 'Sannat', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-54', label: 'Santa Venera', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-54', label: 'Santa Venera', type: 'Local Council'),
       GeoRegionOption(code: 'MT-55', label: 'Siġġiewi', type: 'Local Council'),
       GeoRegionOption(code: 'MT-56', label: 'Sliema', type: 'Local Council'),
       GeoRegionOption(code: 'MT-57', label: 'Swieqi', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-58', label: 'Ta\' Xbiex', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-58', label: 'Ta\' Xbiex', type: 'Local Council'),
       GeoRegionOption(code: 'MT-59', label: 'Tarxien', type: 'Local Council'),
       GeoRegionOption(code: 'MT-60', label: 'Valletta', type: 'Local Council'),
       GeoRegionOption(code: 'MT-61', label: 'Xagħra', type: 'Local Council'),
@@ -2781,47 +3402,97 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MT-63', label: 'Xgħajra', type: 'Local Council'),
       GeoRegionOption(code: 'MT-18', label: 'Ħamrun', type: 'Local Council'),
       GeoRegionOption(code: 'MT-64', label: 'Żabbar', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-65', label: 'Żebbuġ Gozo', type: 'Local Council'),
-      GeoRegionOption(code: 'MT-66', label: 'Żebbuġ Malta', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-65', label: 'Żebbuġ Gozo', type: 'Local Council'),
+      GeoRegionOption(
+          code: 'MT-66', label: 'Żebbuġ Malta', type: 'Local Council'),
       GeoRegionOption(code: 'MT-67', label: 'Żejtun', type: 'Local Council'),
       GeoRegionOption(code: 'MT-68', label: 'Żurrieq', type: 'Local Council'),
     ],
     'MU': <GeoRegionOption>[
-      GeoRegionOption(code: 'MU-AG', label: 'Agalega Islands', type: 'Dependency'),
+      GeoRegionOption(
+          code: 'MU-AG', label: 'Agalega Islands', type: 'Dependency'),
       GeoRegionOption(code: 'MU-BL', label: 'Black River', type: 'District'),
-      GeoRegionOption(code: 'MU-CC', label: 'Cargados Carajos Shoals', type: 'Dependency'),
+      GeoRegionOption(
+          code: 'MU-CC', label: 'Cargados Carajos Shoals', type: 'Dependency'),
       GeoRegionOption(code: 'MU-FL', label: 'Flacq', type: 'District'),
       GeoRegionOption(code: 'MU-GP', label: 'Grand Port', type: 'District'),
       GeoRegionOption(code: 'MU-MO', label: 'Moka', type: 'District'),
       GeoRegionOption(code: 'MU-PA', label: 'Pamplemousses', type: 'District'),
-      GeoRegionOption(code: 'MU-PW', label: 'Plaines Wilhems', type: 'District'),
+      GeoRegionOption(
+          code: 'MU-PW', label: 'Plaines Wilhems', type: 'District'),
       GeoRegionOption(code: 'MU-PL', label: 'Port Louis', type: 'District'),
-      GeoRegionOption(code: 'MU-RR', label: 'Rivière du Rempart', type: 'District'),
-      GeoRegionOption(code: 'MU-RO', label: 'Rodrigues Island', type: 'Dependency'),
+      GeoRegionOption(
+          code: 'MU-RR', label: 'Rivière du Rempart', type: 'District'),
+      GeoRegionOption(
+          code: 'MU-RO', label: 'Rodrigues Island', type: 'Dependency'),
       GeoRegionOption(code: 'MU-SA', label: 'Savanne', type: 'District'),
     ],
     'MV': <GeoRegionOption>[
       GeoRegionOption(code: 'MV-01', label: 'Addu City', type: 'City'),
-      GeoRegionOption(code: 'MV-03', label: 'Faadhippolhu', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-04', label: 'Felidhu Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-29', label: 'Fuvammulah', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-05', label: 'Hahdhunmathi', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-08', label: 'Kolhumadulu', type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-03', label: 'Faadhippolhu', type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-04', label: 'Felidhu Atoll', type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-29', label: 'Fuvammulah', type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-05', label: 'Hahdhunmathi', type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-08', label: 'Kolhumadulu', type: 'Administrative Atoll'),
       GeoRegionOption(code: 'MV-MLE', label: 'Male', type: 'City'),
-      GeoRegionOption(code: 'MV-26', label: 'Male Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-12', label: 'Mulaku Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-02', label: 'North Ari Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-27', label: 'North Huvadhu Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-13', label: 'North Maalhosmadulu', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-24', label: 'North Miladhunmadulu', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-14', label: 'North Nilandhe Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-07', label: 'North Thiladhunmathi', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-00', label: 'South Ari Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-28', label: 'South Huvadhu Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-20', label: 'South Maalhosmadulu', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-25', label: 'South Miladhunmadulu', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-17', label: 'South Nilandhe Atoll', type: 'Administrative Atoll'),
-      GeoRegionOption(code: 'MV-23', label: 'South Thiladhunmathi', type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-26', label: 'Male Atoll', type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-12', label: 'Mulaku Atoll', type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-02',
+          label: 'North Ari Atoll',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-27',
+          label: 'North Huvadhu Atoll',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-13',
+          label: 'North Maalhosmadulu',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-24',
+          label: 'North Miladhunmadulu',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-14',
+          label: 'North Nilandhe Atoll',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-07',
+          label: 'North Thiladhunmathi',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-00',
+          label: 'South Ari Atoll',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-28',
+          label: 'South Huvadhu Atoll',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-20',
+          label: 'South Maalhosmadulu',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-25',
+          label: 'South Miladhunmadulu',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-17',
+          label: 'South Nilandhe Atoll',
+          type: 'Administrative Atoll'),
+      GeoRegionOption(
+          code: 'MV-23',
+          label: 'South Thiladhunmathi',
+          type: 'Administrative Atoll'),
     ],
     'MW': <GeoRegionOption>[
       GeoRegionOption(code: 'MW-C', label: 'Central Region', type: 'Region'),
@@ -2831,19 +3502,23 @@ class GlobalSetupOptions {
     'MX': <GeoRegionOption>[
       GeoRegionOption(code: 'MX-AGU', label: 'Aguascalientes', type: 'State'),
       GeoRegionOption(code: 'MX-BCN', label: 'Baja California', type: 'State'),
-      GeoRegionOption(code: 'MX-BCS', label: 'Baja California Sur', type: 'State'),
+      GeoRegionOption(
+          code: 'MX-BCS', label: 'Baja California Sur', type: 'State'),
       GeoRegionOption(code: 'MX-CAM', label: 'Campeche', type: 'State'),
       GeoRegionOption(code: 'MX-CHP', label: 'Chiapas', type: 'State'),
       GeoRegionOption(code: 'MX-CHH', label: 'Chihuahua', type: 'State'),
-      GeoRegionOption(code: 'MX-CMX', label: 'Ciudad de México', type: 'Federal Entity'),
-      GeoRegionOption(code: 'MX-COA', label: 'Coahuila de Zaragoza', type: 'State'),
+      GeoRegionOption(
+          code: 'MX-CMX', label: 'Ciudad de México', type: 'Federal Entity'),
+      GeoRegionOption(
+          code: 'MX-COA', label: 'Coahuila de Zaragoza', type: 'State'),
       GeoRegionOption(code: 'MX-COL', label: 'Colima', type: 'State'),
       GeoRegionOption(code: 'MX-DUR', label: 'Durango', type: 'State'),
       GeoRegionOption(code: 'MX-GUA', label: 'Guanajuato', type: 'State'),
       GeoRegionOption(code: 'MX-GRO', label: 'Guerrero', type: 'State'),
       GeoRegionOption(code: 'MX-HID', label: 'Hidalgo', type: 'State'),
       GeoRegionOption(code: 'MX-JAL', label: 'Jalisco', type: 'State'),
-      GeoRegionOption(code: 'MX-MIC', label: 'Michoacán de Ocampo', type: 'State'),
+      GeoRegionOption(
+          code: 'MX-MIC', label: 'Michoacán de Ocampo', type: 'State'),
       GeoRegionOption(code: 'MX-MOR', label: 'Morelos', type: 'State'),
       GeoRegionOption(code: 'MX-MEX', label: 'México', type: 'State'),
       GeoRegionOption(code: 'MX-NAY', label: 'Nayarit', type: 'State'),
@@ -2858,7 +3533,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MX-TAB', label: 'Tabasco', type: 'State'),
       GeoRegionOption(code: 'MX-TAM', label: 'Tamaulipas', type: 'State'),
       GeoRegionOption(code: 'MX-TLA', label: 'Tlaxcala', type: 'State'),
-      GeoRegionOption(code: 'MX-VER', label: 'Veracruz de Ignacio de la Llave', type: 'State'),
+      GeoRegionOption(
+          code: 'MX-VER',
+          label: 'Veracruz de Ignacio de la Llave',
+          type: 'State'),
       GeoRegionOption(code: 'MX-YUC', label: 'Yucatán', type: 'State'),
       GeoRegionOption(code: 'MX-ZAC', label: 'Zacatecas', type: 'State'),
     ],
@@ -2876,9 +3554,18 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'MY-13', label: 'Sarawak', type: 'State'),
       GeoRegionOption(code: 'MY-10', label: 'Selangor', type: 'State'),
       GeoRegionOption(code: 'MY-11', label: 'Terengganu', type: 'State'),
-      GeoRegionOption(code: 'MY-14', label: 'Wilayah Persekutuan Kuala Lumpur', type: 'Federal Territory'),
-      GeoRegionOption(code: 'MY-15', label: 'Wilayah Persekutuan Labuan', type: 'Federal Territory'),
-      GeoRegionOption(code: 'MY-16', label: 'Wilayah Persekutuan Putrajaya', type: 'Federal Territory'),
+      GeoRegionOption(
+          code: 'MY-14',
+          label: 'Wilayah Persekutuan Kuala Lumpur',
+          type: 'Federal Territory'),
+      GeoRegionOption(
+          code: 'MY-15',
+          label: 'Wilayah Persekutuan Labuan',
+          type: 'Federal Territory'),
+      GeoRegionOption(
+          code: 'MY-16',
+          label: 'Wilayah Persekutuan Putrajaya',
+          type: 'Federal Territory'),
     ],
     'MZ': <GeoRegionOption>[
       GeoRegionOption(code: 'MZ-P', label: 'Cabo Delgado', type: 'Province'),
@@ -2921,7 +3608,10 @@ class GlobalSetupOptions {
     ],
     'NG': <GeoRegionOption>[
       GeoRegionOption(code: 'NG-AB', label: 'Abia', type: 'State'),
-      GeoRegionOption(code: 'NG-FC', label: 'Abuja Federal Capital Territory', type: 'Capital Territory'),
+      GeoRegionOption(
+          code: 'NG-FC',
+          label: 'Abuja Federal Capital Territory',
+          type: 'Capital Territory'),
       GeoRegionOption(code: 'NG-AD', label: 'Adamawa', type: 'State'),
       GeoRegionOption(code: 'NG-AK', label: 'Akwa Ibom', type: 'State'),
       GeoRegionOption(code: 'NG-AN', label: 'Anambra', type: 'State'),
@@ -2963,7 +3653,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'NI-CA', label: 'Carazo', type: 'Department'),
       GeoRegionOption(code: 'NI-CI', label: 'Chinandega', type: 'Department'),
       GeoRegionOption(code: 'NI-CO', label: 'Chontales', type: 'Department'),
-      GeoRegionOption(code: 'NI-AN', label: 'Costa Caribe Norte', type: 'Region'),
+      GeoRegionOption(
+          code: 'NI-AN', label: 'Costa Caribe Norte', type: 'Region'),
       GeoRegionOption(code: 'NI-AS', label: 'Costa Caribe Sur', type: 'Region'),
       GeoRegionOption(code: 'NI-ES', label: 'Estelí', type: 'Department'),
       GeoRegionOption(code: 'NI-GR', label: 'Granada', type: 'Department'),
@@ -2973,13 +3664,15 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'NI-MN', label: 'Managua', type: 'Department'),
       GeoRegionOption(code: 'NI-MS', label: 'Masaya', type: 'Department'),
       GeoRegionOption(code: 'NI-MT', label: 'Matagalpa', type: 'Department'),
-      GeoRegionOption(code: 'NI-NS', label: 'Nueva Segovia', type: 'Department'),
+      GeoRegionOption(
+          code: 'NI-NS', label: 'Nueva Segovia', type: 'Department'),
       GeoRegionOption(code: 'NI-RI', label: 'Rivas', type: 'Department'),
       GeoRegionOption(code: 'NI-SJ', label: 'Río San Juan', type: 'Department'),
     ],
     'NL': <GeoRegionOption>[
       GeoRegionOption(code: 'NL-AW', label: 'Aruba', type: 'Country'),
-      GeoRegionOption(code: 'NL-BQ1', label: 'Bonaire', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'NL-BQ1', label: 'Bonaire', type: 'Special Municipality'),
       GeoRegionOption(code: 'NL-CW', label: 'Curaçao', type: 'Country'),
       GeoRegionOption(code: 'NL-DR', label: 'Drenthe', type: 'Province'),
       GeoRegionOption(code: 'NL-FL', label: 'Flevoland', type: 'Province'),
@@ -2990,8 +3683,12 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'NL-NB', label: 'Noord-Brabant', type: 'Province'),
       GeoRegionOption(code: 'NL-NH', label: 'Noord-Holland', type: 'Province'),
       GeoRegionOption(code: 'NL-OV', label: 'Overijssel', type: 'Province'),
-      GeoRegionOption(code: 'NL-BQ2', label: 'Saba', type: 'Special Municipality'),
-      GeoRegionOption(code: 'NL-BQ3', label: 'Sint Eustatius', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'NL-BQ2', label: 'Saba', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'NL-BQ3',
+          label: 'Sint Eustatius',
+          type: 'Special Municipality'),
       GeoRegionOption(code: 'NL-SX', label: 'Sint Maarten', type: 'Country'),
       GeoRegionOption(code: 'NL-UT', label: 'Utrecht', type: 'Province'),
       GeoRegionOption(code: 'NL-ZE', label: 'Zeeland', type: 'Province'),
@@ -3000,15 +3697,23 @@ class GlobalSetupOptions {
     'NO': <GeoRegionOption>[
       GeoRegionOption(code: 'NO-42', label: 'Agder', type: 'County'),
       GeoRegionOption(code: 'NO-34', label: 'Innlandet', type: 'County'),
-      GeoRegionOption(code: 'NO-22', label: 'Jan Mayen (Arctic Region)', type: 'Arctic Region'),
+      GeoRegionOption(
+          code: 'NO-22',
+          label: 'Jan Mayen (Arctic Region)',
+          type: 'Arctic Region'),
       GeoRegionOption(code: 'NO-15', label: 'Møre og Romsdal', type: 'County'),
       GeoRegionOption(code: 'NO-18', label: 'Nordland', type: 'County'),
       GeoRegionOption(code: 'NO-03', label: 'Oslo', type: 'County'),
       GeoRegionOption(code: 'NO-11', label: 'Rogaland', type: 'County'),
-      GeoRegionOption(code: 'NO-54', label: 'Romssa ja Finnmárkku', type: 'County'),
-      GeoRegionOption(code: 'NO-21', label: 'Svalbard (Arctic Region)', type: 'Arctic Region'),
+      GeoRegionOption(
+          code: 'NO-54', label: 'Romssa ja Finnmárkku', type: 'County'),
+      GeoRegionOption(
+          code: 'NO-21',
+          label: 'Svalbard (Arctic Region)',
+          type: 'Arctic Region'),
       GeoRegionOption(code: 'NO-50', label: 'Trööndelage', type: 'County'),
-      GeoRegionOption(code: 'NO-38', label: 'Vestfold og Telemark', type: 'County'),
+      GeoRegionOption(
+          code: 'NO-38', label: 'Vestfold og Telemark', type: 'County'),
       GeoRegionOption(code: 'NO-46', label: 'Vestland', type: 'County'),
       GeoRegionOption(code: 'NO-30', label: 'Viken', type: 'County'),
     ],
@@ -3041,11 +3746,16 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'NZ-AUK', label: 'Auckland', type: 'Region'),
       GeoRegionOption(code: 'NZ-BOP', label: 'Bay of Plenty', type: 'Region'),
       GeoRegionOption(code: 'NZ-CAN', label: 'Canterbury', type: 'Region'),
-      GeoRegionOption(code: 'NZ-CIT', label: 'Chatham Islands Territory', type: 'Special Island Authority'),
+      GeoRegionOption(
+          code: 'NZ-CIT',
+          label: 'Chatham Islands Territory',
+          type: 'Special Island Authority'),
       GeoRegionOption(code: 'NZ-GIS', label: 'Gisborne', type: 'Region'),
-      GeoRegionOption(code: 'NZ-WGN', label: 'Greater Wellington', type: 'Region'),
+      GeoRegionOption(
+          code: 'NZ-WGN', label: 'Greater Wellington', type: 'Region'),
       GeoRegionOption(code: 'NZ-HKB', label: 'Hawke\'s Bay', type: 'Region'),
-      GeoRegionOption(code: 'NZ-MWT', label: 'Manawatū-Whanganui', type: 'Region'),
+      GeoRegionOption(
+          code: 'NZ-MWT', label: 'Manawatū-Whanganui', type: 'Region'),
       GeoRegionOption(code: 'NZ-MBH', label: 'Marlborough', type: 'Region'),
       GeoRegionOption(code: 'NZ-NSN', label: 'Nelson', type: 'Region'),
       GeoRegionOption(code: 'NZ-NTL', label: 'Northland', type: 'Region'),
@@ -3057,16 +3767,22 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'NZ-WTC', label: 'West Coast', type: 'Region'),
     ],
     'OM': <GeoRegionOption>[
-      GeoRegionOption(code: 'OM-DA', label: 'Ad Dākhilīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'OM-DA', label: 'Ad Dākhilīyah', type: 'Governorate'),
       GeoRegionOption(code: 'OM-BU', label: 'Al Buraymī', type: 'Governorate'),
       GeoRegionOption(code: 'OM-WU', label: 'Al Wusţá', type: 'Governorate'),
-      GeoRegionOption(code: 'OM-ZA', label: 'Az̧ Z̧āhirah', type: 'Governorate'),
-      GeoRegionOption(code: 'OM-BJ', label: 'Janūb al Bāţinah', type: 'Governorate'),
-      GeoRegionOption(code: 'OM-SJ', label: 'Janūb ash Sharqīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'OM-ZA', label: 'Az̧ Z̧āhirah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'OM-BJ', label: 'Janūb al Bāţinah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'OM-SJ', label: 'Janūb ash Sharqīyah', type: 'Governorate'),
       GeoRegionOption(code: 'OM-MA', label: 'Masqaţ', type: 'Governorate'),
       GeoRegionOption(code: 'OM-MU', label: 'Musandam', type: 'Governorate'),
-      GeoRegionOption(code: 'OM-BS', label: 'Shamāl al Bāţinah', type: 'Governorate'),
-      GeoRegionOption(code: 'OM-SS', label: 'Shamāl ash Sharqīyah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'OM-BS', label: 'Shamāl al Bāţinah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'OM-SS', label: 'Shamāl ash Sharqīyah', type: 'Governorate'),
       GeoRegionOption(code: 'OM-ZU', label: 'Z̧ufār', type: 'Governorate'),
     ],
     'PA': <GeoRegionOption>[
@@ -3075,12 +3791,16 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'PA-2', label: 'Coclé', type: 'Province'),
       GeoRegionOption(code: 'PA-3', label: 'Colón', type: 'Province'),
       GeoRegionOption(code: 'PA-5', label: 'Darién', type: 'Province'),
-      GeoRegionOption(code: 'PA-EM', label: 'Emberá', type: 'Indigenous Region'),
-      GeoRegionOption(code: 'PA-KY', label: 'Guna Yala', type: 'Indigenous Region'),
+      GeoRegionOption(
+          code: 'PA-EM', label: 'Emberá', type: 'Indigenous Region'),
+      GeoRegionOption(
+          code: 'PA-KY', label: 'Guna Yala', type: 'Indigenous Region'),
       GeoRegionOption(code: 'PA-6', label: 'Herrera', type: 'Province'),
       GeoRegionOption(code: 'PA-7', label: 'Los Santos', type: 'Province'),
-      GeoRegionOption(code: 'PA-NT', label: 'Naso Tjër Di', type: 'Indigenous Region'),
-      GeoRegionOption(code: 'PA-NB', label: 'Ngäbe-Buglé', type: 'Indigenous Region'),
+      GeoRegionOption(
+          code: 'PA-NT', label: 'Naso Tjër Di', type: 'Indigenous Region'),
+      GeoRegionOption(
+          code: 'PA-NB', label: 'Ngäbe-Buglé', type: 'Indigenous Region'),
       GeoRegionOption(code: 'PA-8', label: 'Panamá', type: 'Province'),
       GeoRegionOption(code: 'PA-10', label: 'Panamá Oeste', type: 'Province'),
       GeoRegionOption(code: 'PA-9', label: 'Veraguas', type: 'Province'),
@@ -3101,7 +3821,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'PE-LAL', label: 'La Libertad', type: 'Region'),
       GeoRegionOption(code: 'PE-LAM', label: 'Lambayeque', type: 'Region'),
       GeoRegionOption(code: 'PE-LIM', label: 'Lima', type: 'Region'),
-      GeoRegionOption(code: 'PE-LMA', label: 'Lima hatun llaqta', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'PE-LMA', label: 'Lima hatun llaqta', type: 'Municipality'),
       GeoRegionOption(code: 'PE-LOR', label: 'Loreto', type: 'Region'),
       GeoRegionOption(code: 'PE-MDD', label: 'Madre de Dios', type: 'Region'),
       GeoRegionOption(code: 'PE-MOQ', label: 'Moquegua', type: 'Region'),
@@ -3117,9 +3838,11 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'PG-NSB', label: 'Bougainville', type: 'Region'),
       GeoRegionOption(code: 'PG-CPM', label: 'Central', type: 'Province'),
       GeoRegionOption(code: 'PG-CPK', label: 'Chimbu', type: 'Province'),
-      GeoRegionOption(code: 'PG-EBR', label: 'East New Britain', type: 'Province'),
+      GeoRegionOption(
+          code: 'PG-EBR', label: 'East New Britain', type: 'Province'),
       GeoRegionOption(code: 'PG-ESW', label: 'East Sepik', type: 'Province'),
-      GeoRegionOption(code: 'PG-EHG', label: 'Eastern Highlands', type: 'Province'),
+      GeoRegionOption(
+          code: 'PG-EHG', label: 'Eastern Highlands', type: 'Province'),
       GeoRegionOption(code: 'PG-EPW', label: 'Enga', type: 'Province'),
       GeoRegionOption(code: 'PG-GPK', label: 'Gulf', type: 'Province'),
       GeoRegionOption(code: 'PG-HLA', label: 'Hela', type: 'Province'),
@@ -3128,46 +3851,85 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'PG-MRL', label: 'Manus', type: 'Province'),
       GeoRegionOption(code: 'PG-MBA', label: 'Milne Bay', type: 'Province'),
       GeoRegionOption(code: 'PG-MPL', label: 'Morobe', type: 'Province'),
-      GeoRegionOption(code: 'PG-NCD', label: 'National Capital District (Port Moresby)', type: 'District'),
+      GeoRegionOption(
+          code: 'PG-NCD',
+          label: 'National Capital District (Port Moresby)',
+          type: 'District'),
       GeoRegionOption(code: 'PG-NIK', label: 'New Ireland', type: 'Province'),
       GeoRegionOption(code: 'PG-NPP', label: 'Northern', type: 'Province'),
-      GeoRegionOption(code: 'PG-SHM', label: 'Southern Highlands', type: 'Province'),
-      GeoRegionOption(code: 'PG-WBK', label: 'West New Britain', type: 'Province'),
+      GeoRegionOption(
+          code: 'PG-SHM', label: 'Southern Highlands', type: 'Province'),
+      GeoRegionOption(
+          code: 'PG-WBK', label: 'West New Britain', type: 'Province'),
       GeoRegionOption(code: 'PG-SAN', label: 'West Sepik', type: 'Province'),
       GeoRegionOption(code: 'PG-WPD', label: 'Western', type: 'Province'),
-      GeoRegionOption(code: 'PG-WHM', label: 'Western Highlands', type: 'Province'),
+      GeoRegionOption(
+          code: 'PG-WHM', label: 'Western Highlands', type: 'Province'),
     ],
     'PH': <GeoRegionOption>[
-      GeoRegionOption(code: 'PH-14', label: 'Autonomous Region in Muslim Mindanao (ARMM)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-14',
+          label: 'Autonomous Region in Muslim Mindanao (ARMM)',
+          type: 'Region'),
       GeoRegionOption(code: 'PH-05', label: 'Bicol (Region V)', type: 'Region'),
-      GeoRegionOption(code: 'PH-02', label: 'Cagayan Valley (Region II)', type: 'Region'),
-      GeoRegionOption(code: 'PH-40', label: 'Calabarzon (Region IV-A)', type: 'Region'),
-      GeoRegionOption(code: 'PH-13', label: 'Caraga (Region XIII)', type: 'Region'),
-      GeoRegionOption(code: 'PH-03', label: 'Central Luzon (Region III)', type: 'Region'),
-      GeoRegionOption(code: 'PH-07', label: 'Central Visayas (Region VII)', type: 'Region'),
-      GeoRegionOption(code: 'PH-15', label: 'Cordillera Administrative Region (CAR)', type: 'Region'),
-      GeoRegionOption(code: 'PH-11', label: 'Davao (Region XI)', type: 'Region'),
-      GeoRegionOption(code: 'PH-08', label: 'Eastern Visayas (Region VIII)', type: 'Region'),
-      GeoRegionOption(code: 'PH-01', label: 'Ilocos (Region I)', type: 'Region'),
-      GeoRegionOption(code: 'PH-41', label: 'Mimaropa (Region IV-B)', type: 'Region'),
-      GeoRegionOption(code: 'PH-00', label: 'National Capital Region', type: 'Region'),
-      GeoRegionOption(code: 'PH-10', label: 'Northern Mindanao (Region X)', type: 'Region'),
-      GeoRegionOption(code: 'PH-12', label: 'Soccsksargen (Region XII)', type: 'Region'),
-      GeoRegionOption(code: 'PH-06', label: 'Western Visayas (Region VI)', type: 'Region'),
-      GeoRegionOption(code: 'PH-09', label: 'Zamboanga Peninsula (Region IX)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-02', label: 'Cagayan Valley (Region II)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-40', label: 'Calabarzon (Region IV-A)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-13', label: 'Caraga (Region XIII)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-03', label: 'Central Luzon (Region III)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-07', label: 'Central Visayas (Region VII)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-15',
+          label: 'Cordillera Administrative Region (CAR)',
+          type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-11', label: 'Davao (Region XI)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-08',
+          label: 'Eastern Visayas (Region VIII)',
+          type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-01', label: 'Ilocos (Region I)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-41', label: 'Mimaropa (Region IV-B)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-00', label: 'National Capital Region', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-10', label: 'Northern Mindanao (Region X)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-12', label: 'Soccsksargen (Region XII)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-06', label: 'Western Visayas (Region VI)', type: 'Region'),
+      GeoRegionOption(
+          code: 'PH-09',
+          label: 'Zamboanga Peninsula (Region IX)',
+          type: 'Region'),
     ],
     'PK': <GeoRegionOption>[
-      GeoRegionOption(code: 'PK-JK', label: 'Azad Jammu and Kashmir', type: 'Pakistan Administered Area'),
+      GeoRegionOption(
+          code: 'PK-JK',
+          label: 'Azad Jammu and Kashmir',
+          type: 'Pakistan Administered Area'),
       GeoRegionOption(code: 'PK-BA', label: 'Balochistan', type: 'Province'),
-      GeoRegionOption(code: 'PK-GB', label: 'Gilgit-Baltistan', type: 'Pakistan Administered Area'),
-      GeoRegionOption(code: 'PK-IS', label: 'Islamabad', type: 'Federal Capital Territory'),
-      GeoRegionOption(code: 'PK-KP', label: 'Khyber Pakhtunkhwa', type: 'Province'),
+      GeoRegionOption(
+          code: 'PK-GB',
+          label: 'Gilgit-Baltistan',
+          type: 'Pakistan Administered Area'),
+      GeoRegionOption(
+          code: 'PK-IS', label: 'Islamabad', type: 'Federal Capital Territory'),
+      GeoRegionOption(
+          code: 'PK-KP', label: 'Khyber Pakhtunkhwa', type: 'Province'),
       GeoRegionOption(code: 'PK-PB', label: 'Punjab', type: 'Province'),
       GeoRegionOption(code: 'PK-SD', label: 'Sindh', type: 'Province'),
     ],
     'PL': <GeoRegionOption>[
       GeoRegionOption(code: 'PL-02', label: 'Dolnośląskie', type: 'Voivodship'),
-      GeoRegionOption(code: 'PL-04', label: 'Kujawsko-Pomorskie', type: 'Voivodship'),
+      GeoRegionOption(
+          code: 'PL-04', label: 'Kujawsko-Pomorskie', type: 'Voivodship'),
       GeoRegionOption(code: 'PL-06', label: 'Lubelskie', type: 'Voivodship'),
       GeoRegionOption(code: 'PL-08', label: 'Lubuskie', type: 'Voivodship'),
       GeoRegionOption(code: 'PL-14', label: 'Mazowieckie', type: 'Voivodship'),
@@ -3176,20 +3938,26 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'PL-18', label: 'Podkarpackie', type: 'Voivodship'),
       GeoRegionOption(code: 'PL-20', label: 'Podlaskie', type: 'Voivodship'),
       GeoRegionOption(code: 'PL-22', label: 'Pomorskie', type: 'Voivodship'),
-      GeoRegionOption(code: 'PL-28', label: 'Warmińsko-Mazurskie', type: 'Voivodship'),
-      GeoRegionOption(code: 'PL-30', label: 'Wielkopolskie', type: 'Voivodship'),
-      GeoRegionOption(code: 'PL-32', label: 'Zachodniopomorskie', type: 'Voivodship'),
+      GeoRegionOption(
+          code: 'PL-28', label: 'Warmińsko-Mazurskie', type: 'Voivodship'),
+      GeoRegionOption(
+          code: 'PL-30', label: 'Wielkopolskie', type: 'Voivodship'),
+      GeoRegionOption(
+          code: 'PL-32', label: 'Zachodniopomorskie', type: 'Voivodship'),
       GeoRegionOption(code: 'PL-10', label: 'Łódzkie', type: 'Voivodship'),
       GeoRegionOption(code: 'PL-24', label: 'Śląskie', type: 'Voivodship'),
-      GeoRegionOption(code: 'PL-26', label: 'Świętokrzyskie', type: 'Voivodship'),
+      GeoRegionOption(
+          code: 'PL-26', label: 'Świętokrzyskie', type: 'Voivodship'),
     ],
     'PS': <GeoRegionOption>[
       GeoRegionOption(code: 'PS-BTH', label: 'Bethlehem', type: 'Governorate'),
-      GeoRegionOption(code: 'PS-DEB', label: 'Deir El Balah', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'PS-DEB', label: 'Deir El Balah', type: 'Governorate'),
       GeoRegionOption(code: 'PS-GZA', label: 'Gaza', type: 'Governorate'),
       GeoRegionOption(code: 'PS-HBN', label: 'Hebron', type: 'Governorate'),
       GeoRegionOption(code: 'PS-JEN', label: 'Jenin', type: 'Governorate'),
-      GeoRegionOption(code: 'PS-JRH', label: 'Jericho and Al Aghwar', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'PS-JRH', label: 'Jericho and Al Aghwar', type: 'Governorate'),
       GeoRegionOption(code: 'PS-JEM', label: 'Jerusalem', type: 'Governorate'),
       GeoRegionOption(code: 'PS-KYS', label: 'Khan Yunis', type: 'Governorate'),
       GeoRegionOption(code: 'PS-NBS', label: 'Nablus', type: 'Governorate'),
@@ -3214,11 +3982,14 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'PT-11', label: 'Lisboa', type: 'District'),
       GeoRegionOption(code: 'PT-12', label: 'Portalegre', type: 'District'),
       GeoRegionOption(code: 'PT-13', label: 'Porto', type: 'District'),
-      GeoRegionOption(code: 'PT-30', label: 'Região Autónoma da Madeira', type: 'Region'),
-      GeoRegionOption(code: 'PT-20', label: 'Região Autónoma dos Açores', type: 'Region'),
+      GeoRegionOption(
+          code: 'PT-30', label: 'Região Autónoma da Madeira', type: 'Region'),
+      GeoRegionOption(
+          code: 'PT-20', label: 'Região Autónoma dos Açores', type: 'Region'),
       GeoRegionOption(code: 'PT-14', label: 'Santarém', type: 'District'),
       GeoRegionOption(code: 'PT-15', label: 'Setúbal', type: 'District'),
-      GeoRegionOption(code: 'PT-16', label: 'Viana do Castelo', type: 'District'),
+      GeoRegionOption(
+          code: 'PT-16', label: 'Viana do Castelo', type: 'District'),
       GeoRegionOption(code: 'PT-17', label: 'Vila Real', type: 'District'),
       GeoRegionOption(code: 'PT-18', label: 'Viseu', type: 'District'),
       GeoRegionOption(code: 'PT-07', label: 'Évora', type: 'District'),
@@ -3242,7 +4013,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'PW-370', label: 'Sonsorol', type: 'State'),
     ],
     'PY': <GeoRegionOption>[
-      GeoRegionOption(code: 'PY-16', label: 'Alto Paraguay', type: 'Department'),
+      GeoRegionOption(
+          code: 'PY-16', label: 'Alto Paraguay', type: 'Department'),
       GeoRegionOption(code: 'PY-10', label: 'Alto Paraná', type: 'Department'),
       GeoRegionOption(code: 'PY-13', label: 'Amambay', type: 'Department'),
       GeoRegionOption(code: 'PY-ASU', label: 'Asunción', type: 'Capital'),
@@ -3257,18 +4029,24 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'PY-7', label: 'Itapúa', type: 'Department'),
       GeoRegionOption(code: 'PY-8', label: 'Misiones', type: 'Department'),
       GeoRegionOption(code: 'PY-9', label: 'Paraguarí', type: 'Department'),
-      GeoRegionOption(code: 'PY-15', label: 'Presidente Hayes', type: 'Department'),
+      GeoRegionOption(
+          code: 'PY-15', label: 'Presidente Hayes', type: 'Department'),
       GeoRegionOption(code: 'PY-2', label: 'San Pedro', type: 'Department'),
       GeoRegionOption(code: 'PY-12', label: 'Ñeembucú', type: 'Department'),
     ],
     'QA': <GeoRegionOption>[
       GeoRegionOption(code: 'QA-DA', label: 'Ad Dawḩah', type: 'Municipality'),
-      GeoRegionOption(code: 'QA-KH', label: 'Al Khawr wa adh Dhakhīrah', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'QA-KH',
+          label: 'Al Khawr wa adh Dhakhīrah',
+          type: 'Municipality'),
       GeoRegionOption(code: 'QA-WA', label: 'Al Wakrah', type: 'Municipality'),
       GeoRegionOption(code: 'QA-RA', label: 'Ar Rayyān', type: 'Municipality'),
       GeoRegionOption(code: 'QA-MS', label: 'Ash Shamāl', type: 'Municipality'),
-      GeoRegionOption(code: 'QA-SH', label: 'Ash Shīḩānīyah', type: 'Municipality'),
-      GeoRegionOption(code: 'QA-ZA', label: 'Az̧ Z̧a‘āyin', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'QA-SH', label: 'Ash Shīḩānīyah', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'QA-ZA', label: 'Az̧ Z̧a‘āyin', type: 'Municipality'),
       GeoRegionOption(code: 'QA-US', label: 'Umm Şalāl', type: 'Municipality'),
     ],
     'RO': <GeoRegionOption>[
@@ -3277,13 +4055,15 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'RO-AG', label: 'Argeș', type: 'Department'),
       GeoRegionOption(code: 'RO-BC', label: 'Bacău', type: 'Department'),
       GeoRegionOption(code: 'RO-BH', label: 'Bihor', type: 'Department'),
-      GeoRegionOption(code: 'RO-BN', label: 'Bistrița-Năsăud', type: 'Department'),
+      GeoRegionOption(
+          code: 'RO-BN', label: 'Bistrița-Năsăud', type: 'Department'),
       GeoRegionOption(code: 'RO-BT', label: 'Botoșani', type: 'Department'),
       GeoRegionOption(code: 'RO-BV', label: 'Brașov', type: 'Department'),
       GeoRegionOption(code: 'RO-BR', label: 'Brăila', type: 'Department'),
       GeoRegionOption(code: 'RO-B', label: 'București', type: 'Municipality'),
       GeoRegionOption(code: 'RO-BZ', label: 'Buzău', type: 'Department'),
-      GeoRegionOption(code: 'RO-CS', label: 'Caraș-Severin', type: 'Department'),
+      GeoRegionOption(
+          code: 'RO-CS', label: 'Caraș-Severin', type: 'Department'),
       GeoRegionOption(code: 'RO-CJ', label: 'Cluj', type: 'Department'),
       GeoRegionOption(code: 'RO-CT', label: 'Constanța', type: 'Department'),
       GeoRegionOption(code: 'RO-CV', label: 'Covasna', type: 'Department'),
@@ -3318,109 +4098,329 @@ class GlobalSetupOptions {
     'RS': <GeoRegionOption>[
       GeoRegionOption(code: 'RS-00', label: 'Beograd', type: 'City'),
       GeoRegionOption(code: 'RS-14', label: 'Borski okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-11', label: 'Braničevski okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-23', label: 'Jablanički okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-09', label: 'Kolubarski okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-KM', label: 'Kosovo-Metohija', type: 'Autonomous Province'),
-      GeoRegionOption(code: 'RS-08', label: 'Mačvanski okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-17', label: 'Moravički okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-11', label: 'Braničevski okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-23', label: 'Jablanički okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-09', label: 'Kolubarski okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-KM', label: 'Kosovo-Metohija', type: 'Autonomous Province'),
+      GeoRegionOption(
+          code: 'RS-08', label: 'Mačvanski okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-17', label: 'Moravički okrug', type: 'District'),
       GeoRegionOption(code: 'RS-20', label: 'Nišavski okrug', type: 'District'),
       GeoRegionOption(code: 'RS-22', label: 'Pirotski okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-10', label: 'Podunavski okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-13', label: 'Pomoravski okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-10', label: 'Podunavski okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-13', label: 'Pomoravski okrug', type: 'District'),
       GeoRegionOption(code: 'RS-24', label: 'Pčinjski okrug', type: 'District'),
       GeoRegionOption(code: 'RS-19', label: 'Rasinski okrug', type: 'District'),
       GeoRegionOption(code: 'RS-18', label: 'Raški okrug', type: 'District'),
       GeoRegionOption(code: 'RS-21', label: 'Toplički okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-VO', label: 'Vojvodina', type: 'Autonomous Province'),
-      GeoRegionOption(code: 'RS-15', label: 'Zaječarski okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-16', label: 'Zlatiborski okrug', type: 'District'),
-      GeoRegionOption(code: 'RS-12', label: 'Šumadijski okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-VO', label: 'Vojvodina', type: 'Autonomous Province'),
+      GeoRegionOption(
+          code: 'RS-15', label: 'Zaječarski okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-16', label: 'Zlatiborski okrug', type: 'District'),
+      GeoRegionOption(
+          code: 'RS-12', label: 'Šumadijski okrug', type: 'District'),
     ],
     'RU': <GeoRegionOption>[
-      GeoRegionOption(code: 'RU-AD', label: 'Adygeja, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-AL', label: 'Altaj, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-ALT', label: 'Altajskij kraj', type: 'Administrative Territory'),
-      GeoRegionOption(code: 'RU-AMU', label: 'Amurskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-ARK', label: 'Arhangel\'skaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-AST', label: 'Astrahanskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-BA', label: 'Bashkortostan, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-BEL', label: 'Belgorodskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-BRY', label: 'Brjanskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-BU', label: 'Burjatija, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-CE', label: 'Chechenskaya Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-CHE', label: 'Chelyabinskaya oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-CHU', label: 'Chukotskiy avtonomnyy okrug', type: 'Autonomous District'),
-      GeoRegionOption(code: 'RU-CU', label: 'Chuvashskaya Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-DA', label: 'Dagestan, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-YEV', label: 'Evrejskaja avtonomnaja oblast\'', type: 'Region'),
-      GeoRegionOption(code: 'RU-KHA', label: 'Habarovskij kraj', type: 'Administrative Territory'),
-      GeoRegionOption(code: 'RU-KK', label: 'Hakasija, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-KHM', label: 'Hanty-Mansijskij avtonomnyj okrug', type: 'Autonomous District'),
-      GeoRegionOption(code: 'RU-IN', label: 'Ingushetiya, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-IRK', label: 'Irkutskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-IVA', label: 'Ivanovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-YAN', label: 'Jamalo-Neneckij avtonomnyj okrug', type: 'Autonomous District'),
-      GeoRegionOption(code: 'RU-YAR', label: 'Jaroslavskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-KB', label: 'Kabardino-Balkarskaja Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-KGD', label: 'Kaliningradskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-KL', label: 'Kalmykija, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-KLU', label: 'Kaluzhskaya oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-KAM', label: 'Kamchatskiy kray', type: 'Administrative Territory'),
-      GeoRegionOption(code: 'RU-KC', label: 'Karachayevo-Cherkesskaya Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-KR', label: 'Karelija, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-KEM', label: 'Kemerovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-KIR', label: 'Kirovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-KO', label: 'Komi, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-KOS', label: 'Kostromskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-KDA', label: 'Krasnodarskij kraj', type: 'Administrative Territory'),
-      GeoRegionOption(code: 'RU-KYA', label: 'Krasnojarskij kraj', type: 'Administrative Territory'),
-      GeoRegionOption(code: 'RU-KGN', label: 'Kurganskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-KRS', label: 'Kurskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-LEN', label: 'Leningradskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-LIP', label: 'Lipeckaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-MAG', label: 'Magadanskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-ME', label: 'Marij Èl, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-MO', label: 'Mordovija, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-MOS', label: 'Moskovskaja oblast\'', type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-AD', label: 'Adygeja, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-AL', label: 'Altaj, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-ALT',
+          label: 'Altajskij kraj',
+          type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-AMU',
+          label: 'Amurskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-ARK',
+          label: 'Arhangel\'skaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-AST',
+          label: 'Astrahanskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-BA', label: 'Bashkortostan, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-BEL',
+          label: 'Belgorodskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-BRY',
+          label: 'Brjanskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-BU', label: 'Burjatija, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-CE', label: 'Chechenskaya Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-CHE',
+          label: 'Chelyabinskaya oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-CHU',
+          label: 'Chukotskiy avtonomnyy okrug',
+          type: 'Autonomous District'),
+      GeoRegionOption(
+          code: 'RU-CU', label: 'Chuvashskaya Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-DA', label: 'Dagestan, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-YEV',
+          label: 'Evrejskaja avtonomnaja oblast\'',
+          type: 'Region'),
+      GeoRegionOption(
+          code: 'RU-KHA',
+          label: 'Habarovskij kraj',
+          type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-KK', label: 'Hakasija, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-KHM',
+          label: 'Hanty-Mansijskij avtonomnyj okrug',
+          type: 'Autonomous District'),
+      GeoRegionOption(
+          code: 'RU-IN', label: 'Ingushetiya, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-IRK',
+          label: 'Irkutskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-IVA',
+          label: 'Ivanovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-YAN',
+          label: 'Jamalo-Neneckij avtonomnyj okrug',
+          type: 'Autonomous District'),
+      GeoRegionOption(
+          code: 'RU-YAR',
+          label: 'Jaroslavskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-KB',
+          label: 'Kabardino-Balkarskaja Respublika',
+          type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-KGD',
+          label: 'Kaliningradskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-KL', label: 'Kalmykija, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-KLU',
+          label: 'Kaluzhskaya oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-KAM',
+          label: 'Kamchatskiy kray',
+          type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-KC',
+          label: 'Karachayevo-Cherkesskaya Respublika',
+          type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-KR', label: 'Karelija, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-KEM',
+          label: 'Kemerovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-KIR',
+          label: 'Kirovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-KO', label: 'Komi, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-KOS',
+          label: 'Kostromskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-KDA',
+          label: 'Krasnodarskij kraj',
+          type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-KYA',
+          label: 'Krasnojarskij kraj',
+          type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-KGN',
+          label: 'Kurganskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-KRS',
+          label: 'Kurskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-LEN',
+          label: 'Leningradskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-LIP',
+          label: 'Lipeckaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-MAG',
+          label: 'Magadanskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-ME', label: 'Marij Èl, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-MO', label: 'Mordovija, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-MOS',
+          label: 'Moskovskaja oblast\'',
+          type: 'Administrative Region'),
       GeoRegionOption(code: 'RU-MOW', label: 'Moskva', type: 'Autonomous City'),
-      GeoRegionOption(code: 'RU-MUR', label: 'Murmanskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-NEN', label: 'Neneckij avtonomnyj okrug', type: 'Autonomous District'),
-      GeoRegionOption(code: 'RU-NIZ', label: 'Nizhegorodskaya oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-NGR', label: 'Novgorodskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-NVS', label: 'Novosibirskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-OMS', label: 'Omskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-ORE', label: 'Orenburgskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-ORL', label: 'Orlovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-PNZ', label: 'Penzenskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-PER', label: 'Permskij kraj', type: 'Administrative Territory'),
-      GeoRegionOption(code: 'RU-PRI', label: 'Primorskij kraj', type: 'Administrative Territory'),
-      GeoRegionOption(code: 'RU-PSK', label: 'Pskovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-RYA', label: 'Rjazanskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-ROS', label: 'Rostovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-SA', label: 'Saha, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-SAK', label: 'Sahalinskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-SAM', label: 'Samarskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-SPE', label: 'Sankt-Peterburg', type: 'Autonomous City'),
-      GeoRegionOption(code: 'RU-SAR', label: 'Saratovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-SE', label: 'Severnaja Osetija, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-SMO', label: 'Smolenskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-STA', label: 'Stavropol\'skij kraj', type: 'Administrative Territory'),
-      GeoRegionOption(code: 'RU-SVE', label: 'Sverdlovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-TAM', label: 'Tambovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-TA', label: 'Tatarstan, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-TYU', label: 'Tjumenskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-TOM', label: 'Tomskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-TUL', label: 'Tul\'skaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-TVE', label: 'Tverskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-TY', label: 'Tyva, Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-UD', label: 'Udmurtskaja Respublika', type: 'Republic'),
-      GeoRegionOption(code: 'RU-ULY', label: 'Ul\'janovskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-VLA', label: 'Vladimirskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-VGG', label: 'Volgogradskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-VLG', label: 'Vologodskaja oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-VOR', label: 'Voronezhskaya oblast\'', type: 'Administrative Region'),
-      GeoRegionOption(code: 'RU-ZAB', label: 'Zabajkal\'skij kraj', type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-MUR',
+          label: 'Murmanskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-NEN',
+          label: 'Neneckij avtonomnyj okrug',
+          type: 'Autonomous District'),
+      GeoRegionOption(
+          code: 'RU-NIZ',
+          label: 'Nizhegorodskaya oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-NGR',
+          label: 'Novgorodskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-NVS',
+          label: 'Novosibirskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-OMS',
+          label: 'Omskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-ORE',
+          label: 'Orenburgskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-ORL',
+          label: 'Orlovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-PNZ',
+          label: 'Penzenskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-PER',
+          label: 'Permskij kraj',
+          type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-PRI',
+          label: 'Primorskij kraj',
+          type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-PSK',
+          label: 'Pskovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-RYA',
+          label: 'Rjazanskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-ROS',
+          label: 'Rostovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-SA', label: 'Saha, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-SAK',
+          label: 'Sahalinskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-SAM',
+          label: 'Samarskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-SPE', label: 'Sankt-Peterburg', type: 'Autonomous City'),
+      GeoRegionOption(
+          code: 'RU-SAR',
+          label: 'Saratovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-SE',
+          label: 'Severnaja Osetija, Respublika',
+          type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-SMO',
+          label: 'Smolenskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-STA',
+          label: 'Stavropol\'skij kraj',
+          type: 'Administrative Territory'),
+      GeoRegionOption(
+          code: 'RU-SVE',
+          label: 'Sverdlovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-TAM',
+          label: 'Tambovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-TA', label: 'Tatarstan, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-TYU',
+          label: 'Tjumenskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-TOM',
+          label: 'Tomskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-TUL',
+          label: 'Tul\'skaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-TVE',
+          label: 'Tverskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-TY', label: 'Tyva, Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-UD', label: 'Udmurtskaja Respublika', type: 'Republic'),
+      GeoRegionOption(
+          code: 'RU-ULY',
+          label: 'Ul\'janovskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-VLA',
+          label: 'Vladimirskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-VGG',
+          label: 'Volgogradskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-VLG',
+          label: 'Vologodskaja oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-VOR',
+          label: 'Voronezhskaya oblast\'',
+          type: 'Administrative Region'),
+      GeoRegionOption(
+          code: 'RU-ZAB',
+          label: 'Zabajkal\'skij kraj',
+          type: 'Administrative Territory'),
     ],
     'RW': <GeoRegionOption>[
       GeoRegionOption(code: 'RW-01', label: 'City of Kigali', type: 'City'),
@@ -3433,26 +4433,33 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SA-14', label: '\'Asīr', type: 'Region'),
       GeoRegionOption(code: 'SA-11', label: 'Al Bāḩah', type: 'Region'),
       GeoRegionOption(code: 'SA-12', label: 'Al Jawf', type: 'Region'),
-      GeoRegionOption(code: 'SA-03', label: 'Al Madīnah al Munawwarah', type: 'Region'),
+      GeoRegionOption(
+          code: 'SA-03', label: 'Al Madīnah al Munawwarah', type: 'Region'),
       GeoRegionOption(code: 'SA-05', label: 'Al Qaşīm', type: 'Region'),
-      GeoRegionOption(code: 'SA-08', label: 'Al Ḩudūd ash Shamālīyah', type: 'Region'),
+      GeoRegionOption(
+          code: 'SA-08', label: 'Al Ḩudūd ash Shamālīyah', type: 'Region'),
       GeoRegionOption(code: 'SA-01', label: 'Ar Riyāḑ', type: 'Region'),
       GeoRegionOption(code: 'SA-04', label: 'Ash Sharqīyah', type: 'Region'),
       GeoRegionOption(code: 'SA-09', label: 'Jāzān', type: 'Region'),
-      GeoRegionOption(code: 'SA-02', label: 'Makkah al Mukarramah', type: 'Region'),
+      GeoRegionOption(
+          code: 'SA-02', label: 'Makkah al Mukarramah', type: 'Region'),
       GeoRegionOption(code: 'SA-10', label: 'Najrān', type: 'Region'),
       GeoRegionOption(code: 'SA-07', label: 'Tabūk', type: 'Region'),
       GeoRegionOption(code: 'SA-06', label: 'Ḩā\'il', type: 'Region'),
     ],
     'SB': <GeoRegionOption>[
-      GeoRegionOption(code: 'SB-CT', label: 'Capital Territory (Honiara)', type: 'Capital Territory'),
+      GeoRegionOption(
+          code: 'SB-CT',
+          label: 'Capital Territory (Honiara)',
+          type: 'Capital Territory'),
       GeoRegionOption(code: 'SB-CE', label: 'Central', type: 'Province'),
       GeoRegionOption(code: 'SB-CH', label: 'Choiseul', type: 'Province'),
       GeoRegionOption(code: 'SB-GU', label: 'Guadalcanal', type: 'Province'),
       GeoRegionOption(code: 'SB-IS', label: 'Isabel', type: 'Province'),
       GeoRegionOption(code: 'SB-MK', label: 'Makira-Ulawa', type: 'Province'),
       GeoRegionOption(code: 'SB-ML', label: 'Malaita', type: 'Province'),
-      GeoRegionOption(code: 'SB-RB', label: 'Rennell and Bellona', type: 'Province'),
+      GeoRegionOption(
+          code: 'SB-RB', label: 'Rennell and Bellona', type: 'Province'),
       GeoRegionOption(code: 'SB-TE', label: 'Temotu', type: 'Province'),
       GeoRegionOption(code: 'SB-WE', label: 'Western', type: 'Province'),
     ],
@@ -3463,17 +4470,22 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SC-01', label: 'Anse aux Pins', type: 'District'),
       GeoRegionOption(code: 'SC-04', label: 'Au Cap', type: 'District'),
       GeoRegionOption(code: 'SC-06', label: 'Baie Lazare', type: 'District'),
-      GeoRegionOption(code: 'SC-07', label: 'Baie Sainte Anne', type: 'District'),
+      GeoRegionOption(
+          code: 'SC-07', label: 'Baie Sainte Anne', type: 'District'),
       GeoRegionOption(code: 'SC-08', label: 'Beau Vallon', type: 'District'),
       GeoRegionOption(code: 'SC-09', label: 'Bel Air', type: 'District'),
       GeoRegionOption(code: 'SC-10', label: 'Bel Ombre', type: 'District'),
       GeoRegionOption(code: 'SC-11', label: 'Cascade', type: 'District'),
       GeoRegionOption(code: 'SC-16', label: 'English River', type: 'District'),
       GeoRegionOption(code: 'SC-12', label: 'Glacis', type: 'District'),
-      GeoRegionOption(code: 'SC-13', label: 'Grand Anse Mahe', type: 'District'),
-      GeoRegionOption(code: 'SC-14', label: 'Grand Anse Praslin', type: 'District'),
-      GeoRegionOption(code: 'SC-26', label: 'Ile Perseverance I', type: 'District'),
-      GeoRegionOption(code: 'SC-27', label: 'Ile Perseverance II', type: 'District'),
+      GeoRegionOption(
+          code: 'SC-13', label: 'Grand Anse Mahe', type: 'District'),
+      GeoRegionOption(
+          code: 'SC-14', label: 'Grand Anse Praslin', type: 'District'),
+      GeoRegionOption(
+          code: 'SC-26', label: 'Ile Perseverance I', type: 'District'),
+      GeoRegionOption(
+          code: 'SC-27', label: 'Ile Perseverance II', type: 'District'),
       GeoRegionOption(code: 'SC-15', label: 'La Digue', type: 'District'),
       GeoRegionOption(code: 'SC-24', label: 'Les Mamelles', type: 'District'),
       GeoRegionOption(code: 'SC-17', label: 'Mont Buxton', type: 'District'),
@@ -3506,47 +4518,75 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SD-NW', label: 'White Nile', type: 'State'),
     ],
     'SE': <GeoRegionOption>[
-      GeoRegionOption(code: 'SE-K', label: 'Blekinge län [SE-10]', type: 'County'),
-      GeoRegionOption(code: 'SE-W', label: 'Dalarnas län [SE-20]', type: 'County'),
-      GeoRegionOption(code: 'SE-I', label: 'Gotlands län [SE-09]', type: 'County'),
-      GeoRegionOption(code: 'SE-X', label: 'Gävleborgs län [SE-21]', type: 'County'),
-      GeoRegionOption(code: 'SE-N', label: 'Hallands län [SE-13]', type: 'County'),
-      GeoRegionOption(code: 'SE-Z', label: 'Jämtlands län [SE-23]', type: 'County'),
-      GeoRegionOption(code: 'SE-F', label: 'Jönköpings län [SE-06]', type: 'County'),
-      GeoRegionOption(code: 'SE-H', label: 'Kalmar län [SE-08]', type: 'County'),
-      GeoRegionOption(code: 'SE-G', label: 'Kronobergs län [SE-07]', type: 'County'),
-      GeoRegionOption(code: 'SE-BD', label: 'Norrbottens län [SE-25]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-K', label: 'Blekinge län [SE-10]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-W', label: 'Dalarnas län [SE-20]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-I', label: 'Gotlands län [SE-09]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-X', label: 'Gävleborgs län [SE-21]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-N', label: 'Hallands län [SE-13]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-Z', label: 'Jämtlands län [SE-23]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-F', label: 'Jönköpings län [SE-06]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-H', label: 'Kalmar län [SE-08]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-G', label: 'Kronobergs län [SE-07]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-BD', label: 'Norrbottens län [SE-25]', type: 'County'),
       GeoRegionOption(code: 'SE-M', label: 'Skåne län [SE-12]', type: 'County'),
-      GeoRegionOption(code: 'SE-AB', label: 'Stockholms län [SE-01]', type: 'County'),
-      GeoRegionOption(code: 'SE-D', label: 'Södermanlands län [SE-04]', type: 'County'),
-      GeoRegionOption(code: 'SE-C', label: 'Uppsala län [SE-03]', type: 'County'),
-      GeoRegionOption(code: 'SE-S', label: 'Värmlands län [SE-17]', type: 'County'),
-      GeoRegionOption(code: 'SE-AC', label: 'Västerbottens län [SE-24]', type: 'County'),
-      GeoRegionOption(code: 'SE-Y', label: 'Västernorrlands län [SE-22]', type: 'County'),
-      GeoRegionOption(code: 'SE-U', label: 'Västmanlands län [SE-19]', type: 'County'),
-      GeoRegionOption(code: 'SE-O', label: 'Västra Götalands län [SE-14]', type: 'County'),
-      GeoRegionOption(code: 'SE-T', label: 'Örebro län [SE-18]', type: 'County'),
-      GeoRegionOption(code: 'SE-E', label: 'Östergötlands län [SE-05]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-AB', label: 'Stockholms län [SE-01]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-D', label: 'Södermanlands län [SE-04]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-C', label: 'Uppsala län [SE-03]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-S', label: 'Värmlands län [SE-17]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-AC', label: 'Västerbottens län [SE-24]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-Y', label: 'Västernorrlands län [SE-22]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-U', label: 'Västmanlands län [SE-19]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-O', label: 'Västra Götalands län [SE-14]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-T', label: 'Örebro län [SE-18]', type: 'County'),
+      GeoRegionOption(
+          code: 'SE-E', label: 'Östergötlands län [SE-05]', type: 'County'),
     ],
     'SG': <GeoRegionOption>[
-      GeoRegionOption(code: 'SG-01', label: 'Central Singapore', type: 'District'),
+      GeoRegionOption(
+          code: 'SG-01', label: 'Central Singapore', type: 'District'),
       GeoRegionOption(code: 'SG-02', label: 'North East', type: 'District'),
       GeoRegionOption(code: 'SG-03', label: 'North West', type: 'District'),
       GeoRegionOption(code: 'SG-04', label: 'South East', type: 'District'),
       GeoRegionOption(code: 'SG-05', label: 'South West', type: 'District'),
     ],
     'SH': <GeoRegionOption>[
-      GeoRegionOption(code: 'SH-AC', label: 'Ascension', type: 'Geographical Entity'),
-      GeoRegionOption(code: 'SH-HL', label: 'Saint Helena', type: 'Geographical Entity'),
-      GeoRegionOption(code: 'SH-TA', label: 'Tristan da Cunha', type: 'Geographical Entity'),
+      GeoRegionOption(
+          code: 'SH-AC', label: 'Ascension', type: 'Geographical Entity'),
+      GeoRegionOption(
+          code: 'SH-HL', label: 'Saint Helena', type: 'Geographical Entity'),
+      GeoRegionOption(
+          code: 'SH-TA',
+          label: 'Tristan da Cunha',
+          type: 'Geographical Entity'),
     ],
     'SI': <GeoRegionOption>[
-      GeoRegionOption(code: 'SI-001', label: 'Ajdovščina', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-001', label: 'Ajdovščina', type: 'Municipality'),
       GeoRegionOption(code: 'SI-213', label: 'Ankaran', type: 'Municipality'),
       GeoRegionOption(code: 'SI-195', label: 'Apače', type: 'Municipality'),
       GeoRegionOption(code: 'SI-002', label: 'Beltinci', type: 'Municipality'),
       GeoRegionOption(code: 'SI-148', label: 'Benedikt', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-149', label: 'Bistrica ob Sotli', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-149', label: 'Bistrica ob Sotli', type: 'Municipality'),
       GeoRegionOption(code: 'SI-003', label: 'Bled', type: 'Municipality'),
       GeoRegionOption(code: 'SI-150', label: 'Bloke', type: 'Municipality'),
       GeoRegionOption(code: 'SI-004', label: 'Bohinj', type: 'Municipality'),
@@ -3557,102 +4597,138 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SI-008', label: 'Brezovica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-009', label: 'Brežice', type: 'Municipality'),
       GeoRegionOption(code: 'SI-152', label: 'Cankova', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-011', label: 'Celje', type: 'Urban Municipality'),
-      GeoRegionOption(code: 'SI-012', label: 'Cerklje na Gorenjskem', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-011', label: 'Celje', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-012', label: 'Cerklje na Gorenjskem', type: 'Municipality'),
       GeoRegionOption(code: 'SI-013', label: 'Cerknica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-014', label: 'Cerkno', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-153', label: 'Cerkvenjak', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-153', label: 'Cerkvenjak', type: 'Municipality'),
       GeoRegionOption(code: 'SI-196', label: 'Cirkulane', type: 'Municipality'),
       GeoRegionOption(code: 'SI-018', label: 'Destrnik', type: 'Municipality'),
       GeoRegionOption(code: 'SI-019', label: 'Divača', type: 'Municipality'),
       GeoRegionOption(code: 'SI-154', label: 'Dobje', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-020', label: 'Dobrepolje', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-020', label: 'Dobrepolje', type: 'Municipality'),
       GeoRegionOption(code: 'SI-155', label: 'Dobrna', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-021', label: 'Dobrova-Polhov Gradec', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-021', label: 'Dobrova-Polhov Gradec', type: 'Municipality'),
       GeoRegionOption(code: 'SI-156', label: 'Dobrovnik', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-022', label: 'Dol pri Ljubljani', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-157', label: 'Dolenjske Toplice', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-022', label: 'Dol pri Ljubljani', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-157', label: 'Dolenjske Toplice', type: 'Municipality'),
       GeoRegionOption(code: 'SI-023', label: 'Domžale', type: 'Municipality'),
       GeoRegionOption(code: 'SI-024', label: 'Dornava', type: 'Municipality'),
       GeoRegionOption(code: 'SI-025', label: 'Dravograd', type: 'Municipality'),
       GeoRegionOption(code: 'SI-026', label: 'Duplek', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-027', label: 'Gorenja vas-Poljane', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-027', label: 'Gorenja vas-Poljane', type: 'Municipality'),
       GeoRegionOption(code: 'SI-028', label: 'Gorišnica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-207', label: 'Gorje', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-029', label: 'Gornja Radgona', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-030', label: 'Gornji Grad', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-031', label: 'Gornji Petrovci', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-029', label: 'Gornja Radgona', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-030', label: 'Gornji Grad', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-031', label: 'Gornji Petrovci', type: 'Municipality'),
       GeoRegionOption(code: 'SI-158', label: 'Grad', type: 'Municipality'),
       GeoRegionOption(code: 'SI-032', label: 'Grosuplje', type: 'Municipality'),
       GeoRegionOption(code: 'SI-159', label: 'Hajdina', type: 'Municipality'),
       GeoRegionOption(code: 'SI-161', label: 'Hodoš', type: 'Municipality'),
       GeoRegionOption(code: 'SI-162', label: 'Horjul', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-160', label: 'Hoče-Slivnica', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-160', label: 'Hoče-Slivnica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-034', label: 'Hrastnik', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-035', label: 'Hrpelje-Kozina', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-035', label: 'Hrpelje-Kozina', type: 'Municipality'),
       GeoRegionOption(code: 'SI-036', label: 'Idrija', type: 'Municipality'),
       GeoRegionOption(code: 'SI-037', label: 'Ig', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-038', label: 'Ilirska Bistrica', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-039', label: 'Ivančna Gorica', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-038', label: 'Ilirska Bistrica', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-039', label: 'Ivančna Gorica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-040', label: 'Izola', type: 'Municipality'),
       GeoRegionOption(code: 'SI-041', label: 'Jesenice', type: 'Municipality'),
       GeoRegionOption(code: 'SI-163', label: 'Jezersko', type: 'Municipality'),
       GeoRegionOption(code: 'SI-042', label: 'Juršinci', type: 'Municipality'),
       GeoRegionOption(code: 'SI-043', label: 'Kamnik', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-044', label: 'Kanal ob Soči', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-044', label: 'Kanal ob Soči', type: 'Municipality'),
       GeoRegionOption(code: 'SI-045', label: 'Kidričevo', type: 'Municipality'),
       GeoRegionOption(code: 'SI-046', label: 'Kobarid', type: 'Municipality'),
       GeoRegionOption(code: 'SI-047', label: 'Kobilje', type: 'Municipality'),
       GeoRegionOption(code: 'SI-049', label: 'Komen', type: 'Municipality'),
       GeoRegionOption(code: 'SI-164', label: 'Komenda', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-050', label: 'Koper', type: 'Urban Municipality'),
-      GeoRegionOption(code: 'SI-197', label: 'Kostanjevica na Krki', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-050', label: 'Koper', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-197', label: 'Kostanjevica na Krki', type: 'Municipality'),
       GeoRegionOption(code: 'SI-165', label: 'Kostel', type: 'Municipality'),
       GeoRegionOption(code: 'SI-051', label: 'Kozje', type: 'Municipality'),
       GeoRegionOption(code: 'SI-048', label: 'Kočevje', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-052', label: 'Kranj', type: 'Urban Municipality'),
-      GeoRegionOption(code: 'SI-053', label: 'Kranjska Gora', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-052', label: 'Kranj', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-053', label: 'Kranjska Gora', type: 'Municipality'),
       GeoRegionOption(code: 'SI-166', label: 'Križevci', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-054', label: 'Krško', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-054', label: 'Krško', type: 'Urban Municipality'),
       GeoRegionOption(code: 'SI-055', label: 'Kungota', type: 'Municipality'),
       GeoRegionOption(code: 'SI-056', label: 'Kuzma', type: 'Municipality'),
       GeoRegionOption(code: 'SI-057', label: 'Laško', type: 'Municipality'),
       GeoRegionOption(code: 'SI-058', label: 'Lenart', type: 'Municipality'),
       GeoRegionOption(code: 'SI-059', label: 'Lendava', type: 'Municipality'),
       GeoRegionOption(code: 'SI-060', label: 'Litija', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-061', label: 'Ljubljana', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-061', label: 'Ljubljana', type: 'Urban Municipality'),
       GeoRegionOption(code: 'SI-062', label: 'Ljubno', type: 'Municipality'),
       GeoRegionOption(code: 'SI-063', label: 'Ljutomer', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-208', label: 'Log-Dragomer', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-208', label: 'Log-Dragomer', type: 'Municipality'),
       GeoRegionOption(code: 'SI-064', label: 'Logatec', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-167', label: 'Lovrenc na Pohorju', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-065', label: 'Loška dolina', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-066', label: 'Loški Potok', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-167', label: 'Lovrenc na Pohorju', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-065', label: 'Loška dolina', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-066', label: 'Loški Potok', type: 'Municipality'),
       GeoRegionOption(code: 'SI-068', label: 'Lukovica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-067', label: 'Luče', type: 'Municipality'),
       GeoRegionOption(code: 'SI-069', label: 'Majšperk', type: 'Municipality'),
       GeoRegionOption(code: 'SI-198', label: 'Makole', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-070', label: 'Maribor', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-070', label: 'Maribor', type: 'Urban Municipality'),
       GeoRegionOption(code: 'SI-168', label: 'Markovci', type: 'Municipality'),
       GeoRegionOption(code: 'SI-071', label: 'Medvode', type: 'Municipality'),
       GeoRegionOption(code: 'SI-072', label: 'Mengeš', type: 'Municipality'),
       GeoRegionOption(code: 'SI-073', label: 'Metlika', type: 'Municipality'),
       GeoRegionOption(code: 'SI-074', label: 'Mežica', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-169', label: 'Miklavž na Dravskem polju', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-075', label: 'Miren-Kostanjevica', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-169',
+          label: 'Miklavž na Dravskem polju',
+          type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-075', label: 'Miren-Kostanjevica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-212', label: 'Mirna', type: 'Municipality'),
       GeoRegionOption(code: 'SI-170', label: 'Mirna Peč', type: 'Municipality'),
       GeoRegionOption(code: 'SI-076', label: 'Mislinja', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-199', label: 'Mokronog-Trebelno', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-078', label: 'Moravske Toplice', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-199', label: 'Mokronog-Trebelno', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-078', label: 'Moravske Toplice', type: 'Municipality'),
       GeoRegionOption(code: 'SI-077', label: 'Moravče', type: 'Municipality'),
       GeoRegionOption(code: 'SI-079', label: 'Mozirje', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-080', label: 'Murska Sobota', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-080', label: 'Murska Sobota', type: 'Urban Municipality'),
       GeoRegionOption(code: 'SI-081', label: 'Muta', type: 'Municipality'),
       GeoRegionOption(code: 'SI-082', label: 'Naklo', type: 'Municipality'),
       GeoRegionOption(code: 'SI-083', label: 'Nazarje', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-084', label: 'Nova Gorica', type: 'Urban Municipality'),
-      GeoRegionOption(code: 'SI-085', label: 'Novo Mesto', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-084', label: 'Nova Gorica', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-085', label: 'Novo Mesto', type: 'Urban Municipality'),
       GeoRegionOption(code: 'SI-086', label: 'Odranci', type: 'Municipality'),
       GeoRegionOption(code: 'SI-171', label: 'Oplotnica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-087', label: 'Ormož', type: 'Municipality'),
@@ -3662,60 +4738,91 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SI-091', label: 'Pivka', type: 'Municipality'),
       GeoRegionOption(code: 'SI-172', label: 'Podlehnik', type: 'Municipality'),
       GeoRegionOption(code: 'SI-093', label: 'Podvelka', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-092', label: 'Podčetrtek', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-092', label: 'Podčetrtek', type: 'Municipality'),
       GeoRegionOption(code: 'SI-200', label: 'Poljčane', type: 'Municipality'),
       GeoRegionOption(code: 'SI-173', label: 'Polzela', type: 'Municipality'),
       GeoRegionOption(code: 'SI-094', label: 'Postojna', type: 'Municipality'),
       GeoRegionOption(code: 'SI-174', label: 'Prebold', type: 'Municipality'),
       GeoRegionOption(code: 'SI-095', label: 'Preddvor', type: 'Municipality'),
       GeoRegionOption(code: 'SI-175', label: 'Prevalje', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-096', label: 'Ptuj', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-096', label: 'Ptuj', type: 'Urban Municipality'),
       GeoRegionOption(code: 'SI-097', label: 'Puconci', type: 'Municipality'),
       GeoRegionOption(code: 'SI-100', label: 'Radenci', type: 'Municipality'),
       GeoRegionOption(code: 'SI-099', label: 'Radeče', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-101', label: 'Radlje ob Dravi', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-102', label: 'Radovljica', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-103', label: 'Ravne na Koroškem', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-101', label: 'Radlje ob Dravi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-102', label: 'Radovljica', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-103', label: 'Ravne na Koroškem', type: 'Municipality'),
       GeoRegionOption(code: 'SI-176', label: 'Razkrižje', type: 'Municipality'),
       GeoRegionOption(code: 'SI-098', label: 'Rače-Fram', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-201', label: 'Renče-Vogrsko', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-209', label: 'Rečica ob Savinji', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-201', label: 'Renče-Vogrsko', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-209', label: 'Rečica ob Savinji', type: 'Municipality'),
       GeoRegionOption(code: 'SI-104', label: 'Ribnica', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-177', label: 'Ribnica na Pohorju', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-177', label: 'Ribnica na Pohorju', type: 'Municipality'),
       GeoRegionOption(code: 'SI-107', label: 'Rogatec', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-106', label: 'Rogaška Slatina', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-106', label: 'Rogaška Slatina', type: 'Municipality'),
       GeoRegionOption(code: 'SI-105', label: 'Rogašovci', type: 'Municipality'),
       GeoRegionOption(code: 'SI-108', label: 'Ruše', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-178', label: 'Selnica ob Dravi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-178', label: 'Selnica ob Dravi', type: 'Municipality'),
       GeoRegionOption(code: 'SI-109', label: 'Semič', type: 'Municipality'),
       GeoRegionOption(code: 'SI-110', label: 'Sevnica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-111', label: 'Sežana', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-112', label: 'Slovenj Gradec', type: 'Urban Municipality'),
-      GeoRegionOption(code: 'SI-113', label: 'Slovenska Bistrica', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-114', label: 'Slovenske Konjice', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-112', label: 'Slovenj Gradec', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-113', label: 'Slovenska Bistrica', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-114', label: 'Slovenske Konjice', type: 'Municipality'),
       GeoRegionOption(code: 'SI-179', label: 'Sodražica', type: 'Municipality'),
       GeoRegionOption(code: 'SI-180', label: 'Solčava', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-202', label: 'Središče ob Dravi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-202', label: 'Središče ob Dravi', type: 'Municipality'),
       GeoRegionOption(code: 'SI-115', label: 'Starše', type: 'Municipality'),
       GeoRegionOption(code: 'SI-203', label: 'Straža', type: 'Municipality'),
       GeoRegionOption(code: 'SI-181', label: 'Sveta Ana', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-204', label: 'Sveta Trojica v Slovenskih goricah', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-182', label: 'Sveti Andraž v Slovenskih goricah', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-116', label: 'Sveti Jurij ob Ščavnici', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-210', label: 'Sveti Jurij v Slovenskih goricah', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-205', label: 'Sveti Tomaž', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-204',
+          label: 'Sveta Trojica v Slovenskih goricah',
+          type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-182',
+          label: 'Sveti Andraž v Slovenskih goricah',
+          type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-116',
+          label: 'Sveti Jurij ob Ščavnici',
+          type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-210',
+          label: 'Sveti Jurij v Slovenskih goricah',
+          type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-205', label: 'Sveti Tomaž', type: 'Municipality'),
       GeoRegionOption(code: 'SI-184', label: 'Tabor', type: 'Municipality'),
       GeoRegionOption(code: 'SI-010', label: 'Tišina', type: 'Municipality'),
       GeoRegionOption(code: 'SI-128', label: 'Tolmin', type: 'Municipality'),
       GeoRegionOption(code: 'SI-129', label: 'Trbovlje', type: 'Municipality'),
       GeoRegionOption(code: 'SI-130', label: 'Trebnje', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-185', label: 'Trnovska Vas', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-185', label: 'Trnovska Vas', type: 'Municipality'),
       GeoRegionOption(code: 'SI-186', label: 'Trzin', type: 'Municipality'),
       GeoRegionOption(code: 'SI-131', label: 'Tržič', type: 'Municipality'),
       GeoRegionOption(code: 'SI-132', label: 'Turnišče', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-133', label: 'Velenje', type: 'Urban Municipality'),
-      GeoRegionOption(code: 'SI-187', label: 'Velika Polana', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-134', label: 'Velike Lašče', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-133', label: 'Velenje', type: 'Urban Municipality'),
+      GeoRegionOption(
+          code: 'SI-187', label: 'Velika Polana', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-134', label: 'Velike Lašče', type: 'Municipality'),
       GeoRegionOption(code: 'SI-188', label: 'Veržej', type: 'Municipality'),
       GeoRegionOption(code: 'SI-135', label: 'Videm', type: 'Municipality'),
       GeoRegionOption(code: 'SI-136', label: 'Vipava', type: 'Municipality'),
@@ -3725,26 +4832,36 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SI-189', label: 'Vransko', type: 'Municipality'),
       GeoRegionOption(code: 'SI-140', label: 'Vrhnika', type: 'Municipality'),
       GeoRegionOption(code: 'SI-141', label: 'Vuzenica', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-142', label: 'Zagorje ob Savi', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-142', label: 'Zagorje ob Savi', type: 'Municipality'),
       GeoRegionOption(code: 'SI-143', label: 'Zavrč', type: 'Municipality'),
       GeoRegionOption(code: 'SI-144', label: 'Zreče', type: 'Municipality'),
       GeoRegionOption(code: 'SI-015', label: 'Črenšovci', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-016', label: 'Črna na Koroškem', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-016', label: 'Črna na Koroškem', type: 'Municipality'),
       GeoRegionOption(code: 'SI-017', label: 'Črnomelj', type: 'Municipality'),
       GeoRegionOption(code: 'SI-033', label: 'Šalovci', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-183', label: 'Šempeter-Vrtojba', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-183', label: 'Šempeter-Vrtojba', type: 'Municipality'),
       GeoRegionOption(code: 'SI-118', label: 'Šentilj', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-119', label: 'Šentjernej', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-119', label: 'Šentjernej', type: 'Municipality'),
       GeoRegionOption(code: 'SI-120', label: 'Šentjur', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-211', label: 'Šentrupert', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-211', label: 'Šentrupert', type: 'Municipality'),
       GeoRegionOption(code: 'SI-117', label: 'Šenčur', type: 'Municipality'),
       GeoRegionOption(code: 'SI-121', label: 'Škocjan', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-122', label: 'Škofja Loka', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-122', label: 'Škofja Loka', type: 'Municipality'),
       GeoRegionOption(code: 'SI-123', label: 'Škofljica', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-124', label: 'Šmarje pri Jelšah', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-206', label: 'Šmarješke Toplice', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-125', label: 'Šmartno ob Paki', type: 'Municipality'),
-      GeoRegionOption(code: 'SI-194', label: 'Šmartno pri Litiji', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-124', label: 'Šmarje pri Jelšah', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-206', label: 'Šmarješke Toplice', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-125', label: 'Šmartno ob Paki', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SI-194', label: 'Šmartno pri Litiji', type: 'Municipality'),
       GeoRegionOption(code: 'SI-126', label: 'Šoštanj', type: 'Municipality'),
       GeoRegionOption(code: 'SI-127', label: 'Štore', type: 'Municipality'),
       GeoRegionOption(code: 'SI-190', label: 'Žalec', type: 'Municipality'),
@@ -3755,8 +4872,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SI-193', label: 'Žužemberk', type: 'Municipality'),
     ],
     'SK': <GeoRegionOption>[
-      GeoRegionOption(code: 'SK-BC', label: 'Banskobystrický kraj', type: 'Region'),
-      GeoRegionOption(code: 'SK-BL', label: 'Bratislavský kraj', type: 'Region'),
+      GeoRegionOption(
+          code: 'SK-BC', label: 'Banskobystrický kraj', type: 'Region'),
+      GeoRegionOption(
+          code: 'SK-BL', label: 'Bratislavský kraj', type: 'Region'),
       GeoRegionOption(code: 'SK-KI', label: 'Košický kraj', type: 'Region'),
       GeoRegionOption(code: 'SK-NI', label: 'Nitriansky kraj', type: 'Region'),
       GeoRegionOption(code: 'SK-PV', label: 'Prešovský kraj', type: 'Region'),
@@ -3769,17 +4888,22 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SL-NW', label: 'North Western', type: 'Province'),
       GeoRegionOption(code: 'SL-N', label: 'Northern', type: 'Province'),
       GeoRegionOption(code: 'SL-S', label: 'Southern', type: 'Province'),
-      GeoRegionOption(code: 'SL-W', label: 'Western Area (Freetown)', type: 'Area'),
+      GeoRegionOption(
+          code: 'SL-W', label: 'Western Area (Freetown)', type: 'Area'),
     ],
     'SM': <GeoRegionOption>[
       GeoRegionOption(code: 'SM-01', label: 'Acquaviva', type: 'Municipality'),
-      GeoRegionOption(code: 'SM-06', label: 'Borgo Maggiore', type: 'Municipality'),
-      GeoRegionOption(code: 'SM-02', label: 'Chiesanuova', type: 'Municipality'),
-      GeoRegionOption(code: 'SM-07', label: 'Città di San Marino', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SM-06', label: 'Borgo Maggiore', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SM-02', label: 'Chiesanuova', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SM-07', label: 'Città di San Marino', type: 'Municipality'),
       GeoRegionOption(code: 'SM-03', label: 'Domagnano', type: 'Municipality'),
       GeoRegionOption(code: 'SM-04', label: 'Faetano', type: 'Municipality'),
       GeoRegionOption(code: 'SM-05', label: 'Fiorentino', type: 'Municipality'),
-      GeoRegionOption(code: 'SM-08', label: 'Montegiardino', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'SM-08', label: 'Montegiardino', type: 'Municipality'),
       GeoRegionOption(code: 'SM-09', label: 'Serravalle', type: 'Municipality'),
     ],
     'SN': <GeoRegionOption>[
@@ -3812,8 +4936,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SO-MU', label: 'Mudug', type: 'Region'),
       GeoRegionOption(code: 'SO-NU', label: 'Nugaal', type: 'Region'),
       GeoRegionOption(code: 'SO-SA', label: 'Sanaag', type: 'Region'),
-      GeoRegionOption(code: 'SO-SD', label: 'Shabeellaha Dhexe', type: 'Region'),
-      GeoRegionOption(code: 'SO-SH', label: 'Shabeellaha Hoose', type: 'Region'),
+      GeoRegionOption(
+          code: 'SO-SD', label: 'Shabeellaha Dhexe', type: 'Region'),
+      GeoRegionOption(
+          code: 'SO-SH', label: 'Shabeellaha Hoose', type: 'Region'),
       GeoRegionOption(code: 'SO-SO', label: 'Sool', type: 'Region'),
       GeoRegionOption(code: 'SO-TO', label: 'Togdheer', type: 'Region'),
       GeoRegionOption(code: 'SO-WO', label: 'Woqooyi Galbeed', type: 'Region'),
@@ -3835,11 +4961,13 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'SS-EE', label: 'Eastern Equatoria', type: 'State'),
       GeoRegionOption(code: 'SS-JG', label: 'Jonglei', type: 'State'),
       GeoRegionOption(code: 'SS-LK', label: 'Lakes', type: 'State'),
-      GeoRegionOption(code: 'SS-BN', label: 'Northern Bahr el Ghazal', type: 'State'),
+      GeoRegionOption(
+          code: 'SS-BN', label: 'Northern Bahr el Ghazal', type: 'State'),
       GeoRegionOption(code: 'SS-UY', label: 'Unity', type: 'State'),
       GeoRegionOption(code: 'SS-NU', label: 'Upper Nile', type: 'State'),
       GeoRegionOption(code: 'SS-WR', label: 'Warrap', type: 'State'),
-      GeoRegionOption(code: 'SS-BW', label: 'Western Bahr el Ghazal', type: 'State'),
+      GeoRegionOption(
+          code: 'SS-BW', label: 'Western Bahr el Ghazal', type: 'State'),
       GeoRegionOption(code: 'SS-EW', label: 'Western Equatoria', type: 'State'),
     ],
     'ST': <GeoRegionOption>[
@@ -3900,18 +5028,22 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TD-HL', label: 'Hadjer Lamis', type: 'Province'),
       GeoRegionOption(code: 'TD-KA', label: 'Kanem', type: 'Province'),
       GeoRegionOption(code: 'TD-LC', label: 'Lac', type: 'Province'),
-      GeoRegionOption(code: 'TD-LO', label: 'Logone-Occidental', type: 'Province'),
-      GeoRegionOption(code: 'TD-LR', label: 'Logone-Oriental', type: 'Province'),
+      GeoRegionOption(
+          code: 'TD-LO', label: 'Logone-Occidental', type: 'Province'),
+      GeoRegionOption(
+          code: 'TD-LR', label: 'Logone-Oriental', type: 'Province'),
       GeoRegionOption(code: 'TD-MA', label: 'Mandoul', type: 'Province'),
       GeoRegionOption(code: 'TD-ME', label: 'Mayo-Kebbi-Est', type: 'Province'),
-      GeoRegionOption(code: 'TD-MO', label: 'Mayo-Kebbi-Ouest', type: 'Province'),
+      GeoRegionOption(
+          code: 'TD-MO', label: 'Mayo-Kebbi-Ouest', type: 'Province'),
       GeoRegionOption(code: 'TD-MC', label: 'Moyen-Chari', type: 'Province'),
       GeoRegionOption(code: 'TD-OD', label: 'Ouaddaï', type: 'Province'),
       GeoRegionOption(code: 'TD-SA', label: 'Salamat', type: 'Province'),
       GeoRegionOption(code: 'TD-SI', label: 'Sila', type: 'Province'),
       GeoRegionOption(code: 'TD-TA', label: 'Tandjilé', type: 'Province'),
       GeoRegionOption(code: 'TD-TI', label: 'Tibesti', type: 'Province'),
-      GeoRegionOption(code: 'TD-ND', label: 'Ville de Ndjamena', type: 'Province'),
+      GeoRegionOption(
+          code: 'TD-ND', label: 'Ville de Ndjamena', type: 'Province'),
       GeoRegionOption(code: 'TD-WF', label: 'Wadi Fira', type: 'Province'),
     ],
     'TG': <GeoRegionOption>[
@@ -3939,7 +5071,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TH-71', label: 'Kanchanaburi', type: 'Province'),
       GeoRegionOption(code: 'TH-40', label: 'Khon Kaen', type: 'Province'),
       GeoRegionOption(code: 'TH-81', label: 'Krabi', type: 'Province'),
-      GeoRegionOption(code: 'TH-10', label: 'Krung Thep Maha Nakhon', type: 'Metropolitan Administration'),
+      GeoRegionOption(
+          code: 'TH-10',
+          label: 'Krung Thep Maha Nakhon',
+          type: 'Metropolitan Administration'),
       GeoRegionOption(code: 'TH-52', label: 'Lampang', type: 'Province'),
       GeoRegionOption(code: 'TH-51', label: 'Lamphun', type: 'Province'),
       GeoRegionOption(code: 'TH-42', label: 'Loei', type: 'Province'),
@@ -3950,29 +5085,37 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TH-26', label: 'Nakhon Nayok', type: 'Province'),
       GeoRegionOption(code: 'TH-73', label: 'Nakhon Pathom', type: 'Province'),
       GeoRegionOption(code: 'TH-48', label: 'Nakhon Phanom', type: 'Province'),
-      GeoRegionOption(code: 'TH-30', label: 'Nakhon Ratchasima', type: 'Province'),
+      GeoRegionOption(
+          code: 'TH-30', label: 'Nakhon Ratchasima', type: 'Province'),
       GeoRegionOption(code: 'TH-60', label: 'Nakhon Sawan', type: 'Province'),
-      GeoRegionOption(code: 'TH-80', label: 'Nakhon Si Thammarat', type: 'Province'),
+      GeoRegionOption(
+          code: 'TH-80', label: 'Nakhon Si Thammarat', type: 'Province'),
       GeoRegionOption(code: 'TH-55', label: 'Nan', type: 'Province'),
       GeoRegionOption(code: 'TH-96', label: 'Narathiwat', type: 'Province'),
-      GeoRegionOption(code: 'TH-39', label: 'Nong Bua Lam Phu', type: 'Province'),
+      GeoRegionOption(
+          code: 'TH-39', label: 'Nong Bua Lam Phu', type: 'Province'),
       GeoRegionOption(code: 'TH-43', label: 'Nong Khai', type: 'Province'),
       GeoRegionOption(code: 'TH-12', label: 'Nonthaburi', type: 'Province'),
       GeoRegionOption(code: 'TH-13', label: 'Pathum Thani', type: 'Province'),
       GeoRegionOption(code: 'TH-94', label: 'Pattani', type: 'Province'),
       GeoRegionOption(code: 'TH-82', label: 'Phangnga', type: 'Province'),
       GeoRegionOption(code: 'TH-93', label: 'Phatthalung', type: 'Province'),
-      GeoRegionOption(code: 'TH-S', label: 'Phatthaya', type: 'Special Administrative City'),
+      GeoRegionOption(
+          code: 'TH-S',
+          label: 'Phatthaya',
+          type: 'Special Administrative City'),
       GeoRegionOption(code: 'TH-56', label: 'Phayao', type: 'Province'),
       GeoRegionOption(code: 'TH-67', label: 'Phetchabun', type: 'Province'),
       GeoRegionOption(code: 'TH-76', label: 'Phetchaburi', type: 'Province'),
       GeoRegionOption(code: 'TH-66', label: 'Phichit', type: 'Province'),
       GeoRegionOption(code: 'TH-65', label: 'Phitsanulok', type: 'Province'),
-      GeoRegionOption(code: 'TH-14', label: 'Phra Nakhon Si Ayutthaya', type: 'Province'),
+      GeoRegionOption(
+          code: 'TH-14', label: 'Phra Nakhon Si Ayutthaya', type: 'Province'),
       GeoRegionOption(code: 'TH-54', label: 'Phrae', type: 'Province'),
       GeoRegionOption(code: 'TH-83', label: 'Phuket', type: 'Province'),
       GeoRegionOption(code: 'TH-25', label: 'Prachin Buri', type: 'Province'),
-      GeoRegionOption(code: 'TH-77', label: 'Prachuap Khiri Khan', type: 'Province'),
+      GeoRegionOption(
+          code: 'TH-77', label: 'Prachuap Khiri Khan', type: 'Province'),
       GeoRegionOption(code: 'TH-85', label: 'Ranong', type: 'Province'),
       GeoRegionOption(code: 'TH-70', label: 'Ratchaburi', type: 'Province'),
       GeoRegionOption(code: 'TH-21', label: 'Rayong', type: 'Province'),
@@ -3981,7 +5124,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TH-47', label: 'Sakon Nakhon', type: 'Province'),
       GeoRegionOption(code: 'TH-11', label: 'Samut Prakan', type: 'Province'),
       GeoRegionOption(code: 'TH-74', label: 'Samut Sakhon', type: 'Province'),
-      GeoRegionOption(code: 'TH-75', label: 'Samut Songkhram', type: 'Province'),
+      GeoRegionOption(
+          code: 'TH-75', label: 'Samut Songkhram', type: 'Province'),
       GeoRegionOption(code: 'TH-19', label: 'Saraburi', type: 'Province'),
       GeoRegionOption(code: 'TH-91', label: 'Satun', type: 'Province'),
       GeoRegionOption(code: 'TH-33', label: 'Si Sa Ket', type: 'Province'),
@@ -3994,7 +5138,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TH-63', label: 'Tak', type: 'Province'),
       GeoRegionOption(code: 'TH-92', label: 'Trang', type: 'Province'),
       GeoRegionOption(code: 'TH-23', label: 'Trat', type: 'Province'),
-      GeoRegionOption(code: 'TH-34', label: 'Ubon Ratchathani', type: 'Province'),
+      GeoRegionOption(
+          code: 'TH-34', label: 'Ubon Ratchathani', type: 'Province'),
       GeoRegionOption(code: 'TH-41', label: 'Udon Thani', type: 'Province'),
       GeoRegionOption(code: 'TH-61', label: 'Uthai Thani', type: 'Province'),
       GeoRegionOption(code: 'TH-53', label: 'Uttaradit', type: 'Province'),
@@ -4002,11 +5147,16 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TH-35', label: 'Yasothon', type: 'Province'),
     ],
     'TJ': <GeoRegionOption>[
-      GeoRegionOption(code: 'TJ-DU', label: 'Dushanbe', type: 'Capital Territory'),
+      GeoRegionOption(
+          code: 'TJ-DU', label: 'Dushanbe', type: 'Capital Territory'),
       GeoRegionOption(code: 'TJ-KT', label: 'Khatlon', type: 'Region'),
-      GeoRegionOption(code: 'TJ-GB', label: 'Kŭhistoni Badakhshon', type: 'Region'),
+      GeoRegionOption(
+          code: 'TJ-GB', label: 'Kŭhistoni Badakhshon', type: 'Region'),
       GeoRegionOption(code: 'TJ-SU', label: 'Sughd', type: 'Region'),
-      GeoRegionOption(code: 'TJ-RA', label: 'nohiyahoi tobei jumhurí', type: 'Districts Under Republic Administration'),
+      GeoRegionOption(
+          code: 'TJ-RA',
+          label: 'nohiyahoi tobei jumhurí',
+          type: 'Districts Under Republic Administration'),
     ],
     'TL': <GeoRegionOption>[
       GeoRegionOption(code: 'TL-AL', label: 'Aileu', type: 'Municipality'),
@@ -4020,7 +5170,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TL-LI', label: 'Likisá', type: 'Municipality'),
       GeoRegionOption(code: 'TL-MT', label: 'Manatuto', type: 'Municipality'),
       GeoRegionOption(code: 'TL-MF', label: 'Manufahi', type: 'Municipality'),
-      GeoRegionOption(code: 'TL-OE', label: 'Oekusi-Ambenu', type: 'Special Administrative Region'),
+      GeoRegionOption(
+          code: 'TL-OE',
+          label: 'Oekusi-Ambenu',
+          type: 'Special Administrative Region'),
       GeoRegionOption(code: 'TL-VI', label: 'Vikeke', type: 'Municipality'),
     ],
     'TM': <GeoRegionOption>[
@@ -4150,15 +5303,18 @@ class GlobalSetupOptions {
     'TT': <GeoRegionOption>[
       GeoRegionOption(code: 'TT-ARI', label: 'Arima', type: 'Borough'),
       GeoRegionOption(code: 'TT-CHA', label: 'Chaguanas', type: 'Borough'),
-      GeoRegionOption(code: 'TT-CTT', label: 'Couva-Tabaquite-Talparo', type: 'Region'),
+      GeoRegionOption(
+          code: 'TT-CTT', label: 'Couva-Tabaquite-Talparo', type: 'Region'),
       GeoRegionOption(code: 'TT-DMN', label: 'Diego Martin', type: 'Region'),
-      GeoRegionOption(code: 'TT-MRC', label: 'Mayaro-Rio Claro', type: 'Region'),
+      GeoRegionOption(
+          code: 'TT-MRC', label: 'Mayaro-Rio Claro', type: 'Region'),
       GeoRegionOption(code: 'TT-PED', label: 'Penal-Debe', type: 'Region'),
       GeoRegionOption(code: 'TT-PTF', label: 'Point Fortin', type: 'Borough'),
       GeoRegionOption(code: 'TT-POS', label: 'Port of Spain', type: 'City'),
       GeoRegionOption(code: 'TT-PRT', label: 'Princes Town', type: 'Region'),
       GeoRegionOption(code: 'TT-SFO', label: 'San Fernando', type: 'City'),
-      GeoRegionOption(code: 'TT-SJL', label: 'San Juan-Laventille', type: 'Region'),
+      GeoRegionOption(
+          code: 'TT-SJL', label: 'San Juan-Laventille', type: 'Region'),
       GeoRegionOption(code: 'TT-SGE', label: 'Sangre Grande', type: 'Region'),
       GeoRegionOption(code: 'TT-SIP', label: 'Siparia', type: 'Region'),
       GeoRegionOption(code: 'TT-TOB', label: 'Tobago', type: 'Ward'),
@@ -4166,12 +5322,15 @@ class GlobalSetupOptions {
     ],
     'TV': <GeoRegionOption>[
       GeoRegionOption(code: 'TV-FUN', label: 'Funafuti', type: 'Town Council'),
-      GeoRegionOption(code: 'TV-NMG', label: 'Nanumaga', type: 'Island Council'),
+      GeoRegionOption(
+          code: 'TV-NMG', label: 'Nanumaga', type: 'Island Council'),
       GeoRegionOption(code: 'TV-NMA', label: 'Nanumea', type: 'Island Council'),
       GeoRegionOption(code: 'TV-NIT', label: 'Niutao', type: 'Island Council'),
       GeoRegionOption(code: 'TV-NUI', label: 'Nui', type: 'Island Council'),
-      GeoRegionOption(code: 'TV-NKF', label: 'Nukufetau', type: 'Island Council'),
-      GeoRegionOption(code: 'TV-NKL', label: 'Nukulaelae', type: 'Island Council'),
+      GeoRegionOption(
+          code: 'TV-NKF', label: 'Nukufetau', type: 'Island Council'),
+      GeoRegionOption(
+          code: 'TV-NKL', label: 'Nukulaelae', type: 'Island Council'),
       GeoRegionOption(code: 'TV-VAI', label: 'Vaitupu', type: 'Island Council'),
     ],
     'TW': <GeoRegionOption>[
@@ -4181,20 +5340,26 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TW-HSQ', label: 'Hsinchu', type: 'County'),
       GeoRegionOption(code: 'TW-HSZ', label: 'Hsinchu', type: 'City'),
       GeoRegionOption(code: 'TW-HUA', label: 'Hualien', type: 'County'),
-      GeoRegionOption(code: 'TW-KHH', label: 'Kaohsiung', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'TW-KHH', label: 'Kaohsiung', type: 'Special Municipality'),
       GeoRegionOption(code: 'TW-KEE', label: 'Keelung', type: 'City'),
       GeoRegionOption(code: 'TW-KIN', label: 'Kinmen', type: 'County'),
       GeoRegionOption(code: 'TW-LIE', label: 'Lienchiang', type: 'County'),
       GeoRegionOption(code: 'TW-MIA', label: 'Miaoli', type: 'County'),
       GeoRegionOption(code: 'TW-NAN', label: 'Nantou', type: 'County'),
-      GeoRegionOption(code: 'TW-NWT', label: 'New Taipei', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'TW-NWT', label: 'New Taipei', type: 'Special Municipality'),
       GeoRegionOption(code: 'TW-PEN', label: 'Penghu', type: 'County'),
       GeoRegionOption(code: 'TW-PIF', label: 'Pingtung', type: 'County'),
-      GeoRegionOption(code: 'TW-TXG', label: 'Taichung', type: 'Special Municipality'),
-      GeoRegionOption(code: 'TW-TNN', label: 'Tainan', type: 'Special Municipality'),
-      GeoRegionOption(code: 'TW-TPE', label: 'Taipei', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'TW-TXG', label: 'Taichung', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'TW-TNN', label: 'Tainan', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'TW-TPE', label: 'Taipei', type: 'Special Municipality'),
       GeoRegionOption(code: 'TW-TTT', label: 'Taitung', type: 'County'),
-      GeoRegionOption(code: 'TW-TAO', label: 'Taoyuan', type: 'Special Municipality'),
+      GeoRegionOption(
+          code: 'TW-TAO', label: 'Taoyuan', type: 'Special Municipality'),
       GeoRegionOption(code: 'TW-ILA', label: 'Yilan', type: 'County'),
       GeoRegionOption(code: 'TW-YUN', label: 'Yunlin', type: 'County'),
     ],
@@ -4232,62 +5397,108 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'TZ-15', label: 'Zanzibar West', type: 'Region'),
     ],
     'UA': <GeoRegionOption>[
-      GeoRegionOption(code: 'UA-43', label: 'Avtonomna Respublika Krym', type: 'Republic'),
+      GeoRegionOption(
+          code: 'UA-43', label: 'Avtonomna Respublika Krym', type: 'Republic'),
       GeoRegionOption(code: 'UA-71', label: 'Cherkaska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-74', label: 'Chernihivska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-77', label: 'Chernivetska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-12', label: 'Dnipropetrovska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-74', label: 'Chernihivska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-77', label: 'Chernivetska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-12', label: 'Dnipropetrovska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-14', label: 'Donetska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-26', label: 'Ivano-Frankivska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-63', label: 'Kharkivska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-65', label: 'Khersonska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-68', label: 'Khmelnytska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-35', label: 'Kirovohradska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-26', label: 'Ivano-Frankivska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-63', label: 'Kharkivska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-65', label: 'Khersonska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-68', label: 'Khmelnytska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-35', label: 'Kirovohradska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-30', label: 'Kyiv', type: 'City'),
       GeoRegionOption(code: 'UA-32', label: 'Kyivska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-09', label: 'Luhanska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-46', label: 'Lvivska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-48', label: 'Mykolaivska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-48', label: 'Mykolaivska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-51', label: 'Odeska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-53', label: 'Poltavska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-56', label: 'Rivnenska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-40', label: 'Sevastopol', type: 'City'),
       GeoRegionOption(code: 'UA-59', label: 'Sumska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-61', label: 'Ternopilska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-61', label: 'Ternopilska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-05', label: 'Vinnytska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-07', label: 'Volynska oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-21', label: 'Zakarpatska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-21', label: 'Zakarpatska oblast', type: 'Region'),
       GeoRegionOption(code: 'UA-23', label: 'Zaporizka oblast', type: 'Region'),
-      GeoRegionOption(code: 'UA-18', label: 'Zhytomyrska oblast', type: 'Region'),
+      GeoRegionOption(
+          code: 'UA-18', label: 'Zhytomyrska oblast', type: 'Region'),
     ],
     'UG': <GeoRegionOption>[
-      GeoRegionOption(code: 'UG-C', label: 'Central', type: 'Geographical Region'),
-      GeoRegionOption(code: 'UG-E', label: 'Eastern', type: 'Geographical Region'),
-      GeoRegionOption(code: 'UG-N', label: 'Northern', type: 'Geographical Region'),
-      GeoRegionOption(code: 'UG-W', label: 'Western', type: 'Geographical Region'),
+      GeoRegionOption(
+          code: 'UG-C', label: 'Central', type: 'Geographical Region'),
+      GeoRegionOption(
+          code: 'UG-E', label: 'Eastern', type: 'Geographical Region'),
+      GeoRegionOption(
+          code: 'UG-N', label: 'Northern', type: 'Geographical Region'),
+      GeoRegionOption(
+          code: 'UG-W', label: 'Western', type: 'Geographical Region'),
     ],
     'UM': <GeoRegionOption>[
-      GeoRegionOption(code: 'UM-81', label: 'Baker Island', type: 'Islands, Groups Of Islands'),
-      GeoRegionOption(code: 'UM-84', label: 'Howland Island', type: 'Islands, Groups Of Islands'),
-      GeoRegionOption(code: 'UM-86', label: 'Jarvis Island', type: 'Islands, Groups Of Islands'),
-      GeoRegionOption(code: 'UM-67', label: 'Johnston Atoll', type: 'Islands, Groups Of Islands'),
-      GeoRegionOption(code: 'UM-89', label: 'Kingman Reef', type: 'Islands, Groups Of Islands'),
-      GeoRegionOption(code: 'UM-71', label: 'Midway Islands', type: 'Islands, Groups Of Islands'),
-      GeoRegionOption(code: 'UM-76', label: 'Navassa Island', type: 'Islands, Groups Of Islands'),
-      GeoRegionOption(code: 'UM-95', label: 'Palmyra Atoll', type: 'Islands, Groups Of Islands'),
-      GeoRegionOption(code: 'UM-79', label: 'Wake Island', type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-81',
+          label: 'Baker Island',
+          type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-84',
+          label: 'Howland Island',
+          type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-86',
+          label: 'Jarvis Island',
+          type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-67',
+          label: 'Johnston Atoll',
+          type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-89',
+          label: 'Kingman Reef',
+          type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-71',
+          label: 'Midway Islands',
+          type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-76',
+          label: 'Navassa Island',
+          type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-95',
+          label: 'Palmyra Atoll',
+          type: 'Islands, Groups Of Islands'),
+      GeoRegionOption(
+          code: 'UM-79',
+          label: 'Wake Island',
+          type: 'Islands, Groups Of Islands'),
     ],
     'US': <GeoRegionOption>[
       GeoRegionOption(code: 'US-AL', label: 'Alabama', type: 'State'),
       GeoRegionOption(code: 'US-AK', label: 'Alaska', type: 'State'),
-      GeoRegionOption(code: 'US-AS', label: 'American Samoa', type: 'Outlying Area'),
+      GeoRegionOption(
+          code: 'US-AS', label: 'American Samoa', type: 'Outlying Area'),
       GeoRegionOption(code: 'US-AZ', label: 'Arizona', type: 'State'),
       GeoRegionOption(code: 'US-AR', label: 'Arkansas', type: 'State'),
       GeoRegionOption(code: 'US-CA', label: 'California', type: 'State'),
       GeoRegionOption(code: 'US-CO', label: 'Colorado', type: 'State'),
       GeoRegionOption(code: 'US-CT', label: 'Connecticut', type: 'State'),
       GeoRegionOption(code: 'US-DE', label: 'Delaware', type: 'State'),
-      GeoRegionOption(code: 'US-DC', label: 'District of Columbia', type: 'District'),
+      GeoRegionOption(
+          code: 'US-DC', label: 'District of Columbia', type: 'District'),
       GeoRegionOption(code: 'US-FL', label: 'Florida', type: 'State'),
       GeoRegionOption(code: 'US-GA', label: 'Georgia', type: 'State'),
       GeoRegionOption(code: 'US-GU', label: 'Guam', type: 'Outlying Area'),
@@ -4315,21 +5526,29 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'US-NY', label: 'New York', type: 'State'),
       GeoRegionOption(code: 'US-NC', label: 'North Carolina', type: 'State'),
       GeoRegionOption(code: 'US-ND', label: 'North Dakota', type: 'State'),
-      GeoRegionOption(code: 'US-MP', label: 'Northern Mariana Islands', type: 'Outlying Area'),
+      GeoRegionOption(
+          code: 'US-MP',
+          label: 'Northern Mariana Islands',
+          type: 'Outlying Area'),
       GeoRegionOption(code: 'US-OH', label: 'Ohio', type: 'State'),
       GeoRegionOption(code: 'US-OK', label: 'Oklahoma', type: 'State'),
       GeoRegionOption(code: 'US-OR', label: 'Oregon', type: 'State'),
       GeoRegionOption(code: 'US-PA', label: 'Pennsylvania', type: 'State'),
-      GeoRegionOption(code: 'US-PR', label: 'Puerto Rico', type: 'Outlying Area'),
+      GeoRegionOption(
+          code: 'US-PR', label: 'Puerto Rico', type: 'Outlying Area'),
       GeoRegionOption(code: 'US-RI', label: 'Rhode Island', type: 'State'),
       GeoRegionOption(code: 'US-SC', label: 'South Carolina', type: 'State'),
       GeoRegionOption(code: 'US-SD', label: 'South Dakota', type: 'State'),
       GeoRegionOption(code: 'US-TN', label: 'Tennessee', type: 'State'),
       GeoRegionOption(code: 'US-TX', label: 'Texas', type: 'State'),
-      GeoRegionOption(code: 'US-UM', label: 'United States Minor Outlying Islands', type: 'Outlying Area'),
+      GeoRegionOption(
+          code: 'US-UM',
+          label: 'United States Minor Outlying Islands',
+          type: 'Outlying Area'),
       GeoRegionOption(code: 'US-UT', label: 'Utah', type: 'State'),
       GeoRegionOption(code: 'US-VT', label: 'Vermont', type: 'State'),
-      GeoRegionOption(code: 'US-VI', label: 'Virgin Islands, U.S.', type: 'Outlying Area'),
+      GeoRegionOption(
+          code: 'US-VI', label: 'Virgin Islands, U.S.', type: 'Outlying Area'),
       GeoRegionOption(code: 'US-VA', label: 'Virginia', type: 'State'),
       GeoRegionOption(code: 'US-WA', label: 'Washington', type: 'State'),
       GeoRegionOption(code: 'US-WV', label: 'West Virginia', type: 'State'),
@@ -4355,7 +5574,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'UY-SJ', label: 'San José', type: 'Department'),
       GeoRegionOption(code: 'UY-SO', label: 'Soriano', type: 'Department'),
       GeoRegionOption(code: 'UY-TA', label: 'Tacuarembó', type: 'Department'),
-      GeoRegionOption(code: 'UY-TT', label: 'Treinta y Tres', type: 'Department'),
+      GeoRegionOption(
+          code: 'UY-TT', label: 'Treinta y Tres', type: 'Department'),
     ],
     'UZ': <GeoRegionOption>[
       GeoRegionOption(code: 'UZ-AN', label: 'Andijon', type: 'Region'),
@@ -4365,7 +5585,10 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'UZ-NG', label: 'Namangan', type: 'Region'),
       GeoRegionOption(code: 'UZ-NW', label: 'Navoiy', type: 'Region'),
       GeoRegionOption(code: 'UZ-QA', label: 'Qashqadaryo', type: 'Region'),
-      GeoRegionOption(code: 'UZ-QR', label: 'Qoraqalpog‘iston Respublikasi', type: 'Republic'),
+      GeoRegionOption(
+          code: 'UZ-QR',
+          label: 'Qoraqalpog‘iston Respublikasi',
+          type: 'Republic'),
       GeoRegionOption(code: 'UZ-SA', label: 'Samarqand', type: 'Region'),
       GeoRegionOption(code: 'UZ-SI', label: 'Sirdaryo', type: 'Region'),
       GeoRegionOption(code: 'UZ-SU', label: 'Surxondaryo', type: 'Region'),
@@ -4391,8 +5614,12 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'VE-G', label: 'Carabobo', type: 'State'),
       GeoRegionOption(code: 'VE-H', label: 'Cojedes', type: 'State'),
       GeoRegionOption(code: 'VE-Y', label: 'Delta Amacuro', type: 'State'),
-      GeoRegionOption(code: 'VE-W', label: 'Dependencias Federales', type: 'Federal Dependency'),
-      GeoRegionOption(code: 'VE-A', label: 'Distrito Capital', type: 'Capital District'),
+      GeoRegionOption(
+          code: 'VE-W',
+          label: 'Dependencias Federales',
+          type: 'Federal Dependency'),
+      GeoRegionOption(
+          code: 'VE-A', label: 'Distrito Capital', type: 'Capital District'),
       GeoRegionOption(code: 'VE-I', label: 'Falcón', type: 'State'),
       GeoRegionOption(code: 'VE-J', label: 'Guárico', type: 'State'),
       GeoRegionOption(code: 'VE-X', label: 'La Guaira', type: 'State'),
@@ -4410,7 +5637,8 @@ class GlobalSetupOptions {
     ],
     'VN': <GeoRegionOption>[
       GeoRegionOption(code: 'VN-44', label: 'An Giang', type: 'Province'),
-      GeoRegionOption(code: 'VN-43', label: 'Bà Rịa - Vũng Tàu', type: 'Province'),
+      GeoRegionOption(
+          code: 'VN-43', label: 'Bà Rịa - Vũng Tàu', type: 'Province'),
       GeoRegionOption(code: 'VN-57', label: 'Bình Dương', type: 'Province'),
       GeoRegionOption(code: 'VN-58', label: 'Bình Phước', type: 'Province'),
       GeoRegionOption(code: 'VN-40', label: 'Bình Thuận', type: 'Province'),
@@ -4433,7 +5661,8 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'VN-61', label: 'Hải Dương', type: 'Province'),
       GeoRegionOption(code: 'VN-HP', label: 'Hải Phòng', type: 'Municipality'),
       GeoRegionOption(code: 'VN-73', label: 'Hậu Giang', type: 'Province'),
-      GeoRegionOption(code: 'VN-SG', label: 'Hồ Chí Minh', type: 'Municipality'),
+      GeoRegionOption(
+          code: 'VN-SG', label: 'Hồ Chí Minh', type: 'Municipality'),
       GeoRegionOption(code: 'VN-34', label: 'Khánh Hòa', type: 'Province'),
       GeoRegionOption(code: 'VN-47', label: 'Kiến Giang', type: 'Province'),
       GeoRegionOption(code: 'VN-28', label: 'Kon Tum', type: 'Province'),
@@ -4482,9 +5711,12 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'VU-TOB', label: 'Torba', type: 'Province'),
     ],
     'WF': <GeoRegionOption>[
-      GeoRegionOption(code: 'WF-AL', label: 'Alo', type: 'Administrative Precinct'),
-      GeoRegionOption(code: 'WF-SG', label: 'Sigave', type: 'Administrative Precinct'),
-      GeoRegionOption(code: 'WF-UV', label: 'Uvea', type: 'Administrative Precinct'),
+      GeoRegionOption(
+          code: 'WF-AL', label: 'Alo', type: 'Administrative Precinct'),
+      GeoRegionOption(
+          code: 'WF-SG', label: 'Sigave', type: 'Administrative Precinct'),
+      GeoRegionOption(
+          code: 'WF-UV', label: 'Uvea', type: 'Administrative Precinct'),
     ],
     'WS': <GeoRegionOption>[
       GeoRegionOption(code: 'WS-AA', label: 'A\'ana', type: 'District'),
@@ -4506,8 +5738,12 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'YE-MR', label: 'Al Mahrah', type: 'Governorate'),
       GeoRegionOption(code: 'YE-MW', label: 'Al Maḩwīt', type: 'Governorate'),
       GeoRegionOption(code: 'YE-HU', label: 'Al Ḩudaydah', type: 'Governorate'),
-      GeoRegionOption(code: 'YE-SA', label: 'Amānat al ‘Āşimah [city]', type: 'Municipality'),
-      GeoRegionOption(code: 'YE-SU', label: 'Arkhabīl Suquţrá', type: 'Governorate'),
+      GeoRegionOption(
+          code: 'YE-SA',
+          label: 'Amānat al ‘Āşimah [city]',
+          type: 'Municipality'),
+      GeoRegionOption(
+          code: 'YE-SU', label: 'Arkhabīl Suquţrá', type: 'Governorate'),
       GeoRegionOption(code: 'YE-DA', label: 'Aḑ Ḑāli‘', type: 'Governorate'),
       GeoRegionOption(code: 'YE-DH', label: 'Dhamār', type: 'Governorate'),
       GeoRegionOption(code: 'YE-IB', label: 'Ibb', type: 'Governorate'),
@@ -4550,12 +5786,17 @@ class GlobalSetupOptions {
       GeoRegionOption(code: 'ZW-BU', label: 'Bulawayo', type: 'Province'),
       GeoRegionOption(code: 'ZW-HA', label: 'Harare', type: 'Province'),
       GeoRegionOption(code: 'ZW-MA', label: 'Manicaland', type: 'Province'),
-      GeoRegionOption(code: 'ZW-MC', label: 'Mashonaland Central', type: 'Province'),
-      GeoRegionOption(code: 'ZW-ME', label: 'Mashonaland East', type: 'Province'),
-      GeoRegionOption(code: 'ZW-MW', label: 'Mashonaland West', type: 'Province'),
+      GeoRegionOption(
+          code: 'ZW-MC', label: 'Mashonaland Central', type: 'Province'),
+      GeoRegionOption(
+          code: 'ZW-ME', label: 'Mashonaland East', type: 'Province'),
+      GeoRegionOption(
+          code: 'ZW-MW', label: 'Mashonaland West', type: 'Province'),
       GeoRegionOption(code: 'ZW-MV', label: 'Masvingo', type: 'Province'),
-      GeoRegionOption(code: 'ZW-MN', label: 'Matabeleland North', type: 'Province'),
-      GeoRegionOption(code: 'ZW-MS', label: 'Matabeleland South', type: 'Province'),
+      GeoRegionOption(
+          code: 'ZW-MN', label: 'Matabeleland North', type: 'Province'),
+      GeoRegionOption(
+          code: 'ZW-MS', label: 'Matabeleland South', type: 'Province'),
       GeoRegionOption(code: 'ZW-MI', label: 'Midlands', type: 'Province'),
     ],
   };
@@ -4563,26 +5804,39 @@ class GlobalSetupOptions {
     if (countryCode == null || countryCode.trim().isEmpty) return 'Region';
     return regionLabelByCountry[countryCode.trim().toUpperCase()] ?? 'Region';
   }
+
   static List<GeoRegionOption> regionsForCountry(String? countryCode) {
-    if (countryCode == null || countryCode.trim().isEmpty) return const <GeoRegionOption>[];
-    return regionsByCountry[countryCode.trim().toUpperCase()] ?? const <GeoRegionOption>[];
+    if (countryCode == null || countryCode.trim().isEmpty) {
+      return const <GeoRegionOption>[];
+    }
+    return regionsByCountry[countryCode.trim().toUpperCase()] ??
+        const <GeoRegionOption>[];
   }
+
   static SetupOption? countryByCode(String? code) {
     if (code == null || code.trim().isEmpty) return null;
     final normalized = code.trim().toUpperCase();
-    for (final item in countries) { if (item.code == normalized) return item; }
+    for (final item in countries) {
+      if (item.code == normalized) return item;
+    }
     return null;
   }
+
   static SetupOption? industryByCode(String? code) {
     if (code == null || code.trim().isEmpty) return null;
     final normalized = code.trim();
-    for (final item in industries) { if (item.code == normalized) return item; }
+    for (final item in industries) {
+      if (item.code == normalized) return item;
+    }
     return null;
   }
+
   static SetupOption? planByCode(String? code) {
     if (code == null || code.trim().isEmpty) return null;
     final normalized = code.trim().toLowerCase();
-    for (final item in plans) { if (item.code == normalized) return item; }
+    for (final item in plans) {
+      if (item.code == normalized) return item;
+    }
     return null;
   }
 }

@@ -15,7 +15,8 @@ class OperatorProvidersScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(child: Text('Providers could not load right now.'));
+          return const Center(
+              child: Text('Providers could not load at the moment.'));
         }
         final items = (snapshot.data!['items'] as List? ?? const <dynamic>[])
             .whereType<Map>()
@@ -32,7 +33,7 @@ class OperatorProvidersScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                   border: Border.all(color: AppTheme.publicLine),
                 ),
                 child: Column(
@@ -67,7 +68,7 @@ class OperatorProvidersScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                   border: Border.all(color: AppTheme.publicLine),
                 ),
                 child: Column(
@@ -83,7 +84,7 @@ class OperatorProvidersScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     if (items.isEmpty)
                       Text(
-                        'No provider status is visible right now.',
+                        'No provider status is visible at the moment.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       )
                     else
@@ -102,7 +103,8 @@ class OperatorProvidersScreen extends StatelessWidget {
   }
 
   Future<Map<String, dynamic>> _load() async {
-    final json = await ApiClient().getJson('/providers/status', surface: ApiSurface.operator);
+    final json = await ApiClient()
+        .getJson('/providers/status', surface: ApiSurface.operator);
     return Map<String, dynamic>.from(json as Map);
   }
 }
@@ -118,11 +120,14 @@ class _Item extends StatelessWidget {
     final available = item['available'] == true;
     final primary = [
       available ? 'Available' : 'Unavailable',
-      if ((item['kind'] ?? '').toString().trim().isNotEmpty) item['kind'].toString(),
+      if ((item['kind'] ?? '').toString().trim().isNotEmpty)
+        item['kind'].toString(),
     ].join(' · ');
     final secondary = [
-      if ((item['reason'] ?? '').toString().trim().isNotEmpty) item['reason'].toString(),
-      if ((item['configured'] ?? '').toString().trim().isNotEmpty) 'configured: ${item['configured']}',
+      if ((item['reason'] ?? '').toString().trim().isNotEmpty)
+        item['reason'].toString(),
+      if ((item['configured'] ?? '').toString().trim().isNotEmpty)
+        'configured: ${item['configured']}',
     ].join(' · ');
 
     return Column(

@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class Surface extends StatelessWidget {
-  const Surface({super.key, required this.child, this.padding = const EdgeInsets.all(24)});
+  const Surface(
+      {super.key,
+      required this.child,
+      this.padding = const EdgeInsets.all(24)});
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -14,7 +17,7 @@ class Surface extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.line),
       ),
       child: child,

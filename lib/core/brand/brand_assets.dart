@@ -3,17 +3,25 @@ import 'package:flutter/material.dart';
 class BrandAssets {
   BrandAssets._();
 
-  static const String _logoLight = 'assets/branding/logo/orchestrate_logo_light.png';
-  static const String _logoDark = 'assets/branding/logo/orchestrate_logo_dark.png';
-  static const String _symbolLight = 'assets/branding/logo/orchestrate_symbol_light.png';
-  static const String _symbolDark = 'assets/branding/logo/orchestrate_symbol_dark.png';
+  static const String _logoLight =
+      'assets/branding/logo/orchestrate_logo_light.png';
+  static const String _logoDark =
+      'assets/branding/logo/orchestrate_logo_dark.png';
+  static const String _symbolLight =
+      'assets/branding/logo/orchestrate_symbol_light.png';
+  static const String _symbolDark =
+      'assets/branding/logo/orchestrate_symbol_dark.png';
 
   static String logoFor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark ? _logoDark : _logoLight;
+    return Theme.of(context).brightness == Brightness.dark
+        ? _logoDark
+        : _logoLight;
   }
 
   static String symbolFor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark ? _symbolDark : _symbolLight;
+    return Theme.of(context).brightness == Brightness.dark
+        ? _symbolDark
+        : _symbolLight;
   }
 
   static ImageProvider<Object> logoProvider(BuildContext context) {
@@ -90,11 +98,11 @@ class BrandAssets {
               overflow: TextOverflow.fade,
               softWrap: false,
               style: theme.textTheme.headlineSmall?.copyWith(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.6,
-                    height: 1,
-                  ),
+                fontSize: fontSize,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.6,
+                height: 1,
+              ),
             ),
           ),
         ],

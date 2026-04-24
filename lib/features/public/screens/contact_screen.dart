@@ -125,7 +125,7 @@ class _ContactIntro extends StatelessWidget {
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -147,12 +147,12 @@ class _ContactIntro extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Talk through fit, scope, pricing, or next steps.',
+            'Talk through fit, service fit, pricing, or next steps.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 16),
           Text(
-            'Use this page when you want a direct conversation before moving forward. Contact is the full support surface for public entry. Quick guidance remains available if you want help to stay open while reviewing another page.',
+            'Use this page when you want a direct conversation before moving forward. Contact is the full support area for public entry. Quick guidance remains available if you want help to stay open while reviewing another page.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -161,13 +161,13 @@ class _ContactIntro extends StatelessWidget {
           const _DetailCard(
             title: 'Best use of this page',
             body:
-                'Use contact for service fit, pricing clarity, onboarding questions, billing questions, or scope decisions before account setup.',
+                'Use contact for service fit, pricing clarity, onboarding questions, billing questions, or service fit decisions before account setup.',
           ),
           const SizedBox(height: 14),
           const _DetailCard(
             title: 'What helps most',
             body:
-                'Share what your business is trying to achieve, the market you serve, what is already in place, and anything that changes the scope or pace of the work.',
+                'Share what your business is trying to achieve, the market you serve, what is already in place, and anything that changes the service fit or pace of the work.',
           ),
           const SizedBox(height: 14),
           const _DetailCard(
@@ -183,7 +183,7 @@ class _ContactIntro extends StatelessWidget {
               side: const BorderSide(color: AppTheme.publicLine),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppTheme.radius),
               ),
             ),
             child: const Text('Open quick guidance'),
@@ -211,7 +211,7 @@ class _ContactSupportSurface extends StatelessWidget {
       height: 600,
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -281,7 +281,7 @@ class _DetailCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(

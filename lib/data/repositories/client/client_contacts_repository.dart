@@ -1,7 +1,8 @@
 import '../../../core/network/api_client.dart';
 
 class ClientContactsRepository {
-  ClientContactsRepository({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ClientContactsRepository({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
@@ -42,5 +43,6 @@ class ClientContactsRepository {
     return <String, dynamic>{};
   }
 
-  List<dynamic> _asList(dynamic value) => value is List ? value : const <dynamic>[];
+  List<dynamic> _asList(dynamic value) =>
+      value is List ? value : const <dynamic>[];
 }

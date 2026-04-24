@@ -45,7 +45,8 @@ class ControlRepository {
 
     if (firstClientId == null) return const <ResourceItem>[];
 
-    final items = await _operatorRepository.fetchReplies(clientId: firstClientId);
+    final items =
+        await _operatorRepository.fetchReplies(clientId: firstClientId);
     return _mapItems(items, ResourceKind.reply);
   }
 
@@ -66,13 +67,12 @@ class ControlRepository {
   Future<DeliverabilityOverview> fetchDeliverabilityOverview() async {
     final json = await _operatorRepository.fetchDeliverabilityOverview();
     final mailboxes = (json['mailboxes'] as List? ?? const []).length;
-    final degraded = (json['mailboxes'] as List? ?? const [])
-        .whereType<Map>()
-        .where((item) {
-          final health = '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
-          return health == 'DEGRADED' || health == 'CRITICAL';
-        })
-        .length;
+    final degraded =
+        (json['mailboxes'] as List? ?? const []).whereType<Map>().where((item) {
+      final health =
+          '${item['healthStatus'] ?? item['status'] ?? ''}'.toUpperCase();
+      return health == 'DEGRADED' || health == 'CRITICAL';
+    }).length;
 
     return DeliverabilityOverview.fromJson({
       'activeMailboxes': mailboxes,

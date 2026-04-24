@@ -283,19 +283,32 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Product',
-            title: 'From target market to qualified meeting, with control.',
+            title: 'Turn target markets into qualified conversations.',
             subtitle:
-                'Orchestrate helps teams define the right market, source opportunities, run outreach, follow up, and move qualified interest toward meetings.',
+                'Orchestrate helps businesses find the right accounts, start outreach, handle follow-up, manage replies, and move interested prospects toward booked meetings.',
+            sideNote:
+                'Start with outreach. Add revenue follow-through when billing, documents, and reminders need to stay connected.',
+            sideActions: [
+              ContentAction(
+                  label: 'Start setup', path: '/auth/join', filled: true),
+              ContentAction(label: 'View pricing', path: '/pricing'),
+            ],
             sections: [
               ContentSection(
-                title: 'What the system does',
+                title: 'What your business gets',
                 body:
-                    'The product connects campaign scope, lead sourcing, outreach, replies, meetings, billing, and support without turning client work into an operator console.',
+                    'A managed workspace for target market setup, outreach coverage, follow-up handling, replies, meetings, billing standing, service records, and support.',
+                points: [
+                  'More qualified conversations from the markets you choose',
+                  'Less manual prospecting and fewer missed follow-ups',
+                  'Clear sales activity without exposing operational clutter',
+                  'A faster path from target market to booked meetings',
+                ],
               ),
               ContentSection(
-                title: 'How the workspace is organized',
+                title: 'How it is organized',
                 body:
-                    'Public pages explain the offer. Client workspaces show service standing and next steps. Operator tools manage execution, inquiries, providers, and system checks.',
+                    'Public pages help you decide. The client workspace shows what is set up, what is running, what needs action, and what happens next. Operator tools keep the managed service moving.',
               ),
             ],
           ),
@@ -309,49 +322,49 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Campaign journey',
-            title: 'Lead source to meeting, governed at each step.',
+            title: 'From target market to booked meeting.',
             subtitle:
-                'Orchestrate keeps the full journey readable while showing live operational records only after sign in.',
+                'The work starts with your business profile and target customers, then moves through sourcing, outreach, replies, meetings, billing records, and support.',
             sideNote:
-                'Clients see client-safe service progress. Operators see the deeper controls needed to run the work.',
+                'You see business progress. Operators keep the deeper service controls out of your way.',
             sideActions: [
               ContentAction(
-                  label: 'Review pricing', path: '/pricing', filled: true),
-              ContentAction(label: 'Start intake', path: '/intake'),
+                  label: 'View pricing', path: '/pricing', filled: true),
+              ContentAction(label: 'Talk through fit', path: '/contact'),
             ],
             sections: [
               ContentSection(
-                title: '1. Scope and authorization',
+                title: '1. Set up the business profile',
                 body:
-                    'The client provides account, market, targeting, and representation details before outbound work is activated.',
+                    'Tell Orchestrate what you sell, who you want to reach, where you serve, and how outreach should represent your business.',
                 points: [
-                  'Setup status',
-                  'Campaign profile',
-                  'Targeting boundaries',
+                  'Business profile',
+                  'Target customers',
+                  'Target location',
                   'Representation authorization'
                 ],
               ),
               ContentSection(
-                title: '2. Source and prepare leads',
+                title: '2. Source and prepare the right leads',
                 body:
-                    'Provider-flexible sourcing feeds lead records that can be checked for reachability, qualification, and readiness.',
+                    'Lead sourcing stays tied to your target market so contacted records are easier to understand and review.',
                 points: [
-                  'Provider readiness',
-                  'Source runs',
                   'Lead records',
-                  'Reachability and qualification where selected'
+                  'Contact readiness',
+                  'Target market fit',
+                  'Outreach readiness'
                 ],
               ),
               ContentSection(
-                title: '3. Execute outreach and follow-up',
+                title: '3. Run outreach and follow-up',
                 body:
-                    'Execution jobs, dispatches, reply handling, and meeting handoff remain system-governed and operator-visible.',
+                    'First messages, follow-ups, replies, and meeting handoff stay connected so momentum does not depend on scattered manual tracking.',
                 points: [
-                  'Email dispatches',
-                  'First sends',
+                  'Queued outreach',
+                  'Sent messages',
                   'Follow-ups',
-                  'Reply classification',
-                  'Meeting handoff'
+                  'Replies',
+                  'Meetings'
                 ],
               ),
             ],
@@ -366,10 +379,9 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'AI governance',
-            title:
-                'AI assists revenue execution under readiness, authority, and enforcement controls.',
+            title: 'AI helps run the work with service controls.',
             subtitle:
-                'AI in Orchestrate is not a decorative writing widget. It supports strategy, messages, sequences, revenue documents, and governed execution decisions.',
+                'AI assists with strategy, messages, sequences, revenue documents, and diagnosis while the managed service stays reviewable and controlled.',
             sideActions: [
               ContentAction(
                   label: 'Talk through fit', path: '/contact', filled: true),
@@ -379,17 +391,17 @@ final router = GoRouter(
               ContentSection(
                 title: 'Governed assistance',
                 body:
-                    'Operators can review AI capability status, trust status, readiness, evaluation sets, authority decisions, diagnosis, and generation actions.',
+                    'Operators can review readiness, trust status, diagnosis, and generation actions before service decisions affect live work.',
               ),
               ContentSection(
                 title: 'Client-safe trust',
                 body:
-                    'Clients see operational summaries and clear blocked or pending states. Detailed AI decision and enforcement records stay in operator tools unless a client-safe summary is available.',
+                    'Clients see clear service progress, blocked states, and next steps without being asked to interpret technical logs.',
               ),
               ContentSection(
                 title: 'Service truth',
                 body:
-                    'AI status is shown from real system records. When a record type is not enabled, the workspace says so plainly.',
+                    'When a view is not available for an account yet, the workspace says so plainly and points to the next useful action.',
               ),
             ],
           ),
@@ -404,19 +416,19 @@ final router = GoRouter(
           child: const PublicContentScreen(
             eyebrow: 'Lead sourcing',
             title:
-                'Provider-flexible sourcing instead of dependence on one list vendor.',
+                'Sourcing starts from your target market, not a generic list.',
             subtitle:
-                'Orchestrate treats sourcing as a governed supply layer that can use providers, internal discovery, campaign source plans, and source runs.',
+                'Orchestrate is designed to find opportunities from the market, region, industry, and offer context you provide.',
             sections: [
               ContentSection(
                 title: 'Sourcing philosophy',
                 body:
-                    'The system is designed around target clarity, provider flexibility, reachability, qualification, and source-run records.',
+                    'The goal is qualified conversations, so sourcing is tied to target clarity, contact readiness, and business fit.',
               ),
               ContentSection(
-                title: 'Operational posture',
+                title: 'What you see',
                 body:
-                    'Operators can inspect providers and campaign-specific source runs where available. Clients see sourced leads and readiness without provider internals.',
+                    'Clients see sourced leads, readiness, contact status, and outreach progress. Operator-only provider details stay out of the client workspace.',
               ),
             ],
           ),
@@ -431,9 +443,9 @@ final router = GoRouter(
           child: const PublicContentScreen(
             eyebrow: 'Trust and compliance',
             title:
-                'Deliverability, representation, suppression, and records are first-class system concerns.',
+                'Deliverability, permission, and records are part of the service.',
             subtitle:
-                'The product separates execution from trust posture so outbound work can be inspected, paused, and corrected.',
+                'Outbound work needs a clear sender posture, representation authorization, suppression handling, and service records.',
             sideActions: [
               ContentAction(
                   label: 'Deliverability policy',
@@ -479,19 +491,20 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'About',
-            title: 'A revenue system with clear operating boundaries.',
+            title:
+                'Managed revenue operations for businesses that need follow-through.',
             subtitle:
-                'The structure matters because products drift when public messaging, client work, and operator control are mixed together.',
+                'Orchestrate exists to connect opportunity creation, outreach execution, replies, meetings, billing continuity, records, and support.',
             sections: [
               ContentSection(
                 title: 'Why the separation matters',
                 body:
-                    'Public pages explain the product. Client workspaces show account-specific progress and next steps. Operator tools manage the deeper execution layer.',
+                    'Visitors get a buying journey, clients get a calm service workspace, and operators get the command tools needed to keep work moving.',
               ),
               ContentSection(
                 title: 'What stays fixed',
                 body:
-                    'Campaigns hold targeting and activation. Leads show sourced records. Outreach, replies, and meetings carry service progress forward.',
+                    'Setup defines the business and target market. Campaigns guide sourcing and outreach. Replies and meetings carry the outcome forward.',
               ),
             ],
           ),
@@ -512,26 +525,24 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Updates',
-            title: 'Product updates and revenue operations notes.',
+            title: 'Updates will appear here when available.',
             subtitle:
-                'Public updates are separate from client account controls, so account work stays clean after sign in.',
+                'Public product notes and revenue operations updates are not available yet. Account-specific notices appear inside the client workspace.',
             sections: [
               ContentSection(
                 title: 'Public updates',
                 body:
-                    'Visitors can follow product updates and revenue operations notes from the public site.',
+                    'This page will hold public product updates when the update subscription is enabled.',
               ),
               ContentSection(
                 title: 'Client communications',
                 body:
-                    'Account-specific communication settings appear inside the client workspace when enabled.',
+                    'Client notices, reminders, and service records appear after sign-in when they are available for the account.',
               ),
             ],
             sideActions: [
               ContentAction(
-                  label: 'Subscribe',
-                  path: '/newsletter/subscribe',
-                  filled: true),
+                  label: 'Contact us', path: '/contact', filled: true),
             ],
           ),
         ),
@@ -544,14 +555,14 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Updates',
-            title: 'Update subscription is not enabled yet.',
+            title: 'Update subscription is not available yet.',
             subtitle:
-                'This account does not have a public updates form connected yet.',
+                'Public update subscriptions are not connected yet. Use contact for now if you want to talk through fit or timing.',
             sections: [
               ContentSection(
                 title: 'Status',
                 body:
-                    'Use the contact form for now. Update subscriptions can be enabled here when the service is connected.',
+                    'This feature will appear here when it is available. For now, contact is the useful next action.',
               ),
             ],
           ),

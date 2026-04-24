@@ -74,7 +74,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
         return const _OperatorSpec(
           eyebrow: 'Identity',
           title: 'Organizations and users',
-          subtitle: 'Tenant and membership surfaces remain system-owned.',
+          subtitle: 'Tenant and membership records remain operator-controlled.',
           sections: [
             BackendSurfaceSection(
               title: 'Organizations',
@@ -87,10 +87,12 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
             BackendSurfaceSection(
               title: 'User directory status',
               description:
-                  'User creation and membership actions exist. A readable user directory is not available from operator control yet.',
+                  'User creation and membership actions exist. A readable user directory is not currently exposed in operator control.',
               endpoints: [],
-              emptyLabel: 'User directory browsing is not enabled.',
-              gapLabel: 'User directory not enabled',
+              emptyLabel:
+                  'User directory browsing is not currently exposed in operator control.',
+              gapLabel:
+                  'User directory not currently exposed in operator control',
             ),
           ],
         );
@@ -122,7 +124,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
           eyebrow: 'Execution',
           title: 'Jobs and execution controls',
           subtitle:
-              'The system exposes execution actions, but no general jobs list capability is present right now.',
+              'The system exposes execution actions, but no general jobs list control is present at the moment.',
           sections: [
             BackendSurfaceSection(
               title: 'Execution summary',
@@ -136,13 +138,13 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No execution summary is visible.',
             ),
             BackendSurfaceSection(
-              title: 'Jobs list status',
+              title: 'Jobs control status',
               description:
-                  'Run and dispatch capabilities exist as action controls; a read capability is not exposed.',
+                  'Run and dispatch capabilities exist as action controls; a read control is not currently exposed in operator control.',
               endpoints: [],
               emptyLabel:
-                  'Job browsing is not enabled. Use dispatch controls from the command board.',
-              gapLabel: 'Jobs list not enabled',
+                  'Job browsing is not currently exposed in operator control. Use the command board to dispatch due work.',
+              gapLabel: 'Jobs list not currently exposed in operator control',
             ),
           ],
         );
@@ -151,15 +153,17 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
           eyebrow: 'Execution',
           title: 'Workers',
           subtitle:
-              'Worker registration exists in system runtime, but operator control has no worker registry read capability yet.',
+              'Worker registration exists in system runtime, but operator control has no worker registry read control yet.',
           sections: [
             BackendSurfaceSection(
               title: 'Worker registry status',
               description:
-                  'Registered workers are system runtime truth, but no read capability is exposed for this view.',
+                  'Registered workers are system runtime truth, but no read control is exposed for this view.',
               endpoints: [],
-              emptyLabel: 'Worker registry browsing is not enabled.',
-              gapLabel: 'Worker registry not enabled',
+              emptyLabel:
+                  'Worker registry browsing is not currently exposed in operator control.',
+              gapLabel:
+                  'Worker registry not currently exposed in operator control',
             ),
           ],
         );
@@ -168,7 +172,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
           eyebrow: 'Execution',
           title: 'Queues and dispatch pressure',
           subtitle:
-              'Queue actions are available through execution capabilities; readable queue snapshots are not exposed as a dedicated capability.',
+              'Queue actions are available through execution capabilities; readable queue snapshots are not currently exposed in operator control as a dedicated control.',
           sections: [
             BackendSurfaceSection(
               title: 'Queue summary',
@@ -182,25 +186,25 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No queue summary is visible.',
             ),
             BackendSurfaceSection(
-              title: 'Queue list status',
-              description: 'No read capability is present.',
+              title: 'Queue control status',
+              description: 'No read control is present.',
               endpoints: [],
               emptyLabel:
-                  'Queue browsing is not enabled. Use dispatch controls from the command board.',
-              gapLabel: 'Queue list not enabled',
+                  'Queue browsing is not currently exposed in operator control. Use the command board to dispatch due work.',
+              gapLabel: 'Queue list not currently exposed in operator control',
             ),
           ],
         );
       case OperatorBackendSurface.aiGovernance:
         return const _OperatorSpec(
           eyebrow: 'AI governance',
-          title: 'AI trust, readiness, authority, and enforcement boundary',
+          title: 'AI trust, readiness, authority, and enforcement',
           subtitle:
-              'AI governance is shown from available AI status capabilities; decision and enforcement logs are reported as gaps when no read capability exists.',
+              'AI governance is shown from available AI status capabilities; decision and enforcement logs are reported as gaps when no read control exists.',
           sections: [
             BackendSurfaceSection(
               title: 'Trust and readiness',
-              description: 'Readable AI capability and readiness capabilities.',
+              description: 'Readable AI control and readiness capabilities.',
               endpoints: [
                 BackendEndpoint('/ai/capabilities/status',
                     label: 'capabilities'),
@@ -214,11 +218,11 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
             BackendSurfaceSection(
               title: 'Decision and enforcement status',
               description:
-                  'The system has durable AI decision/enforcement models and action authority capabilities, but no readable decision or enforcement log capability is exposed.',
+                  'The system has durable AI decision/enforcement models and action authority capabilities, but no readable decision or enforcement log control is exposed.',
               endpoints: [],
               emptyLabel:
-                  'Decision and enforcement log browsing is not enabled. Authority actions remain operator-only actions.',
-              gapLabel: 'AI governance logs not enabled',
+                  'Decision and enforcement log browsing is not currently exposed in operator control. Authority actions remain operator-only actions.',
+              gapLabel: 'AI governance logs not currently exposed',
             ),
           ],
         );
@@ -254,13 +258,13 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
           subtitle: 'Reachability is entity-specific in the system.',
           sections: [
             BackendSurfaceSection(
-              title: 'Reachability data boundary',
+              title: 'Reachability control requirement',
               description:
                   'Reachability is available for selected entities, but no aggregate reachability list is enabled yet.',
               endpoints: [],
               emptyLabel:
-                  'Aggregate reachability browsing is not enabled. Select a lead to check a specific entity.',
-              gapLabel: 'Aggregate reachability not enabled',
+                  'Aggregate reachability browsing is not currently exposed in operator control. Select a lead to check a specific entity.',
+              gapLabel: 'Requires lead selection',
             ),
           ],
         );
@@ -272,13 +276,13 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               'Qualification reads are campaign-specific or entity-specific.',
           sections: [
             BackendSurfaceSection(
-              title: 'Qualification data boundary',
+              title: 'Qualification control requirement',
               description:
                   'The system exposes campaign and entity qualification capabilities, but no aggregate qualification list.',
               endpoints: [],
               emptyLabel:
-                  'Aggregate qualification browsing is not enabled. Use campaign or lead-specific qualification checks.',
-              gapLabel: 'Aggregate qualification not enabled',
+                  'Aggregate qualification browsing is not currently exposed in operator control. Use campaign or lead-specific qualification checks.',
+              gapLabel: 'Requires campaign or lead selection',
             ),
           ],
         );
@@ -290,13 +294,13 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               'Signals and adaptation are campaign-specific system capabilities.',
           sections: [
             BackendSurfaceSection(
-              title: 'Campaign signal boundary',
+              title: 'Campaign signal requirement',
               description:
-                  'Signal detection, signal reads, and adaptation runs require a campaign id right now.',
+                  'Signal detection, signal reads, and adaptation runs require a campaign id at the moment.',
               endpoints: [],
               emptyLabel:
-                  'Aggregate signal browsing is not enabled. Select a campaign for signal review.',
-              gapLabel: 'Aggregate signals not enabled',
+                  'Aggregate signal browsing is not currently exposed in operator control. Select a campaign for signal review.',
+              gapLabel: 'Requires campaign selection',
             ),
           ],
         );
@@ -305,7 +309,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
           eyebrow: 'Emails',
           title: 'Email dispatches and inbound mail',
           subtitle:
-              'Dispatch history is readable. Inbound mail and templates are action capabilities unless a list capability is present.',
+              'Dispatch history is readable. Inbound mail and templates are action capabilities unless a list control is present.',
           sections: [
             BackendSurfaceSection(
               title: 'Dispatches',
@@ -375,16 +379,17 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
         return const _OperatorSpec(
           eyebrow: 'Analytics',
           title: 'Analytics',
-          subtitle: 'Analytics capabilities are campaign-specific right now.',
+          subtitle:
+              'Analytics capabilities are campaign-specific at the moment.',
           sections: [
             BackendSurfaceSection(
-              title: 'Analytics boundary',
+              title: 'Analytics requirement',
               description:
-                  'Source-yield and conversion analytics require a campaign id. No aggregate operator analytics capability is exposed.',
+                  'Source-yield and conversion analytics require a campaign id. No aggregate operator analytics control is exposed.',
               endpoints: [],
               emptyLabel:
-                  'Aggregate analytics browsing is not enabled. Select a campaign for source-yield or conversion analytics.',
-              gapLabel: 'Aggregate analytics not enabled',
+                  'Aggregate analytics browsing is not currently exposed in operator control. Select a campaign for source-yield or conversion analytics.',
+              gapLabel: 'Requires campaign selection',
             ),
           ],
         );
@@ -393,7 +398,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
           eyebrow: 'Records',
           title: 'Activity, audit, and system records',
           subtitle:
-              'Records overview is available, but there is no dedicated audit/activity event stream capability right now.',
+              'Records overview is available, but there is no dedicated audit/activity event stream control at the moment.',
           sections: [
             BackendSurfaceSection(
               title: 'Records overview',
@@ -408,10 +413,12 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
             BackendSurfaceSection(
               title: 'Audit stream status',
               description:
-                  'A dedicated audit/activity stream is not exposed for browsing yet.',
+                  'A dedicated audit/activity stream is not currently exposed in operator control for browsing yet.',
               endpoints: [],
-              emptyLabel: 'Audit and activity stream browsing is not enabled.',
-              gapLabel: 'Audit stream not enabled',
+              emptyLabel:
+                  'Audit and activity stream browsing is not currently exposed in operator control.',
+              gapLabel:
+                  'Audit stream not currently exposed in operator control',
             ),
           ],
         );

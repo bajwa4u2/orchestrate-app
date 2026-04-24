@@ -5,7 +5,12 @@ import '../theme/app_theme.dart';
 import 'surface.dart';
 
 class ResourceTable extends StatelessWidget {
-  const ResourceTable({super.key, required this.title, required this.subtitle, required this.items, required this.emptyLabel});
+  const ResourceTable(
+      {super.key,
+      required this.title,
+      required this.subtitle,
+      required this.items,
+      required this.emptyLabel});
 
   final String title;
   final String subtitle;
@@ -25,7 +30,11 @@ class ResourceTable extends StatelessWidget {
           if (items.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 22),
-              child: Text(emptyLabel, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.muted)),
+              child: Text(emptyLabel,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: AppTheme.muted)),
             )
           else
             Column(
@@ -53,15 +62,21 @@ class _Row extends StatelessWidget {
       children: [
         Expanded(
           flex: 3,
-          child: Text(item.title, style: Theme.of(context).textTheme.titleMedium),
+          child:
+              Text(item.title, style: Theme.of(context).textTheme.titleMedium),
         ),
         Expanded(
           flex: 2,
-          child: Text(item.primary, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.text)),
+          child: Text(item.primary,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppTheme.text)),
         ),
         Expanded(
           flex: 3,
-          child: Text(item.secondary.isEmpty ? '—' : item.secondary, style: Theme.of(context).textTheme.bodyMedium),
+          child: Text(item.secondary.isEmpty ? '—' : item.secondary,
+              style: Theme.of(context).textTheme.bodyMedium),
         ),
       ],
     );

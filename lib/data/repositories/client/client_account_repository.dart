@@ -75,7 +75,6 @@ class ClientAccountRepository {
   }
 }
 
-
 extension ClientAccountRepositorySafe on ClientAccountRepository {
   Future<Map<String, dynamic>> fetchClientProfileSafe() async {
     try {

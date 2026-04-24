@@ -479,7 +479,7 @@ class _AuthIntro extends StatelessWidget {
     final details = <String>[
       if (plan != null && plan!.isNotEmpty) 'Plan: ${_label(plan!)}',
       if (tier != null && tier!.isNotEmpty) 'Tier: ${_label(tier!)}',
-      if (trial == '15d') '15-day trial request selected',
+      if (trial == '15d') '15-day start period selected',
     ];
 
     return Container(
@@ -504,7 +504,7 @@ class _AuthIntro extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             isJoin
-                ? 'Create your workspace, confirm your email, define your operating scope, and continue to checkout.'
+                ? 'Create your workspace, confirm your email, define your business setup, and continue to checkout.'
                 : 'Sign in to continue where you left off, review your account, and get back to work.',
             style: Theme.of(
               context,
@@ -715,7 +715,9 @@ class _AuthCard extends StatelessWidget {
                   child: FilledButton(
                     onPressed: state._busy ? null : state.register,
                     child: Text(
-                      state._busy ? 'Creating workspace...' : 'Continue',
+                      state._busy
+                          ? 'Creating workspace...'
+                          : 'Create workspace',
                     ),
                   ),
                 ),

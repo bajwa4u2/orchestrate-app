@@ -32,7 +32,8 @@ class _SupportDrawerState extends State<SupportDrawer> {
   SupportController? _ownedController;
   String _draft = '';
 
-  SupportController get _controller => widget.controllerOverride ?? _ownedController!;
+  SupportController get _controller =>
+      widget.controllerOverride ?? _ownedController!;
   bool get _ownsController => widget.controllerOverride == null;
 
   @override

@@ -14,7 +14,7 @@ class ClientBrandingScreen extends StatelessWidget {
         children: const [
           _HoldingSurface(
             eyebrow: 'Branding',
-            title: 'Brand controls are not enabled yet',
+            title: 'Brand controls are available later',
             body:
                 'Identity, templates, and signatures will appear here when they are available for this account. Your campaign and account settings remain separate.',
           ),

@@ -15,7 +15,8 @@ class ClientMailboxScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(child: Text('Mailbox could not load right now.'));
+          return const Center(
+              child: Text('Mailbox could not load at the moment.'));
         }
         final data = snapshot.data!;
         return SingleChildScrollView(
@@ -29,7 +30,8 @@ class ClientMailboxScreen extends StatelessWidget {
               const SizedBox(height: 18),
               _Panel(
                 title: 'Recent dispatch movement',
-                emptyLabel: 'Dispatch activity will appear here once sending begins.',
+                emptyLabel:
+                    'Dispatch activity will appear here once sending begins.',
                 items: data.dispatchRows,
               ),
             ],
@@ -88,7 +90,8 @@ class _MailboxViewData {
 }
 
 class _MailboxRow {
-  const _MailboxRow({required this.title, required this.primary, required this.secondary});
+  const _MailboxRow(
+      {required this.title, required this.primary, required this.secondary});
 
   final String title;
   final String primary;
@@ -107,7 +110,7 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -163,13 +166,14 @@ class _Stats extends StatelessWidget {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                   border: Border.all(color: AppTheme.publicLine),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(entry.$1, style: Theme.of(context).textTheme.bodyMedium),
+                    Text(entry.$1,
+                        style: Theme.of(context).textTheme.bodyMedium),
                     const SizedBox(height: 10),
                     Text(
                       entry.$2,
@@ -226,7 +230,7 @@ class _Panel extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -302,7 +306,8 @@ String _title(String value) {
   return value
       .split(RegExp(r'[_\s-]+'))
       .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map((part) =>
+          '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
       .join(' ');
 }
 
@@ -313,7 +318,8 @@ String _firstNonEmpty(List<String> values) {
   return '';
 }
 
-String _join(List<String> values) => values.where((entry) => entry.trim().isNotEmpty).join(' · ');
+String _join(List<String> values) =>
+    values.where((entry) => entry.trim().isNotEmpty).join(' · ');
 
 String _formatDateTime(String value) {
   if (value.trim().isEmpty) return '';
@@ -321,7 +327,8 @@ String _formatDateTime(String value) {
   if (parsed == null) return value;
   final local = parsed.toLocal();
   final minute = local.minute.toString().padLeft(2, '0');
-  final hour = local.hour == 0 ? 12 : (local.hour > 12 ? local.hour - 12 : local.hour);
+  final hour =
+      local.hour == 0 ? 12 : (local.hour > 12 ? local.hour - 12 : local.hour);
   final suffix = local.hour >= 12 ? 'PM' : 'AM';
   return '${_monthName(local.month)} ${local.day}, ${local.year} · $hour:$minute $suffix';
 }

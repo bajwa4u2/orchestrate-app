@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class SectionHeader extends StatelessWidget {
-  const SectionHeader({super.key, required this.title, required this.subtitle, this.trailing});
+  const SectionHeader(
+      {super.key, required this.title, required this.subtitle, this.trailing});
 
   final String title;
   final String subtitle;
@@ -16,7 +17,10 @@ class SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(height: 1.08),
+          style: Theme.of(context)
+              .textTheme
+              .headlineMedium
+              ?.copyWith(height: 1.08),
         ),
         if (subtitle.trim().isNotEmpty) ...[
           const SizedBox(height: 10),
@@ -24,7 +28,10 @@ class SectionHeader extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 760),
             child: Text(
               subtitle,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.muted),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(color: AppTheme.muted),
             ),
           ),
         ],

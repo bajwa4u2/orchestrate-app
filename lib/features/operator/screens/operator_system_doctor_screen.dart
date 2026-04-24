@@ -91,6 +91,7 @@ class _OperatorSystemDoctorScreenState
             logsController: _logsController,
             message: _message,
             running: _running,
+            onPreset: _applyPreset,
             onRun: _runDiagnosis,
           ),
           const SizedBox(height: 18),
@@ -103,6 +104,17 @@ class _OperatorSystemDoctorScreenState
         ],
       ),
     );
+  }
+
+  void _applyPreset(String value) {
+    setState(() {
+      _issueController.text = value;
+      _expectedController.text =
+          'Identify the issue, likely cause, recommended action, validation step, and rollback plan.';
+      _observedController.clear();
+      _logsController.clear();
+      _message = null;
+    });
   }
 }
 
@@ -135,7 +147,7 @@ class _Hero extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 10),
                 Text(
-                  'Run a structured system check when a queue, worker, provider, campaign, billing flow, or control surface is not behaving as expected.',
+                  'Run a structured system check when a queue, worker, provider, campaign, billing flow, or control view is not behaving as expected.',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ],
@@ -167,6 +179,7 @@ class _InputPanel extends StatelessWidget {
     required this.logsController,
     required this.message,
     required this.running,
+    required this.onPreset,
     required this.onRun,
   });
 
@@ -176,6 +189,7 @@ class _InputPanel extends StatelessWidget {
   final TextEditingController logsController;
   final String? message;
   final bool running;
+  final ValueChanged<String> onPreset;
   final VoidCallback onRun;
 
   @override
@@ -188,6 +202,24 @@ class _InputPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Check input', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final preset in const [
+                'Queue not moving',
+                'Campaign not sourcing',
+                'Outreach not sending',
+                'Replies not processing',
+                'Billing records not visible',
+              ])
+                OutlinedButton(
+                  onPressed: running ? null : () => onPreset(preset),
+                  child: Text(preset),
+                ),
+            ],
+          ),
           const SizedBox(height: 14),
           TextField(
             controller: issueController,
@@ -290,7 +322,7 @@ class _DiagnosisPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          Text('Diagnosis', style: Theme.of(context).textTheme.headlineSmall),
+          Text('Issue', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
           Text(
             _read(
@@ -303,7 +335,7 @@ class _DiagnosisPanel extends StatelessWidget {
           const SizedBox(height: 18),
           _ListBlock(title: 'Evidence', items: _list(diagnosis['proof'])),
           _ListBlock(
-              title: 'Actionable findings',
+              title: 'Recommended action',
               items: _list(diagnosis['safeFixPlan'])),
           _ListBlock(
               title: 'Validation plan',
@@ -319,7 +351,8 @@ class _DiagnosisPanel extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge),
             children: [
               _ListBlock(
-                  title: 'Likely files', items: _list(diagnosis['likelyFiles'])),
+                  title: 'Likely files',
+                  items: _list(diagnosis['likelyFiles'])),
               _ListBlock(
                   title: 'Do not touch', items: _list(diagnosis['doNotTouch'])),
             ],
@@ -378,7 +411,7 @@ class _Pill extends StatelessWidget {
 BoxDecoration _box() {
   return BoxDecoration(
     color: AppTheme.panel,
-    borderRadius: BorderRadius.circular(24),
+    borderRadius: BorderRadius.circular(AppTheme.radius),
     border: Border.all(color: AppTheme.line),
   );
 }

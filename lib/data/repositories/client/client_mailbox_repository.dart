@@ -1,7 +1,8 @@
 import '../../../core/network/api_client.dart';
 
 class ClientMailboxRepository {
-  ClientMailboxRepository({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ClientMailboxRepository({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
@@ -23,7 +24,8 @@ class ClientMailboxRepository {
   }
 
   Future<List<Map<String, dynamic>>> fetchEmailDispatches() async {
-    final json = await _apiClient.getJson('/client/email-dispatches', surface: ApiSurface.client);
+    final json = await _apiClient.getJson('/client/email-dispatches',
+        surface: ApiSurface.client);
     return _asList(json).map(_asMap).toList();
   }
 
@@ -36,7 +38,8 @@ class ClientMailboxRepository {
   }
 
   Future<List<Map<String, dynamic>>> fetchNotifications() async {
-    final json = await _apiClient.getJson('/client/notifications', surface: ApiSurface.client);
+    final json = await _apiClient.getJson('/client/notifications',
+        surface: ApiSurface.client);
     return _asList(json).map(_asMap).toList();
   }
 
@@ -54,5 +57,6 @@ class ClientMailboxRepository {
     return <String, dynamic>{};
   }
 
-  List<dynamic> _asList(dynamic value) => value is List ? value : const <dynamic>[];
+  List<dynamic> _asList(dynamic value) =>
+      value is List ? value : const <dynamic>[];
 }

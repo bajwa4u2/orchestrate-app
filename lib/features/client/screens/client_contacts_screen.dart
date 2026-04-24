@@ -16,7 +16,7 @@ class ClientContactsScreen extends StatelessWidget {
         }
         if (snapshot.hasError || snapshot.data == null) {
           return const Center(
-            child: Text('Contacts could not load right now.'),
+            child: Text('Contacts could not load at the moment.'),
           );
         }
 
@@ -30,16 +30,21 @@ class ClientContactsScreen extends StatelessWidget {
               const SizedBox(height: 18),
               _StatusRow(
                 cards: [
-                  _StatusCardData(label: 'Contacts', value: '${data.totalContacts}'),
-                  _StatusCardData(label: 'Ready', value: '${data.readyContacts}'),
-                  _StatusCardData(label: 'With phone', value: '${data.phoneCount}'),
-                  _StatusCardData(label: 'Companies', value: '${data.companyCount}'),
+                  _StatusCardData(
+                      label: 'Contacts', value: '${data.totalContacts}'),
+                  _StatusCardData(
+                      label: 'Ready', value: '${data.readyContacts}'),
+                  _StatusCardData(
+                      label: 'With phone', value: '${data.phoneCount}'),
+                  _StatusCardData(
+                      label: 'Companies', value: '${data.companyCount}'),
                 ],
               ),
               const SizedBox(height: 18),
               _Panel(
                 title: 'Contacts in system memory',
-                emptyLabel: 'Contact records will appear here once sourcing begins.',
+                emptyLabel:
+                    'Contact records will appear here once sourcing begins.',
                 items: data.rows,
               ),
             ],
@@ -56,10 +61,15 @@ class ClientContactsScreen extends StatelessWidget {
 
     final activity = _asMap(overview['activity']);
     final totalContacts = _countValue(
-      activity['leadCount'] ?? activity['leads'] ?? activity['prospects'] ?? contacts.length,
+      activity['leadCount'] ??
+          activity['leads'] ??
+          activity['prospects'] ??
+          contacts.length,
     );
     final readyContacts = _countValue(
-      activity['sendableLeadCount'] ?? activity['sendableLeads'] ?? activity['queuedLeads'],
+      activity['sendableLeadCount'] ??
+          activity['sendableLeads'] ??
+          activity['queuedLeads'],
     );
 
     var phoneCount = 0;
@@ -161,7 +171,7 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -176,7 +186,9 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            total == 0 ? 'No contacts are visible yet' : '$total contacts currently visible',
+            total == 0
+                ? 'No contacts are visible yet'
+                : '$total contacts currently visible',
             style: Theme.of(context)
                 .textTheme
                 .headlineMedium
@@ -248,7 +260,7 @@ class _StatusTile extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -281,7 +293,7 @@ class _Panel extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -381,7 +393,8 @@ String _title(String value) {
   return value
       .split(RegExp(r'[_\s-]+'))
       .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map((part) =>
+          '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
       .join(' ');
 }
 

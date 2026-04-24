@@ -14,7 +14,7 @@ class ClientNewsletterScreen extends StatelessWidget {
         children: const [
           _HoldingSurface(
             eyebrow: 'Updates',
-            title: 'Audience controls are not enabled yet',
+            title: 'Update controls are available later',
             body:
                 'Audience, issue, and preference controls will appear here when they are available for this account. No communication records are shown until the service is connected.',
           ),

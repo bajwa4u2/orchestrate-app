@@ -21,16 +21,21 @@ class SupportService {
     String? sourcePage,
     String? inquiryTypeHint,
   }) async {
-    final endpoint = publicMode ? '$baseUrl/public/intake' : '$baseUrl/client/support/intake';
+    final endpoint = publicMode
+        ? '$baseUrl/public/intake'
+        : '$baseUrl/client/support/intake';
 
     final response = await http.post(
       Uri.parse(endpoint),
       headers: await _headers(publicMode: publicMode),
       body: jsonEncode({
         'message': message,
-        if (publicMode && name != null && name.trim().isNotEmpty) 'name': name.trim(),
-        if (publicMode && email != null && email.trim().isNotEmpty) 'email': email.trim(),
-        if (sourcePage != null && sourcePage.trim().isNotEmpty) 'sourcePage': sourcePage.trim(),
+        if (publicMode && name != null && name.trim().isNotEmpty)
+          'name': name.trim(),
+        if (publicMode && email != null && email.trim().isNotEmpty)
+          'email': email.trim(),
+        if (sourcePage != null && sourcePage.trim().isNotEmpty)
+          'sourcePage': sourcePage.trim(),
         if (inquiryTypeHint != null && inquiryTypeHint.trim().isNotEmpty)
           'inquiryTypeHint': inquiryTypeHint.trim(),
       }),
@@ -85,7 +90,8 @@ class SupportService {
 
   Map<String, dynamic> _decode(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Support request failed: ${response.statusCode} ${response.body}');
+      throw Exception(
+          'Support request failed: ${response.statusCode} ${response.body}');
     }
     final decoded = jsonDecode(response.body);
     if (decoded is Map<String, dynamic>) return decoded;

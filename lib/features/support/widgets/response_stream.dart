@@ -24,7 +24,8 @@ class ResponseStream extends StatelessWidget {
             'Start the conversation by sending a message below.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.68),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.68),
                 ),
           ),
         ),
@@ -164,11 +165,7 @@ class _SystemMessageBlock extends StatelessWidget {
 
   static String _normalizeStatus(String? value) {
     if (value == null) return '';
-    return value
-        .trim()
-        .toLowerCase()
-        .replaceAll('-', '_')
-        .replaceAll(' ', '_');
+    return value.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
   }
 }
 

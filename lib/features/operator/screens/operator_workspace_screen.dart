@@ -71,7 +71,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
       if (!mounted) return;
       setState(() {
         _actionMessage =
-            'Dispatch could not run right now. Capability may need setup or operator permission.';
+            'Dispatch could not run at the moment. This may require setup or operator permission.';
       });
     } finally {
       if (mounted) setState(() => _actionInFlight = false);
@@ -90,7 +90,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         if (snapshot.hasError) {
           return Center(
             child: Text(
-              'This area could not load right now.',
+              'This area could not load at the moment.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           );
@@ -99,7 +99,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final data = snapshot.data;
         if (data == null) {
           return const Center(
-              child: Text('This area could not load right now.'));
+              child: Text('This area could not load at the moment.'));
         }
 
         return SingleChildScrollView(
@@ -182,9 +182,9 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         );
         return _OperatorData(
           eyebrow: 'Command',
-          title: 'System pressure and operator visibility',
+          title: 'Command board for priority, health, and recovery',
           subtitle:
-              'Command is now the center of the workspace. Pressure, health, and movement stay visible from one surface.',
+              'See what needs attention first, confirm operating health, and dispatch supported recovery actions.',
           metrics: [
             _Metric('Sent today', _read(today, 'sent', fallback: '0')),
             _Metric('Replies', _read(today, 'replies', fallback: '0')),
@@ -194,7 +194,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           ],
           primaryTitle: 'Needs attention',
           primaryRows: attention,
-          primaryEmpty: 'Nothing urgent is open right now.',
+          primaryEmpty: 'Nothing urgent is open at the moment.',
           secondaryTitle: 'System posture',
           secondaryRows: [
             _Row(
@@ -231,7 +231,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           eyebrow: 'Flow',
           title: 'Lead intake and campaign supply',
           subtitle:
-              'This is the raw movement feeding execution. It should show what is entering the system and where it is pointed.',
+              'Shows lead supply, campaign intake, and where work is pointed before outreach runs.',
           metrics: [
             _Metric('Leads', '${leads.length}'),
             _Metric('Campaigns', '${campaigns.length}'),
@@ -644,12 +644,12 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           subtitle:
               'Operator access stays visible here without pretending this area is a product feature of its own.',
           metrics: [
-            _Metric('Surface', _read(auth, 'surface', fallback: 'operator'))
+            _Metric('Workspace', _read(auth, 'surface', fallback: 'operator'))
           ],
           primaryTitle: 'Access context',
           primaryRows: [
             _Row(
-              title: 'Surface',
+              title: 'Workspace',
               primary: _read(auth, 'surface', fallback: 'operator'),
             ),
             _Row(title: 'Organization', primary: _read(auth, 'organizationId')),
@@ -681,7 +681,7 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.line),
       ),
       child: Column(
@@ -758,7 +758,7 @@ class _ActionPanel extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.line),
       ),
       child: LayoutBuilder(
@@ -832,7 +832,7 @@ class _MetricCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.line),
       ),
       child: Column(
@@ -861,7 +861,7 @@ class _Panel extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.line),
       ),
       child: Column(
@@ -894,7 +894,7 @@ class _RowTile extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.panelRaised,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.lineSoft),
       ),
       child: Column(

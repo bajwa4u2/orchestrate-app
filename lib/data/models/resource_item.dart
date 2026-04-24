@@ -1,5 +1,10 @@
 class ResourceItem {
-  ResourceItem({required this.id, required this.title, required this.primary, required this.secondary, required this.meta});
+  ResourceItem(
+      {required this.id,
+      required this.title,
+      required this.primary,
+      required this.secondary,
+      required this.meta});
 
   final String id;
   final String title;
@@ -12,8 +17,12 @@ class ResourceItem {
       case ResourceKind.client:
         return ResourceItem(
           id: (json['id'] ?? '').toString(),
-          title: (json['displayName'] ?? json['legalName'] ?? 'Client').toString(),
-          primary: (json['websiteUrl'] ?? json['contactEmail'] ?? (json['industry'] ?? 'Client record')).toString(),
+          title:
+              (json['displayName'] ?? json['legalName'] ?? 'Client').toString(),
+          primary: (json['websiteUrl'] ??
+                  json['contactEmail'] ??
+                  (json['industry'] ?? 'Client record'))
+              .toString(),
           secondary: _join([
             json['stage'],
             json['countryCode'],
@@ -36,7 +45,8 @@ class ResourceItem {
         return ResourceItem(
           id: (json['id'] ?? '').toString(),
           title: (json['fullName'] ?? json['email'] ?? 'Lead').toString(),
-          primary: (json['companyName'] ?? json['email'] ?? 'Lead record').toString(),
+          primary: (json['companyName'] ?? json['email'] ?? 'Lead record')
+              .toString(),
           secondary: _join([
             json['status'],
             json['source'],
@@ -66,7 +76,10 @@ class ResourceItem {
   }
 
   static String _join(List<dynamic> parts) {
-    final values = parts.where((part) => part != null && part.toString().trim().isNotEmpty).map((part) => part.toString().trim()).toList();
+    final values = parts
+        .where((part) => part != null && part.toString().trim().isNotEmpty)
+        .map((part) => part.toString().trim())
+        .toList();
     return values.join(' · ');
   }
 }

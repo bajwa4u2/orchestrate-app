@@ -4,7 +4,8 @@ import 'client_contacts_repository.dart';
 import 'client_mailbox_repository.dart';
 
 class ClientActivityRepository {
-  ClientActivityRepository({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ClientActivityRepository({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
@@ -57,5 +58,6 @@ class ClientActivityRepository {
     return <String, dynamic>{};
   }
 
-  List<dynamic> _asList(dynamic value) => value is List ? value : const <dynamic>[];
+  List<dynamic> _asList(dynamic value) =>
+      value is List ? value : const <dynamic>[];
 }

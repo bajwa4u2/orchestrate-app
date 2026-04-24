@@ -2,7 +2,8 @@ import '../../core/auth/auth_session.dart';
 import '../../core/network/api_client.dart';
 
 class AuthRepository {
-  AuthRepository({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  AuthRepository({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
@@ -18,7 +19,8 @@ class AuthRepository {
       'email': email,
       'password': password,
       'companyName': companyName,
-      if (websiteUrl != null && websiteUrl.trim().isNotEmpty) 'websiteUrl': websiteUrl.trim(),
+      if (websiteUrl != null && websiteUrl.trim().isNotEmpty)
+        'websiteUrl': websiteUrl.trim(),
     });
     return Map<String, dynamic>.from(json as Map);
   }
@@ -101,7 +103,8 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> fetchClientSetup() async {
-    final json = await _apiClient.getJson('/clients/me/setup', surface: ApiSurface.client);
+    final json = await _apiClient.getJson('/clients/me/setup',
+        surface: ApiSurface.client);
     return Map<String, dynamic>.from(json as Map);
   }
 

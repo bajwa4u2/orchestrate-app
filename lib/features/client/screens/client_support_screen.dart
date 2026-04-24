@@ -100,7 +100,8 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 1080;
-              final overview = _SupportOverview(onOpenDrawer: _openSupportDrawer);
+              final overview =
+                  _SupportOverview(onOpenDrawer: _openSupportDrawer);
               final thread = _SupportThread(
                 controller: _controller,
                 draft: _draft,
@@ -142,14 +143,15 @@ class _SupportOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = AuthSessionController.instance;
-    final accountName =
-        session.workspaceName.isNotEmpty ? session.workspaceName : 'Client account';
+    final accountName = session.workspaceName.isNotEmpty
+        ? session.workspaceName
+        : 'Client account';
 
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -205,7 +207,7 @@ class _SupportOverview extends StatelessWidget {
               side: const BorderSide(color: AppTheme.publicLine),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppTheme.radius),
               ),
             ),
             child: const Text('Open support conversation'),
@@ -233,7 +235,7 @@ class _SupportThread extends StatelessWidget {
       height: 600,
       decoration: BoxDecoration(
         color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
@@ -299,7 +301,7 @@ class _SupportCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(

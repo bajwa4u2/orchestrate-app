@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
 
@@ -12,7 +13,8 @@ class CampaignsScreen extends StatefulWidget {
 }
 
 class _CampaignsScreenState extends State<CampaignsScreen> {
-  final ClientCampaignRepository _campaignRepository = ClientCampaignRepository();
+  final ClientCampaignRepository _campaignRepository =
+      ClientCampaignRepository();
   final ClientBillingRepository _billingRepository = ClientBillingRepository();
 
   final TextEditingController _countryController = TextEditingController();
@@ -63,11 +65,15 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   List<_RegionItem> get _regionsForActiveCountry {
     if (_activeCountryCode == null) return const <_RegionItem>[];
-    return _regions.where((item) => item.countryCode == _activeCountryCode).toList();
+    return _regions
+        .where((item) => item.countryCode == _activeCountryCode)
+        .toList();
   }
 
   List<_MetroItem> get _metrosForActiveRegion {
-    if (_activeCountryCode == null || _activeRegionKey == null) return const <_MetroItem>[];
+    if (_activeCountryCode == null || _activeRegionKey == null) {
+      return const <_MetroItem>[];
+    }
     final region = _regions.firstWhere(
       (item) => item.key == _activeRegionKey,
       orElse: () => const _RegionItem(
@@ -80,7 +86,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     );
     if (region.key.isEmpty) return const <_MetroItem>[];
     return _metros
-        .where((item) => item.countryCode == region.countryCode && item.regionCode == region.regionCode)
+        .where((item) =>
+            item.countryCode == region.countryCode &&
+            item.regionCode == region.regionCode)
         .toList();
   }
 
@@ -91,7 +99,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     final industries = _industries.length;
     final parts = <String>[];
     if (countries > 0) {
-      parts.add(countries == 1 ? '1 market selected' : '$countries markets selected');
+      parts.add(
+          countries == 1 ? '1 market selected' : '$countries markets selected');
     }
     if (regions > 0) {
       parts.add(regions == 1 ? '1 area narrowed' : '$regions areas narrowed');
@@ -100,9 +109,12 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       parts.add(cities == 1 ? '1 city focus' : '$cities city focuses');
     }
     if (industries > 0) {
-      parts.add(industries == 1 ? '1 business type' : '$industries business types');
+      parts.add(
+          industries == 1 ? '1 business type' : '$industries business types');
     }
-    if (parts.isEmpty) return 'Add a market and business type to get this campaign ready.';
+    if (parts.isEmpty) {
+      return 'Add a market and business type to get this campaign ready.';
+    }
     return parts.join(' • ');
   }
 
@@ -227,7 +239,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       case _CampaignPrimaryAction.waiting:
         return 'Activation in progress';
       case _CampaignPrimaryAction.start:
-        return _campaignState == 'NEEDS_REBUILD' ? 'Rebuild campaign' : 'Start campaign';
+        return _campaignState == 'NEEDS_REBUILD'
+            ? 'Rebuild campaign'
+            : 'Start campaign';
     }
   }
 
@@ -238,12 +252,16 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       case _CampaignPrimaryAction.waiting:
         return Icons.hourglass_top_outlined;
       case _CampaignPrimaryAction.start:
-        return _campaignState == 'NEEDS_REBUILD' ? Icons.autorenew_outlined : Icons.rocket_launch_outlined;
+        return _campaignState == 'NEEDS_REBUILD'
+            ? Icons.autorenew_outlined
+            : Icons.rocket_launch_outlined;
     }
   }
 
   bool get _canRestartCampaign =>
-      _campaignState == 'ACTIVE' || _campaignState == 'ERROR' || _campaignState == 'NEEDS_REBUILD';
+      _campaignState == 'ACTIVE' ||
+      _campaignState == 'ERROR' ||
+      _campaignState == 'NEEDS_REBUILD';
 
   Future<void> _load() async {
     setState(() {
@@ -261,13 +279,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       final subscriptionJson = results[1] as Map<String, dynamic>?;
       final profile = _resolveCampaignProfile(campaignJson);
 
-      _campaignLane = _string(profile['lane'], fallback: 'opportunity');
+      _campaignLane = _string(profile['servicePath'], fallback: 'opportunity');
       _campaignMode = _string(profile['mode'], fallback: 'focused');
       _subscriptionPlanLabel = _resolveSubscriptionLabel(subscriptionJson);
       _subscriptionTier = _resolveSubscriptionTier(subscriptionJson);
 
       final nextCampaignState = _resolveCampaignState(campaignJson, profile);
-      final nextActivationMessage = _resolveActivationMessage(campaignJson, profile);
+      final nextActivationMessage =
+          _resolveActivationMessage(campaignJson, profile);
       final nextCampaignHealth = _string(campaignJson['health']);
       final nextCampaignMetrics = _asMap(campaignJson['metrics']);
 
@@ -297,12 +316,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       _notesController.text = _string(profile['notes']);
 
-      _activeCountryCode = _countries.any((item) => item.code == _activeCountryCode)
-          ? _activeCountryCode
-          : (_countries.isNotEmpty ? _countries.first.code : null);
+      _activeCountryCode =
+          _countries.any((item) => item.code == _activeCountryCode)
+              ? _activeCountryCode
+              : (_countries.isNotEmpty ? _countries.first.code : null);
 
       final availableRegions = _regionsForActiveCountry;
-      _activeRegionKey = availableRegions.any((item) => item.key == _activeRegionKey)
+      _activeRegionKey = availableRegions
+              .any((item) => item.key == _activeRegionKey)
           ? _activeRegionKey
           : (availableRegions.isNotEmpty ? availableRegions.first.key : null);
 
@@ -312,14 +333,17 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'This campaign area could not be loaded right now.';
+        _error = 'This campaign area could not be loaded at the moment.';
       });
     }
   }
 
   Map<String, dynamic> _buildProfilePayload() {
     return <String, dynamic>{
-      'countries': _countries.map((item) => <String, String>{'code': item.code, 'label': item.label}).toList(),
+      'countries': _countries
+          .map((item) =>
+              <String, String>{'code': item.code, 'label': item.label})
+          .toList(),
       'regions': _regions
           .map(
             (item) => <String, String>{
@@ -340,7 +364,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
             },
           )
           .toList(),
-      'industries': _industries.map((item) => <String, String>{'code': item.code, 'label': item.label}).toList(),
+      'industries': _industries
+          .map((item) =>
+              <String, String>{'code': item.code, 'label': item.label})
+          .toList(),
       'notes': _notesController.text.trim(),
     };
   }
@@ -375,12 +402,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'Targeting could not be saved right now.';
+        _error = 'Targeting could not be saved at the moment.';
       });
     }
   }
-
-
 
   Future<bool> _confirmRestartCampaign() async {
     return await showDialog<bool>(
@@ -425,7 +450,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     });
 
     try {
-      await _campaignRepository.updateCampaignProfile(profile: _buildProfilePayload());
+      await _campaignRepository.updateCampaignProfile(
+          profile: _buildProfilePayload());
       final result = await _campaignRepository.restartCampaign();
       if (!mounted) return;
 
@@ -453,7 +479,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              message.isEmpty ? 'Please wait before restarting again.' : message,
+              message.isEmpty
+                  ? 'Please wait before restarting again.'
+                  : message,
             ),
           ),
         );
@@ -467,7 +495,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         await _showPlanDialog(
           _PlanIssue(
             title: 'Expand your plan',
-            message: message.isEmpty ? 'Your current plan does not cover this targeting.' : message,
+            message: message.isEmpty
+                ? 'Your current plan does not cover this targeting.'
+                : message,
           ),
         );
         return;
@@ -476,11 +506,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       setState(() {
         _restarting = false;
         _pendingActivationPayload = result;
-        _campaignState = _resolveCampaignState(result, _resolveCampaignProfile(result));
+        _campaignState =
+            _resolveCampaignState(result, _resolveCampaignProfile(result));
         _activationMessage = message.isEmpty
             ? 'Campaign restart has started. We are applying your updated targeting now.'
             : message;
-        _campaignHealth = _string(result['health']).isEmpty ? null : _string(result['health']);
+        _campaignHealth = _string(result['health']).isEmpty
+            ? null
+            : _string(result['health']);
         _campaignMetrics = _asMap(result['metrics']);
       });
 
@@ -493,16 +526,16 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       if (!mounted) return;
       setState(() {
         _restarting = false;
-        _error = 'Your campaign could not be restarted right now.';
+        _error = 'Your campaign could not be restarted at the moment.';
       });
     }
   }
 
-
   bool _isRepresentationAuthRequired(Map<String, dynamic> result) {
     final code = _string(result['code']).toUpperCase();
     final status = _string(result['status']).toLowerCase();
-    return code == 'REPRESENTATION_AUTH_REQUIRED' || status == 'representation_auth_required';
+    return code == 'REPRESENTATION_AUTH_REQUIRED' ||
+        status == 'representation_auth_required';
   }
 
   bool _isRestartCooldown(Map<String, dynamic> result) {
@@ -515,7 +548,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         message.contains('restart cooldown');
   }
 
-  Future<bool> _ensureRepresentationAuthorization(Map<String, dynamic> result) async {
+  Future<bool> _ensureRepresentationAuthorization(
+      Map<String, dynamic> result) async {
     final accepted = await _showRepresentationAuthorizationDialog(result);
     if (!accepted || !mounted) return false;
 
@@ -524,12 +558,13 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       return true;
     } catch (_) {
       if (!mounted) return false;
-      _showNotice('We could not save your authorization right now.');
+      _showNotice('We could not save your authorization at the moment.');
       return false;
     }
   }
 
-  Future<bool> _showRepresentationAuthorizationDialog(Map<String, dynamic> result) async {
+  Future<bool> _showRepresentationAuthorizationDialog(
+      Map<String, dynamic> result) async {
     bool agreed = false;
     final message = _string(result['message']);
 
@@ -549,8 +584,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         : message,
                   ),
                   const SizedBox(height: 12),
-                  const Text('• We may contact prospects representing your business'),
-                  const Text('• Messages will clearly state they are sent on your behalf'),
+                  const Text(
+                      '• We may contact prospects representing your business'),
+                  const Text(
+                      '• Messages will clearly state they are sent on your behalf'),
                   const Text('• Replies will go to your email'),
                   const SizedBox(height: 16),
                   CheckboxListTile(
@@ -561,7 +598,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         agreed = value ?? false;
                       });
                     },
-                    title: const Text('I agree to authorize Orchestrate to represent my business'),
+                    title: const Text(
+                        'I agree to authorize Orchestrate to represent my business'),
                     controlAffinity: ListTileControlAffinity.leading,
                   ),
                 ],
@@ -572,7 +610,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   child: const Text('Not now'),
                 ),
                 FilledButton(
-                  onPressed: agreed ? () => Navigator.of(context).pop(true) : null,
+                  onPressed:
+                      agreed ? () => Navigator.of(context).pop(true) : null,
                   child: const Text('Agree and continue'),
                 ),
               ],
@@ -607,7 +646,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   void _showNotice(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _startCampaign() async {
@@ -627,7 +667,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     });
 
     try {
-      await _campaignRepository.updateCampaignProfile(profile: _buildProfilePayload());
+      await _campaignRepository.updateCampaignProfile(
+          profile: _buildProfilePayload());
       final result = await _campaignRepository.startCampaign();
       if (!mounted) return;
 
@@ -669,7 +710,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         await _showPlanDialog(
           _PlanIssue(
             title: 'Expand your plan',
-            message: message.isEmpty ? 'Your current plan does not cover this targeting.' : message,
+            message: message.isEmpty
+                ? 'Your current plan does not cover this targeting.'
+                : message,
           ),
         );
         return;
@@ -678,8 +721,11 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       setState(() {
         _starting = false;
         _pendingActivationPayload = result;
-        _campaignState = _resolveCampaignState(result, _resolveCampaignProfile(result));
-        _campaignHealth = _string(result['health']).isEmpty ? null : _string(result['health']);
+        _campaignState =
+            _resolveCampaignState(result, _resolveCampaignProfile(result));
+        _campaignHealth = _string(result['health']).isEmpty
+            ? null
+            : _string(result['health']);
         _campaignMetrics = _asMap(result['metrics']);
         _activationMessage = message.isEmpty
             ? _fallbackActivationMessageForState(_campaignState)
@@ -695,7 +741,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       if (!mounted) return;
       setState(() {
         _starting = false;
-        _error = 'Your campaign could not be started right now.';
+        _error = 'Your campaign could not be started at the moment.';
       });
     }
   }
@@ -718,8 +764,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   void _addCountry() {
     final label = _countryController.text.trim();
     if (label.isEmpty) return;
-    final item = _NamedItem(code: _slug(label).toUpperCase(), label: _titleCase(label));
-    final exists = _countries.any((entry) => entry.label.toLowerCase() == item.label.toLowerCase());
+    final item =
+        _NamedItem(code: _slug(label).toUpperCase(), label: _titleCase(label));
+    final exists = _countries
+        .any((entry) => entry.label.toLowerCase() == item.label.toLowerCase());
     if (exists) {
       _showNotice('That market is already listed.');
       return;
@@ -806,7 +854,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     final label = _industryController.text.trim();
     if (label.isEmpty) return;
     final item = _NamedItem(code: _slug(label), label: _titleCase(label));
-    final exists = _industries.any((entry) => entry.label.toLowerCase() == item.label.toLowerCase());
+    final exists = _industries
+        .any((entry) => entry.label.toLowerCase() == item.label.toLowerCase());
     if (exists) {
       _showNotice('That business type is already listed.');
       return;
@@ -823,9 +872,11 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       _regions.removeWhere((entry) => entry.countryCode == item.code);
       _metros.removeWhere((entry) => entry.countryCode == item.code);
       if (_activeCountryCode == item.code) {
-        _activeCountryCode = _countries.isNotEmpty ? _countries.first.code : null;
+        _activeCountryCode =
+            _countries.isNotEmpty ? _countries.first.code : null;
         final nextRegions = _regionsForActiveCountry;
-        _activeRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
+        _activeRegionKey =
+            nextRegions.isNotEmpty ? nextRegions.first.key : null;
       }
       if (_campaignState == 'ACTIVE' || _campaignState == 'ACTIVATING') {
         _campaignState = 'NEEDS_REBUILD';
@@ -836,10 +887,13 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   void _removeRegion(_RegionItem item) {
     setState(() {
       _regions.removeWhere((entry) => entry.key == item.key);
-      _metros.removeWhere((entry) => entry.countryCode == item.countryCode && entry.regionCode == item.regionCode);
+      _metros.removeWhere((entry) =>
+          entry.countryCode == item.countryCode &&
+          entry.regionCode == item.regionCode);
       final nextRegions = _regionsForActiveCountry;
       if (_activeRegionKey == item.key) {
-        _activeRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
+        _activeRegionKey =
+            nextRegions.isNotEmpty ? nextRegions.first.key : null;
       }
       if (_campaignState == 'ACTIVE' || _campaignState == 'ACTIVATING') {
         _campaignState = 'NEEDS_REBUILD';
@@ -922,12 +976,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   children: <Widget>[
                     Text(
                       'Campaign targeting',
-                      style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'This is the one place for targeting, geography, and activation control.',
-                      style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 20),
                     Wrap(
@@ -937,7 +993,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         _StatusChip(label: 'State: $_campaignStatusLabel'),
                         if (_campaignHealthLabel.isNotEmpty)
                           _StatusChip(label: 'Health: $_campaignHealthLabel'),
-                        _StatusChip(label: 'Plan: $_campaignLane · $_subscriptionTier'),
+                        _StatusChip(
+                            label: 'Plan: $_campaignLane · $_subscriptionTier'),
                         _StatusChip(label: 'Billing: ACTIVE'),
                       ],
                     ),
@@ -947,7 +1004,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
               const SizedBox(height: 20),
               _SectionCard(
                 title: 'Who should we reach?',
-                subtitle: 'Use plain language. The system will work from this saved targeting.',
+                subtitle:
+                    'Use plain language. The system will work from this saved targeting.',
                 child: Text(
                   _notesController.text.trim().isEmpty
                       ? 'No additional guidance saved yet.'
@@ -961,7 +1019,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
                   border: Border.all(color: theme.colorScheme.outlineVariant),
                 ),
                 child: Column(
@@ -969,25 +1027,29 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                   children: <Widget>[
                     Text(
                       _campaignCardTitle,
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _campaignCardSubtitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 16),
                     if (_error != null) ...<Widget>[
                       Text(
                         _error!,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: theme.colorScheme.error),
                       ),
                       const SizedBox(height: 12),
                     ],
                     if (_activationMessage != null) ...<Widget>[
                       Text(
                         _activationMessage!,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: theme.colorScheme.primary),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -996,19 +1058,34 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         spacing: 12,
                         runSpacing: 12,
                         children: <Widget>[
-                          _StatusChip(label: 'Sendable: ${_metricInt(_campaignMetrics['sendable'])}'),
-                          _StatusChip(label: 'Queued: ${_metricInt(_campaignMetrics['queued'])}'),
-                          _StatusChip(label: 'Blocked: ${_blockedCountFromMetrics(_campaignMetrics)}'),
-                          _StatusChip(label: 'Sent today: ${_metricInt(_campaignMetrics['sentToday'])}'),
-                          _StatusChip(label: 'Replies: ${_metricInt(_campaignMetrics['replies'])}'),
-                          _StatusChip(label: 'Meetings: ${_metricInt(_campaignMetrics['meetings'])}'),
+                          _StatusChip(
+                              label:
+                                  'Sendable: ${_metricInt(_campaignMetrics['sendable'])}'),
+                          _StatusChip(
+                              label:
+                                  'Queued: ${_metricInt(_campaignMetrics['queued'])}'),
+                          _StatusChip(
+                              label:
+                                  'Blocked: ${_blockedCountFromMetrics(_campaignMetrics)}'),
+                          _StatusChip(
+                              label:
+                                  'Sent today: ${_metricInt(_campaignMetrics['sentToday'])}'),
+                          _StatusChip(
+                              label:
+                                  'Replies: ${_metricInt(_campaignMetrics['replies'])}'),
+                          _StatusChip(
+                              label:
+                                  'Meetings: ${_metricInt(_campaignMetrics['meetings'])}'),
                         ],
                       ),
-                      if (_blockedCountFromMetrics(_campaignMetrics) > 0) ...<Widget>[
+                      if (_blockedCountFromMetrics(_campaignMetrics) >
+                          0) ...<Widget>[
                         const SizedBox(height: 12),
                         _CampaignBlockedNotice(
-                          blockedCount: _blockedCountFromMetrics(_campaignMetrics),
-                          blockedReasons: _blockedReasonCountsFromMetrics(_campaignMetrics),
+                          blockedCount:
+                              _blockedCountFromMetrics(_campaignMetrics),
+                          blockedReasons:
+                              _blockedReasonCountsFromMetrics(_campaignMetrics),
                         ),
                       ],
                       const SizedBox(height: 16),
@@ -1016,22 +1093,30 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: (_starting || _restarting || _saving || _campaignPrimaryAction == _CampaignPrimaryAction.waiting)
+                        onPressed: (_starting ||
+                                _restarting ||
+                                _saving ||
+                                _campaignPrimaryAction ==
+                                    _CampaignPrimaryAction.waiting)
                             ? null
-                            : (_campaignPrimaryAction == _CampaignPrimaryAction.viewLeads
+                            : (_campaignPrimaryAction ==
+                                    _CampaignPrimaryAction.viewLeads
                                 ? () => context.go('/app/contacts')
                                 : _startCampaign),
                         icon: (_starting || _restarting || _saving)
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : Icon(_campaignPrimaryActionIcon),
                         label: Text(
                           _starting
                               ? 'Starting your campaign...'
-                              : (_restarting ? 'Restarting your campaign...' : _campaignPrimaryActionLabel),
+                              : (_restarting
+                                  ? 'Restarting your campaign...'
+                                  : _campaignPrimaryActionLabel),
                         ),
                       ),
                     ),
@@ -1041,24 +1126,33 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       runSpacing: 12,
                       children: <Widget>[
                         OutlinedButton.icon(
-                          onPressed: (_saving || _starting || _restarting) ? null : _save,
+                          onPressed: (_saving || _starting || _restarting)
+                              ? null
+                              : _save,
                           icon: const Icon(Icons.check_circle_outline),
                           label: Text(_saving ? 'Saving...' : 'Save for later'),
                         ),
                         if (_canRestartCampaign)
                           OutlinedButton.icon(
-                            onPressed: (_saving || _starting || _restarting) ? null : _restartCampaign,
+                            onPressed: (_saving || _starting || _restarting)
+                                ? null
+                                : _restartCampaign,
                             icon: _restarting
                                 ? const SizedBox(
                                     width: 16,
                                     height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
                                   )
                                 : const Icon(Icons.autorenew_outlined),
-                            label: Text(_restarting ? 'Restarting...' : 'Restart campaign'),
+                            label: Text(_restarting
+                                ? 'Restarting...'
+                                : 'Restart campaign'),
                           ),
                         TextButton.icon(
-                          onPressed: (_restarting || _starting) ? null : () => context.go('/app/home'),
+                          onPressed: (_restarting || _starting)
+                              ? null
+                              : () => context.go('/app/home'),
                           icon: const Icon(Icons.arrow_back),
                           label: const Text('Back to workspace'),
                         ),
@@ -1070,7 +1164,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
               const SizedBox(height: 20),
               _SectionCard(
                 title: 'Where should we look?',
-                subtitle: 'Add markets in plain language. We will keep the saved targeting aligned with your plan.',
+                subtitle:
+                    'Add markets in plain language. We will keep the saved targeting aligned with your plan.',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -1090,7 +1185,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         setState(() {
                           _activeCountryCode = item.code;
                           final nextRegions = _regionsForActiveCountry;
-                          _activeRegionKey = nextRegions.isNotEmpty ? nextRegions.first.key : null;
+                          _activeRegionKey = nextRegions.isNotEmpty
+                              ? nextRegions.first.key
+                              : null;
                         });
                       },
                       onDeleted: _removeCountry,
@@ -1100,7 +1197,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       const SizedBox(height: 20),
                       Text(
                         'Narrow ${activeCountry.label}',
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
                       _AddBar(
@@ -1115,7 +1213,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         items: _regionsForActiveCountry,
                         labelBuilder: (item) => item.regionLabel,
                         selected: (item) => item.key == _activeRegionKey,
-                        onSelected: (item) => setState(() => _activeRegionKey = item.key),
+                        onSelected: (item) =>
+                            setState(() => _activeRegionKey = item.key),
                         onDeleted: _removeRegion,
                         emptyLabel: 'No areas added yet for this market.',
                       ),
@@ -1124,7 +1223,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       const SizedBox(height: 20),
                       Text(
                         'City focus in ${activeRegion.regionLabel}',
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
                       _AddBar(
@@ -1148,13 +1248,15 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
               const SizedBox(height: 20),
               _SectionCard(
                 title: 'What kind of businesses should we reach?',
-                subtitle: 'Use everyday language. You can add one or several business types.',
+                subtitle:
+                    'Use everyday language. You can add one or several business types.',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     _AddBar(
                       controller: _industryController,
-                      hintText: 'Examples: roofing companies, dental clinics, trucking companies',
+                      hintText:
+                          'Examples: roofing companies, dental clinics, trucking companies',
                       buttonLabel: 'Add business type',
                       onSubmitted: (_) => _addIndustry(),
                       onPressed: _addIndustry,
@@ -1172,7 +1274,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
               const SizedBox(height: 20),
               _SectionCard(
                 title: 'Anything else we should keep in mind?',
-                subtitle: 'Optional guidance helps us keep the campaign closer to your intent.',
+                subtitle:
+                    'Optional guidance helps us keep the campaign closer to your intent.',
                 child: TextField(
                   controller: _notesController,
                   maxLines: 5,
@@ -1212,7 +1315,7 @@ class _HeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
@@ -1225,10 +1328,12 @@ class _HeroCard extends StatelessWidget {
             children: <Widget>[
               Text(
                 'Find customers',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                style: theme.textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(999),
@@ -1242,14 +1347,16 @@ class _HeroCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   laneLabel,
-                  style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.labelLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -1257,17 +1364,20 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Tell us where to look and who you want to reach. The system will use this saved profile when your campaign runs.',
-            style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyLarge
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           Text(
             summary,
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             coverageMessage,
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -1294,7 +1404,7 @@ class _SectionCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
@@ -1302,12 +1412,14 @@ class _SectionCard extends StatelessWidget {
         children: <Widget>[
           Text(
             title,
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 18),
           child,
@@ -1329,12 +1441,13 @@ class _StatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Text(
         label,
-        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        style:
+            theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -1403,7 +1516,8 @@ class _SelectableChipWrap<T> extends StatelessWidget {
     if (items.isEmpty) {
       return Text(
         emptyLabel,
-        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        style: theme.textTheme.bodyMedium
+            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
       );
     }
     return Wrap(
@@ -1442,7 +1556,8 @@ class _ChipList<T> extends StatelessWidget {
     if (items.isEmpty) {
       return Text(
         emptyLabel,
-        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        style: theme.textTheme.bodyMedium
+            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
       );
     }
     return Wrap(
@@ -1459,7 +1574,6 @@ class _ChipList<T> extends StatelessWidget {
     );
   }
 }
-
 
 class _CampaignBlockedNotice extends StatelessWidget {
   const _CampaignBlockedNotice({
@@ -1481,7 +1595,7 @@ class _CampaignBlockedNotice extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
@@ -1489,7 +1603,8 @@ class _CampaignBlockedNotice extends StatelessWidget {
         children: <Widget>[
           Text(
             'Why some outreach is paused',
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1508,7 +1623,8 @@ class _CampaignBlockedNotice extends StatelessWidget {
               children: entries
                   .map(
                     (entry) => Chip(
-                      label: Text('${_translateBlockedReason(entry.key)} (${entry.value})'),
+                      label: Text(
+                          '${_translateBlockedReason(entry.key)} (${entry.value})'),
                     ),
                   )
                   .toList(),
@@ -1626,7 +1742,6 @@ String _humanize(String value) {
       .join(' ');
 }
 
-
 int _blockedCountFromMetrics(Map<String, dynamic> metrics) {
   return _metricInt(metrics['blocked']);
 }
@@ -1675,10 +1790,15 @@ String _resolveSubscriptionLabel(Map<String, dynamic>? subscription) {
 
   final plan = _string(subscription['plan']);
   final service = _string(subscription['service']);
-  final lane = _string(subscription['lane']);
+  final servicePath = _string(subscription['servicePath'],
+      fallback: _string(subscription['lane']));
   final tier = _string(subscription['tier']);
 
-  final parts = <String>[plan, service, lane, tier].where((entry) => entry.isNotEmpty).map(_humanize).toSet().toList();
+  final parts = <String>[plan, service, servicePath, tier]
+      .where((entry) => entry.isNotEmpty)
+      .map(_humanize)
+      .toSet()
+      .toList();
   if (parts.isEmpty) return 'Current plan';
   return parts.join(' • ');
 }
@@ -1688,16 +1808,21 @@ String _resolveSubscriptionTier(Map<String, dynamic>? subscription) {
   return _string(subscription['tier']).toLowerCase();
 }
 
-String _resolveCampaignState(Map<String, dynamic> payload, Map<String, dynamic> profile) {
+String _resolveCampaignState(
+    Map<String, dynamic> payload, Map<String, dynamic> profile) {
   final metadata = _resolveCampaignMetadata(payload, profile);
   final activation = _asMap(metadata['activation']);
   final bootstrapStatus = _string(activation['bootstrapStatus']).toLowerCase();
   final explicitStatus = _string(payload['status']).toLowerCase();
   final generationState = _string(payload['generationState']).toUpperCase();
-  final profileGenerationState = _string(profile['generationState']).toUpperCase();
-  final effectiveGenerationState = generationState.isNotEmpty ? generationState : profileGenerationState;
+  final profileGenerationState =
+      _string(profile['generationState']).toUpperCase();
+  final effectiveGenerationState =
+      generationState.isNotEmpty ? generationState : profileGenerationState;
 
-  if (bootstrapStatus == 'activation_requested' || bootstrapStatus == 'activation_in_progress' || bootstrapStatus == 'activation_retry_scheduled') {
+  if (bootstrapStatus == 'activation_requested' ||
+      bootstrapStatus == 'activation_in_progress' ||
+      bootstrapStatus == 'activation_retry_scheduled') {
     return 'ACTIVATING';
   }
   if (bootstrapStatus == 'activation_completed') {
@@ -1712,7 +1837,8 @@ String _resolveCampaignState(Map<String, dynamic> payload, Map<String, dynamic> 
   return 'READY';
 }
 
-String? _resolveActivationMessage(Map<String, dynamic> payload, Map<String, dynamic> profile) {
+String? _resolveActivationMessage(
+    Map<String, dynamic> payload, Map<String, dynamic> profile) {
   final explicit = _string(payload['message']);
   if (explicit.isNotEmpty) return explicit;
 
@@ -1731,7 +1857,9 @@ String? _resolveActivationMessage(Map<String, dynamic> payload, Map<String, dyna
     case 'activation_completed':
       return 'Your campaign is active. Leads and outreach are moving.';
     case 'activation_failed':
-      return lastError.isEmpty ? 'Activation did not finish cleanly. Please try again.' : lastError;
+      return lastError.isEmpty
+          ? 'Activation did not finish cleanly. Please try again.'
+          : lastError;
     default:
       return null;
   }
@@ -1752,7 +1880,8 @@ String _fallbackActivationMessageForState(String state) {
   }
 }
 
-Map<String, dynamic> _resolveCampaignMetadata(Map<String, dynamic> payload, Map<String, dynamic> profile) {
+Map<String, dynamic> _resolveCampaignMetadata(
+    Map<String, dynamic> payload, Map<String, dynamic> profile) {
   final campaign = _asMap(payload['campaign']);
   final campaignMetadata = _asMap(campaign['metadataJson']);
   if (campaignMetadata.isNotEmpty) return campaignMetadata;
@@ -1771,36 +1900,51 @@ Map<String, dynamic> _resolveCampaignMetadata(Map<String, dynamic> payload, Map<
 
 List<_NamedItem> _readNamedItems(dynamic value) {
   if (value is! List) return const <_NamedItem>[];
-  return value.map((entry) {
-    final map = _asMap(entry);
-    final code = _string(map['code']);
-    final label = _string(map['label']);
-    return _NamedItem(code: code, label: label);
-  }).where((item) => item.code.isNotEmpty && item.label.isNotEmpty).toList();
+  return value
+      .map((entry) {
+        final map = _asMap(entry);
+        final code = _string(map['code']);
+        final label = _string(map['label']);
+        return _NamedItem(code: code, label: label);
+      })
+      .where((item) => item.code.isNotEmpty && item.label.isNotEmpty)
+      .toList();
 }
 
 List<_RegionItem> _readRegions(dynamic value) {
   if (value is! List) return const <_RegionItem>[];
-  return value.map((entry) {
-    final map = _asMap(entry);
-    return _RegionItem(
-      countryCode: _string(map['countryCode']).toUpperCase(),
-      countryLabel: _string(map['countryLabel']),
-      regionType: _string(map['regionType'], fallback: 'region'),
-      regionCode: _string(map['regionCode']).toUpperCase(),
-      regionLabel: _string(map['regionLabel']),
-    );
-  }).where((item) => item.countryCode.isNotEmpty && item.regionCode.isNotEmpty && item.regionLabel.isNotEmpty).toList();
+  return value
+      .map((entry) {
+        final map = _asMap(entry);
+        return _RegionItem(
+          countryCode: _string(map['countryCode']).toUpperCase(),
+          countryLabel: _string(map['countryLabel']),
+          regionType: _string(map['regionType'], fallback: 'region'),
+          regionCode: _string(map['regionCode']).toUpperCase(),
+          regionLabel: _string(map['regionLabel']),
+        );
+      })
+      .where((item) =>
+          item.countryCode.isNotEmpty &&
+          item.regionCode.isNotEmpty &&
+          item.regionLabel.isNotEmpty)
+      .toList();
 }
 
 List<_MetroItem> _readMetros(dynamic value) {
   if (value is! List) return const <_MetroItem>[];
-  return value.map((entry) {
-    final map = _asMap(entry);
-    return _MetroItem(
-      countryCode: _string(map['countryCode']).toUpperCase(),
-      regionCode: _string(map['regionCode']).toUpperCase(),
-      label: _string(map['label']),
-    );
-  }).where((item) => item.countryCode.isNotEmpty && item.regionCode.isNotEmpty && item.label.isNotEmpty).toList();
+  return value
+      .map((entry) {
+        final map = _asMap(entry);
+        return _MetroItem(
+          countryCode: _string(map['countryCode']).toUpperCase(),
+          regionCode: _string(map['regionCode']).toUpperCase(),
+          label: _string(map['label']),
+        );
+      })
+      .where((item) =>
+          item.countryCode.isNotEmpty &&
+          item.regionCode.isNotEmpty &&
+          item.label.isNotEmpty)
+      .toList();
 }
