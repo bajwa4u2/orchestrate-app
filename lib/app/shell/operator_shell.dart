@@ -21,6 +21,8 @@ class OperatorShell extends StatelessWidget {
           'System health', '/operator/overview', Icons.monitor_heart_outlined),
       _NavItem(
           'Alerts and context', '/operator/system', Icons.dashboard_outlined),
+      _NavItem('System Doctor', '/operator/system-doctor',
+          Icons.health_and_safety_outlined),
     ]),
     _NavGroup('Operations', [
       _NavItem('Campaigns', '/operator/campaigns', Icons.campaign_outlined),

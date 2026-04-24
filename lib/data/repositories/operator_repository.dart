@@ -365,6 +365,33 @@ class OperatorRepository {
     return _asMap(json);
   }
 
+  Future<Map<String, dynamic>> diagnoseSystem({
+    required String issue,
+    String? expectedBehavior,
+    String? observedBehavior,
+    List<String> logs = const <String>[],
+  }) async {
+    final json = await _apiClient.postJson(
+      '/ai/system/diagnose',
+      body: <String, dynamic>{
+        'scope': 'SYSTEM',
+        'issue': issue.trim(),
+        if (expectedBehavior != null && expectedBehavior.trim().isNotEmpty)
+          'expectedBehavior': expectedBehavior.trim(),
+        if (observedBehavior != null && observedBehavior.trim().isNotEmpty)
+          'observedBehavior': observedBehavior.trim(),
+        if (logs.isNotEmpty)
+          'logs': logs
+              .map((item) => item.trim())
+              .where((item) => item.isNotEmpty)
+              .toList(),
+        'doNotTouch': const <String>['orchestrate_backend'],
+      },
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
   Future<List<dynamic>> fetchReminders() async {
     final json = await _apiClient.getJson(
       '/reminders',

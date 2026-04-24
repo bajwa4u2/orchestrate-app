@@ -118,7 +118,7 @@ class _Hero extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
-                  'From target market to qualified meeting, under operational control.',
+                  'Revenue execution that can source, send, follow up, and hand off without losing control.',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontSize: stacked ? 38 : 52,
                         height: 1.04,
@@ -223,19 +223,19 @@ class _HeroPanel extends StatelessWidget {
           _Signal(
             title: 'Execution pipeline',
             body:
-                'Targeting, sourcing, outreach, follow-ups, replies, and meetings stay connected to the same operating record.',
+                'Targeting, sourcing, outreach, follow-ups, replies, and meetings stay connected to one operating record from intake to handoff.',
           ),
           SizedBox(height: 14),
           _Signal(
             title: 'Governance and control',
             body:
-                'AI-assisted decisions, readiness checks, and operator controls keep execution visible and correctable.',
+                'AI-assisted strategy, message work, readiness checks, and operator controls keep execution visible and correctable.',
           ),
           SizedBox(height: 14),
           _Signal(
             title: 'Trust and continuity',
             body:
-                'Deliverability, representation, documents, billing, reminders, and account truth remain part of the service.',
+                'Deliverability, representation, documents, billing, reminders, and account truth remain part of the same managed service.',
           ),
         ],
       ),
@@ -269,20 +269,20 @@ class _SystemStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = const [
       _StripItem(
-        'Public truth',
-        'Plans, scope, and readiness are visible before sign-up.',
+        'Clear buying path',
+        'Plans, scope, intake, and service readiness are visible before account setup.',
       ),
       _StripItem(
-        'Client entry',
-        'Verification, setup, and activation stay tied to real account state.',
+        'Client control',
+        'Verification, setup, subscription, campaign scope, and billing stay tied to real account state.',
       ),
       _StripItem(
         'Execution',
         'Outreach, follow-up, replies, and meetings stay inside one operating line.',
       ),
       _StripItem(
-        'Revenue continuity',
-        'Invoices, reminders, statements, and records remain attached after work begins.',
+        'Business continuity',
+        'Invoices, reminders, statements, documents, and support remain attached after work begins.',
       ),
     ];
 
@@ -351,8 +351,8 @@ class _JourneySection extends StatelessWidget {
     final stages = const [
       _JourneyStage(
         '1',
-        'Choose your lane',
-        'Start with Opportunity or Revenue, then choose the coverage depth you need.',
+        'Choose the operating lane',
+        'Start with Opportunity for outbound execution or Revenue when billing continuity also matters.',
       ),
       _JourneyStage(
         '2',
@@ -361,8 +361,8 @@ class _JourneySection extends StatelessWidget {
       ),
       _JourneyStage(
         '3',
-        'Define operating scope',
-        'Country, region, industry, and operating direction become execution input.',
+        'Define sourcing and execution scope',
+        'Markets, regions, industries, offer context, and representation boundaries become execution input.',
       ),
       _JourneyStage(
         '4',
@@ -372,7 +372,7 @@ class _JourneySection extends StatelessWidget {
       _JourneyStage(
         '5',
         'Operate from the system',
-        'Client visibility and operator execution stay aligned to the same record of work.',
+        'Client visibility and operator execution stay aligned to the same record of sourcing, outreach, replies, meetings, billing, and support.',
       ),
     ];
 
@@ -435,22 +435,22 @@ class _CapabilitySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = const [
       _Capability(
-        title: 'Lead sourcing',
+        title: 'Sourcing that is not vendor-locked',
         body:
             'Provider-flexible sourcing starts from target scope instead of a single static list.',
       ),
       _Capability(
-        title: 'Outreach execution',
+        title: 'Execution with follow-through',
         body:
             'First sends, follow-ups, replies, and meeting handoff are treated as one governed workflow.',
       ),
       _Capability(
-        title: 'Deliverability and trust',
+        title: 'Deliverability and representation',
         body:
             'Mailbox posture, representation, suppressions, and formal records stay visible to the service.',
       ),
       _Capability(
-        title: 'Revenue operations',
+        title: 'Billing and service records',
         body:
             'Plans, billing status, invoices, statements, reminders, and agreements stay attached after activation.',
       ),
@@ -471,7 +471,7 @@ class _CapabilitySection extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'The public view explains capabilities. Live operational details remain inside client and operator workspaces after authentication.',
+            'Orchestrate is built around connected revenue work: governed sourcing, execution, deliverability, intake, billing, records, and support.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge

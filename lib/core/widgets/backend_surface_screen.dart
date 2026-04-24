@@ -244,7 +244,7 @@ class _SurfacePanel extends StatelessWidget {
             const SizedBox(height: 10),
             for (final gap in gaps)
               Text(
-                '${_endpointLabel(section.section, gap.path)}${gap.statusCode == null ? '' : ' (${gap.statusCode})'}: ${_cleanReason(gap.reason)}',
+                '${_endpointLabel(section.section, gap.path)}: ${_cleanReason(gap.reason, gap.statusCode)}',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
           ],
@@ -552,7 +552,16 @@ String _friendlySource(String value) {
       .join(' ');
 }
 
-String _cleanReason(String? reason) {
+String _cleanReason(String? reason, int? statusCode) {
+  if (statusCode == 401 || statusCode == 403) {
+    return 'Not available for this account';
+  }
+  if (statusCode == 404) {
+    return 'Capability not enabled';
+  }
+  if (statusCode != null && statusCode >= 500) {
+    return 'Operating status could not be loaded';
+  }
   final text = (reason ?? '').trim();
   if (text.isEmpty) return 'Not yet configured';
   if (text.contains('Cannot GET') || text.contains('404')) {

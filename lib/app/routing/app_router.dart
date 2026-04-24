@@ -21,6 +21,7 @@ import 'package:orchestrate_app/features/client/screens/client_support_screen.da
 import 'package:orchestrate_app/features/operator/screens/operator_backend_surface_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_debug_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_providers_screen.dart';
+import 'package:orchestrate_app/features/operator/screens/operator_system_doctor_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_workspace_screen.dart';
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
 import 'package:orchestrate_app/features/public/screens/pricing_screen.dart';
@@ -778,6 +779,9 @@ final router = GoRouter(
             path: '/operator/system',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
                 surface: OperatorBackendSurface.system)),
+        GoRoute(
+            path: '/operator/system-doctor',
+            builder: (context, state) => const OperatorSystemDoctorScreen()),
         GoRoute(
             path: '/operator/clients',
             builder: (context, state) => const OperatorWorkspaceScreen(

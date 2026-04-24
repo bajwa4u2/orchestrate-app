@@ -127,14 +127,12 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
               'Receipts are shown only if the system exposes client-authorized receipt data.',
           sections: [
             BackendSurfaceSection(
-              title: 'Receipt data gap',
+              title: 'Receipt status',
               description:
-                  'The system has operator billing receipts, but the right now does not expose /client/receipts.',
-              endpoints: [
-                BackendEndpoint('/client/receipts', label: 'client receipts')
-              ],
-              emptyLabel: 'No client receipt capability data is available.',
-              gapLabel: 'Missing client-safe receipts capability',
+                  'Operator billing receipts exist, but client-safe receipt browsing is not enabled for this account yet.',
+              endpoints: [],
+              emptyLabel: 'Client receipt browsing is not enabled.',
+              gapLabel: 'Client-safe receipts not enabled',
             ),
           ],
         );
@@ -213,7 +211,7 @@ class ClientBackendSurfaceScreen extends StatelessWidget {
             BackendSurfaceSection(
               title: 'Support capability boundary',
               description:
-                  'The system supports /client/support/intake and replies by session, but does not expose a client support thread list.',
+                  'Support intake and session replies are available. A client support thread list is not enabled yet.',
               endpoints: [],
               emptyLabel:
                   'Use the support action in this workspace to start or continue a support conversation.',

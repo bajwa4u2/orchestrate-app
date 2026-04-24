@@ -85,12 +85,12 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No organizations are visible.',
             ),
             BackendSurfaceSection(
-              title: 'Users data gap',
+              title: 'User directory status',
               description:
-                  'The system exposes user creation and membership creation actions, but no user list capability is present.',
-              endpoints: [BackendEndpoint('/users', label: 'users')],
-              emptyLabel: 'No user list data is available.',
-              gapLabel: 'Missing users list capability',
+                  'User creation and membership actions exist. A readable user directory is not available from operator control yet.',
+              endpoints: [],
+              emptyLabel: 'User directory browsing is not enabled.',
+              gapLabel: 'User directory not enabled',
             ),
           ],
         );
@@ -113,7 +113,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
                   'Reachability and qualification capabilities are entity-specific and need selected lead/entity ids before they can be queried.',
               endpoints: [],
               emptyLabel:
-                  'Select a lead detail workflow before calling /reachability/entities/:entityId or /qualification/entities/:entityId/evaluate.',
+                  'Select a lead detail workflow before running reachability or qualification checks.',
             ),
           ],
         );
@@ -136,12 +136,12 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No execution summary is visible.',
             ),
             BackendSurfaceSection(
-              title: 'Jobs list gap',
+              title: 'Jobs list status',
               description:
                   'Run and dispatch capabilities exist as action controls; a read capability is not exposed.',
-              endpoints: [BackendEndpoint('/execution/jobs', label: 'jobs')],
-              emptyLabel: 'No jobs list capability data is available.',
-              gapLabel: 'Missing jobs list capability',
+              endpoints: [],
+              emptyLabel: 'Job browsing is not enabled. Use dispatch controls from the command board.',
+              gapLabel: 'Jobs list not enabled',
             ),
           ],
         );
@@ -150,15 +150,15 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
           eyebrow: 'Execution',
           title: 'Workers',
           subtitle:
-              'Worker registration exists in system runtime, but the right now has no worker registry capability.',
+              'Worker registration exists in system runtime, but operator control has no worker registry read capability yet.',
           sections: [
             BackendSurfaceSection(
-              title: 'Worker registry gap',
+              title: 'Worker registry status',
               description:
                   'Registered workers are system runtime truth, but no read capability is exposed to the frontend.',
-              endpoints: [BackendEndpoint('/workers', label: 'workers')],
-              emptyLabel: 'No worker registry capability data is available.',
-              gapLabel: 'Missing workers capability',
+              endpoints: [],
+              emptyLabel: 'Worker registry browsing is not enabled.',
+              gapLabel: 'Worker registry not enabled',
             ),
           ],
         );
@@ -181,13 +181,11 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No queue summary is visible.',
             ),
             BackendSurfaceSection(
-              title: 'Queue list gap',
+              title: 'Queue list status',
               description: 'No read capability is present.',
-              endpoints: [
-                BackendEndpoint('/execution/queues', label: 'queues')
-              ],
-              emptyLabel: 'No queue list capability data is available.',
-              gapLabel: 'Missing queues capability',
+              endpoints: [],
+              emptyLabel: 'Queue browsing is not enabled. Use dispatch controls from the command board.',
+              gapLabel: 'Queue list not enabled',
             ),
           ],
         );
@@ -212,19 +210,13 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No AI trust status is visible.',
             ),
             BackendSurfaceSection(
-              title: 'Decision and enforcement gaps',
+              title: 'Decision and enforcement status',
               description:
                   'The system has durable AI decision/enforcement models and action authority capabilities, but no readable decision or enforcement log capability is exposed.',
-              endpoints: [
-                BackendEndpoint('/ai/authority/snapshot',
-                    label: 'authority snapshot'),
-                BackendEndpoint('/ai/governance/decisions',
-                    label: 'decision log'),
-                BackendEndpoint('/ai/governance/enforcements',
-                    label: 'enforcement log'),
-              ],
-              emptyLabel: 'No AI governance log data is available.',
-              gapLabel: 'Missing AI governance read capabilities',
+              endpoints: [],
+              emptyLabel:
+                  'Decision and enforcement log browsing is not enabled. Authority actions remain operator-only actions.',
+              gapLabel: 'AI governance logs not enabled',
             ),
           ],
         );
@@ -249,7 +241,7 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
                   'Source plans, discovery, provider usage, and source runs are campaign-specific and need campaign selection.',
               endpoints: [],
               emptyLabel:
-                  'Use a campaign detail workflow before calling /sources/campaigns/:campaignId/runs or /providers/usage/campaigns/:campaignId.',
+                  'Select a campaign detail workflow before viewing source runs or provider usage.',
             ),
           ],
         );
@@ -262,14 +254,11 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
             BackendSurfaceSection(
               title: 'Reachability data boundary',
               description:
-                  'The system exposes /reachability/entities/:entityId, but no aggregate reachability list capability.',
-              endpoints: [
-                BackendEndpoint('/reachability/entities',
-                    label: 'reachability list')
-              ],
+                  'Reachability is available for selected entities, but no aggregate reachability list is enabled yet.',
+              endpoints: [],
               emptyLabel:
-                  'No aggregate reachability capability data is available.',
-              gapLabel: 'Missing aggregate reachability capability',
+                  'Aggregate reachability browsing is not enabled. Select a lead to check a specific entity.',
+              gapLabel: 'Aggregate reachability not enabled',
             ),
           ],
         );
@@ -284,12 +273,10 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               title: 'Qualification data boundary',
               description:
                   'The system exposes campaign and entity qualification capabilities, but no aggregate qualification list.',
-              endpoints: [
-                BackendEndpoint('/qualification', label: 'qualification list')
-              ],
+              endpoints: [],
               emptyLabel:
-                  'No aggregate qualification capability data is available.',
-              gapLabel: 'Missing aggregate qualification capability',
+                  'Aggregate qualification browsing is not enabled. Use campaign or lead-specific qualification checks.',
+              gapLabel: 'Aggregate qualification not enabled',
             ),
           ],
         );
@@ -304,9 +291,9 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               title: 'Campaign signal boundary',
               description:
                   'Signal detection, signal reads, and adaptation runs require a campaign id right now.',
-              endpoints: [BackendEndpoint('/signals', label: 'signals list')],
-              emptyLabel: 'No aggregate signals capability data is available.',
-              gapLabel: 'Missing aggregate signals capability',
+              endpoints: [],
+              emptyLabel: 'Aggregate signal browsing is not enabled. Select a campaign for signal review.',
+              gapLabel: 'Aggregate signals not enabled',
             ),
           ],
         );
@@ -391,12 +378,10 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               title: 'Analytics boundary',
               description:
                   'Source-yield and conversion analytics require a campaign id. No aggregate operator analytics capability is exposed.',
-              endpoints: [
-                BackendEndpoint('/analytics', label: 'analytics list')
-              ],
+              endpoints: [],
               emptyLabel:
-                  'No aggregate analytics capability data is available.',
-              gapLabel: 'Missing aggregate analytics capability',
+                  'Aggregate analytics browsing is not enabled. Select a campaign for source-yield or conversion analytics.',
+              gapLabel: 'Aggregate analytics not enabled',
             ),
           ],
         );
@@ -418,16 +403,13 @@ class OperatorBackendSurfaceScreen extends StatelessWidget {
               emptyLabel: 'No records overview is visible.',
             ),
             BackendSurfaceSection(
-              title: 'Audit stream gap',
+              title: 'Audit stream status',
               description:
-                  'No read capability or read capability is exposed for durable activity stream browsing.',
-              endpoints: [
-                BackendEndpoint('/audit', label: 'audit'),
-                BackendEndpoint('/activity', label: 'activity'),
-              ],
+                  'A dedicated audit/activity stream is not exposed for browsing yet.',
+              endpoints: [],
               emptyLabel:
-                  'No audit/activity stream capability data is available.',
-              gapLabel: 'Missing audit/activity stream capabilities',
+                  'Audit and activity stream browsing is not enabled.',
+              gapLabel: 'Audit stream not enabled',
             ),
           ],
         );
