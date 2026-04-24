@@ -23,114 +23,110 @@ class PublicContentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1180),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: AppTheme.publicSurface,
-                    borderRadius: BorderRadius.circular(AppTheme.radius),
-                    border: Border.all(color: AppTheme.publicLine),
-                  ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final stacked = constraints.maxWidth < 940;
-                      final lead = Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.publicAccentSoft,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              eyebrow,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: AppTheme.publicAccent,
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 720),
-                            child: Text(
-                              title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineLarge
-                                  ?.copyWith(
-                                    fontSize: stacked ? 52 : 44,
-                                    height: 1.04,
-                                    letterSpacing: 0,
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 720),
-                            child: Text(
-                              subtitle,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: AppTheme.publicMuted,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      );
-
-                      final aside = _SidePanel(
-                        note: sideNote,
-                        actions: sideActions,
-                      );
-
-                      if (stacked) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            lead,
-                            if (sideNote != null || sideActions.isNotEmpty) ...[
-                              const SizedBox(height: 22),
-                              aside,
-                            ],
-                          ],
-                        );
-                      }
-
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 7, child: lead),
-                          if (sideNote != null || sideActions.isNotEmpty) ...[
-                            const SizedBox(width: 24),
-                            Expanded(flex: 4, child: aside),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1180),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppTheme.publicSurface,
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                  border: Border.all(color: AppTheme.publicLine),
                 ),
-                const SizedBox(height: 24),
-                for (final section in sections) ...[
-                  _SectionCard(section: section),
-                  const SizedBox(height: 18),
-                ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stacked = constraints.maxWidth < 940;
+                    final lead = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.publicAccentSoft,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            eyebrow,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: AppTheme.publicAccent,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 720),
+                          child: Text(
+                            title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineLarge
+                                ?.copyWith(
+                                  fontSize: stacked ? 52 : 44,
+                                  height: 1.04,
+                                  letterSpacing: 0,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 720),
+                          child: Text(
+                            subtitle,
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: AppTheme.publicMuted,
+                                    ),
+                          ),
+                        ),
+                      ],
+                    );
+
+                    final aside = _SidePanel(
+                      note: sideNote,
+                      actions: sideActions,
+                    );
+
+                    if (stacked) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          lead,
+                          if (sideNote != null || sideActions.isNotEmpty) ...[
+                            const SizedBox(height: 22),
+                            aside,
+                          ],
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 7, child: lead),
+                        if (sideNote != null || sideActions.isNotEmpty) ...[
+                          const SizedBox(width: 24),
+                          Expanded(flex: 4, child: aside),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              for (final section in sections) ...[
+                _SectionCard(section: section),
+                const SizedBox(height: 18),
               ],
-            ),
+            ],
           ),
         ),
       ),

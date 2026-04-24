@@ -162,7 +162,7 @@ class _PricingScreenState extends State<PricingScreen> {
   Widget build(BuildContext context) {
     final catalog = _catalog;
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -51,7 +51,7 @@ class PublicHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(28, 28, 28, 44),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
