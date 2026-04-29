@@ -19,7 +19,9 @@ class SurfaceEndpointRepository {
       return EndpointSnapshot.unavailable(
         path: path,
         statusCode: error.statusCode,
-        reason: _reasonFromBody(error.body),
+        reason: error.displayMessage,
+        requestId: error.requestId,
+        correlationId: error.correlationId,
       );
     } catch (error) {
       return EndpointSnapshot.unavailable(path: path, reason: error.toString());
@@ -39,12 +41,6 @@ class SurfaceEndpointRepository {
     return value;
   }
 
-  String _reasonFromBody(String body) {
-    final text = body.trim();
-    if (text.isEmpty) return 'Request failed';
-    if (text.length <= 180) return text;
-    return '${text.substring(0, 180)}...';
-  }
 }
 
 class EndpointSnapshot {
@@ -54,6 +50,8 @@ class EndpointSnapshot {
     this.data,
     this.statusCode,
     this.reason,
+    this.requestId,
+    this.correlationId,
   });
 
   factory EndpointSnapshot.available({
@@ -67,12 +65,16 @@ class EndpointSnapshot {
     required String path,
     int? statusCode,
     String? reason,
+    String? requestId,
+    String? correlationId,
   }) {
     return EndpointSnapshot(
       path: path,
       available: false,
       statusCode: statusCode,
       reason: reason,
+      requestId: requestId,
+      correlationId: correlationId,
     );
   }
 
@@ -81,6 +83,8 @@ class EndpointSnapshot {
   final dynamic data;
   final int? statusCode;
   final String? reason;
+  final String? requestId;
+  final String? correlationId;
 
   List<dynamic> get items {
     final value = data;

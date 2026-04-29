@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/operator_repository.dart';
 
@@ -55,11 +56,11 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
         _notes = notes;
         _loading = false;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'This inquiry could not load at the moment.';
+        _error = _errorMessage(error, 'This inquiry could not load at the moment.');
       });
     }
   }
@@ -70,6 +71,10 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
       await OperatorRepository()
           .updateInquiryStatus(inquiryId: widget.inquiryId, status: status);
       await _load();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = _errorMessage(error, 'Status could not be updated.'));
+      }
     } finally {
       if (mounted) setState(() => _updatingStatus = false);
     }
@@ -83,6 +88,10 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
           inquiryId: widget.inquiryId, content: _replyController.text.trim());
       _replyController.clear();
       await _load();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = _errorMessage(error, 'Reply could not be sent.'));
+      }
     } finally {
       if (mounted) setState(() => _sendingReply = false);
     }
@@ -96,6 +105,10 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
           inquiryId: widget.inquiryId, content: _noteController.text.trim());
       _noteController.clear();
       await _load();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = _errorMessage(error, 'Note could not be saved.'));
+      }
     } finally {
       if (mounted) setState(() => _savingNote = false);
     }
@@ -104,7 +117,22 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) return Center(child: Text(_error!));
+    if (_error != null && _inquiry.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 28),
@@ -129,6 +157,9 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
               Wrap(spacing: 10, runSpacing: 10, children: [
                 _Pill(label: _read(_inquiry, 'status', fallback: 'NEW')),
                 _Pill(label: _read(_inquiry, 'email', fallback: 'No email')),
+                _Pill(label: 'SLA: ${_read(_inquiry, 'slaState', fallback: 'not_set')}'),
+                _Pill(label: 'Escalation: ${_read(_inquiry, 'escalationState', fallback: 'standard')}'),
+                _Pill(label: 'Assigned: ${_read(_inquiry, 'assignedToName', fallback: 'Unassigned')}'),
                 if (_read(_inquiry, 'company').isNotEmpty)
                   _Pill(label: _read(_inquiry, 'company')),
                 if (_read(_inquiry, 'type').isNotEmpty)
@@ -159,6 +190,10 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
                         ? null
                         : () => _updateStatus('CLOSED'))),
           ]),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            _InlineError(message: _error!, onRetry: _load),
+          ],
           const SizedBox(height: 18),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -242,6 +277,38 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
                   ]);
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+String _errorMessage(Object error, String fallback) {
+  if (error is ApiException) return error.displayMessage;
+  return fallback;
+}
+
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF3A1F23),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: const Color(0xFF7A3A43)),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(message)),
+          const SizedBox(width: 12),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );

@@ -92,12 +92,19 @@ class ApiClient {
 }
 
 class ApiException implements Exception {
-  ApiException(this.statusCode, this.message, this.body, {this.requestId});
+  ApiException(
+    this.statusCode,
+    this.message,
+    this.body, {
+    this.requestId,
+    this.correlationId,
+  });
 
   final int statusCode;
   final String message;
   final String body;
   final String? requestId;
+  final String? correlationId;
 
   factory ApiException.fromResponse(http.Response response) {
     var message = 'Request failed';
@@ -118,15 +125,25 @@ class ApiException implements Exception {
         message = response.body.trim();
       }
     }
+    requestId ??= response.headers['x-request-id'];
+    final correlationId = response.headers['x-correlation-id'];
     return ApiException(
       response.statusCode,
       message,
       response.body,
       requestId: requestId,
+      correlationId: correlationId,
     );
   }
 
   bool get isAuthFailure => statusCode == 401 || statusCode == 403;
+  String get displayId => correlationId?.isNotEmpty == true
+      ? correlationId!
+      : requestId?.isNotEmpty == true
+          ? requestId!
+          : '';
+  String get displayMessage =>
+      displayId.isEmpty ? message : '$message Reference: $displayId';
 
   @override
   String toString() => 'ApiException(statusCode: $statusCode, message: $message)';

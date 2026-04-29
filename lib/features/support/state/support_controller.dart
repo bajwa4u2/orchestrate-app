@@ -122,7 +122,7 @@ class SupportController extends ChangeNotifier {
       if (error.statusCode == 429) {
         return 'Too many support requests were sent in a short period. Try again shortly.';
       }
-      if (error.message.isNotEmpty) return error.message;
+      if (error.message.isNotEmpty) return error.displayMessage;
     }
     return 'We could not process this at the moment. Please try again.';
   }

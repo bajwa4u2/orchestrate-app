@@ -4,7 +4,7 @@ import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/surface_endpoint_repository.dart';
 
-class BackendSurfaceScreen extends StatelessWidget {
+class BackendSurfaceScreen extends StatefulWidget {
   const BackendSurfaceScreen({
     super.key,
     required this.eyebrow,
@@ -23,9 +23,35 @@ class BackendSurfaceScreen extends StatelessWidget {
   final bool dark;
 
   @override
+  State<BackendSurfaceScreen> createState() => _BackendSurfaceScreenState();
+}
+
+class _BackendSurfaceScreenState extends State<BackendSurfaceScreen> {
+  late Future<List<_ResolvedSection>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant BackendSurfaceScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.surface != widget.surface ||
+        oldWidget.sections.length != widget.sections.length) {
+      _future = _load();
+    }
+  }
+
+  void _retry() {
+    setState(() => _future = _load());
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<_ResolvedSection>>(
-      future: _load(),
+      future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return SingleChildScrollView(
@@ -33,11 +59,11 @@ class BackendSurfaceScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _LoadingBlock(dark: dark, large: true),
+                _LoadingBlock(dark: widget.dark, large: true),
                 const SizedBox(height: 18),
-                _LoadingBlock(dark: dark),
+                _LoadingBlock(dark: widget.dark),
                 const SizedBox(height: 18),
-                _LoadingBlock(dark: dark),
+                _LoadingBlock(dark: widget.dark),
               ],
             ),
           );
@@ -55,19 +81,20 @@ class BackendSurfaceScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _Hero(
-                eyebrow: eyebrow,
-                title: title,
-                subtitle: subtitle,
-                dark: dark,
+                eyebrow: widget.eyebrow,
+                title: widget.title,
+                subtitle: widget.subtitle,
+                dark: widget.dark,
                 sourceCount: resolved.fold<int>(
                   0,
                   (total, section) => total + section.snapshots.length,
                 ),
                 pendingCount: unavailable,
+                onRetry: _retry,
               ),
               const SizedBox(height: 18),
               for (final section in resolved) ...[
-                _SurfacePanel(section: section, dark: dark),
+                _SurfacePanel(section: section, dark: widget.dark),
                 const SizedBox(height: 18),
               ],
             ],
@@ -80,12 +107,12 @@ class BackendSurfaceScreen extends StatelessWidget {
   Future<List<_ResolvedSection>> _load() async {
     final repo = SurfaceEndpointRepository();
     final resolved = <_ResolvedSection>[];
-    for (final section in sections) {
+    for (final section in widget.sections) {
       final snapshots = <EndpointSnapshot>[];
       for (final endpoint in section.endpoints) {
         snapshots.add(
           await repo.get(endpoint.path,
-              query: endpoint.query, surface: surface),
+              query: endpoint.query, surface: widget.surface),
         );
       }
       resolved.add(_ResolvedSection(section: section, snapshots: snapshots));
@@ -133,6 +160,7 @@ class _Hero extends StatelessWidget {
     required this.dark,
     required this.sourceCount,
     required this.pendingCount,
+    required this.onRetry,
   });
 
   final String eyebrow;
@@ -141,6 +169,7 @@ class _Hero extends StatelessWidget {
   final bool dark;
   final int sourceCount;
   final int pendingCount;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -175,6 +204,11 @@ class _Hero extends StatelessWidget {
                     ? 'Records available'
                     : '$pendingCount sources need setup',
                 dark: dark,
+              ),
+              OutlinedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Retry'),
               ),
             ],
           ),
