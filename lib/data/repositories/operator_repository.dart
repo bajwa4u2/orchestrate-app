@@ -313,6 +313,41 @@ class OperatorRepository {
     return _asMap(json);
   }
 
+  Future<Map<String, dynamic>> reconnectMailbox(String mailboxId) async {
+    final json = await _apiClient.postJson(
+      '/deliverability/mailboxes/$mailboxId/reconnect',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> createSuppression({
+    String? clientId,
+    String? emailAddress,
+    String? domain,
+    String type = 'MANUAL_BLOCK',
+    String? reason,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/deliverability/suppressions',
+      body: <String, dynamic>{
+        if (clientId != null && clientId.trim().isNotEmpty)
+          'clientId': clientId.trim(),
+        if (emailAddress != null && emailAddress.trim().isNotEmpty)
+          'emailAddress': emailAddress.trim(),
+        if (domain != null && domain.trim().isNotEmpty)
+          'domain': domain.trim(),
+        'type': type,
+        if (reason != null && reason.trim().isNotEmpty)
+          'reason': reason.trim(),
+        'source': 'ops_debug_control_center',
+      },
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
   Future<Map<String, dynamic>> runJob({
     required String jobId,
     bool force = false,
