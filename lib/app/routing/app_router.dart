@@ -809,16 +809,16 @@ final router = GoRouter(
                 surface: OperatorBackendSurface.leads)),
         GoRoute(
             path: '/operator/jobs',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.jobs)),
+            builder: (context, state) => const OperatorWorkspaceScreen(
+                section: OperatorSection.execution)),
         GoRoute(
             path: '/operator/workers',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.workers)),
+            builder: (context, state) => const OperatorWorkspaceScreen(
+                section: OperatorSection.execution)),
         GoRoute(
             path: '/operator/queues',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.queues)),
+            builder: (context, state) => const OperatorWorkspaceScreen(
+                section: OperatorSection.execution)),
         GoRoute(
             path: '/operator/ai-governance',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
@@ -848,8 +848,8 @@ final router = GoRouter(
                 section: OperatorSection.deliverability)),
         GoRoute(
             path: '/operator/emails',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.emails)),
+            builder: (context, state) => const OperatorWorkspaceScreen(
+                section: OperatorSection.communications)),
         GoRoute(
             path: '/operator/replies',
             builder: (context, state) => const OperatorWorkspaceScreen(
@@ -860,24 +860,24 @@ final router = GoRouter(
                 section: OperatorSection.meetings)),
         GoRoute(
             path: '/operator/billing',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.billing)),
+            builder: (context, state) => const OperatorWorkspaceScreen(
+                section: OperatorSection.revenue)),
         GoRoute(
             path: '/operator/documents',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.documents)),
+            builder: (context, state) => const OperatorWorkspaceScreen(
+                section: OperatorSection.records)),
         GoRoute(
             path: '/operator/support',
             builder: (context, state) => const OperatorWorkspaceScreen(
                 section: OperatorSection.inquiries)),
         GoRoute(
             path: '/operator/analytics',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.analytics)),
+            builder: (context, state) => const OperatorWorkspaceScreen(
+                section: OperatorSection.analytics)),
         GoRoute(
             path: '/operator/activity',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.activity)),
+            builder: (context, state) => const OperatorWorkspaceScreen(
+                section: OperatorSection.activity)),
         GoRoute(
             path: '/ops/overview',
             builder: (context, state) => const OperatorWorkspaceScreen(
@@ -904,7 +904,7 @@ final router = GoRouter(
         GoRoute(
             path: '/ops/activity',
             builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.inquiries)),
+                section: OperatorSection.activity)),
         GoRoute(
             path: '/ops/inquiries',
             builder: (context, state) => const OperatorWorkspaceScreen(

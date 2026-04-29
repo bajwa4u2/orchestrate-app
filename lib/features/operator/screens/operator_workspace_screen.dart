@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/operator_repository.dart';
 
@@ -15,6 +16,9 @@ enum OperatorSection {
   deliverability,
   communications,
   records,
+  activity,
+  execution,
+  analytics,
   settings,
 }
 
@@ -88,12 +92,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         }
 
         if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'This area could not load at the moment.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          );
+          return _ErrorState(error: snapshot.error, onRetry: _refresh);
         }
 
         final data = snapshot.data;
@@ -109,15 +108,14 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
             children: [
               _Header(data: data),
               const SizedBox(height: 18),
-              if (widget.section == OperatorSection.command) ...[
-                _ActionPanel(
-                  inFlight: _actionInFlight,
-                  message: _actionMessage,
-                  onDispatchDue: _dispatchDueJobs,
-                  onRefresh: _refresh,
-                ),
-                const SizedBox(height: 18),
-              ],
+              _ActionPanel(
+                inFlight: _actionInFlight,
+                message: _actionMessage,
+                onDispatchDue: _dispatchDueJobs,
+                onRefresh: _refresh,
+                commandMode: widget.section == OperatorSection.command,
+              ),
+              const SizedBox(height: 18),
               _Metrics(metrics: data.metrics),
               const SizedBox(height: 18),
               LayoutBuilder(
@@ -514,35 +512,49 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
 
       case OperatorSection.deliverability:
         final overview = await repo.fetchDeliverabilityOverview();
+        final mailboxes =
+            (overview['mailboxes'] as List? ?? const []).cast<dynamic>();
+        final healthyMailboxes = mailboxes.where((item) {
+          final map = _asMap(item);
+          final health = _read(map, 'healthStatus').toUpperCase();
+          return health != 'DEGRADED' && health != 'CRITICAL';
+        }).length;
+        final degradedMailboxes = mailboxes.length - healthyMailboxes;
         return _OperatorData(
           eyebrow: 'System',
           title: 'Mailboxes and sending posture',
           subtitle:
               'Healthy mailbox posture protects the rest of the operator chain. This area should stay close to execution reality.',
           metrics: [
-            _Metric(
-                'Healthy', _read(overview, 'healthyMailboxes', fallback: '0')),
-            _Metric('Degraded',
-                _read(overview, 'degradedMailboxes', fallback: '0')),
+            _Metric('Mailboxes', '${mailboxes.length}'),
+            _Metric('Healthy', '$healthyMailboxes'),
+            _Metric('Degraded', '$degradedMailboxes'),
           ],
           primaryTitle: 'Mailbox standing',
-          primaryRows: [
+          primaryRows: mailboxes
+              .take(10)
+              .map((item) => _mapRow(
+                    item,
+                    titleKeys: const ['emailAddress', 'email', 'label'],
+                    primaryKeys: const [
+                      'connectionState',
+                      'healthStatus',
+                      'status'
+                    ],
+                    secondaryKeys: const ['provider', 'updatedAt'],
+                  ))
+              .toList(),
+          primaryEmpty: 'No deliverability data is available.',
+          secondaryTitle: 'Sending posture',
+          secondaryRows: [
             _Row(
               title: 'Healthy mailboxes',
-              primary: _read(overview, 'healthyMailboxes', fallback: '0'),
+              primary: '$healthyMailboxes',
+              secondary: '$degradedMailboxes degraded or critical',
             ),
-            _Row(
-              title: 'Degraded mailboxes',
-              primary: _read(overview, 'degradedMailboxes', fallback: '0'),
-            ),
-          ],
-          primaryEmpty: 'No deliverability data is available.',
-          secondaryTitle: 'Operator note',
-          secondaryRows: const [
-            _Row(
-              title: 'Posture',
-              primary:
-                  'Review degraded mailboxes before scaling outbound volume.',
+            const _Row(
+              title: 'Operator action',
+              primary: 'Refresh health or reconnect mailboxes from Ops Debug.',
             ),
           ],
           secondaryEmpty: 'No posture note is available.',
@@ -634,6 +646,143 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
           ],
           secondaryEmpty: 'No artifacts are available.',
+        );
+
+      case OperatorSection.activity:
+        final activity = await repo.fetchActivity(limit: 50);
+        final items = (activity['items'] as List? ?? const []).cast<dynamic>();
+        final summary = _asMap(activity['summary']);
+        final byKind = _asMap(summary['byKind']);
+        return _OperatorData(
+          eyebrow: 'Records',
+          title: 'Audit stream and operator-visible activity',
+          subtitle:
+              'Recent durable activity events ordered by system time, with client and campaign context when available.',
+          metrics: [
+            _Metric('Visible events', '${items.length}'),
+            _Metric('Messages', _read(byKind, 'MESSAGE_SENT', fallback: '0')),
+            _Metric('Replies', _read(byKind, 'REPLY_RECEIVED', fallback: '0')),
+          ],
+          primaryTitle: 'Recent activity',
+          primaryRows: items
+              .take(14)
+              .map((item) => _mapRow(
+                    item,
+                    titleKeys: const ['summary', 'kind'],
+                    primaryKeys: const ['kind', 'visibility'],
+                    secondaryKeys: const [
+                      'clientName',
+                      'campaignName',
+                      'createdAt'
+                    ],
+                  ))
+              .toList(),
+          primaryEmpty: 'No activity events are available.',
+          secondaryTitle: 'Activity mix',
+          secondaryRows: byKind.entries
+              .take(10)
+              .map((entry) => _Row(title: entry.key, primary: '${entry.value}'))
+              .toList(),
+          secondaryEmpty: 'No activity mix is available yet.',
+        );
+
+      case OperatorSection.execution:
+        final execution = await repo.fetchExecutionWorkspace(limit: 50);
+        final items = (execution['items'] as List? ?? const []).cast<dynamic>();
+        final recentRuns =
+            (execution['recentRuns'] as List? ?? const []).cast<dynamic>();
+        final summary = _asMap(execution['summary']);
+        final byStatus = _asMap(summary['byStatus']);
+        return _OperatorData(
+          eyebrow: 'Execution',
+          title: 'Jobs, queues, and worker pressure',
+          subtitle:
+              'Queue pressure and recent execution are read from durable job records so failed or stuck work remains visible.',
+          metrics: [
+            _Metric('Queued', _read(byStatus, 'QUEUED', fallback: '0')),
+            _Metric('Running', _read(byStatus, 'RUNNING', fallback: '0')),
+            _Metric('Failed', _read(byStatus, 'FAILED', fallback: '0')),
+          ],
+          primaryTitle: 'Recent jobs',
+          primaryRows: items
+              .take(14)
+              .map((item) => _mapRow(
+                    item,
+                    titleKeys: const ['type', 'id'],
+                    primaryKeys: const ['status', 'queueName'],
+                    secondaryKeys: const [
+                      'clientName',
+                      'campaignName',
+                      'updatedAt'
+                    ],
+                  ))
+              .toList(),
+          primaryEmpty: 'No jobs are visible.',
+          secondaryTitle: 'Recent worker runs',
+          secondaryRows: recentRuns
+              .take(10)
+              .map((item) => _mapRow(
+                    item,
+                    titleKeys: const ['type', 'jobId'],
+                    primaryKeys: const ['status', 'queueName'],
+                    secondaryKeys: const ['campaignName', 'startedAt'],
+                  ))
+              .toList(),
+          secondaryEmpty: 'No worker runs are visible.',
+        );
+
+      case OperatorSection.analytics:
+        final campaigns = await repo.fetchCampaigns();
+        final emails = await repo.fetchEmailDispatches();
+        final replies = await repo.fetchReplies();
+        final meetings = await repo.fetchMeetings();
+        final revenue = await repo.fetchRevenueOverview();
+        final sent = emails.where((item) {
+          final status = _read(_asMap(item), 'status').toUpperCase();
+          return status == 'SENT';
+        }).length;
+        final failed = emails.where((item) {
+          final status = _read(_asMap(item), 'status').toUpperCase();
+          return status == 'FAILED' || status == 'BOUNCED';
+        }).length;
+        return _OperatorData(
+          eyebrow: 'Analytics',
+          title: 'Revenue operations movement',
+          subtitle:
+              'Aggregate conversion and movement indicators from campaigns, dispatches, replies, meetings, and revenue records.',
+          metrics: [
+            _Metric('Campaigns', '${campaigns.length}'),
+            _Metric('Sent', '$sent'),
+            _Metric('Replies', '${replies.length}'),
+            _Metric('Meetings', '${meetings.length}'),
+          ],
+          primaryTitle: 'Campaign performance cues',
+          primaryRows: [
+            _Row(title: 'Dispatches sent', primary: '$sent'),
+            _Row(title: 'Dispatch failures', primary: '$failed'),
+            _Row(
+              title: 'Reply to meeting signal',
+              primary: replies.isEmpty
+                  ? 'No replies yet'
+                  : '${meetings.length} meetings from ${replies.length} replies',
+            ),
+            _Row(
+              title: 'Outstanding revenue',
+              primary: _money(_asMap(revenue['totals'])['outstandingCents']),
+            ),
+          ],
+          primaryEmpty: 'No analytics signals are available.',
+          secondaryTitle: 'Active campaigns',
+          secondaryRows: campaigns
+              .take(10)
+              .map((item) => _mapRow(
+                    item,
+                    titleKeys: const ['name'],
+                    primaryKeys: const ['status'],
+                    secondaryKeys: const ['updatedAt', 'createdAt'],
+                  ))
+              .toList(),
+          secondaryEmpty: 'No campaign analytics are available.',
         );
 
       case OperatorSection.settings:
@@ -744,12 +893,14 @@ class _ActionPanel extends StatelessWidget {
     required this.message,
     required this.onDispatchDue,
     required this.onRefresh,
+    required this.commandMode,
   });
 
   final bool inFlight;
   final String? message;
   final VoidCallback onDispatchDue;
   final VoidCallback onRefresh;
+  final bool commandMode;
 
   @override
   Widget build(BuildContext context) {
@@ -772,7 +923,9 @@ class _ActionPanel extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 message ??
-                    'Run supported recovery controls from the command center. Actions use live system capabilities and report cleanly when setup is missing.',
+                    (commandMode
+                        ? 'Run supported recovery controls from the command center. Actions use live system capabilities and report cleanly when setup is missing.'
+                        : 'Refresh this operational view to confirm the latest backend state. Actions stay available from command and debug surfaces when supported.'),
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
@@ -784,21 +937,22 @@ class _ActionPanel extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              FilledButton.icon(
-                onPressed: inFlight ? null : onDispatchDue,
-                icon: inFlight
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.play_arrow_outlined),
-                label: const Text('Dispatch due work'),
-              ),
+              if (commandMode)
+                FilledButton.icon(
+                  onPressed: inFlight ? null : onDispatchDue,
+                  icon: inFlight
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.play_arrow_outlined),
+                  label: const Text('Dispatch due work'),
+                ),
               OutlinedButton.icon(
                 onPressed: inFlight ? null : onRefresh,
                 icon: const Icon(Icons.refresh_outlined),
-                label: const Text('Refresh command'),
+                label: Text(commandMode ? 'Refresh command' : 'Refresh view'),
               ),
             ],
           );
@@ -842,6 +996,55 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(metric.value, style: Theme.of(context).textTheme.headlineMedium),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.error, required this.onRetry});
+
+  final Object? error;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final message = error is ApiException
+        ? (error as ApiException).displayMessage
+        : 'This area could not load at the moment.';
+    return Center(
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 680),
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppTheme.panel,
+          borderRadius: BorderRadius.circular(AppTheme.radius),
+          border: Border.all(color: AppTheme.line),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Operational data unavailable',
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppTheme.subdued),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_outlined),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }

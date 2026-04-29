@@ -27,6 +27,16 @@ class OperatorRepository {
   }
 
   Future<Map<String, dynamic>> fetchCommandWorkspace() async {
+    try {
+      final json = await _apiClient.getJson(
+        '/operator/command',
+        surface: ApiSurface.operator,
+      );
+      return Map<String, dynamic>.from(json as Map);
+    } catch (_) {
+      // Keep the command surface usable against older deployments during rollout.
+    }
+
     final control = await fetchControlOverview();
     final clients = await fetchClients();
     final campaigns = await fetchCampaigns();
@@ -142,14 +152,31 @@ class OperatorRepository {
   Future<List<dynamic>> fetchLeads() => _fetchItems('/leads');
 
   Future<List<dynamic>> fetchReplies({String? clientId}) {
-    if (clientId == null || clientId.trim().isEmpty) {
-      return Future.value(const <dynamic>[]);
-    }
-
-    return _fetchList('/replies', query: {'clientId': clientId.trim()});
+    final query = clientId == null || clientId.trim().isEmpty
+        ? null
+        : {'clientId': clientId.trim()};
+    return _fetchList('/replies', query: query);
   }
 
   Future<List<dynamic>> fetchMeetings() => _fetchItems('/meetings');
+
+  Future<Map<String, dynamic>> fetchActivity({int limit = 50}) async {
+    final json = await _apiClient.getJson(
+      '/operator/activity',
+      query: {'limit': '$limit'},
+      surface: ApiSurface.operator,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  Future<Map<String, dynamic>> fetchExecutionWorkspace({int limit = 50}) async {
+    final json = await _apiClient.getJson(
+      '/operator/execution',
+      query: {'limit': '$limit'},
+      surface: ApiSurface.operator,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
 
   Future<List<dynamic>> fetchInvoices() async {
     final json = await _apiClient.getJson(
@@ -336,11 +363,9 @@ class OperatorRepository {
           'clientId': clientId.trim(),
         if (emailAddress != null && emailAddress.trim().isNotEmpty)
           'emailAddress': emailAddress.trim(),
-        if (domain != null && domain.trim().isNotEmpty)
-          'domain': domain.trim(),
+        if (domain != null && domain.trim().isNotEmpty) 'domain': domain.trim(),
         'type': type,
-        if (reason != null && reason.trim().isNotEmpty)
-          'reason': reason.trim(),
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
         'source': 'ops_debug_control_center',
       },
       surface: ApiSurface.operator,
