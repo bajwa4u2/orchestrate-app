@@ -64,6 +64,10 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   @override
   void initState() {
     super.initState();
+    final notice = AuthSessionController.instance.authNotice;
+    if (notice.isNotEmpty) {
+      _error = notice;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _readRouteContext());
   }
 

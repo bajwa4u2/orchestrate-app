@@ -46,7 +46,6 @@ class PublicRepository {
     String? company,
     String? sourcePage,
     String? inquiryTypeHint,
-    Map<String, dynamic>? context,
   }) async {
     final body = <String, dynamic>{
       'message': message.trim(),
@@ -58,7 +57,6 @@ class PublicRepository {
         'sourcePage': sourcePage.trim(),
       if (inquiryTypeHint != null && inquiryTypeHint.trim().isNotEmpty)
         'inquiryTypeHint': inquiryTypeHint.trim(),
-      if (context != null && context.isNotEmpty) 'context': context,
     };
 
     final json = await _apiClient.postJson('/public/intake', body: body);
@@ -68,10 +66,14 @@ class PublicRepository {
   Future<Map<String, dynamic>> replyToIntakeSession({
     required String sessionId,
     required String message,
+    required String sessionToken,
   }) async {
     final json = await _apiClient.postJson(
       '/public/intake/$sessionId/reply',
-      body: {'message': message.trim()},
+      body: {
+        'message': message.trim(),
+        'sessionToken': sessionToken.trim(),
+      },
     );
     return Map<String, dynamic>.from(json as Map);
   }

@@ -83,7 +83,6 @@ class _PricingScreenState extends State<PricingScreen> {
               alignment: Alignment.centerRight,
               child: SupportDrawer(
                 publicMode: true,
-                baseUrl: AppConfig.apiBaseUrl,
               ),
             ),
           ],

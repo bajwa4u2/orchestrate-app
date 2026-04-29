@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
-import 'package:orchestrate_app/core/config/app_config.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/support/services/support_service.dart';
 import 'package:orchestrate_app/features/support/state/support_controller.dart';
@@ -25,30 +24,8 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
     super.initState();
     _controller = SupportController(
       publicMode: false,
-      service: SupportService(
-        baseUrl: AppConfig.apiBaseUrl,
-        authHeadersBuilder: _authHeaders,
-      ),
+      service: SupportService(),
     )..addListener(_refresh);
-  }
-
-  Future<Map<String, String>> _authHeaders() async {
-    final session = AuthSessionController.instance;
-    final headers = <String, String>{};
-    if (session.token.isNotEmpty) {
-      headers['authorization'] = 'Bearer ${session.token}';
-      headers['x-user-email'] = session.email;
-      if (session.organizationId.isNotEmpty) {
-        headers['x-organization-id'] = session.organizationId;
-      }
-      if (session.clientId.isNotEmpty) {
-        headers['x-client-id'] = session.clientId;
-      }
-      if (session.memberRole.isNotEmpty) {
-        headers['x-member-role'] = session.memberRole;
-      }
-    }
-    return headers;
   }
 
   void _refresh() {

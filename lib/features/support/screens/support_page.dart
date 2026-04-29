@@ -8,14 +8,12 @@ import '../widgets/support_footer.dart';
 
 class SupportPage extends StatefulWidget {
   final bool publicMode;
-  final String baseUrl;
   final String? sourcePage;
   final String? inquiryTypeHint;
 
   const SupportPage({
     super.key,
     required this.publicMode,
-    required this.baseUrl,
     this.sourcePage,
     this.inquiryTypeHint,
   });
@@ -35,7 +33,7 @@ class _SupportPageState extends State<SupportPage> {
       publicMode: widget.publicMode,
       sourcePage: widget.sourcePage,
       inquiryTypeHint: widget.inquiryTypeHint,
-      service: SupportService(baseUrl: widget.baseUrl),
+      service: SupportService(),
     )..addListener(_refresh);
   }
 

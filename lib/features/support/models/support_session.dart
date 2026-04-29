@@ -2,6 +2,7 @@ import 'support_message.dart';
 
 class SupportSession {
   final String? sessionId;
+  final String? sessionToken;
   final List<SupportMessage> messages;
   final bool isLoading;
   final bool publicMode;
@@ -13,6 +14,7 @@ class SupportSession {
 
   const SupportSession({
     this.sessionId,
+    this.sessionToken,
     this.messages = const [],
     this.isLoading = false,
     this.publicMode = true,
@@ -25,6 +27,7 @@ class SupportSession {
 
   SupportSession copyWith({
     Object? sessionId = _unset,
+    Object? sessionToken = _unset,
     List<SupportMessage>? messages,
     bool? isLoading,
     bool? publicMode,
@@ -37,6 +40,9 @@ class SupportSession {
     return SupportSession(
       sessionId:
           identical(sessionId, _unset) ? this.sessionId : sessionId as String?,
+      sessionToken: identical(sessionToken, _unset)
+          ? this.sessionToken
+          : sessionToken as String?,
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       publicMode: publicMode ?? this.publicMode,

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/network/api_client.dart';
 import '../models/support_message.dart';
 import '../models/support_session.dart';
 import '../services/support_service.dart';
@@ -27,6 +28,19 @@ class SupportController extends ChangeNotifier {
   }) async {
     final trimmed = message.trim();
     if (trimmed.isEmpty || _session.isLoading) return;
+    if (trimmed.length > 5000) {
+      _session = _session.copyWith(
+        messages: [
+          ..._session.messages,
+          const SupportMessage(
+            role: 'system',
+            content: 'Messages must be 5,000 characters or fewer.',
+          ),
+        ],
+      );
+      notifyListeners();
+      return;
+    }
 
     final nextMessages = List<SupportMessage>.from(_session.messages)
       ..add(
@@ -56,6 +70,7 @@ class SupportController extends ChangeNotifier {
               sessionId: _session.sessionId!,
               message: trimmed,
               publicMode: publicMode,
+              sessionToken: _session.sessionToken,
             );
 
       final systemMessage = SupportMessage.fromIntakeResponse(data);
@@ -64,6 +79,8 @@ class SupportController extends ChangeNotifier {
 
       _session = _session.copyWith(
         sessionId: data['sessionId']?.toString() ?? _session.sessionId,
+        sessionToken:
+            data['sessionToken']?.toString() ?? _session.sessionToken,
         messages: updated,
         isLoading: false,
         status: data['status']?.toString(),
@@ -73,13 +90,12 @@ class SupportController extends ChangeNotifier {
         caseId: data['caseId']?.toString(),
       );
       notifyListeners();
-    } catch (_) {
+    } catch (error) {
       final updated = List<SupportMessage>.from(nextMessages)
         ..add(
-          const SupportMessage(
+          SupportMessage(
             role: 'system',
-            content:
-                'We couldn’t process this at the moment. Please try again.',
+            content: _supportErrorMessage(error),
           ),
         );
 
@@ -89,5 +105,25 @@ class SupportController extends ChangeNotifier {
       );
       notifyListeners();
     }
+  }
+
+  String _supportErrorMessage(Object error) {
+    if (error is ApiException) {
+      if (error.statusCode == 403) {
+        return publicMode
+            ? 'This support session can’t be continued from here. Start a new message and we’ll route it safely.'
+            : 'This support session does not belong to the signed-in client.';
+      }
+      if (error.statusCode == 401) {
+        return publicMode
+            ? 'This support session needs a valid continuation token. Start a new message if the session was lost.'
+            : 'Your session expired. Sign in again to continue support.';
+      }
+      if (error.statusCode == 429) {
+        return 'Too many support requests were sent in a short period. Try again shortly.';
+      }
+      if (error.message.isNotEmpty) return error.message;
+    }
+    return 'We could not process this at the moment. Please try again.';
   }
 }

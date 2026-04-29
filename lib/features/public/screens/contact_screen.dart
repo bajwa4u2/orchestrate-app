@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:orchestrate_app/core/config/app_config.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
 import 'package:orchestrate_app/features/support/services/support_service.dart';
@@ -25,7 +24,7 @@ class _ContactScreenState extends State<ContactScreen> {
     super.initState();
     _controller = SupportController(
       publicMode: true,
-      service: const SupportService(baseUrl: AppConfig.apiBaseUrl),
+      service: SupportService(),
     )..addListener(_refresh);
   }
 
@@ -50,7 +49,6 @@ class _ContactScreenState extends State<ContactScreen> {
       pageBuilder: (context, animation, secondaryAnimation) {
         return const SupportDrawer(
           publicMode: true,
-          baseUrl: AppConfig.apiBaseUrl,
         );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {

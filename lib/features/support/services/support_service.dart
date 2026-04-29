@@ -1,17 +1,9 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
-import '../../../core/auth/auth_session.dart';
+import '../../../core/network/api_client.dart';
 
 class SupportService {
-  final String baseUrl;
-  final Future<Map<String, String>> Function()? authHeadersBuilder;
+  final ApiClient _apiClient;
 
-  const SupportService({
-    required this.baseUrl,
-    this.authHeadersBuilder,
-  });
+  SupportService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   Future<Map<String, dynamic>> createSession({
     required String message,
@@ -21,14 +13,10 @@ class SupportService {
     String? sourcePage,
     String? inquiryTypeHint,
   }) async {
-    final endpoint = publicMode
-        ? '$baseUrl/public/intake'
-        : '$baseUrl/client/support/intake';
-
-    final response = await http.post(
-      Uri.parse(endpoint),
-      headers: await _headers(publicMode: publicMode),
-      body: jsonEncode({
+    final response = await _apiClient.postJson(
+      publicMode ? '/public/intake' : '/client/support/intake',
+      surface: publicMode ? ApiSurface.public : ApiSurface.client,
+      body: {
         'message': message,
         if (publicMode && name != null && name.trim().isNotEmpty)
           'name': name.trim(),
@@ -38,63 +26,36 @@ class SupportService {
           'sourcePage': sourcePage.trim(),
         if (inquiryTypeHint != null && inquiryTypeHint.trim().isNotEmpty)
           'inquiryTypeHint': inquiryTypeHint.trim(),
-      }),
+      },
     );
-
-    return _decode(response);
+    return _mapResponse(response);
   }
 
   Future<Map<String, dynamic>> reply({
     required String sessionId,
     required String message,
     required bool publicMode,
+    String? sessionToken,
   }) async {
-    final endpoint = publicMode
-        ? '$baseUrl/public/intake/$sessionId/reply'
-        : '$baseUrl/client/support/intake/$sessionId/reply';
-
-    final response = await http.post(
-      Uri.parse(endpoint),
-      headers: await _headers(publicMode: publicMode),
-      body: jsonEncode({'message': message}),
+    final response = await _apiClient.postJson(
+      publicMode
+          ? '/public/intake/$sessionId/reply'
+          : '/client/support/intake/$sessionId/reply',
+      surface: publicMode ? ApiSurface.public : ApiSurface.client,
+      body: {
+        'message': message,
+        if (publicMode && sessionToken != null && sessionToken.isNotEmpty)
+          'sessionToken': sessionToken,
+      },
     );
-
-    return _decode(response);
+    return _mapResponse(response);
   }
 
-  Future<Map<String, String>> _headers({required bool publicMode}) async {
-    final headers = <String, String>{'content-type': 'application/json'};
-    if (publicMode) return headers;
-
-    if (authHeadersBuilder != null) {
-      headers.addAll(await authHeadersBuilder!.call());
-      return headers;
-    }
-
-    final session = AuthSessionController.instance;
-    if (session.token.isNotEmpty) {
-      headers['authorization'] = 'Bearer ${session.token}';
-      headers['x-user-email'] = session.email;
-      if (session.organizationId.isNotEmpty) {
-        headers['x-organization-id'] = session.organizationId;
-      }
-      if (session.clientId.isNotEmpty) {
-        headers['x-client-id'] = session.clientId;
-      }
-      if (session.memberRole.isNotEmpty) {
-        headers['x-member-role'] = session.memberRole;
-      }
-    }
-    return headers;
-  }
-
-  Map<String, dynamic> _decode(http.Response response) {
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-          'Support request failed: ${response.statusCode} ${response.body}');
-    }
-    final decoded = jsonDecode(response.body);
+  Map<String, dynamic> _mapResponse(dynamic decoded) {
     if (decoded is Map<String, dynamic>) return decoded;
+    if (decoded is Map) {
+      return decoded.map((key, value) => MapEntry(key.toString(), value));
+    }
     throw Exception('Unexpected support response shape');
   }
 }

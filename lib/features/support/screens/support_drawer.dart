@@ -8,20 +8,16 @@ import '../widgets/support_footer.dart';
 
 class SupportDrawer extends StatefulWidget {
   final bool publicMode;
-  final String baseUrl;
   final String? sourcePage;
   final String? inquiryTypeHint;
   final SupportController? controllerOverride;
-  final Future<Map<String, String>> Function()? authHeadersBuilder;
 
   const SupportDrawer({
     super.key,
     required this.publicMode,
-    required this.baseUrl,
     this.sourcePage,
     this.inquiryTypeHint,
     this.controllerOverride,
-    this.authHeadersBuilder,
   });
 
   @override
@@ -58,13 +54,6 @@ class _SupportDrawerState extends State<SupportDrawer> {
       return;
     }
 
-    if (_ownsController && oldWidget.baseUrl != widget.baseUrl) {
-      _controller.removeListener(_refresh);
-      _ownedController?.dispose();
-      _ownedController = null;
-      _ensureController();
-      _controller.addListener(_refresh);
-    }
   }
 
   void _ensureController() {
@@ -73,10 +62,7 @@ class _SupportDrawerState extends State<SupportDrawer> {
         publicMode: widget.publicMode,
         sourcePage: widget.sourcePage,
         inquiryTypeHint: widget.inquiryTypeHint,
-        service: SupportService(
-          baseUrl: widget.baseUrl,
-          authHeadersBuilder: widget.authHeadersBuilder,
-        ),
+        service: SupportService(),
       );
     }
   }

@@ -23,6 +23,7 @@ class IntakeCard extends StatefulWidget {
 
 class _IntakeCardState extends State<IntakeCard> {
   late final TextEditingController _messageController;
+  String? _error;
 
   @override
   void initState() {
@@ -58,7 +59,12 @@ class _IntakeCardState extends State<IntakeCard> {
   Future<void> _submit() async {
     final message = _messageController.text.trim();
     if (message.isEmpty || widget.isLoading) return;
+    if (message.length > 5000) {
+      setState(() => _error = 'Messages must be 5,000 characters or fewer.');
+      return;
+    }
 
+    setState(() => _error = null);
     await widget.onSubmit(message, null, null);
 
     if (!mounted) return;
@@ -89,10 +95,18 @@ class _IntakeCardState extends State<IntakeCard> {
               enabled: !widget.isLoading,
               minLines: 1,
               maxLines: 4,
+              maxLength: 5000,
               textInputAction: TextInputAction.newline,
-              onChanged: widget.onChanged,
+              onChanged: (value) {
+                if (_error != null && value.trim().length <= 5000) {
+                  setState(() => _error = null);
+                }
+                widget.onChanged?.call(value);
+              },
               decoration: InputDecoration(
                 hintText: 'Write your message...',
+                errorText: _error,
+                counterText: '',
                 filled: true,
                 fillColor: scheme.surfaceContainerLowest,
                 contentPadding: const EdgeInsets.symmetric(

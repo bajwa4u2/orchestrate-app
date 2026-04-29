@@ -23,6 +23,15 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    final notice = AuthSessionController.instance.authNotice;
+    if (notice.isNotEmpty) {
+      _error = notice;
+    }
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     _workspace.dispose();

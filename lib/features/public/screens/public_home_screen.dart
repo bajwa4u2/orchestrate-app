@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:orchestrate_app/core/config/app_config.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/public_overview_widget.dart';
 import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
@@ -26,7 +25,6 @@ Future<void> _openPublicSupportDrawer(BuildContext context) async {
             alignment: Alignment.centerRight,
             child: SupportDrawer(
               publicMode: true,
-              baseUrl: AppConfig.apiBaseUrl,
             ),
           ),
         ],

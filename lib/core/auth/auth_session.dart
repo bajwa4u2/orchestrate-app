@@ -25,6 +25,7 @@ class AuthSessionController extends ChangeNotifier {
   String get fullName => (_session?['fullName'] as String?) ?? '';
   bool get emailVerified => (_session?['emailVerified'] as bool?) ?? false;
   String get workspaceName => (_session?['workspaceName'] as String?) ?? '';
+  String get authNotice => (_session?['authNotice'] as String?) ?? '';
   bool get hasSetupCompleted => (_session?['setupCompleted'] as bool?) ?? false;
 
   String? get commercialPlan {
@@ -204,6 +205,7 @@ class AuthSessionController extends ChangeNotifier {
           .toLowerCase(),
       'setup': setup.isNotEmpty ? setup : previous['setup'],
       'setupDraft': previous['setupDraft'],
+      'authNotice': '',
     };
 
     _ready = true;
@@ -305,6 +307,20 @@ class AuthSessionController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(key);
 
+    notifyListeners();
+  }
+
+  Future<void> handleAuthFailure({
+    required String surface,
+    required String message,
+  }) async {
+    final failedSurface = surface == 'operator' ? 'operator' : 'client';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_resolveKey(failedSurface));
+    _session = {
+      'surface': failedSurface,
+      'authNotice': message,
+    };
     notifyListeners();
   }
 
