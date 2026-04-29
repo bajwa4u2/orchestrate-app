@@ -335,7 +335,7 @@ class OperatorRepository {
       '/execution/leads/$leadId/queue-first-send',
       body: <String, dynamic>{
         if (scheduledAt != null && scheduledAt.trim().isNotEmpty)
-          'scheduledAt': scheduledAt.trim(),
+          'scheduledFor': scheduledAt.trim(),
       },
       surface: ApiSurface.operator,
     );
@@ -350,7 +350,7 @@ class OperatorRepository {
       '/execution/leads/$leadId/queue-follow-up',
       body: <String, dynamic>{
         if (scheduledAt != null && scheduledAt.trim().isNotEmpty)
-          'scheduledAt': scheduledAt.trim(),
+          'scheduledFor': scheduledAt.trim(),
       },
       surface: ApiSurface.operator,
     );

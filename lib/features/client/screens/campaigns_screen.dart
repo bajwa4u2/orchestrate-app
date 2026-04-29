@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
@@ -329,11 +330,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
       if (!mounted) return;
       setState(() => _loading = false);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'This campaign area could not be loaded at the moment.';
+        _error = _displayError(
+          error,
+          fallback: 'This campaign area could not be loaded at the moment.',
+        );
       });
     }
   }
@@ -398,11 +402,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         const SnackBar(content: Text('Targeting saved')),
       );
       _load();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'Targeting could not be saved at the moment.';
+        _error = _displayError(
+          error,
+          fallback: 'Targeting could not be saved at the moment.',
+        );
       });
     }
   }
@@ -522,11 +529,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       );
 
       _load();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _restarting = false;
-        _error = 'Your campaign could not be restarted at the moment.';
+        _error = _displayError(
+          error,
+          fallback: 'Your campaign could not be restarted at the moment.',
+        );
       });
     }
   }
@@ -737,11 +747,14 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       );
 
       _load();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _starting = false;
-        _error = 'Your campaign could not be started at the moment.';
+        _error = _displayError(
+          error,
+          fallback: 'Your campaign could not be started at the moment.',
+        );
       });
     }
   }
@@ -1878,6 +1891,11 @@ String _fallbackActivationMessageForState(String state) {
     default:
       return 'Your campaign request has been received.';
   }
+}
+
+String _displayError(Object error, {required String fallback}) {
+  if (error is ApiException) return error.displayMessage;
+  return fallback;
 }
 
 Map<String, dynamic> _resolveCampaignMetadata(

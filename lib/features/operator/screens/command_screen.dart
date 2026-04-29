@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/operator_repository.dart';
 
@@ -13,6 +14,7 @@ class CommandScreen extends StatefulWidget {
 class _CommandScreenState extends State<CommandScreen> {
   late final OperatorRepository _repo;
   late Future<Map<String, dynamic>> _future;
+  String? _actionError;
 
   @override
   void initState() {
@@ -25,13 +27,24 @@ class _CommandScreenState extends State<CommandScreen> {
     final next = _repo.fetchCommandWorkspace();
     setState(() {
       _future = next;
+      _actionError = null;
     });
     await next;
   }
 
   Future<void> _runAction(Future<void> Function() action) async {
     FocusScope.of(context).unfocus();
-    await action();
+    try {
+      setState(() => _actionError = null);
+      await action();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _actionError = _displayError(
+            error,
+            fallback: 'The command action could not be completed.',
+          ));
+      return;
+    }
     if (!mounted) return;
     await _refresh();
   }
@@ -187,6 +200,13 @@ class _CommandScreenState extends State<CommandScreen> {
                   onRefresh: _refresh,
                   onDispatchDueJobs: _dispatchDueJobs,
                 ),
+                if (_actionError != null) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: _ActionErrorBanner(message: _actionError!),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 _MetricGrid(
                   metrics: [
@@ -819,6 +839,31 @@ class _FailedJobList extends StatelessWidget {
   }
 }
 
+class _ActionErrorBanner extends StatelessWidget {
+  const _ActionErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: theme.colorScheme.error.withOpacity(0.25)),
+      ),
+      child: Text(
+        message,
+        style: theme.textTheme.bodyMedium
+            ?.copyWith(color: theme.colorScheme.onErrorContainer),
+      ),
+    );
+  }
+}
+
 class _MailboxList extends StatelessWidget {
   const _MailboxList({
     required this.items,
@@ -1285,6 +1330,11 @@ String _read(
 
 String _joinNonEmpty(List<String> parts) {
   return parts.where((item) => item.trim().isNotEmpty).join(' • ');
+}
+
+String _displayError(Object error, {required String fallback}) {
+  if (error is ApiException) return error.displayMessage;
+  return fallback;
 }
 
 String _firstNonEmpty(List<String> parts, {String fallback = ''}) {
