@@ -15,6 +15,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
   final SupportService _service = SupportService();
   final TextEditingController _newRequest = TextEditingController();
   final TextEditingController _reply = TextEditingController();
+  final FocusNode _newRequestFocus = FocusNode();
   late Future<Map<String, dynamic>> _future;
   Map<String, dynamic>? _thread;
   String? _selectedId;
@@ -31,6 +32,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
   void dispose() {
     _newRequest.dispose();
     _reply.dispose();
+    _newRequestFocus.dispose();
     super.dispose();
   }
 
@@ -125,17 +127,34 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
         }
         final inquiries =
             asList(asMap(snapshot.data)['items']).map(asMap).toList();
+        final open = inquiries
+            .where((item) => readText(item, 'status') != 'CLOSED')
+            .length;
 
         return ClientPage(
           eyebrow: 'Support',
           title: 'Support requests and conversations',
           subtitle:
-              'Support requests persist to client-scoped inquiry records and can be reopened after refresh.',
+              'Create a request when you need help, then reopen prior threads without losing context after refresh.',
+          banner: ClientStatusBanner(
+            tone: open > 0 ? ClientBannerTone.info : ClientBannerTone.success,
+            title: open > 0
+                ? '$open open support requests'
+                : 'No open support requests',
+            message:
+                'We typically respond within one business day. If you do nothing, open requests remain in the support queue.',
+          ),
+          actions: [
+            FilledButton.icon(
+              onPressed: () => _newRequestFocus.requestFocus(),
+              icon: const Icon(Icons.add_comment_outlined, size: 18),
+              label: const Text('Create request'),
+            ),
+          ],
           children: [
             ClientMetricStrip(metrics: [
               ClientMetric('Requests', '${inquiries.length}'),
-              ClientMetric('Open',
-                  '${inquiries.where((item) => readText(item, 'status') != 'CLOSED').length}'),
+              ClientMetric('Open', '$open'),
               ClientMetric('Closed',
                   '${inquiries.where((item) => readText(item, 'status') == 'CLOSED').length}'),
               ClientMetric('Escalated',
@@ -158,11 +177,10 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
                             title: _shorten(readText(item, 'subject',
                                 fallback: 'Support request')),
                             primary:
-                                '${titleCase(readText(item, 'status'))} · ${titleCase(readText(item, 'priority'))}',
+                                '${_ticketState(item)} · ${titleCase(readText(item, 'priority'))}',
                             secondary: [
                               titleCase(readText(item, 'category')),
-                              dateLabel(item['lastActivityAt'] ??
-                                  item['submittedAt']),
+                              'Last response ${relativeDateLabel(item['lastOutboundAt'] ?? item['lastActivityAt'] ?? item['submittedAt'])}',
                             ].where((part) => part.isNotEmpty).join(' · '),
                             trailing: OutlinedButton(
                               onPressed: _loadingThread &&
@@ -207,6 +225,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
               children: [
                 TextField(
                   controller: _newRequest,
+                  focusNode: _newRequestFocus,
                   minLines: 3,
                   maxLines: 6,
                   decoration: const InputDecoration(
@@ -233,6 +252,13 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
       },
     );
   }
+}
+
+String _ticketState(Map<String, dynamic> item) {
+  final status = readText(item, 'status').toUpperCase();
+  if (status == 'CLOSED') return 'Closed';
+  if (item['isEscalated'] == true) return 'Escalated';
+  return 'Open';
 }
 
 class _SupportThreadPanel extends StatelessWidget {

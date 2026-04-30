@@ -56,7 +56,13 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
           eyebrow: 'Records',
           title: 'Service records and documents',
           subtitle:
-              'Records are grouped into agreements, billing documents, authorization records, and real source/import records.',
+              'Browse the documents and operational records that explain service, billing, permission, and source history.',
+          banner: const ClientStatusBanner(
+            tone: ClientBannerTone.info,
+            title: 'Records are read-only',
+            message:
+                'Use this page to understand what exists. If nothing changes, records remain available here as backend documents are created.',
+          ),
           children: [
             ClientMetricStrip(metrics: [
               ClientMetric('Agreements', '${agreements.length}'),
@@ -67,7 +73,9 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
             ]),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Agreements',
+              title: 'Service agreements',
+              subtitle:
+                  'These define the service relationship and accepted terms for this account.',
               children: agreements.isEmpty
                   ? const [
                       ClientEmptyState(
@@ -91,7 +99,9 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Billing documents',
+              title: 'Invoices & statements',
+              subtitle:
+                  'These explain charges, payments, receipts, reminders, and account standing.',
               children: [
                 _RecordCountRow(label: 'Invoices', items: invoices),
                 _RecordCountRow(label: 'Receipts', items: receipts),
@@ -101,7 +111,9 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Authorization records',
+              title: 'Permissions',
+              subtitle:
+                  'These records show whether Orchestrate is authorized to represent your business in outreach.',
               children: authorizations.isEmpty
                   ? const [
                       ClientEmptyState(
@@ -123,7 +135,9 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Source and import records',
+              title: 'Data sources',
+              subtitle:
+                  'These records show source/import batches used to create lead and contact inventory.',
               children: imports.isEmpty
                   ? const [
                       ClientEmptyState(

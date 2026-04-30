@@ -46,11 +46,21 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
         final data = snapshot.data ?? const <String, dynamic>{};
         final summary = asMap(data['summary']);
         final replies = asList(data['items']).map(asMap).toList();
+        final needsReview = replies
+            .where((item) => item['requiresHumanReview'] == true)
+            .toList();
+        final unread = replies
+            .where((item) => readText(item, 'handledAt').isEmpty)
+            .toList();
+        final handled = replies
+            .where((item) => readText(item, 'handledAt').isNotEmpty)
+            .toList();
         final selected = replies.firstWhere(
           (item) => readText(item, 'id') == _selectedId,
           orElse: () =>
               replies.isEmpty ? const <String, dynamic>{} : replies.first,
         );
+        final banner = _replyBanner(replies, needsReview, unread);
 
         return ClientPage(
           eyebrow: 'Replies',
@@ -58,7 +68,17 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
               ? 'No inbound replies are visible yet'
               : '${replies.length} replies from outreach',
           subtitle:
-              'Reply intent, review state, original message context, and meeting handoff status come from client-scoped reply records.',
+              'Use this inbox to decide which replies need review, which have meetings, and which require no action.',
+          banner: banner,
+          actions: [
+            if (needsReview.isNotEmpty)
+              FilledButton.icon(
+                onPressed: () => setState(
+                    () => _selectedId = readText(needsReview.first, 'id')),
+                icon: const Icon(Icons.rate_review_outlined, size: 18),
+                label: const Text('Review new replies'),
+              ),
+          ],
           children: [
             ClientMetricStrip(metrics: [
               ClientMetric('Total', '${summary['total'] ?? replies.length}'),
@@ -77,16 +97,14 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
                             message:
                                 'Replies appear here after prospects respond to sent outreach.')
                       ]
-                    : [
-                        for (final reply in replies)
-                          _ReplyListItem(
-                            reply: reply,
-                            selected: readText(reply, 'id') ==
-                                readText(selected, 'id'),
-                            onTap: () => setState(
-                                () => _selectedId = readText(reply, 'id')),
-                          ),
-                      ],
+                    : _groupedReplyItems(
+                        selected: selected,
+                        unread: unread,
+                        needsReview: needsReview,
+                        handled: handled,
+                        onSelect: (reply) =>
+                            setState(() => _selectedId = readText(reply, 'id')),
+                      ),
               );
               final detail = _ReplyDetail(reply: selected);
               if (stacked) {
@@ -216,8 +234,14 @@ class _ReplyDetail extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
+        ClientStatusBanner(
+          tone: _intentTone(readText(reply, 'intent')),
+          title: _nextStepTitle(reply),
+          message: _nextStepMessage(reply),
+        ),
+        const SizedBox(height: 16),
         ClientInfoRow(
-          title: 'Contact',
+          title: 'From',
           primary: [
             readText(contact, 'name'),
             readText(contact, 'email'),
@@ -258,4 +282,138 @@ class _ReplyDetail extends StatelessWidget {
       ],
     );
   }
+}
+
+ClientStatusBanner _replyBanner(
+  List<Map<String, dynamic>> replies,
+  List<Map<String, dynamic>> needsReview,
+  List<Map<String, dynamic>> unread,
+) {
+  if (replies.isEmpty) {
+    return const ClientStatusBanner(
+      tone: ClientBannerTone.info,
+      title: 'Replies will appear when recipients respond',
+      message:
+          'No reply records are visible yet. If nothing changes, keep monitoring outreach volume and mailbox readiness.',
+    );
+  }
+  if (needsReview.isNotEmpty) {
+    return ClientStatusBanner(
+      tone: ClientBannerTone.warning,
+      title: '${needsReview.length} replies need review',
+      message:
+          'Start with replies flagged for human review. If you do nothing, interested or unclear responses may wait unresolved.',
+    );
+  }
+  if (unread.isNotEmpty) {
+    return ClientStatusBanner(
+      tone: ClientBannerTone.info,
+      title: '${unread.length} replies are unhandled',
+      message:
+          'Review unhandled replies for intent and meeting handoff status. If you do nothing, the inbox remains untriaged.',
+    );
+  }
+  return const ClientStatusBanner(
+    tone: ClientBannerTone.success,
+    title: 'Reply inbox is handled',
+    message:
+        'No visible replies require review right now. Keep watching for new inbound replies.',
+  );
+}
+
+List<Widget> _groupedReplyItems({
+  required Map<String, dynamic> selected,
+  required List<Map<String, dynamic>> unread,
+  required List<Map<String, dynamic>> needsReview,
+  required List<Map<String, dynamic>> handled,
+  required ValueChanged<Map<String, dynamic>> onSelect,
+}) {
+  final reviewIds = needsReview.map((item) => readText(item, 'id')).toSet();
+  final unreviewed = unread
+      .where((item) => !reviewIds.contains(readText(item, 'id')))
+      .toList();
+  return [
+    if (needsReview.isNotEmpty) ...[
+      const _GroupLabel('Needs attention'),
+      for (final reply in needsReview)
+        _ReplyListItem(
+          reply: reply,
+          selected: readText(reply, 'id') == readText(selected, 'id'),
+          onTap: () => onSelect(reply),
+        ),
+    ],
+    if (unreviewed.isNotEmpty) ...[
+      const _GroupLabel('Unread'),
+      for (final reply in unreviewed)
+        _ReplyListItem(
+          reply: reply,
+          selected: readText(reply, 'id') == readText(selected, 'id'),
+          onTap: () => onSelect(reply),
+        ),
+    ],
+    if (handled.isNotEmpty) ...[
+      const _GroupLabel('Handled'),
+      for (final reply in handled)
+        _ReplyListItem(
+          reply: reply,
+          selected: readText(reply, 'id') == readText(selected, 'id'),
+          onTap: () => onSelect(reply),
+        ),
+    ],
+  ];
+}
+
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 6),
+      child: Text(
+        label,
+        style: Theme.of(context)
+            .textTheme
+            .titleMedium
+            ?.copyWith(color: AppTheme.publicMuted),
+      ),
+    );
+  }
+}
+
+ClientBannerTone _intentTone(String intent) {
+  final normalized = intent.toUpperCase();
+  if (normalized == 'INTERESTED' || normalized == 'REFERRAL') {
+    return ClientBannerTone.success;
+  }
+  if (normalized == 'UNCLEAR' || normalized == 'NOT_NOW') {
+    return ClientBannerTone.warning;
+  }
+  return ClientBannerTone.info;
+}
+
+String _nextStepTitle(Map<String, dynamic> reply) {
+  if (reply['meeting'] != null) return 'Meeting scheduled';
+  if (reply['requiresHumanReview'] == true) return 'Follow up needed';
+  final intent = readText(reply, 'intent').toUpperCase();
+  if (intent == 'INTERESTED' || intent == 'REFERRAL') {
+    return 'Interested reply needs attention';
+  }
+  return 'No immediate action needed';
+}
+
+String _nextStepMessage(Map<String, dynamic> reply) {
+  if (reply['meeting'] != null) {
+    return 'A meeting is linked to this reply. If you do nothing, the meeting remains on record without additional client-side action.';
+  }
+  if (reply['requiresHumanReview'] == true) {
+    return 'This reply is flagged for review. If you do nothing, the conversation may remain unresolved.';
+  }
+  final intent = readText(reply, 'intent').toUpperCase();
+  if (intent == 'INTERESTED' || intent == 'REFERRAL') {
+    return 'This reply may create a meeting opportunity. Review the context before assuming the handoff is complete.';
+  }
+  return 'The backend has no review or meeting flag on this reply. Keep it for context and watch for future replies.';
 }

@@ -87,6 +87,9 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
         final readiness = asMap(data.outreach['readiness']);
         final mailbox = asMap(data.outreach['mailbox']);
         final billingDocs = asMap(data.records['billingDocuments']);
+        final setupComplete = session.hasSetupCompleted;
+        final authorized = data.auth['authorized'] == true;
+        final blockers = asList(readiness['blockers']);
 
         return ClientPage(
           eyebrow: 'Settings',
@@ -95,18 +98,25 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                   ? 'Client workspace'
                   : session.workspaceName),
           subtitle:
-              'Account details, setup state, billing state, authorization, record availability, and outreach readiness are read from backend records.',
+              'Use settings to resolve account, setup, billing, and permission items that affect service readiness.',
+          banner: _settingsBanner(
+            setupComplete: setupComplete,
+            authorized: authorized,
+            blockers: blockers,
+          ),
           actions: [
-            OutlinedButton.icon(
-              onPressed: _retry,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Retry'),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => context.go('/client/account'),
-              icon: const Icon(Icons.manage_accounts_outlined, size: 18),
-              label: const Text('Edit profile'),
-            ),
+            if (!setupComplete)
+              FilledButton.icon(
+                onPressed: () => context.go('/client/setup'),
+                icon: const Icon(Icons.fact_check_outlined, size: 18),
+                label: const Text('Complete setup'),
+              )
+            else
+              FilledButton.icon(
+                onPressed: () => context.go('/client/account'),
+                icon: const Icon(Icons.manage_accounts_outlined, size: 18),
+                label: const Text('Edit profile'),
+              ),
             TextButton.icon(
               onPressed: _signingOut ? null : _signOut,
               icon: _signingOut
@@ -137,7 +147,9 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
             ]),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Profile',
+              title: 'Account',
+              subtitle:
+                  'These details identify the workspace and the client-facing links used by service records.',
               children: [
                 ClientInfoRow(
                   title: readText(profile, 'legalName',
@@ -156,7 +168,9 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Setup and billing',
+              title: 'Setup',
+              subtitle:
+                  'Setup controls whether targeting and service preferences are ready for execution.',
               children: [
                 ClientInfoRow(
                   title: 'Setup state',
@@ -167,6 +181,14 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                       ? 'Campaign targeting and service preferences are available.'
                       : 'Finish setup before outreach can run.',
                 ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            ClientPanel(
+              title: 'Billing',
+              subtitle:
+                  'Billing state determines whether service can remain active.',
+              children: [
                 ClientInfoRow(
                   title: 'Subscription',
                   primary: readText(data.subscription, 'displayPlanLabel',
@@ -178,7 +200,9 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Authorization and readiness',
+              title: 'Permissions',
+              subtitle:
+                  'Permissions determine whether Orchestrate can represent your business in outreach.',
               children: [
                 ClientInfoRow(
                   title: 'Representation authorization',
@@ -190,10 +214,10 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                 ),
                 ClientInfoRow(
                   title: 'Outreach readiness',
-                  primary: asList(readiness['blockers']).isEmpty
+                  primary: blockers.isEmpty
                       ? 'No blockers reported.'
-                      : '${asList(readiness['blockers']).length} blockers reported.',
-                  secondary: asList(readiness['blockers'])
+                      : '${blockers.length} blockers reported.',
+                  secondary: blockers
                       .map((item) => readText(asMap(item), 'label'))
                       .where((item) => item.isNotEmpty)
                       .join(' · '),
@@ -221,6 +245,43 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
       },
     );
   }
+}
+
+ClientStatusBanner _settingsBanner({
+  required bool setupComplete,
+  required bool authorized,
+  required List<dynamic> blockers,
+}) {
+  if (!setupComplete) {
+    return const ClientStatusBanner(
+      tone: ClientBannerTone.blocked,
+      title: 'Setup is incomplete',
+      message:
+          'Complete setup before expecting campaign execution. If you do nothing, outreach readiness remains limited.',
+    );
+  }
+  if (!authorized) {
+    return const ClientStatusBanner(
+      tone: ClientBannerTone.warning,
+      title: 'Representation permission is missing',
+      message:
+          'Authorization is required before Orchestrate can send outreach on your behalf.',
+    );
+  }
+  if (blockers.isNotEmpty) {
+    return ClientStatusBanner(
+      tone: ClientBannerTone.warning,
+      title: '${blockers.length} readiness items need attention',
+      message:
+          'Review the permission and outreach readiness sections. If you do nothing, service execution may remain blocked.',
+    );
+  }
+  return const ClientStatusBanner(
+    tone: ClientBannerTone.success,
+    title: 'Workspace controls are ready',
+    message:
+        'Account, setup, billing, and permission records are available. Edit profile only when details change.',
+  );
 }
 
 class _SettingsData {

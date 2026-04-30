@@ -51,6 +51,9 @@ class _ClientNotificationsScreenState extends State<ClientNotificationsScreen> {
         final resolved = notifications
             .where((item) => readText(item, 'status') == 'RESOLVED')
             .length;
+        final high = notifications
+            .where((item) => readText(item, 'severity').toUpperCase() == 'HIGH')
+            .length;
 
         return ClientPage(
           eyebrow: 'Notifications',
@@ -58,13 +61,31 @@ class _ClientNotificationsScreenState extends State<ClientNotificationsScreen> {
               ? 'No notifications are visible yet'
               : '${notifications.length} account notifications',
           subtitle:
-              'Notification history is backed by client-visible alert records. Preferences are not configurable because no preference persistence contract exists yet.',
+              'Focus on high-priority alerts first, then use resolved and informational notices as account history.',
+          banner: notifications.isEmpty
+              ? const ClientStatusBanner(
+                  tone: ClientBannerTone.success,
+                  title: 'No recent alerts',
+                  message:
+                      'There are no client-visible alerts right now. If nothing changes, no action is required.',
+                )
+              : ClientStatusBanner(
+                  tone: high > 0
+                      ? ClientBannerTone.warning
+                      : ClientBannerTone.info,
+                  title: high > 0
+                      ? '$high high-priority alerts need attention'
+                      : '$open open notifications',
+                  message: high > 0
+                      ? 'Review high-priority alerts first. If you do nothing, account or service issues may remain unresolved.'
+                      : 'Review open notifications for context. If you do nothing, they remain visible as account history.',
+                ),
           children: [
             ClientMetricStrip(metrics: [
               ClientMetric('Total', '${notifications.length}'),
               ClientMetric('Open', '$open'),
               ClientMetric('Resolved', '$resolved'),
-              ClientMetric('Preferences', 'Not configurable'),
+              ClientMetric('High priority', '$high'),
             ]),
             const SizedBox(height: 18),
             ClientPanel(
@@ -73,7 +94,7 @@ class _ClientNotificationsScreenState extends State<ClientNotificationsScreen> {
                   ? const [
                       ClientEmptyState(
                           message:
-                              'Account notices, service alerts, and billing notifications will appear here when created for this client.')
+                              'No recent alerts. Account notices, service alerts, and billing notifications will appear here when created for this client.')
                     ]
                   : [
                       for (final item in notifications)
@@ -89,21 +110,28 @@ class _ClientNotificationsScreenState extends State<ClientNotificationsScreen> {
                             readText(item, 'bodyText'),
                             dateLabel(item['createdAt']),
                           ].where((part) => part.isNotEmpty).join(' · '),
+                          trailing: ClientBadge(
+                              label:
+                                  _priorityLabel(readText(item, 'severity'))),
                         ),
                     ],
-            ),
-            const SizedBox(height: 18),
-            const ClientPanel(
-              title: 'Preferences',
-              children: [
-                ClientEmptyState(
-                    message:
-                        'Notification preferences are not configurable yet. No unsaved toggles are shown on this workspace.')
-              ],
             ),
           ],
         );
       },
     );
+  }
+}
+
+String _priorityLabel(String severity) {
+  switch (severity.toUpperCase()) {
+    case 'CRITICAL':
+    case 'HIGH':
+      return 'High';
+    case 'WARNING':
+    case 'MEDIUM':
+      return 'Medium';
+    default:
+      return 'Low';
   }
 }

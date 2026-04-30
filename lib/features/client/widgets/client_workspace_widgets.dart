@@ -47,6 +47,14 @@ class ClientErrorView extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 10),
             Text(message, style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Retry the request. If this continues, sign out and back in so the workspace can refresh your session.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppTheme.publicMuted),
+            ),
             const SizedBox(height: 18),
             OutlinedButton.icon(
               onPressed: onRetry,
@@ -68,6 +76,7 @@ class ClientPage extends StatelessWidget {
     required this.subtitle,
     required this.children,
     this.actions = const [],
+    this.banner,
   });
 
   final String eyebrow;
@@ -75,6 +84,7 @@ class ClientPage extends StatelessWidget {
   final String subtitle;
   final List<Widget> children;
   final List<Widget> actions;
+  final Widget? banner;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +100,80 @@ class ClientPage extends StatelessWidget {
             actions: actions,
           ),
           const SizedBox(height: 18),
+          if (banner != null) ...[
+            banner!,
+            const SizedBox(height: 18),
+          ],
           ...children,
+        ],
+      ),
+    );
+  }
+}
+
+enum ClientBannerTone { success, warning, blocked, info }
+
+class ClientStatusBanner extends StatelessWidget {
+  const ClientStatusBanner({
+    super.key,
+    required this.tone,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final ClientBannerTone tone;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (tone) {
+      ClientBannerTone.success => AppTheme.publicAccent,
+      ClientBannerTone.warning => AppTheme.amber,
+      ClientBannerTone.blocked => Colors.red.shade700,
+      ClientBannerTone.info => AppTheme.publicMuted,
+    };
+    final soft = switch (tone) {
+      ClientBannerTone.success => AppTheme.publicAccentSoft,
+      ClientBannerTone.warning => AppTheme.publicAmberSoft,
+      ClientBannerTone.blocked => Colors.red.shade50,
+      ClientBannerTone.info => AppTheme.publicSurfaceSoft,
+    };
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: soft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(top: 7, right: 12),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 4),
+                Text(message, style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(width: 12),
+            OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+          ],
         ],
       ),
     );
@@ -383,6 +466,31 @@ String dateLabel(dynamic value) {
           : local.hour;
   final suffix = local.hour >= 12 ? 'PM' : 'AM';
   return '${local.month}/${local.day}/${local.year} $hour:$minute $suffix';
+}
+
+String relativeDateLabel(dynamic value) {
+  final text = value?.toString().trim() ?? '';
+  if (text.isEmpty) return '';
+  final parsed = DateTime.tryParse(text);
+  if (parsed == null) return text;
+  final now = DateTime.now();
+  final diff = parsed.toLocal().difference(now);
+  final past = diff.isNegative;
+  final abs = past ? diff.abs() : diff;
+  String unit;
+  int amount;
+  if (abs.inDays >= 1) {
+    amount = abs.inDays;
+    unit = amount == 1 ? 'day' : 'days';
+  } else if (abs.inHours >= 1) {
+    amount = abs.inHours;
+    unit = amount == 1 ? 'hour' : 'hours';
+  } else {
+    amount = abs.inMinutes.clamp(0, 59);
+    unit = amount == 1 ? 'minute' : 'minutes';
+  }
+  if (amount == 0) return 'now';
+  return past ? '$amount $unit ago' : 'in $amount $unit';
 }
 
 String moneyLabel(dynamic cents, String currency) {

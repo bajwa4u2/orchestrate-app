@@ -96,15 +96,23 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
         final data = snapshot.data!;
         final session = AuthSessionController.instance;
         final billing = asMap(data.overview['billing']);
+        final status = readText(data.subscription, 'status',
+            fallback: session.subscriptionStatus);
         final currency = readText(data.subscription, 'currency',
             fallback: readText(asMap(data.overview['client']), 'currencyCode',
                 fallback: 'USD'));
+        final banner = _billingBanner(
+          status: status,
+          periodEnd: data.subscription['currentPeriodEnd'],
+          portalError: _portalError,
+        );
 
         return ClientPage(
           eyebrow: 'Billing',
           title: 'Billing and service standing',
           subtitle:
-              'Subscription, invoices, agreements, statements, reminders, and the external portal are shown only from backend billing records.',
+              'Confirm whether service is active, trialing, or at risk, then use the portal when billing needs attention.',
+          banner: banner,
           actions: [
             FilledButton.icon(
               onPressed: _openingPortal ? null : _openPortal,
@@ -127,10 +135,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
               const SizedBox(height: 18),
             ],
             ClientMetricStrip(metrics: [
-              ClientMetric(
-                  'Status',
-                  titleCase(readText(data.subscription, 'status',
-                      fallback: session.subscriptionStatus))),
+              ClientMetric('Status', titleCase(status)),
               ClientMetric(
                   'Plan',
                   readText(data.subscription, 'displayPlanLabel',
@@ -149,8 +154,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
                 ClientInfoRow(
                   title: readText(data.subscription, 'displayPlanLabel',
                       fallback: 'No active subscription record'),
-                  primary:
-                      'Status: ${titleCase(readText(data.subscription, 'status', fallback: session.subscriptionStatus))}',
+                  primary: 'Status: ${titleCase(status)}',
                   secondary: [
                     'Period start: ${dateLabel(data.subscription['currentPeriodStart'])}',
                     'Period end: ${dateLabel(data.subscription['currentPeriodEnd'])}',
@@ -167,7 +171,8 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
               children: data.invoices.isEmpty
                   ? const [
                       ClientEmptyState(
-                          message: 'No invoices are currently visible.')
+                          message:
+                              'No invoices are currently visible. When billing documents are issued for this account, they will appear here.')
                     ]
                   : [
                       for (final raw in data.invoices.take(20))
@@ -199,6 +204,56 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
       },
     );
   }
+}
+
+ClientStatusBanner _billingBanner({
+  required String status,
+  required dynamic periodEnd,
+  required String? portalError,
+}) {
+  if (portalError != null) {
+    return ClientStatusBanner(
+      tone: ClientBannerTone.warning,
+      title: 'Billing portal needs attention',
+      message:
+          'The portal could not open. If you do nothing, billing changes must wait until portal access is available.',
+    );
+  }
+  final normalized = status.toLowerCase();
+  final end = DateTime.tryParse('${periodEnd ?? ''}');
+  final expiring = end != null &&
+      end.toLocal().isAfter(DateTime.now()) &&
+      end.toLocal().difference(DateTime.now()).inDays <= 7;
+  if (normalized == 'past_due' || normalized == 'past due') {
+    return const ClientStatusBanner(
+      tone: ClientBannerTone.blocked,
+      title: 'Billing requires attention',
+      message:
+          'The subscription is past due. Open the billing portal to resolve payment so service is not interrupted.',
+    );
+  }
+  if (normalized == 'trialing') {
+    return ClientStatusBanner(
+      tone: expiring ? ClientBannerTone.warning : ClientBannerTone.info,
+      title: expiring ? 'Trial ends soon' : 'Trial is active',
+      message:
+          'Open the billing portal when you need to manage payment details. If you do nothing, billing follows the current subscription terms.',
+    );
+  }
+  if (normalized == 'active') {
+    return const ClientStatusBanner(
+      tone: ClientBannerTone.success,
+      title: 'Billing is active',
+      message:
+          'No billing action is required right now. Use the portal only when you need to manage payment or subscription details.',
+    );
+  }
+  return const ClientStatusBanner(
+    tone: ClientBannerTone.warning,
+    title: 'Billing status is not active',
+    message:
+        'Open the billing portal or review subscription setup. If you do nothing, service activation may remain limited.',
+  );
 }
 
 class _InvoiceRow extends StatelessWidget {
