@@ -10,10 +10,16 @@ import 'package:orchestrate_app/features/client/screens/client_contacts_screen.d
 import 'package:orchestrate_app/features/client/screens/client_mailbox_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_newsletter_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_account_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_billing_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_setup_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_subscribe_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_workspace_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_backend_surface_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_notifications_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_outreach_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_records_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_replies_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_settings_screen.dart';
 import 'package:orchestrate_app/features/client/screens/leads_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/inquiry_detail_screen.dart';
 import 'package:orchestrate_app/features/client/screens/meetings_screen.dart';
@@ -64,6 +70,7 @@ const _clientCanonicalRoutes = <String>{
   '/client/campaigns',
   '/client/meetings',
   '/client/billing',
+  '/client/records',
   '/client/invoices',
   '/client/receipts',
   '/client/agreements',
@@ -651,12 +658,10 @@ final router = GoRouter(
             builder: (context, state) => const LeadsScreen()),
         GoRoute(
             path: '/client/outreach',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.outreach)),
+            builder: (context, state) => const ClientOutreachScreen()),
         GoRoute(
             path: '/client/replies',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.replies)),
+            builder: (context, state) => const ClientRepliesScreen()),
         GoRoute(
             path: '/client/campaign',
             builder: (context, state) => const CampaignsScreen()),
@@ -671,39 +676,34 @@ final router = GoRouter(
             builder: (context, state) => const MeetingsScreen()),
         GoRoute(
             path: '/client/billing',
-            builder: (context, state) =>
-                const ClientHomeScreen(section: ClientSection.billing)),
+            builder: (context, state) => const ClientBillingScreen()),
+        GoRoute(
+            path: '/client/records',
+            builder: (context, state) => const ClientRecordsScreen()),
         GoRoute(
             path: '/client/invoices',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.invoices)),
+            redirect: (context, state) => '/client/records'),
         GoRoute(
             path: '/client/receipts',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.receipts)),
+            redirect: (context, state) => '/client/records'),
         GoRoute(
             path: '/client/agreements',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.agreements)),
+            redirect: (context, state) => '/client/records'),
         GoRoute(
             path: '/client/statements',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.statements)),
+            redirect: (context, state) => '/client/records'),
         GoRoute(
             path: '/client/reminders',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.reminders)),
+            redirect: (context, state) => '/client/records'),
         GoRoute(
             path: '/client/notifications',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.notifications)),
+            builder: (context, state) => const ClientNotificationsScreen()),
         GoRoute(
             path: '/client/support',
             builder: (context, state) => const ClientSupportScreen()),
         GoRoute(
             path: '/client/settings',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.settings)),
+            builder: (context, state) => const ClientSettingsScreen()),
         GoRoute(
             path: '/client/account',
             builder: (context, state) => const ClientAccountScreen()),

@@ -3,7 +3,8 @@ import '../../../core/network/api_client.dart';
 class SupportService {
   final ApiClient _apiClient;
 
-  SupportService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  SupportService({ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   Future<Map<String, dynamic>> createSession({
     required String message,
@@ -47,6 +48,22 @@ class SupportService {
         if (publicMode && sessionToken != null && sessionToken.isNotEmpty)
           'sessionToken': sessionToken,
       },
+    );
+    return _mapResponse(response);
+  }
+
+  Future<Map<String, dynamic>> listClientInquiries() async {
+    final response = await _apiClient.getJson(
+      '/client/support/inquiries',
+      surface: ApiSurface.client,
+    );
+    return _mapResponse(response);
+  }
+
+  Future<Map<String, dynamic>> getClientInquiryThread(String inquiryId) async {
+    final response = await _apiClient.getJson(
+      '/client/support/inquiries/$inquiryId/thread',
+      surface: ApiSurface.client,
     );
     return _mapResponse(response);
   }

@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:orchestrate_app/core/auth/auth_session.dart';
-import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/network/api_client.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/support/services/support_service.dart';
-import 'package:orchestrate_app/features/support/state/support_controller.dart';
-import 'package:orchestrate_app/features/support/widgets/intake_card.dart';
-import 'package:orchestrate_app/features/support/widgets/response_stream.dart';
-import 'package:orchestrate_app/features/support/widgets/support_footer.dart';
 
 class ClientSupportScreen extends StatefulWidget {
   const ClientSupportScreen({super.key});
@@ -16,395 +12,316 @@ class ClientSupportScreen extends StatefulWidget {
 }
 
 class _ClientSupportScreenState extends State<ClientSupportScreen> {
-  late final SupportController _controller;
-  String _draft = '';
+  final SupportService _service = SupportService();
+  final TextEditingController _newRequest = TextEditingController();
+  final TextEditingController _reply = TextEditingController();
+  late Future<Map<String, dynamic>> _future;
+  Map<String, dynamic>? _thread;
+  String? _selectedId;
+  bool _submitting = false;
+  bool _loadingThread = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = SupportController(
-      publicMode: false,
-      service: SupportService(),
-    )..addListener(_refresh);
-  }
-
-  void _refresh() {
-    if (mounted) setState(() {});
+    _future = _service.listClientInquiries();
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_refresh);
-    _controller.dispose();
+    _newRequest.dispose();
+    _reply.dispose();
     super.dispose();
   }
 
-  Future<void> _openSupportDrawer() async {
-    await showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close support',
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 220),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return _ClientSupportDrawer(
-          controller: _controller,
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final offset = Tween<Offset>(
-          begin: const Offset(0.08, 0),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-        );
-
-        return SlideTransition(
-          position: offset,
-          child: FadeTransition(opacity: animation, child: child),
-        );
-      },
-    );
+  void _retry() {
+    setState(() => _future = _service.listClientInquiries());
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 1080;
-              final overview =
-                  _SupportOverview(onOpenDrawer: _openSupportDrawer);
-              final thread = _SupportThread(
-                controller: _controller,
-                draft: _draft,
-                onDraftChanged: (value) => setState(() => _draft = value),
-              );
-
-              if (stacked) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    overview,
-                    const SizedBox(height: 20),
-                    thread,
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 4, child: overview),
-                  const SizedBox(width: 24),
-                  Expanded(flex: 7, child: thread),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SupportOverview extends StatelessWidget {
-  const _SupportOverview({required this.onOpenDrawer});
-
-  final VoidCallback onOpenDrawer;
-
-  @override
-  Widget build(BuildContext context) {
-    final session = AuthSessionController.instance;
-    final accountName = session.workspaceName.isNotEmpty
-        ? session.workspaceName
-        : 'Client account';
-
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.publicSurfaceSoft,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppTheme.publicLine),
-            ),
-            child: Text(
-              'Help & Support',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Reach support directly when you need help.',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Support uses your current account, plan, and setup context automatically so questions can be handled with the right client details already in view.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 22),
-          _SupportCard(
-            label: 'Account',
-            value: accountName,
-          ),
-          const SizedBox(height: 12),
-          _SupportCard(
-            label: 'Signed in as',
-            value: session.email.isNotEmpty ? session.email : 'Client account',
-          ),
-          const SizedBox(height: 12),
-          const _SupportCard(
-            label: 'Use this space for',
-            value:
-                'Setup guidance, plan questions, billing support, workflow issues, and execution clarity.',
-          ),
-          const SizedBox(height: 22),
-          OutlinedButton(
-            onPressed: onOpenDrawer,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.publicText,
-              side: const BorderSide(color: AppTheme.publicLine),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radius),
-              ),
-            ),
-            child: const Text('Open support conversation'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SupportThread extends StatelessWidget {
-  const _SupportThread({
-    required this.controller,
-    required this.draft,
-    required this.onDraftChanged,
-  });
-
-  final SupportController controller;
-  final String draft;
-  final ValueChanged<String> onDraftChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 600,
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 28, 28, 10),
-            child: Text(
-              'Start with what you need',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 0, 28, 18),
-            child: Text(
-              'We’ll respond immediately or guide it into follow-up if needed.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-              child: ResponseStream(
-                messages: controller.session.messages,
-                isLoading: controller.session.isLoading,
-                onFollowUpTap: (_) {},
-              ),
-            ),
-          ),
-          IntakeCard(
-            publicMode: false,
-            isLoading: controller.session.isLoading,
-            initialValue: draft,
-            onChanged: onDraftChanged,
-            onSubmit: (message, name, email) async {
-              onDraftChanged('');
-              await controller.sendMessage(message: message);
-            },
-          ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
-            child: SupportFooter(showStripe: true),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SupportCard extends StatelessWidget {
-  const _SupportCard({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.publicMuted,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClientSupportDrawer extends StatefulWidget {
-  const _ClientSupportDrawer({required this.controller});
-
-  final SupportController controller;
-
-  @override
-  State<_ClientSupportDrawer> createState() => _ClientSupportDrawerState();
-}
-
-class _ClientSupportDrawerState extends State<_ClientSupportDrawer> {
-  String _draft = '';
-
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_refresh);
-  }
-
-  @override
-  void didUpdateWidget(covariant _ClientSupportDrawer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.controller, widget.controller)) {
-      oldWidget.controller.removeListener(_refresh);
-      widget.controller.addListener(_refresh);
+  Future<void> _loadThread(String id) async {
+    setState(() {
+      _selectedId = id;
+      _loadingThread = true;
+    });
+    try {
+      final thread = await _service.getClientInquiryThread(id);
+      if (!mounted) return;
+      setState(() => _thread = thread);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error is ApiException
+              ? error.displayMessage
+              : error.toString())));
+    } finally {
+      if (mounted) setState(() => _loadingThread = false);
     }
   }
 
-  void _refresh() {
-    if (mounted) setState(() {});
+  Future<void> _createRequest() async {
+    final message = _newRequest.text.trim();
+    if (message.isEmpty || _submitting) return;
+    setState(() => _submitting = true);
+    try {
+      await _service.createSession(message: message, publicMode: false);
+      _newRequest.clear();
+      _thread = null;
+      _selectedId = null;
+      _retry();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error is ApiException
+              ? error.displayMessage
+              : error.toString())));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
-  @override
-  void dispose() {
-    widget.controller.removeListener(_refresh);
-    super.dispose();
+  Future<void> _replyToThread() async {
+    final thread = _thread;
+    final sessionId = readText(thread ?? const {}, 'sessionId');
+    final message = _reply.text.trim();
+    if (thread == null || sessionId.isEmpty || message.isEmpty || _submitting) {
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await _service.reply(
+        sessionId: sessionId,
+        message: message,
+        publicMode: false,
+      );
+      _reply.clear();
+      await _loadThread(readText(thread, 'id'));
+      _retry();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error is ApiException
+              ? error.displayMessage
+              : error.toString())));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        child: SafeArea(
-          child: SizedBox(
-            width: 460,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const ClientLoadingView(label: 'Loading support');
+        }
+        if (snapshot.hasError) {
+          final error = snapshot.error;
+          return ClientErrorView(
+            message:
+                error is ApiException ? error.displayMessage : error.toString(),
+            onRetry: _retry,
+          );
+        }
+        final inquiries =
+            asList(asMap(snapshot.data)['items']).map(asMap).toList();
+
+        return ClientPage(
+          eyebrow: 'Support',
+          title: 'Support requests and conversations',
+          subtitle:
+              'Support requests persist to client-scoped inquiry records and can be reopened after refresh.',
+          children: [
+            ClientMetricStrip(metrics: [
+              ClientMetric('Requests', '${inquiries.length}'),
+              ClientMetric('Open',
+                  '${inquiries.where((item) => readText(item, 'status') != 'CLOSED').length}'),
+              ClientMetric('Closed',
+                  '${inquiries.where((item) => readText(item, 'status') == 'CLOSED').length}'),
+              ClientMetric('Escalated',
+                  '${inquiries.where((item) => item['isEscalated'] == true).length}'),
+            ]),
+            const SizedBox(height: 18),
+            LayoutBuilder(builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 1040;
+              final list = ClientPanel(
+                title: 'Previous requests',
+                children: inquiries.isEmpty
+                    ? const [
+                        ClientEmptyState(
+                            message:
+                                'No support requests are on record yet. Start a new request below.')
+                      ]
+                    : [
+                        for (final item in inquiries)
+                          ClientInfoRow(
+                            title: _shorten(readText(item, 'subject',
+                                fallback: 'Support request')),
+                            primary:
+                                '${titleCase(readText(item, 'status'))} · ${titleCase(readText(item, 'priority'))}',
+                            secondary: [
+                              titleCase(readText(item, 'category')),
+                              dateLabel(item['lastActivityAt'] ??
+                                  item['submittedAt']),
+                            ].where((part) => part.isNotEmpty).join(' · '),
+                            trailing: OutlinedButton(
+                              onPressed: _loadingThread &&
+                                      _selectedId == readText(item, 'id')
+                                  ? null
+                                  : () => _loadThread(readText(item, 'id')),
+                              child: Text(_selectedId == readText(item, 'id')
+                                  ? 'Open'
+                                  : 'View'),
+                            ),
+                          ),
+                      ],
+              );
+              final detail = _SupportThreadPanel(
+                thread: _thread,
+                loading: _loadingThread,
+                replyController: _reply,
+                submitting: _submitting,
+                onReply: _replyToThread,
+              );
+              if (stacked) {
+                return Column(
+                  children: [
+                    list,
+                    const SizedBox(height: 18),
+                    detail,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 5, child: list),
+                  const SizedBox(width: 18),
+                  Expanded(flex: 6, child: detail),
+                ],
+              );
+            }),
+            const SizedBox(height: 18),
+            ClientPanel(
+              title: 'Create a new request',
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Help & Support',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
+                TextField(
+                  controller: _newRequest,
+                  minLines: 3,
+                  maxLines: 6,
+                  decoration: const InputDecoration(
+                    labelText: 'What do you need help with?',
+                    border: OutlineInputBorder(),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
-                  child: Text(
-                    'Continue the same support conversation without leaving this page.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: ResponseStream(
-                      messages: widget.controller.session.messages,
-                      isLoading: widget.controller.session.isLoading,
-                      onFollowUpTap: (_) {},
-                    ),
-                  ),
-                ),
-                IntakeCard(
-                  publicMode: false,
-                  isLoading: widget.controller.session.isLoading,
-                  initialValue: _draft,
-                  onChanged: (value) => setState(() => _draft = value),
-                  onSubmit: (message, name, email) async {
-                    setState(() => _draft = '');
-                    await widget.controller.sendMessage(message: message);
-                  },
-                ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
-                  child: SupportFooter(showStripe: true),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _submitting ? null : _createRequest,
+                  icon: _submitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send_outlined, size: 18),
+                  label: Text(_submitting ? 'Sending' : 'Send request'),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
+          ],
+        );
+      },
     );
   }
+}
+
+class _SupportThreadPanel extends StatelessWidget {
+  const _SupportThreadPanel({
+    required this.thread,
+    required this.loading,
+    required this.replyController,
+    required this.submitting,
+    required this.onReply,
+  });
+
+  final Map<String, dynamic>? thread;
+  final bool loading;
+  final TextEditingController replyController;
+  final bool submitting;
+  final VoidCallback onReply;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const ClientPanel(
+        title: 'Conversation',
+        children: [ClientLoadingView(label: 'Loading conversation')],
+      );
+    }
+    final current = thread;
+    if (current == null) {
+      return const ClientPanel(
+        title: 'Conversation',
+        children: [
+          ClientEmptyState(
+              message:
+                  'Select a previous request to review its persisted support thread.')
+        ],
+      );
+    }
+    final messages = asList(current['messages']).map(asMap).toList();
+    final closed = readText(current, 'status') == 'CLOSED';
+    return ClientPanel(
+      title: 'Conversation',
+      subtitle:
+          '${titleCase(readText(current, 'status'))} · ${titleCase(readText(current, 'priority'))}',
+      children: [
+        if (messages.isEmpty)
+          const ClientEmptyState(message: 'No thread messages are visible yet.')
+        else
+          for (final message in messages)
+            ClientInfoRow(
+              title: titleCase(readText(message, 'authorType',
+                  fallback: readText(message, 'direction'))),
+              primary: readText(message, 'bodyText'),
+              secondary: dateLabel(message['sentAt'] ??
+                  message['receivedAt'] ??
+                  message['createdAt']),
+            ),
+        const SizedBox(height: 12),
+        if (closed)
+          const ClientEmptyState(
+              message:
+                  'This request is closed. Start a new request if you need more help.')
+        else ...[
+          TextField(
+            controller: replyController,
+            minLines: 2,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              labelText: 'Reply to this request',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: submitting ? null : onReply,
+            icon: submitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.reply_outlined, size: 18),
+            label: Text(submitting ? 'Sending' : 'Send reply'),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+String _shorten(String value) {
+  if (value.length <= 90) return value;
+  return '${value.substring(0, 87)}...';
 }
