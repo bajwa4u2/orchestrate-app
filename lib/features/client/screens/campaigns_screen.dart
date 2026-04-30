@@ -32,6 +32,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   String? _activationMessage;
   String? _campaignHealth;
   Map<String, dynamic> _campaignMetrics = const <String, dynamic>{};
+  Map<String, dynamic> _campaignActionEligibility = const <String, dynamic>{};
   String? _error;
   Map<String, dynamic>? _pendingActivationPayload;
 
@@ -138,6 +139,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
         return 'Activation in progress';
       case 'ACTIVE':
         return 'Campaign active';
+      case 'PAUSED':
+        return 'Paused';
+      case 'BLOCKED':
+        return 'Blocked';
       case 'ERROR':
         return 'Needs attention';
       case 'NEEDS_REBUILD':
@@ -183,6 +188,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           default:
             return 'Campaign is running';
         }
+      case 'PAUSED':
+        return 'Campaign is paused';
+      case 'BLOCKED':
+        return 'Campaign is blocked';
       case 'ERROR':
         return 'Campaign needs attention';
       case 'NEEDS_REBUILD':
@@ -210,6 +219,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           default:
             return 'We are actively finding businesses and preparing outreach from your saved targeting.';
         }
+      case 'PAUSED':
+        return 'Your campaign is saved and paused. Resume when you are ready to continue outreach.';
+      case 'BLOCKED':
+        return _campaignBlockedReasonLabel;
       case 'ERROR':
         return 'Activation did not finish cleanly. Review the campaign and try again.';
       case 'NEEDS_REBUILD':
@@ -220,25 +233,32 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   }
 
   _CampaignPrimaryAction get _campaignPrimaryAction {
-    switch (_campaignState) {
-      case 'ACTIVE':
-        return _CampaignPrimaryAction.viewLeads;
-      case 'ACTIVATING':
-        return _CampaignPrimaryAction.waiting;
-      case 'ERROR':
-      case 'NEEDS_REBUILD':
-      case 'READY':
-      default:
-        return _CampaignPrimaryAction.start;
+    final eligibility = _campaignActionEligibility;
+    final activeState = _string(eligibility['activeState']).toLowerCase();
+    if (activeState == 'running') return _CampaignPrimaryAction.viewOutreach;
+    if (activeState == 'queued') return _CampaignPrimaryAction.refreshStatus;
+    if (eligibility['canRetryFailed'] == true) {
+      return _CampaignPrimaryAction.retryFailed;
     }
+    if (eligibility['canResume'] == true) return _CampaignPrimaryAction.resume;
+    if (eligibility['canStart'] == true) return _CampaignPrimaryAction.start;
+    if (eligibility['canRestart'] == true) return _CampaignPrimaryAction.resume;
+    if (_campaignState == 'ACTIVATING') return _CampaignPrimaryAction.waiting;
+    return _CampaignPrimaryAction.refreshStatus;
   }
 
   String get _campaignPrimaryActionLabel {
     switch (_campaignPrimaryAction) {
-      case _CampaignPrimaryAction.viewLeads:
-        return 'View leads';
+      case _CampaignPrimaryAction.viewOutreach:
+        return 'View outreach';
       case _CampaignPrimaryAction.waiting:
         return 'Activation in progress';
+      case _CampaignPrimaryAction.resume:
+        return 'Resume campaign';
+      case _CampaignPrimaryAction.retryFailed:
+        return 'Retry failed sends';
+      case _CampaignPrimaryAction.refreshStatus:
+        return 'Refresh status';
       case _CampaignPrimaryAction.start:
         return _campaignState == 'NEEDS_REBUILD'
             ? 'Rebuild campaign'
@@ -248,10 +268,16 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   IconData get _campaignPrimaryActionIcon {
     switch (_campaignPrimaryAction) {
-      case _CampaignPrimaryAction.viewLeads:
-        return Icons.people_outline;
+      case _CampaignPrimaryAction.viewOutreach:
+        return Icons.mark_email_read_outlined;
       case _CampaignPrimaryAction.waiting:
         return Icons.hourglass_top_outlined;
+      case _CampaignPrimaryAction.resume:
+        return Icons.play_arrow_outlined;
+      case _CampaignPrimaryAction.retryFailed:
+        return Icons.refresh_outlined;
+      case _CampaignPrimaryAction.refreshStatus:
+        return Icons.sync_outlined;
       case _CampaignPrimaryAction.start:
         return _campaignState == 'NEEDS_REBUILD'
             ? Icons.autorenew_outlined
@@ -259,10 +285,25 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
-  bool get _canRestartCampaign =>
-      _campaignState == 'ACTIVE' ||
-      _campaignState == 'ERROR' ||
-      _campaignState == 'NEEDS_REBUILD';
+  String get _campaignBlockedReasonLabel {
+    final reason = _string(_campaignActionEligibility['blockedReason']);
+    final nextAvailableAt =
+        _string(_campaignActionEligibility['nextAvailableAt']);
+    switch (reason) {
+      case 'active_dispatch_in_progress':
+        return 'Outbound dispatch is already in progress. View outreach to monitor sends.';
+      case 'activation_in_progress':
+        return 'Campaign activation is already queued. Refresh status to check progress.';
+      case 'mailbox_not_ready':
+        return 'Mailbox readiness is blocking outreach. Reconnect or verify the mailbox before sending.';
+      case 'recent_restart_already_processed':
+        return nextAvailableAt.isEmpty
+            ? 'A campaign action was just processed. Refresh status before trying again.'
+            : 'A campaign action was just processed. Try again after $nextAvailableAt.';
+      default:
+        return 'A backend safety check is blocking campaign action right now.';
+    }
+  }
 
   Future<void> _load() async {
     setState(() {
@@ -290,6 +331,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           _resolveActivationMessage(campaignJson, profile);
       final nextCampaignHealth = _string(campaignJson['health']);
       final nextCampaignMetrics = _asMap(campaignJson['metrics']);
+      final nextActionEligibility = _asMap(campaignJson['actionEligibility']);
 
       if (_pendingActivationPayload != null &&
           _shouldPreserveInFlightState(_campaignState, nextCampaignState)) {
@@ -301,6 +343,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       }
       _campaignHealth = nextCampaignHealth.isEmpty ? null : nextCampaignHealth;
       _campaignMetrics = nextCampaignMetrics;
+      _campaignActionEligibility = nextActionEligibility;
 
       _countries
         ..clear()
@@ -522,6 +565,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
             ? null
             : _string(result['health']);
         _campaignMetrics = _asMap(result['metrics']);
+        _campaignActionEligibility = _asMap(result['actionEligibility']);
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -538,6 +582,25 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           fallback: 'Your campaign could not be restarted at the moment.',
         );
       });
+    }
+  }
+
+  Future<void> _runCampaignPrimaryAction() async {
+    switch (_campaignPrimaryAction) {
+      case _CampaignPrimaryAction.viewOutreach:
+        context.go('/client/outreach');
+        return;
+      case _CampaignPrimaryAction.refreshStatus:
+      case _CampaignPrimaryAction.waiting:
+        await _load();
+        return;
+      case _CampaignPrimaryAction.resume:
+      case _CampaignPrimaryAction.retryFailed:
+        await _restartCampaign(skipConfirmation: true);
+        return;
+      case _CampaignPrimaryAction.start:
+        await _startCampaign();
+        return;
     }
   }
 
@@ -737,6 +800,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
             ? null
             : _string(result['health']);
         _campaignMetrics = _asMap(result['metrics']);
+        _campaignActionEligibility = _asMap(result['actionEligibility']);
         _activationMessage = message.isEmpty
             ? _fallbackActivationMessageForState(_campaignState)
             : message;
@@ -1112,10 +1176,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                                 _campaignPrimaryAction ==
                                     _CampaignPrimaryAction.waiting)
                             ? null
-                            : (_campaignPrimaryAction ==
-                                    _CampaignPrimaryAction.viewLeads
-                                ? () => context.go('/app/contacts')
-                                : _startCampaign),
+                            : _runCampaignPrimaryAction,
                         icon: (_starting || _restarting || _saving)
                             ? const SizedBox(
                                 width: 16,
@@ -1145,23 +1206,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                           icon: const Icon(Icons.check_circle_outline),
                           label: Text(_saving ? 'Saving...' : 'Save for later'),
                         ),
-                        if (_canRestartCampaign)
-                          OutlinedButton.icon(
-                            onPressed: (_saving || _starting || _restarting)
-                                ? null
-                                : _restartCampaign,
-                            icon: _restarting
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.autorenew_outlined),
-                            label: Text(_restarting
-                                ? 'Restarting...'
-                                : 'Restart campaign'),
-                          ),
                         TextButton.icon(
                           onPressed: (_restarting || _starting)
                               ? null
@@ -1695,8 +1739,11 @@ class _MetroItem {
 
 enum _CampaignPrimaryAction {
   start,
+  resume,
+  retryFailed,
+  refreshStatus,
   waiting,
-  viewLeads,
+  viewOutreach,
 }
 
 Map<String, dynamic> _asMap(dynamic value) {
@@ -1823,6 +1870,16 @@ String _resolveSubscriptionTier(Map<String, dynamic>? subscription) {
 
 String _resolveCampaignState(
     Map<String, dynamic> payload, Map<String, dynamic> profile) {
+  final eligibility = _asMap(payload['actionEligibility']);
+  final activeState = _string(eligibility['activeState']).toLowerCase();
+  if (activeState == 'running') return 'ACTIVE';
+  if (activeState == 'queued') return 'ACTIVATING';
+  if (activeState == 'paused') return 'PAUSED';
+  if (activeState == 'failed_retryable' || activeState == 'failed') {
+    return 'ERROR';
+  }
+  if (activeState == 'blocked') return 'BLOCKED';
+
   final metadata = _resolveCampaignMetadata(payload, profile);
   final activation = _asMap(metadata['activation']);
   final bootstrapStatus = _string(activation['bootstrapStatus']).toLowerCase();
