@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 
 class ClientMailboxScreen extends StatelessWidget {
   const ClientMailboxScreen({super.key});
@@ -43,9 +44,13 @@ class ClientMailboxScreen extends StatelessWidget {
 
   Future<_MailboxViewData> _load() async {
     final repo = ClientOutreachRepository();
+    final portalRepo = ClientPortalRepository();
     final dispatches = await repo.fetchEmailDispatches();
     final replies = await repo.fetchReplies();
     final notices = await repo.fetchNotifications();
+    final outreach = await portalRepo.fetchOutreach();
+    final readiness = _asMap(outreach['outboundEmail']);
+    final mailbox = _asMap(readiness['mailbox']);
 
     final dispatchRows = dispatches.take(12).map((raw) {
       final map = _asMap(raw);
@@ -70,6 +75,14 @@ class ClientMailboxScreen extends StatelessWidget {
       dispatchCount: dispatches.length,
       replyCount: replies.length,
       noticeCount: notices.length,
+      ready: readiness['ready'] == true,
+      status: _title(_read(readiness, 'status')),
+      mailboxLine: _join([
+        _read(mailbox, 'address'),
+        _title(_read(mailbox, 'provider')),
+        _read(mailbox, 'connected') == 'true' ? 'Connected' : '',
+        _read(mailbox, 'verified') == 'true' ? 'Verified' : '',
+      ]),
       dispatchRows: dispatchRows,
     );
   }
@@ -80,12 +93,18 @@ class _MailboxViewData {
     required this.dispatchCount,
     required this.replyCount,
     required this.noticeCount,
+    required this.ready,
+    required this.status,
+    required this.mailboxLine,
     required this.dispatchRows,
   });
 
   final int dispatchCount;
   final int replyCount;
   final int noticeCount;
+  final bool ready;
+  final String status;
+  final String mailboxLine;
   final List<_MailboxRow> dispatchRows;
 }
 
@@ -125,7 +144,9 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Outbound and reply movement connected to the client workspace',
+            data.ready
+                ? 'Outbound email is ready'
+                : 'Outbound email is not ready',
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall
@@ -133,7 +154,12 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Mailbox visibility is live. Mailbox connection controls can be expanded later without inventing fake state today.',
+            _join([
+              data.status,
+              data.mailboxLine.isEmpty
+                  ? 'No mailbox is available for this client.'
+                  : data.mailboxLine,
+            ]),
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge

@@ -213,6 +213,10 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
                         label: readiness['mailboxReady'] == true
                             ? 'Mailbox ready'
                             : 'Mailbox not ready'),
+                    ClientBadge(
+                        label: readiness['outboundEmailReady'] == true
+                            ? 'Outbound email ready'
+                            : 'Outbound ${titleCase(readText(readiness, 'outboundEmailStatus', fallback: 'blocked'))}'),
                   ],
                 ),
                 const SizedBox(height: 16),
