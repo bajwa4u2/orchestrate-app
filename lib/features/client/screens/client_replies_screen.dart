@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_workflow_state_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientRepliesScreen extends StatefulWidget {
@@ -14,23 +15,30 @@ class ClientRepliesScreen extends StatefulWidget {
 
 class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
   final ClientPortalRepository _repository = ClientPortalRepository();
-  late Future<Map<String, dynamic>> _future;
+  final ClientWorkflowStateRepository _workflowRepository =
+      ClientWorkflowStateRepository();
+  late Future<List<Map<String, dynamic>>> _futures;
   String? _selectedId;
 
   @override
   void initState() {
     super.initState();
-    _future = _repository.fetchReplies();
+    _futures = _load();
   }
 
+  Future<List<Map<String, dynamic>>> _load() => Future.wait([
+        _repository.fetchReplies(),
+        _workflowRepository.fetchWorkflowState().catchError((_) => const <String, dynamic>{}),
+      ]);
+
   void _retry() {
-    setState(() => _future = _repository.fetchReplies());
+    setState(() => _futures = _load());
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _future,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _futures,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const ClientLoadingView(label: 'Loading replies');
@@ -43,9 +51,11 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
             onRetry: _retry,
           );
         }
-        final data = snapshot.data ?? const <String, dynamic>{};
+        final data = snapshot.data?[0] ?? const <String, dynamic>{};
+        final workflowState = snapshot.data?[1] ?? const <String, dynamic>{};
         final summary = asMap(data['summary']);
         final replies = asList(data['items']).map(asMap).toList();
+        final upstreamBlocker = _resolveRepliesUpstreamBlocker(replies, workflowState);
         final needsReview = replies
             .where((item) => item['requiresHumanReview'] == true)
             .toList();
@@ -60,7 +70,7 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
           orElse: () =>
               replies.isEmpty ? const <String, dynamic>{} : replies.first,
         );
-        final banner = _replyBanner(replies, needsReview, unread);
+        final banner = _replyBanner(replies, needsReview, unread, upstreamBlocker: upstreamBlocker);
 
         return ClientPage(
           eyebrow: 'Replies',
@@ -284,12 +294,35 @@ class _ReplyDetail extends StatelessWidget {
   }
 }
 
+String? _resolveRepliesUpstreamBlocker(
+  List<Map<String, dynamic>> replies,
+  Map<String, dynamic> workflowState,
+) {
+  if (replies.isNotEmpty) return null;
+  final stages = asMap(workflowState['stages']);
+  final replyStage = asMap(stages['replies']);
+  final blocker = asMap(replyStage['upstreamBlocker']);
+  if (blocker.isNotEmpty) return readText(blocker, 'message');
+  final primaryBlocker = asMap(workflowState['primaryBlocker']);
+  final msg = readText(primaryBlocker, 'message');
+  if (msg.isNotEmpty) return msg;
+  return null;
+}
+
 ClientStatusBanner _replyBanner(
   List<Map<String, dynamic>> replies,
   List<Map<String, dynamic>> needsReview,
-  List<Map<String, dynamic>> unread,
-) {
+  List<Map<String, dynamic>> unread, {
+  String? upstreamBlocker,
+}) {
   if (replies.isEmpty) {
+    if (upstreamBlocker != null && upstreamBlocker.isNotEmpty) {
+      return ClientStatusBanner(
+        tone: ClientBannerTone.warning,
+        title: 'Replies require active outreach',
+        message: upstreamBlocker,
+      );
+    }
     return const ClientStatusBanner(
       tone: ClientBannerTone.info,
       title: 'Replies will appear when recipients respond',

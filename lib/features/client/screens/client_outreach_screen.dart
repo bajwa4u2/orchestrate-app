@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_workflow_state_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientOutreachScreen extends StatefulWidget {
@@ -17,18 +18,25 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
   final ClientPortalRepository _repository = ClientPortalRepository();
   final ClientCampaignRepository _campaignRepository =
       ClientCampaignRepository();
-  late Future<Map<String, dynamic>> _future;
+  final ClientWorkflowStateRepository _workflowRepository =
+      ClientWorkflowStateRepository();
+  late Future<List<Map<String, dynamic>>> _futures;
   bool _starting = false;
   bool _retrying = false;
 
   @override
   void initState() {
     super.initState();
-    _future = _repository.fetchOutreach();
+    _futures = _load();
   }
 
+  Future<List<Map<String, dynamic>>> _load() => Future.wait([
+        _repository.fetchOutreach(),
+        _workflowRepository.fetchWorkflowState().catchError((_) => const <String, dynamic>{}),
+      ]);
+
   void _retry() {
-    setState(() => _future = _repository.fetchOutreach());
+    setState(() => _futures = _load());
   }
 
   Future<void> _runAction(Future<Map<String, dynamic>> Function() action,
@@ -68,8 +76,8 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _future,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _futures,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const ClientLoadingView(label: 'Loading outreach');
@@ -83,20 +91,23 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
           );
         }
 
-        final data = snapshot.data ?? const <String, dynamic>{};
+        final data = snapshot.data?[0] ?? const <String, dynamic>{};
+        final workflowState = snapshot.data?[1] ?? const <String, dynamic>{};
         final readiness = asMap(data['readiness']);
         final summary = asMap(data['summary']);
         final mailbox = asMap(data['mailbox']);
         final campaigns = asList(data['campaigns']);
         final messages = asList(data['recentMessages']);
         final actions = asMap(data['actions']);
-        final blockers = asList(readiness['blockers']);
+        final blockers = _mergeBlockers(readiness, workflowState);
         final canStart = actions['startCampaign'] != null;
         final canRetry = actions['retryCampaign'] != null;
         final queued = _intValue(summary['queued']);
         final sent = _intValue(summary['sent']);
         final replies = _intValue(summary['replies']);
         final meetings = _intValue(summary['meetings']);
+        final wfMetrics = asMap(workflowState['metrics']);
+        final retryableFailed = _intValue(wfMetrics['retryableFailed']);
         final status = _outreachStatus(
           blockers: blockers,
           canStart: canStart,
@@ -108,6 +119,7 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
           blockers: blockers,
           summary: summary,
           campaigns: campaigns,
+          retryableFailed: retryableFailed,
         );
 
         return ClientPage(
@@ -168,6 +180,9 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
             ClientMetricStrip(metrics: [
               ClientMetric('Campaigns', '${summary['campaigns'] ?? 0}'),
               ClientMetric('Queued', '$queued'),
+              ClientMetric('Sent', '$sent'),
+              if (retryableFailed > 0)
+                ClientMetric('Retry needed', '$retryableFailed'),
               ClientMetric('Replies', '$replies'),
               ClientMetric('Meetings', '$meetings'),
             ]),
@@ -372,10 +387,29 @@ _OutreachStatus _outreachStatus({
   );
 }
 
+List<dynamic> _mergeBlockers(
+  Map<String, dynamic> readiness,
+  Map<String, dynamic> workflowState,
+) {
+  final existing = asList(readiness['blockers']);
+  final primaryBlocker = asMap(workflowState['primaryBlocker']);
+  if (primaryBlocker.isEmpty) return existing;
+  final primaryCode = readText(primaryBlocker, 'code');
+  final alreadyPresent = existing.any((b) => readText(asMap(b), 'code') == primaryCode);
+  if (alreadyPresent || primaryCode.isEmpty) return existing;
+  final extra = {
+    'code': primaryCode,
+    'label': readText(primaryBlocker, 'message').split('.').first,
+    'detail': readText(primaryBlocker, 'message'),
+  };
+  return [extra, ...existing];
+}
+
 List<_AttentionItem> _attentionItems({
   required List<dynamic> blockers,
   required Map<String, dynamic> summary,
   required List<dynamic> campaigns,
+  int retryableFailed = 0,
 }) {
   if (blockers.isNotEmpty) {
     return blockers
@@ -387,6 +421,13 @@ List<_AttentionItem> _attentionItems({
         .toList();
   }
   final items = <_AttentionItem>[];
+  if (retryableFailed > 0) {
+    items.add(_AttentionItem(
+      'Sends need retry',
+      '$retryableFailed message(s) failed and can be retried.',
+      'Use the retry campaign action to re-queue failed sends.',
+    ));
+  }
   final campaignIdle = campaigns.any((item) {
     final status = readText(asMap(item), 'status').toUpperCase();
     return status == 'PAUSED' || status == 'DRAFT' || status == 'READY';

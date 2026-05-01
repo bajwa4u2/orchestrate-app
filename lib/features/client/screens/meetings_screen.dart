@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/data/repositories/client/client_meetings_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_workflow_state_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class MeetingsScreen extends StatefulWidget {
@@ -12,22 +13,27 @@ class MeetingsScreen extends StatefulWidget {
 }
 
 class _MeetingsScreenState extends State<MeetingsScreen> {
-  late Future<Map<String, dynamic>> _future;
+  late Future<List<Map<String, dynamic>>> _futures;
 
   @override
   void initState() {
     super.initState();
-    _future = ClientMeetingsRepository().fetchMeetings();
+    _futures = _load();
   }
 
+  Future<List<Map<String, dynamic>>> _load() => Future.wait([
+        ClientMeetingsRepository().fetchMeetings(),
+        ClientWorkflowStateRepository().fetchWorkflowState().catchError((_) => const <String, dynamic>{}),
+      ]);
+
   void _retry() {
-    setState(() => _future = ClientMeetingsRepository().fetchMeetings());
+    setState(() => _futures = _load());
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _future,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _futures,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const ClientLoadingView(label: 'Loading meetings');
@@ -40,10 +46,12 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
             onRetry: _retry,
           );
         }
-        final data = snapshot.data ?? const <String, dynamic>{};
+        final data = snapshot.data?[0] ?? const <String, dynamic>{};
+        final workflowState = snapshot.data?[1] ?? const <String, dynamic>{};
         final summary = asMap(data['summary']);
         final provider = asMap(data['provider']);
         final meetings = asList(data['items']).map(asMap).toList();
+        final upstreamBlocker = _resolveUpstreamBlocker(meetings, workflowState);
         final handoff = meetings
             .where((item) => readText(item, 'status') == 'PROPOSED')
             .toList();
@@ -71,6 +79,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
           upcoming: upcoming,
           past: past,
           total: meetings.length,
+          upstreamBlocker: upstreamBlocker,
         );
 
         return ClientPage(
@@ -186,11 +195,30 @@ class _MeetingGroup extends StatelessWidget {
   }
 }
 
+String? _resolveUpstreamBlocker(
+  List<Map<String, dynamic>> meetings,
+  Map<String, dynamic> workflowState,
+) {
+  if (meetings.isNotEmpty) return null;
+  final stages = asMap(workflowState['stages']);
+  final meetingStage = asMap(stages['meetings']);
+  final blocker = asMap(meetingStage['upstreamBlocker']);
+  if (blocker.isNotEmpty) return readText(blocker, 'message');
+  final overallState = readText(workflowState, 'overallState');
+  if (overallState.isNotEmpty && overallState != 'OUTREACH_RUNNING' && overallState != 'HEALTHY') {
+    final primaryBlocker = asMap(workflowState['primaryBlocker']);
+    final msg = readText(primaryBlocker, 'message');
+    if (msg.isNotEmpty) return msg;
+  }
+  return null;
+}
+
 ClientStatusBanner _meetingBanner({
   required List<Map<String, dynamic>> handoff,
   required List<Map<String, dynamic>> upcoming,
   required List<Map<String, dynamic>> past,
   required int total,
+  String? upstreamBlocker,
 }) {
   if (handoff.isNotEmpty) {
     return ClientStatusBanner(
@@ -209,11 +237,18 @@ ClientStatusBanner _meetingBanner({
     );
   }
   if (total == 0) {
+    if (upstreamBlocker != null && upstreamBlocker.isNotEmpty) {
+      return ClientStatusBanner(
+        tone: ClientBannerTone.warning,
+        title: 'Meetings require active outreach',
+        message: upstreamBlocker,
+      );
+    }
     return const ClientStatusBanner(
       tone: ClientBannerTone.info,
       title: 'No meetings scheduled yet',
       message:
-          'Meetings will appear when recipients book time or when an interested reply enters handoff.',
+          'Meetings appear when a recipient replies and classifies as interested. Calendar integration is not automatic — booking occurs through the client\'s configured booking URL.',
     );
   }
   return const ClientStatusBanner(
