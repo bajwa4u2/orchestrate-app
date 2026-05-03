@@ -6,6 +6,45 @@ class ClientMailboxRepository {
 
   final ApiClient _apiClient;
 
+  Future<Map<String, dynamic>> fetchMailbox() async {
+    final json =
+        await _apiClient.getJson('/client/mailbox', surface: ApiSurface.client);
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> activateMailbox() async {
+    final json = await _apiClient.postJson(
+      '/client/mailbox/activate',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> fetchResponseEligibility(String replyId) async {
+    final json = await _apiClient.getJson(
+      '/client/replies/$replyId/response-eligibility',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  Future<Map<String, dynamic>> sendReplyResponse({
+    required String replyId,
+    required String subject,
+    required String bodyText,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/client/replies/$replyId/respond',
+      body: <String, dynamic>{
+        'subject': subject,
+        'bodyText': bodyText,
+      },
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   Future<List<Map<String, dynamic>>> fetchReplies({int limit = 12}) async {
     final json = await _apiClient.getJson(
       '/replies',

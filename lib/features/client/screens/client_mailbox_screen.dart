@@ -1,16 +1,39 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
-import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 
-class ClientMailboxScreen extends StatelessWidget {
+class ClientMailboxScreen extends StatefulWidget {
   const ClientMailboxScreen({super.key});
+
+  @override
+  State<ClientMailboxScreen> createState() => _ClientMailboxScreenState();
+}
+
+class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
+  final ClientMailboxRepository _mailboxRepository = ClientMailboxRepository();
+  late Future<_MailboxViewData> _future = _load();
+  bool _activating = false;
+
+  Future<void> _activate() async {
+    setState(() => _activating = true);
+    try {
+      await _mailboxRepository.activateMailbox();
+      setState(() => _future = _load());
+    } finally {
+      if (mounted) setState(() => _activating = false);
+    }
+  }
+
+  void _refresh() {
+    setState(() => _future = _load());
+  }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_MailboxViewData>(
-      future: _load(),
+      future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
@@ -26,6 +49,29 @@ class ClientMailboxScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _Hero(data: data),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _activating ? null : _activate,
+                    icon: _activating
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.outgoing_mail, size: 18),
+                    label: Text(_activating ? 'Activating' : 'Activate mailbox'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _refresh,
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Refresh mailbox status'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 18),
               _Stats(data: data),
               const SizedBox(height: 18),
@@ -44,13 +90,13 @@ class ClientMailboxScreen extends StatelessWidget {
 
   Future<_MailboxViewData> _load() async {
     final repo = ClientOutreachRepository();
-    final portalRepo = ClientPortalRepository();
     final dispatches = await repo.fetchEmailDispatches();
     final replies = await repo.fetchReplies();
     final notices = await repo.fetchNotifications();
-    final outreach = await portalRepo.fetchOutreach();
-    final readiness = _asMap(outreach['outboundEmail']);
+    final readiness = await _mailboxRepository.fetchMailbox();
     final mailbox = _asMap(readiness['mailbox']);
+    final blockers = _asList(readiness['blockers']).map(_asMap).toList();
+    final firstBlocker = blockers.isEmpty ? const <String, dynamic>{} : blockers.first;
 
     final dispatchRows = dispatches.take(12).map((raw) {
       final map = _asMap(raw);
@@ -77,9 +123,12 @@ class ClientMailboxScreen extends StatelessWidget {
       noticeCount: notices.length,
       ready: readiness['ready'] == true,
       status: _title(_read(readiness, 'status')),
+      blocker: _read(firstBlocker, 'message'),
+      lastCheckedAt: _read(mailbox, 'lastCheckedAt'),
       mailboxLine: _join([
-        _read(mailbox, 'address'),
+        _firstNonEmpty([_read(mailbox, 'fromEmail'), _read(mailbox, 'address')]),
         _title(_read(mailbox, 'provider')),
+        _read(mailbox, 'replyToEmail').isEmpty ? '' : 'Reply-to ${_read(mailbox, 'replyToEmail')}',
         _read(mailbox, 'connected') == 'true' ? 'Connected' : '',
         _read(mailbox, 'verified') == 'true' ? 'Verified' : '',
       ]),
@@ -95,6 +144,8 @@ class _MailboxViewData {
     required this.noticeCount,
     required this.ready,
     required this.status,
+    required this.blocker,
+    required this.lastCheckedAt,
     required this.mailboxLine,
     required this.dispatchRows,
   });
@@ -104,6 +155,8 @@ class _MailboxViewData {
   final int noticeCount;
   final bool ready;
   final String status;
+  final String blocker;
+  final String lastCheckedAt;
   final String mailboxLine;
   final List<_MailboxRow> dispatchRows;
 }
@@ -159,12 +212,25 @@ class _Hero extends StatelessWidget {
               data.mailboxLine.isEmpty
                   ? 'No mailbox is available for this client.'
                   : data.mailboxLine,
+              data.lastCheckedAt.isEmpty
+                  ? ''
+                  : 'Last checked ${_formatDateTime(data.lastCheckedAt)}',
             ]),
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
                 ?.copyWith(color: AppTheme.publicMuted),
           ),
+          if (data.blocker.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              data.blocker,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppTheme.rose),
+            ),
+          ],
         ],
       ),
     );
@@ -320,6 +386,9 @@ Map<String, dynamic> _asMap(dynamic value) {
   }
   return const <String, dynamic>{};
 }
+
+List<dynamic> _asList(dynamic value) =>
+    value is List ? value : const <dynamic>[];
 
 String _read(Map<String, dynamic> map, String key) {
   final value = map[key];

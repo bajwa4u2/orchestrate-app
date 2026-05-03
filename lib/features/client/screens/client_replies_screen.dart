@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workflow_state_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
@@ -223,6 +224,7 @@ class _ReplyDetail extends StatelessWidget {
     final campaign = asMap(reply['campaign']);
     final message = asMap(reply['message']);
     final meeting = asMap(reply['meeting']);
+    final response = asMap(reply['response']);
     final confidence = reply['confidence'];
 
     return ClientPanel(
@@ -274,6 +276,21 @@ class _ReplyDetail extends StatelessWidget {
           ].where((item) => item.isNotEmpty).join(' · '),
         ),
         ClientInfoRow(
+          title: 'Response state',
+          primary: response.isEmpty
+              ? 'Needs response'
+              : titleCase(readText(response, 'status')),
+          secondary: response.isEmpty
+              ? ''
+              : [
+                  dateLabel(response['sentAt']),
+                  dateLabel(response['failedAt']),
+                  readText(response, 'errorMessage'),
+                ].where((item) => item.isNotEmpty).join(' · '),
+        ),
+        _ReplyResponseComposer(reply: reply, existingResponse: response),
+        const SizedBox(height: 8),
+        ClientInfoRow(
           title: 'Meeting handoff',
           primary: meeting.isEmpty
               ? 'No meeting is linked to this reply.'
@@ -292,6 +309,169 @@ class _ReplyDetail extends StatelessWidget {
       ],
     );
   }
+}
+
+class _ReplyResponseComposer extends StatefulWidget {
+  const _ReplyResponseComposer({
+    required this.reply,
+    required this.existingResponse,
+  });
+
+  final Map<String, dynamic> reply;
+  final Map<String, dynamic> existingResponse;
+
+  @override
+  State<_ReplyResponseComposer> createState() => _ReplyResponseComposerState();
+}
+
+class _ReplyResponseComposerState extends State<_ReplyResponseComposer> {
+  final ClientMailboxRepository _repository = ClientMailboxRepository();
+  final TextEditingController _subject = TextEditingController();
+  final TextEditingController _body = TextEditingController();
+  Future<Map<String, dynamic>>? _eligibility;
+  bool _sending = false;
+  String? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEligibility();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReplyResponseComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (readText(oldWidget.reply, 'id') != readText(widget.reply, 'id')) {
+      _subject.clear();
+      _body.clear();
+      _result = null;
+      _loadEligibility();
+    }
+  }
+
+  @override
+  void dispose() {
+    _subject.dispose();
+    _body.dispose();
+    super.dispose();
+  }
+
+  void _loadEligibility() {
+    final replyId = readText(widget.reply, 'id');
+    _eligibility = replyId.isEmpty
+        ? Future.value(const <String, dynamic>{})
+        : _repository.fetchResponseEligibility(replyId);
+  }
+
+  Future<void> _send() async {
+    final replyId = readText(widget.reply, 'id');
+    if (replyId.isEmpty || _body.text.trim().isEmpty) return;
+    setState(() => _sending = true);
+    try {
+      final response = await _repository.sendReplyResponse(
+        replyId: replyId,
+        subject: _subject.text.trim(),
+        bodyText: _body.text.trim(),
+      );
+      setState(() {
+        _result = 'Response ${titleCase(readText(response, 'status', fallback: 'queued'))}.';
+        _eligibility = _repository.fetchResponseEligibility(replyId);
+      });
+    } catch (error) {
+      setState(() => _result = error is ApiException ? error.displayMessage : error.toString());
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.existingResponse.isNotEmpty) {
+      return ClientStatusBanner(
+        tone: _responseTone(readText(widget.existingResponse, 'status')),
+        title: 'Response ${titleCase(readText(widget.existingResponse, 'status'))}',
+        message: [
+          dateLabel(widget.existingResponse['sentAt']),
+          readText(widget.existingResponse, 'errorMessage'),
+        ].where((item) => item.isNotEmpty).join(' · '),
+      );
+    }
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _eligibility,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const ClientStatusBanner(
+            tone: ClientBannerTone.info,
+            title: 'Checking response readiness',
+            message: 'Mailbox, subscription, authorization, and recipient checks are loading.',
+          );
+        }
+
+        final eligibility = snapshot.data ?? const <String, dynamic>{};
+        final blocker = asMap(eligibility['blocker']);
+        final canRespond = eligibility['canRespond'] == true;
+        final suggestedSubject = readText(eligibility, 'suggestedSubject', fallback: 'Re: Your reply');
+        if (_subject.text.isEmpty) _subject.text = suggestedSubject;
+
+        if (!canRespond) {
+          return ClientStatusBanner(
+            tone: ClientBannerTone.warning,
+            title: 'Response sending is blocked',
+            message: readText(blocker, 'message',
+                fallback: 'Mailbox must be ready before this reply can receive a response.'),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _subject,
+              decoration: const InputDecoration(labelText: 'Subject'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _body,
+              minLines: 4,
+              maxLines: 8,
+              decoration: const InputDecoration(labelText: 'Response'),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                FilledButton.icon(
+                  onPressed: _sending ? null : _send,
+                  icon: _sending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.reply_outlined, size: 18),
+                  label: Text(_sending ? 'Queueing' : 'Send response'),
+                ),
+                if (_result != null)
+                  Text(_result!, style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+ClientBannerTone _responseTone(String status) {
+  final normalized = status.toUpperCase();
+  if (normalized == 'SENT') return ClientBannerTone.success;
+  if (normalized == 'FAILED' || normalized == 'RETRYABLE_FAILED') {
+    return ClientBannerTone.warning;
+  }
+  return ClientBannerTone.info;
 }
 
 String? _resolveRepliesUpstreamBlocker(
