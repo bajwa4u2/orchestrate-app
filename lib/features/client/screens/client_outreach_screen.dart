@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workflow_state_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
@@ -18,11 +19,13 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
   final ClientPortalRepository _repository = ClientPortalRepository();
   final ClientCampaignRepository _campaignRepository =
       ClientCampaignRepository();
+  final ClientMailboxRepository _mailboxRepository = ClientMailboxRepository();
   final ClientWorkflowStateRepository _workflowRepository =
       ClientWorkflowStateRepository();
   late Future<List<Map<String, dynamic>>> _futures;
   bool _starting = false;
   bool _retrying = false;
+  bool _activatingMailbox = false;
 
   @override
   void initState() {
@@ -74,6 +77,35 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
     }
   }
 
+  Future<void> _activateMailbox() async {
+    setState(() => _activatingMailbox = true);
+    try {
+      final result = await _mailboxRepository.activateMailbox();
+      if (!mounted) return;
+      final ready = result['ready'] == true;
+      final blockers = asList(result['blockers']);
+      final blocker = blockers.isEmpty ? '' : readText(asMap(blockers.first), 'message');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ready
+              ? 'Mailbox is ready.'
+              : blocker.isNotEmpty
+                  ? blocker
+                  : 'Mailbox activation is still blocked.'),
+        ),
+      );
+      _retry();
+    } catch (error) {
+      if (!mounted) return;
+      final message =
+          error is ApiException ? error.displayMessage : error.toString();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _activatingMailbox = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -99,9 +131,13 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         final campaigns = asList(data['campaigns']);
         final messages = asList(data['recentMessages']);
         final actions = asMap(data['actions']);
+        final capabilities = asMap(workflowState['capabilities']);
         final blockers = _mergeBlockers(readiness, workflowState);
         final canStart = actions['startCampaign'] != null;
         final canRetry = actions['retryCampaign'] != null;
+        final canActivateMailbox =
+            workflowState['overallState'] == 'MAILBOX_BLOCKED' &&
+                capabilities['canActivateMailbox'] == true;
         final queued = _intValue(summary['queued']);
         final sent = _intValue(summary['sent']);
         final replies = _intValue(summary['replies']);
@@ -169,11 +205,23 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
                 icon: const Icon(Icons.forum_outlined, size: 18),
                 label: const Text('Review replies'),
               ),
+            if (!canStart && !canRetry && blockers.isNotEmpty && canActivateMailbox)
+              FilledButton.icon(
+                onPressed: _activatingMailbox ? null : _activateMailbox,
+                icon: _activatingMailbox
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.outgoing_mail, size: 18),
+                label: Text(_activatingMailbox ? 'Activating' : 'Activate mailbox'),
+              ),
             if (!canStart && !canRetry && blockers.isNotEmpty)
               OutlinedButton.icon(
-                onPressed: null,
+                onPressed: canActivateMailbox ? () => context.go('/app/mailbox') : null,
                 icon: const Icon(Icons.block_outlined, size: 18),
-                label: Text(_firstBlockerAction(blockers)),
+                label: Text(canActivateMailbox ? 'View mailbox' : _firstBlockerAction(blockers)),
               ),
           ],
           children: [

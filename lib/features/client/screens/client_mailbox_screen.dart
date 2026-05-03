@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
@@ -15,12 +16,28 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   final ClientMailboxRepository _mailboxRepository = ClientMailboxRepository();
   late Future<_MailboxViewData> _future = _load();
   bool _activating = false;
+  String? _result;
 
   Future<void> _activate() async {
     setState(() => _activating = true);
     try {
-      await _mailboxRepository.activateMailbox();
-      setState(() => _future = _load());
+      final result = await _mailboxRepository.activateMailbox();
+      final ready = result['ready'] == true;
+      final blockers = _asList(result['blockers']);
+      final blocker = blockers.isEmpty ? '' : _read(_asMap(blockers.first), 'message');
+      setState(() {
+        _result = ready
+            ? 'Mailbox is ready.'
+            : blocker.isNotEmpty
+                ? blocker
+                : 'Mailbox activation is still blocked.';
+        _future = _load();
+      });
+    } catch (error) {
+      setState(() {
+        _result = error is ApiException ? error.displayMessage : error.toString();
+        _future = _load();
+      });
     } finally {
       if (mounted) setState(() => _activating = false);
     }
@@ -72,6 +89,10 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
                   ),
                 ],
               ),
+              if (_result != null) ...[
+                const SizedBox(height: 10),
+                Text(_result!, style: Theme.of(context).textTheme.bodyMedium),
+              ],
               const SizedBox(height: 18),
               _Stats(data: data),
               const SizedBox(height: 18),
