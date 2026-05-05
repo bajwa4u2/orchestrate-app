@@ -40,6 +40,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
   final _resetPassword = TextEditingController();
+  final _loginCode = TextEditingController();
 
   bool _busy = false;
   bool _googleBusy = false;
@@ -48,6 +49,8 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _obscureResetPassword = true;
+  bool _rememberEmail = false;
+  bool _trustDevice = true;
 
   String? _message;
   String? _error;
@@ -55,6 +58,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   String? _selectedTier;
   String? _selectedTrial;
   String? _verificationEmail;
+  Map<String, dynamic>? _pendingChallenge;
   bool _verificationComplete = false;
 
   bool get _isJoin => widget.createMode;
@@ -68,6 +72,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (notice.isNotEmpty) {
       _error = notice;
     }
+    _loadSavedEmail();
     WidgetsBinding.instance.addPostFrameCallback((_) => _readRouteContext());
   }
 
@@ -80,7 +85,17 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     _password.dispose();
     _confirmPassword.dispose();
     _resetPassword.dispose();
+    _loginCode.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSavedEmail() async {
+    final saved = await AuthSessionController.instance.savedLoginEmail();
+    if (!mounted || saved.isEmpty) return;
+    setState(() {
+      _email.text = saved;
+      _rememberEmail = true;
+    });
   }
 
   Future<void> _readRouteContext() async {
@@ -146,6 +161,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   Widget build(BuildContext context) {
     if (_isVerification) return _VerificationView(state: this);
     if (_isReset) return _ResetView(state: this);
+    if (_pendingChallenge != null) return _EmailCodeView(state: this);
 
     return Scaffold(
       backgroundColor: AppTheme.publicBackground,
@@ -243,6 +259,21 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         email: _email.text.trim(),
         password: _password.text,
       );
+      if (response['requiresEmailCodeChallenge'] == true) {
+        if (_rememberEmail) {
+          await AuthSessionController.instance.saveLoginEmail(_email.text);
+        } else {
+          await AuthSessionController.instance.clearSavedLoginEmail();
+        }
+        if (!mounted) return;
+        setState(() {
+          _pendingChallenge = Map<String, dynamic>.from(
+              (response['challenge'] as Map?) ?? const {});
+          _message = 'We sent a code to your email.';
+        });
+        return;
+      }
+      await _persistEmailPreference();
       await _completeClientAccess(response);
     } catch (error) {
       if (!mounted) return;
@@ -250,6 +281,75 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> verifyLoginCode() async {
+    final challengeId = _pendingChallenge?['id']?.toString() ?? '';
+    final code = _loginCode.text.trim();
+    if (challengeId.isEmpty || code.isEmpty) {
+      setState(() => _error = 'Enter the code from your email.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+      _message = null;
+    });
+    try {
+      final response = await AuthRepository().verifyClientLoginCode(
+        challengeId: challengeId,
+        code: code,
+        trustDevice: _trustDevice,
+      );
+      await _persistEmailPreference();
+      await _completeClientAccess(response);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = _humanizeCodeError(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> resendLoginCode() async {
+    final challengeId = _pendingChallenge?['id']?.toString() ?? '';
+    if (challengeId.isEmpty) return;
+    setState(() {
+      _resendingVerification = true;
+      _error = null;
+    });
+    try {
+      final response = await AuthRepository().resendClientLoginCode(challengeId);
+      if (!mounted) return;
+      setState(() {
+        _pendingChallenge = Map<String, dynamic>.from(
+            (response['challenge'] as Map?) ?? _pendingChallenge ?? const {});
+        _message = 'A fresh code has been sent.';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = _humanizeCodeError(error));
+    } finally {
+      if (mounted) setState(() => _resendingVerification = false);
+    }
+  }
+
+  Future<void> _persistEmailPreference() async {
+    if (_rememberEmail) {
+      await AuthSessionController.instance.saveLoginEmail(_email.text);
+    } else {
+      await AuthSessionController.instance.clearSavedLoginEmail();
+    }
+  }
+
+  void changeLoginEmail() {
+    setState(() {
+      _pendingChallenge = null;
+      _loginCode.clear();
+      _password.clear();
+      _error = null;
+      _message = null;
+    });
   }
 
   Future<void> loginWithGoogle() async {
@@ -467,6 +567,14 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       return 'That link is not valid anymore.';
     }
     return 'We could not complete that request.';
+  }
+
+  String _humanizeCodeError(Object error) {
+    final text = error.toString().toLowerCase();
+    if (text.contains('expired')) return 'That code expired. Request a fresh code and try again.';
+    if (text.contains('invalid')) return 'That code did not work. Check it and try again.';
+    if (text.contains('wait')) return 'Please wait before requesting another code.';
+    return 'We could not verify that code.';
   }
 }
 
@@ -749,6 +857,17 @@ class _AuthCard extends StatelessWidget {
                   label: 'Work email',
                   keyboardType: TextInputType.emailAddress,
                 ),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: state._rememberEmail,
+                  onChanged: (value) => state.setState(
+                    () => state._rememberEmail = value == true,
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Save email on this device'),
+                  subtitle: const Text('Your password is never saved.'),
+                ),
                 const SizedBox(height: 14),
                 _Field(
                   controller: state._password,
@@ -808,6 +927,114 @@ class _AuthCard extends StatelessWidget {
                 ),
               ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmailCodeView extends StatelessWidget {
+  const _EmailCodeView({required this.state});
+  final _ClientLoginScreenState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final challenge = state._pendingChallenge ?? const {};
+    final email = challenge['email']?.toString() ?? 'your email';
+    return Scaffold(
+      backgroundColor: AppTheme.publicBackground,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Card(
+                elevation: 0,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(32),
+                  side: const BorderSide(color: AppTheme.publicLine),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BrandAssets.logo(context, height: 28),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Check your email',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'We sent a code to $email. Enter it to finish signing in.',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppTheme.publicMuted,
+                            ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (state._message != null)
+                        _Banner(message: state._message!, error: false),
+                      if (state._error != null)
+                        _Banner(message: state._error!, error: true),
+                      _Field(
+                        controller: state._loginCode,
+                        label: 'Email code',
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 10),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: state._trustDevice,
+                        onChanged: (value) => state.setState(
+                          () => state._trustDevice = value == true,
+                        ),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        title: const Text('Trust this device for 60 days'),
+                        subtitle: const Text(
+                          'Trusted devices skip the email code until they expire or are revoked.',
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: state._busy ? null : state.verifyLoginCode,
+                          child: Text(
+                            state._busy ? 'Verifying...' : 'Verify code',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          OutlinedButton(
+                            onPressed: state._resendingVerification
+                                ? null
+                                : state.resendLoginCode,
+                            child: Text(state._resendingVerification
+                                ? 'Sending...'
+                                : 'Resend code'),
+                          ),
+                          TextButton(
+                            onPressed: state._busy ? null : state.changeLoginEmail,
+                            child: const Text('Back and change email'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),

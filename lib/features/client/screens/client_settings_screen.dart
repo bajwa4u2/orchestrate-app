@@ -23,6 +23,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   final AuthRepository _authRepository = AuthRepository();
   late Future<_SettingsData> _future;
   bool _signingOut = false;
+  bool _revokingDevice = false;
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
       _portalRepository.fetchRepresentationAuth(),
       _portalRepository.fetchOutreach(),
       _portalRepository.fetchRecords(),
+      _authRepository.fetchTrustedDevices(),
     ]);
     return _SettingsData(
       profile: asMap(results[0]),
@@ -44,6 +46,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
       auth: asMap(results[2]),
       outreach: asMap(results[3]),
       records: asMap(results[4]),
+      trustedDevices: asMap(results[5]),
     );
   }
 
@@ -60,6 +63,19 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
     } finally {
       await AuthSessionController.instance.clear();
       if (mounted) context.go('/auth/login');
+    }
+  }
+
+  Future<void> _revokeDevice(String deviceId) async {
+    setState(() => _revokingDevice = true);
+    try {
+      await _authRepository.revokeTrustedDevice(deviceId);
+      await AuthSessionController.instance.clearTrustedDeviceToken(
+        surface: 'client',
+      );
+      _retry();
+    } finally {
+      if (mounted) setState(() => _revokingDevice = false);
     }
   }
 
@@ -87,6 +103,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
         final readiness = asMap(data.outreach['readiness']);
         final mailbox = asMap(data.outreach['mailbox']);
         final billingDocs = asMap(data.records['billingDocuments']);
+        final trustedDevices = asList(data.trustedDevices['devices']);
         final setupComplete = session.hasSetupCompleted;
         final authorized = data.auth['authorized'] == true;
         final blockers = asList(readiness['blockers']);
@@ -226,6 +243,29 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
+              title: 'Security',
+              subtitle:
+                  'Trusted devices skip the email code until they expire or are revoked.',
+              children: trustedDevices.isEmpty
+                  ? const [
+                      ClientInfoRow(
+                        title: 'Trusted devices',
+                        primary: 'No trusted devices are recorded yet.',
+                        secondary:
+                            'After verifying an email code, you can trust this device for 60 days.',
+                      ),
+                    ]
+                  : [
+                      for (final raw in trustedDevices)
+                        _TrustedDeviceRow(
+                          device: asMap(raw),
+                          busy: _revokingDevice,
+                          onRevoke: _revokeDevice,
+                        ),
+                    ],
+            ),
+            const SizedBox(height: 18),
+            ClientPanel(
               title: 'Record availability',
               children: [
                 ClientInfoRow(
@@ -291,6 +331,7 @@ class _SettingsData {
     required this.auth,
     required this.outreach,
     required this.records,
+    required this.trustedDevices,
   });
 
   final Map<String, dynamic> profile;
@@ -298,4 +339,43 @@ class _SettingsData {
   final Map<String, dynamic> auth;
   final Map<String, dynamic> outreach;
   final Map<String, dynamic> records;
+  final Map<String, dynamic> trustedDevices;
+}
+
+class _TrustedDeviceRow extends StatelessWidget {
+  const _TrustedDeviceRow({
+    required this.device,
+    required this.busy,
+    required this.onRevoke,
+  });
+
+  final Map<String, dynamic> device;
+  final bool busy;
+  final Future<void> Function(String deviceId) onRevoke;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = device['active'] == true;
+    final id = readText(device, 'id');
+    return ClientInfoRow(
+      title: readText(device, 'deviceName', fallback: 'Trusted device'),
+      primary: [
+        active ? 'Active' : 'Inactive',
+        readText(device, 'platform'),
+      ].where((part) => part.isNotEmpty).join(' · '),
+      secondary: [
+        'Created ${dateLabel(device['createdAt'])}',
+        'Last used ${dateLabel(device['lastUsedAt'])}',
+        'Expires ${dateLabel(device['expiresAt'])}',
+        if (device['revokedAt'] != null)
+          'Revoked ${dateLabel(device['revokedAt'])}',
+      ].join(' · '),
+      trailing: active && id.isNotEmpty
+          ? TextButton(
+              onPressed: busy ? null : () => onRevoke(id),
+              child: Text(busy ? 'Revoking' : 'Revoke'),
+            )
+          : null,
+    );
+  }
 }

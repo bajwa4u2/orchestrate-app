@@ -59,6 +59,17 @@ class ApiClient {
     return _decode(response);
   }
 
+  Future<dynamic> deleteJson(
+    String path, {
+    ApiSurface surface = ApiSurface.public,
+  }) async {
+    final response = await _httpClient.delete(
+      _uri(path),
+      headers: await _headers(surface),
+    ).timeout(AppConfig.apiTimeout);
+    return _decode(response);
+  }
+
   Future<Map<String, String>> _headers(ApiSurface surface) async {
     final session = AuthSessionController.instance;
 

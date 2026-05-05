@@ -19,8 +19,11 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
   final _workspace = TextEditingController(text: 'Orchestrate Operations');
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _code = TextEditingController();
   bool _busy = false;
+  bool _trustDevice = true;
   String? _error;
+  Map<String, dynamic>? _pendingChallenge;
 
   @override
   void initState() {
@@ -37,12 +40,14 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
     _workspace.dispose();
     _email.dispose();
     _password.dispose();
+    _code.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final createMode = widget.createMode;
+    final pendingChallenge = _pendingChallenge;
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -59,7 +64,9 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                            createMode
+                            pendingChallenge != null
+                                ? 'Enter email code'
+                                : createMode
                                 ? 'Create operator access'
                                 : 'Operator sign in',
                             style: Theme.of(context).textTheme.headlineMedium),
@@ -67,6 +74,40 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                         if (_error != null)
                           Text(_error!,
                               style: const TextStyle(color: Colors.red)),
+                        if (pendingChallenge != null) ...[
+                          Text(
+                            'We sent a code to ${pendingChallenge['email'] ?? 'your email'}.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                              controller: _code,
+                              decoration:
+                                  const InputDecoration(labelText: 'Email code'),
+                              validator: _required),
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _trustDevice,
+                            onChanged: (value) => setState(
+                                () => _trustDevice = value == true),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            title: const Text('Trust this device for 60 days'),
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton(
+                              onPressed: _busy ? null : _verifyCode,
+                              child: Text(
+                                  _busy ? 'Verifying...' : 'Verify code')),
+                          TextButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => setState(() {
+                                        _pendingChallenge = null;
+                                        _password.clear();
+                                        _code.clear();
+                                      }),
+                              child: const Text('Back to sign in')),
+                        ] else ...[
                         if (createMode) ...[
                           TextFormField(
                               controller: _name,
@@ -110,6 +151,7 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                             child: Text(createMode
                                 ? 'Use existing operator account'
                                 : 'Create operator access')),
+                        ],
                       ]),
                 ),
               ),
@@ -153,9 +195,38 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
     try {
       final response = await AuthRepository()
           .loginOperator(email: _email.text.trim(), password: _password.text);
+      if (response['requiresEmailCodeChallenge'] == true) {
+        setState(() {
+          _pendingChallenge = Map<String, dynamic>.from(
+              (response['challenge'] as Map?) ?? const {});
+        });
+        return;
+      }
       if (mounted) context.go('/ops/overview');
     } catch (error) {
       setState(() => _error = 'That operator login did not work.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _verifyCode() async {
+    if (!_formKey.currentState!.validate()) return;
+    final challengeId = _pendingChallenge?['id']?.toString() ?? '';
+    if (challengeId.isEmpty) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await AuthRepository().verifyOperatorLoginCode(
+        challengeId: challengeId,
+        code: _code.text.trim(),
+        trustDevice: _trustDevice,
+      );
+      if (mounted) context.go('/ops/overview');
+    } catch (error) {
+      setState(() => _error = 'That code did not work.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

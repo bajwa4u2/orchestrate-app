@@ -29,13 +29,54 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
+    final trustedDeviceToken =
+        await AuthSessionController.instance.trustedDeviceToken(
+      surface: 'client',
+    );
     final json = await _apiClient.postJson('/auth/client/login', body: {
       'email': email,
       'password': password,
+      if (trustedDeviceToken.isNotEmpty)
+        'trustedDeviceToken': trustedDeviceToken,
+      'deviceName': 'Current device',
     });
     final payload = Map<String, dynamic>.from(json as Map);
+    if (payload['requiresEmailCodeChallenge'] != true) {
+      await AuthSessionController.instance.applyAuthResponse(payload);
+    }
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> verifyClientLoginCode({
+    required String challengeId,
+    required String code,
+    required bool trustDevice,
+  }) async {
+    final json =
+        await _apiClient.postJson('/auth/client/login/verify-code', body: {
+      'challengeId': challengeId,
+      'code': code,
+      'trustDevice': trustDevice,
+      'deviceName': 'Current device',
+    });
+    final payload = Map<String, dynamic>.from(json as Map);
+    final trustedDeviceToken = payload['trustedDeviceToken']?.toString() ?? '';
+    if (trustedDeviceToken.isNotEmpty) {
+      await AuthSessionController.instance.saveTrustedDeviceToken(
+        trustedDeviceToken,
+        surface: 'client',
+      );
+    }
     await AuthSessionController.instance.applyAuthResponse(payload);
     return payload;
+  }
+
+  Future<Map<String, dynamic>> resendClientLoginCode(String challengeId) async {
+    final json =
+        await _apiClient.postJson('/auth/client/login/resend-code', body: {
+      'challengeId': challengeId,
+    });
+    return Map<String, dynamic>.from(json as Map);
   }
 
   Future<Map<String, dynamic>> loginClientWithGoogle({
@@ -88,13 +129,62 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
+    final trustedDeviceToken =
+        await AuthSessionController.instance.trustedDeviceToken(
+      surface: 'operator',
+    );
     final json = await _apiClient.postJson('/auth/operator/login', body: {
       'email': email,
       'password': password,
+      if (trustedDeviceToken.isNotEmpty)
+        'trustedDeviceToken': trustedDeviceToken,
+      'deviceName': 'Current device',
     });
     final payload = Map<String, dynamic>.from(json as Map);
+    if (payload['requiresEmailCodeChallenge'] != true) {
+      await AuthSessionController.instance.applyAuthResponse(payload);
+    }
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> verifyOperatorLoginCode({
+    required String challengeId,
+    required String code,
+    required bool trustDevice,
+  }) async {
+    final json =
+        await _apiClient.postJson('/auth/operator/login/verify-code', body: {
+      'challengeId': challengeId,
+      'code': code,
+      'trustDevice': trustDevice,
+      'deviceName': 'Current device',
+    });
+    final payload = Map<String, dynamic>.from(json as Map);
+    final trustedDeviceToken = payload['trustedDeviceToken']?.toString() ?? '';
+    if (trustedDeviceToken.isNotEmpty) {
+      await AuthSessionController.instance.saveTrustedDeviceToken(
+        trustedDeviceToken,
+        surface: 'operator',
+      );
+    }
     await AuthSessionController.instance.applyAuthResponse(payload);
     return payload;
+  }
+
+  Future<Map<String, dynamic>> fetchTrustedDevices() async {
+    final json = await _apiClient.getJson('/auth/trusted-devices',
+        surface: ApiSurface.client);
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  Future<void> revokeTrustedDevice(String deviceId) async {
+    await _apiClient.postJson('/auth/trusted-devices/revoke',
+        surface: ApiSurface.client, body: {'deviceId': deviceId});
+  }
+
+  Future<void> revokeAllTrustedDevices() async {
+    await _apiClient.deleteJson('/auth/trusted-devices',
+        surface: ApiSurface.client);
   }
 
   Future<Map<String, dynamic>> currentSession() async {

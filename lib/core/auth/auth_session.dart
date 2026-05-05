@@ -10,6 +10,9 @@ class AuthSessionController extends ChangeNotifier {
 
   static const _clientKey = 'orch_client_session_v1';
   static const _operatorKey = 'orch_operator_session_v1';
+  static const _savedLoginEmailKey = 'orch_saved_login_email_v1';
+  static const _clientTrustedDeviceKey = 'orch_client_trusted_device_v1';
+  static const _operatorTrustedDeviceKey = 'orch_operator_trusted_device_v1';
 
   bool _ready = false;
   Map<String, dynamic>? _session;
@@ -80,6 +83,12 @@ class AuthSessionController extends ChangeNotifier {
 
   String _resolveKey(String? currentSurface) {
     return currentSurface == 'operator' ? _operatorKey : _clientKey;
+  }
+
+  String _resolveTrustedDeviceKey(String? currentSurface) {
+    return currentSurface == 'operator'
+        ? _operatorTrustedDeviceKey
+        : _clientTrustedDeviceKey;
   }
 
   Future<void> init() async {
@@ -210,6 +219,49 @@ class AuthSessionController extends ChangeNotifier {
 
     _ready = true;
     await _persist();
+  }
+
+  Future<String> savedLoginEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_savedLoginEmailKey) ?? '';
+  }
+
+  Future<void> saveLoginEmail(String email) async {
+    final normalized = email.trim().toLowerCase();
+    final prefs = await SharedPreferences.getInstance();
+    if (normalized.isEmpty) {
+      await prefs.remove(_savedLoginEmailKey);
+    } else {
+      await prefs.setString(_savedLoginEmailKey, normalized);
+    }
+  }
+
+  Future<void> clearSavedLoginEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_savedLoginEmailKey);
+  }
+
+  Future<String> trustedDeviceToken({String surface = 'client'}) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_resolveTrustedDeviceKey(surface)) ?? '';
+  }
+
+  Future<void> saveTrustedDeviceToken(
+    String token, {
+    String surface = 'client',
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final normalized = token.trim();
+    if (normalized.isEmpty) {
+      await prefs.remove(_resolveTrustedDeviceKey(surface));
+    } else {
+      await prefs.setString(_resolveTrustedDeviceKey(surface), normalized);
+    }
+  }
+
+  Future<void> clearTrustedDeviceToken({String surface = 'client'}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_resolveTrustedDeviceKey(surface));
   }
 
   Future<void> applyClientSetupResponse(Map<String, dynamic> payload) async {
