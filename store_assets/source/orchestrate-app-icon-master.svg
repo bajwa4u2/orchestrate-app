@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Orchestrate app icon">
+  <defs>
+    <linearGradient id="bg" x1="96" y1="96" x2="928" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#060B17"/>
+      <stop offset="1" stop-color="#0C1C34"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <g fill="none" stroke="#F8FAFC" stroke-width="108" stroke-linecap="butt">
+    <path d="M 224 632 A 318 318 0 0 1 554 210"/>
+    <path d="M 800 392 A 318 318 0 0 1 470 814"/>
+    <path d="M 512 830 A 318 318 0 0 1 512 194"/>
+  </g>
+  <g fill="#F8FAFC">
+    <path d="M 786 671 L 618 617 L 736 499 Z"/>
+    <path d="M 238 353 L 406 407 L 288 525 Z"/>
+    <path d="M 512 196 L 606 346 L 418 346 Z"/>
+  </g>
+  <g fill="none" stroke="#57C4FF" stroke-width="28" stroke-linecap="round">
+    <path d="M 627 216 A 318 318 0 0 1 726 280"/>
+    <path d="M 397 808 A 318 318 0 0 1 298 744"/>
+  </g>
+</svg>

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "orchestrate_app" "\0"
+            VALUE "CompanyName", "Orchestrate" "\0"
+            VALUE "FileDescription", "Orchestrate" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "orchestrate_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Orchestrate. All rights reserved." "\0"
             VALUE "OriginalFilename", "orchestrate_app.exe" "\0"
-            VALUE "ProductName", "orchestrate_app" "\0"
+            VALUE "ProductName", "Orchestrate" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
