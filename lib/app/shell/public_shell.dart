@@ -345,6 +345,9 @@ class _PublicFooter extends StatelessWidget {
                       _FooterLink(
                           label: 'Refunds',
                           onTap: () => context.go('/legal/refunds')),
+                      _FooterLink(
+                          label: 'Account deletion',
+                          onTap: () => context.go('/account-deletion')),
                     ],
                   ),
                   _FooterGroup(

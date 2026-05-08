@@ -526,6 +526,67 @@ final router = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/account-deletion',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: const PublicContentScreen(
+            eyebrow: 'Account access',
+            title: 'Account deletion',
+            subtitle:
+                'Orchestrate users can request account deletion from inside the app or by contacting support from the email address associated with the account.',
+            sideNote:
+                'Orchestrate by Aura Platform LLC. Support: support@orchestrateops.com.',
+            sections: [
+              ContentSection(
+                title: 'Request from inside the app',
+                body:
+                    'Users can request account deletion from inside the app: Client workspace → Settings → Account → Deactivate account.',
+              ),
+              ContentSection(
+                title: 'Alternative contact method',
+                body:
+                    'You may also request deletion by emailing support@orchestrateops.com from the email address associated with your Orchestrate account.',
+              ),
+              ContentSection(
+                title: 'What is deleted',
+                body:
+                    'When an account deletion request is processed, Orchestrate deletes or deactivates eligible account profile information, workspace access, client account records where eligible, and user-provided account data where deletion is legally permitted.',
+                points: [
+                  'account profile',
+                  'workspace access',
+                  'client account records where eligible',
+                  'user-provided account data where deletion is legally permitted',
+                ],
+              ),
+              ContentSection(
+                title: 'What may be retained',
+                body:
+                    'Some records may be retained for a limited period where required for billing, security, fraud prevention, audit logs, legal compliance, dispute resolution, or unpaid balances.',
+                points: [
+                  'billing records',
+                  'security/audit logs',
+                  'fraud prevention records',
+                  'legal/compliance records',
+                  'records required to resolve active disputes or unpaid balances',
+                ],
+              ),
+              ContentSection(
+                title: 'Timeline',
+                body:
+                    'Requests are reviewed and processed within a reasonable period, normally within 30 days, unless retention is required by law, billing, security, or dispute obligations.',
+              ),
+              ContentSection(
+                title: 'Developer and support',
+                body:
+                    'Orchestrate is operated by Aura Platform LLC. For account deletion support, email support@orchestrateops.com.',
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+    GoRoute(
       path: '/newsletter',
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
