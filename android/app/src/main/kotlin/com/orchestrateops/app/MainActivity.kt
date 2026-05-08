@@ -1,4 +1,4 @@
-package com.example.orchestrate_app
+package com.orchestrateops.app
 
 import io.flutter.embedding.android.FlutterActivity
 
