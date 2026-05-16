@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 
 class ClientWorkspaceRepository {
@@ -13,7 +15,9 @@ class ClientWorkspaceRepository {
         surface: ApiSurface.client,
       );
       return Map<String, dynamic>.from(json as Map);
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_workspace_repository] /client/overview fell back: $error');
       final profile = await _safeGetMap('/clients/me/profile');
       final campaignOverview =
           await _safeGetMap('/clients/me/campaign-overview');
@@ -98,7 +102,11 @@ class ClientWorkspaceRepository {
         return Map<String, dynamic>.from(json);
       }
       return const <String, dynamic>{};
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 404) {
+        return const <String, dynamic>{};
+      }
+      debugPrint('[client_workspace_repository] $path failed: $error');
       return const <String, dynamic>{};
     }
   }
@@ -107,7 +115,11 @@ class ClientWorkspaceRepository {
     try {
       final json = await _apiClient.getJson(path, surface: ApiSurface.client);
       return (json as List? ?? const []).cast<dynamic>();
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 404) {
+        return const <dynamic>[];
+      }
+      debugPrint('[client_workspace_repository] $path failed: $error');
       return const <dynamic>[];
     }
   }

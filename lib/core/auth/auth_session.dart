@@ -110,13 +110,19 @@ class AuthSessionController extends ChangeNotifier {
     if (clientRaw != null && clientRaw.isNotEmpty) {
       try {
         _session = Map<String, dynamic>.from(jsonDecode(clientRaw));
-      } catch (_) {}
+      } catch (error) {
+        debugPrint('[auth_session] discarding corrupted client session: $error');
+        await prefs.remove(_clientKey);
+      }
     }
 
     if (_session == null && operatorRaw != null && operatorRaw.isNotEmpty) {
       try {
         _session = Map<String, dynamic>.from(jsonDecode(operatorRaw));
-      } catch (_) {}
+      } catch (error) {
+        debugPrint('[auth_session] discarding corrupted operator session: $error');
+        await prefs.remove(_operatorKey);
+      }
     }
 
     _ready = true;

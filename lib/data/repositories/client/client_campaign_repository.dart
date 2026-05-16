@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 
 class ClientCampaignRepository {
@@ -94,7 +96,15 @@ class ClientCampaignRepository {
       if (json is Map) {
         return Map<String, dynamic>.from(json);
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      if (error is ApiException && error.statusCode == 404) {
+        return const <String, dynamic>{};
+      }
+      debugPrint('[client_campaign_repository] $path failed: $error');
+      if (kDebugMode) {
+        debugPrintStack(stackTrace: stack, label: path);
+      }
+    }
     return const <String, dynamic>{};
   }
 
@@ -102,7 +112,14 @@ class ClientCampaignRepository {
     try {
       final json = await _apiClient.getJson(path, surface: ApiSurface.client);
       return (json as List? ?? const []).cast<dynamic>();
-    } catch (_) {
+    } catch (error, stack) {
+      if (error is ApiException && error.statusCode == 404) {
+        return const <dynamic>[];
+      }
+      debugPrint('[client_campaign_repository] $path failed: $error');
+      if (kDebugMode) {
+        debugPrintStack(stackTrace: stack, label: path);
+      }
       return const <dynamic>[];
     }
   }

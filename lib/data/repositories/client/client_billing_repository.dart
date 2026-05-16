@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/config/pricing_config.dart';
 import '../../../core/network/api_client.dart';
 
@@ -40,7 +42,9 @@ class ClientBillingRepository {
   Future<List<dynamic>> fetchAgreementsSafe() async {
     try {
       return await fetchAgreements();
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_billing_repository] /client/agreements failed: $error');
       return const <dynamic>[];
     }
   }
@@ -48,7 +52,9 @@ class ClientBillingRepository {
   Future<Map<String, dynamic>?> fetchSubscriptionSafe() async {
     try {
       return await fetchSubscription();
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_billing_repository] /billing/subscription failed: $error');
       return null;
     }
   }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 
 class ClientAccountRepository {
@@ -79,7 +81,9 @@ extension ClientAccountRepositorySafe on ClientAccountRepository {
   Future<Map<String, dynamic>> fetchClientProfileSafe() async {
     try {
       return await fetchClientProfile();
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_account_repository] /clients/me/profile failed: $error');
       return const <String, dynamic>{};
     }
   }

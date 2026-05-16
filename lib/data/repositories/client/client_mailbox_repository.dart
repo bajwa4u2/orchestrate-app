@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 
 class ClientMailboxRepository {
@@ -57,7 +59,9 @@ class ClientMailboxRepository {
   Future<List<Map<String, dynamic>>> fetchRepliesSafe({int limit = 12}) async {
     try {
       return await fetchReplies(limit: limit);
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_mailbox_repository] /replies failed: $error');
       return const <Map<String, dynamic>>[];
     }
   }
@@ -71,7 +75,9 @@ class ClientMailboxRepository {
   Future<List<Map<String, dynamic>>> fetchEmailDispatchesSafe() async {
     try {
       return await fetchEmailDispatches();
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_mailbox_repository] /client/email-dispatches failed: $error');
       return const <Map<String, dynamic>>[];
     }
   }
@@ -85,7 +91,9 @@ class ClientMailboxRepository {
   Future<List<Map<String, dynamic>>> fetchNotificationsSafe() async {
     try {
       return await fetchNotifications();
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_mailbox_repository] /client/notifications failed: $error');
       return const <Map<String, dynamic>>[];
     }
   }

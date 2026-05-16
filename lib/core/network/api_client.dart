@@ -89,10 +89,10 @@ class ApiClient {
   dynamic _decode(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final exception = ApiException.fromResponse(response);
-      if (response.statusCode == 401 || response.statusCode == 403) {
+      if (response.statusCode == 401) {
         AuthSessionController.instance.handleAuthFailure(
           surface: AuthSessionController.instance.surface,
-          message: exception.message,
+          message: 'Your session has ended. Please sign in again to continue.',
         );
       }
       throw exception;

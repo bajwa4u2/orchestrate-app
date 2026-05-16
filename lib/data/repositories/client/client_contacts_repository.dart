@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 
 class ClientContactsRepository {
@@ -22,7 +24,9 @@ class ClientContactsRepository {
   Future<List<Map<String, dynamic>>> fetchContactsSafe() async {
     try {
       return await fetchContacts();
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_contacts_repository] fetchContacts failed: $error');
       return const <Map<String, dynamic>>[];
     }
   }

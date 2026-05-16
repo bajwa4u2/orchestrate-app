@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import 'client_account_repository.dart';
 import 'client_billing_repository.dart';
@@ -16,7 +18,9 @@ class ClientHomeRepository {
       final json = await _apiClient.getJson('/client/overview',
           surface: ApiSurface.client);
       return _asMap(json);
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[client_home_repository] /client/overview fell back: $error');
       return _composeFromCoreSources();
     }
   }

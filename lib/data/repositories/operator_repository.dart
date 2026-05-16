@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../core/network/api_client.dart';
 
 class OperatorRepository {
@@ -21,7 +23,9 @@ class OperatorRepository {
         surface: ApiSurface.operator,
       );
       return Map<String, dynamic>.from(json as Map);
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[operator_repository] /operator/command/overview fell back: $error');
       return fetchControlOverview();
     }
   }
@@ -33,8 +37,9 @@ class OperatorRepository {
         surface: ApiSurface.operator,
       );
       return Map<String, dynamic>.from(json as Map);
-    } catch (_) {
-      // Keep the command surface usable against older deployments during rollout.
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      debugPrint('[operator_repository] /operator/command fell back: $error');
     }
 
     final control = await fetchControlOverview();
