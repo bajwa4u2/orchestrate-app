@@ -15,8 +15,12 @@ class OperatorProvidersScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(
-              child: Text('Providers could not load at the moment.'));
+          return Center(
+            child: Text(
+              'Providers could not load at the moment.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          );
         }
         final items = (snapshot.data!['items'] as List? ?? const <dynamic>[])
             .whereType<Map>()
@@ -31,11 +35,7 @@ class OperatorProvidersScreen extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
-                  border: Border.all(color: AppTheme.publicLine),
-                ),
+                decoration: _operatorCardDecoration(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -44,7 +44,7 @@ class OperatorProvidersScreen extends StatelessWidget {
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
-                          ?.copyWith(color: AppTheme.publicMuted),
+                          ?.copyWith(color: AppTheme.subdued),
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -66,11 +66,7 @@ class OperatorProvidersScreen extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
-                  border: Border.all(color: AppTheme.publicLine),
-                ),
+                decoration: _operatorCardDecoration(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -90,7 +86,8 @@ class OperatorProvidersScreen extends StatelessWidget {
                     else
                       for (int i = 0; i < items.length; i++) ...[
                         _Item(item: items[i]),
-                        if (i != items.length - 1) const Divider(height: 22),
+                        if (i != items.length - 1)
+                          const Divider(height: 22, color: AppTheme.line),
                       ],
                   ],
                 ),
@@ -109,6 +106,14 @@ class OperatorProvidersScreen extends StatelessWidget {
   }
 }
 
+BoxDecoration _operatorCardDecoration() {
+  return BoxDecoration(
+    color: AppTheme.panel,
+    borderRadius: BorderRadius.circular(AppTheme.radius),
+    border: Border.all(color: AppTheme.line),
+  );
+}
+
 class _Item extends StatelessWidget {
   const _Item({required this.item});
 
@@ -118,34 +123,59 @@ class _Item extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = (item['key'] ?? item['name'] ?? 'Provider').toString();
     final available = item['available'] == true;
-    final primary = [
-      available ? 'Available' : 'Unavailable',
-      if ((item['kind'] ?? '').toString().trim().isNotEmpty)
-        item['kind'].toString(),
-    ].join(' · ');
+    final kind = (item['kind'] ?? '').toString().trim();
+    final reason = (item['reason'] ?? '').toString().trim();
+    final configured = (item['configured'] ?? '').toString().trim();
+
+    final statusColor = available ? AppTheme.emerald : AppTheme.rose;
     final secondary = [
-      if ((item['reason'] ?? '').toString().trim().isNotEmpty)
-        item['reason'].toString(),
-      if ((item['configured'] ?? '').toString().trim().isNotEmpty)
-        'configured: ${item['configured']}',
+      if (reason.isNotEmpty) reason,
+      if (configured.isNotEmpty) 'configured: $configured',
     ].join(' · ');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(name, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 6),
-        Text(primary, style: Theme.of(context).textTheme.bodyLarge),
-        if (secondary.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            secondary,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: AppTheme.publicMuted),
-          ),
-        ],
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              margin: const EdgeInsets.only(top: 8, right: 10),
+              decoration: BoxDecoration(
+                color: statusColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 6),
+                  Text(
+                    [
+                      available ? 'Available' : 'Unavailable',
+                      if (kind.isNotEmpty) kind,
+                    ].join(' · '),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  if (secondary.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      secondary,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: AppTheme.subdued),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
