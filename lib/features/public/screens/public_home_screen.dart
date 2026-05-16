@@ -105,7 +105,7 @@ class _Hero extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'AI-driven revenue operations with governed execution',
+                  'Commercial intelligence + execution infrastructure',
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
@@ -114,9 +114,9 @@ class _Hero extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 620),
+                constraints: const BoxConstraints(maxWidth: 640),
                 child: Text(
-                  'More qualified conversations, fewer missed follow-ups, and a clearer path from target market to meetings.',
+                  'Managed revenue automation infrastructure that detects opportunity, verifies readiness, and runs execution for you.',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontSize: stacked ? 38 : 52,
                         height: 1.04,
@@ -125,9 +125,9 @@ class _Hero extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 620),
+                constraints: const BoxConstraints(maxWidth: 640),
                 child: Text(
-                  'Orchestrate helps your business define a target market, source opportunities, run outreach, handle follow-up, manage replies, and move qualified interest toward booked meetings.',
+                  'You connect your business identity and sending identity. Orchestrate detects commercial opportunity from market signals, qualifies it, verifies readiness, and runs governed execution end to end — with operational continuity built in.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.publicMuted,
                       ),
@@ -151,10 +151,10 @@ class _Hero extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppTheme.radius),
                       ),
                     ),
-                    child: const Text('View pricing'),
+                    child: const Text('Activate infrastructure'),
                   ),
                   OutlinedButton(
-                    onPressed: () => context.go('/contact'),
+                    onPressed: () => context.go('/how-it-works'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.publicText,
                       side: const BorderSide(color: AppTheme.publicLine),
@@ -166,11 +166,11 @@ class _Hero extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppTheme.radius),
                       ),
                     ),
-                    child: const Text('Talk through fit'),
+                    child: const Text('See how it operates'),
                   ),
                   TextButton(
                     onPressed: onSupportTap,
-                    child: const Text('Get quick guidance'),
+                    child: const Text('Talk through fit'),
                   ),
                 ],
               ),
@@ -219,21 +219,21 @@ class _HeroPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
           _Signal(
-            title: 'Execution pipeline',
+            title: 'Signal-driven opportunity detection',
             body:
-                'Targeting, sourcing, outreach, follow-ups, replies, and meetings stay connected to one service record from intake to handoff.',
+                'Orchestrate watches your defined market for commercial signals — not a static contact list — and turns them into qualified, contactable opportunities.',
           ),
           SizedBox(height: 14),
           _Signal(
-            title: 'Governance and control',
+            title: 'Readiness orchestration',
             body:
-                'AI-assisted strategy, message work, readiness checks, and operator controls keep execution visible and correctable.',
+                'Subscription, representation, mailbox connection, and verified sending identity (SPF / DKIM / DMARC) are continuously verified before execution begins.',
           ),
           SizedBox(height: 14),
           _Signal(
-            title: 'Trust and continuity',
+            title: 'Managed execution + continuity',
             body:
-                'Deliverability, representation, documents, billing, reminders, and account truth remain part of the same managed service.',
+                'Governed dispatch, follow-up continuity, automatic recovery, deliverability posture, and operational visibility remain Orchestrate-owned once readiness is met.',
           ),
         ],
       ),
@@ -267,20 +267,20 @@ class _SystemStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = const [
       _StripItem(
-        'Clear buying path',
-        'Plans, service fit, intake, and service readiness are visible before account setup.',
+        'Client provides',
+        'Business identity, mailbox connection, mailbox ownership, and sending-domain verification. That is the full client surface.',
       ),
       _StripItem(
-        'Client control',
-        'Verification, setup, subscription, campaign service fit, and billing stay tied to real account state.',
+        'Orchestrate verifies',
+        'Real DNS-based SPF / DKIM / DMARC verification, mailbox OAuth handshake, and continuous readiness checks before any send happens.',
       ),
       _StripItem(
-        'Execution',
-        'Outreach, follow-up, replies, and meetings stay inside one service journey.',
+        'Orchestrate executes',
+        'Signal discovery, qualification, governed dispatch, follow-up continuity, and automatic recovery — without manual lifecycle controls.',
       ),
       _StripItem(
-        'Business continuity',
-        'Invoices, reminders, statements, documents, and support remain attached after work begins.',
+        'Operational continuity',
+        'Audit trail, readiness transitions, deliverability posture, and revenue records remain visible and explainable end to end.',
       ),
     ];
 
@@ -349,28 +349,28 @@ class _JourneySection extends StatelessWidget {
     final stages = const [
       _JourneyStage(
         '1',
-        'Choose your service path',
-        'Start with Opportunity for outbound execution or Revenue when billing continuity also matters.',
+        'Connect your business identity',
+        'Market, offer, target segments, and representation authorization. The inputs Orchestrate needs to discover the right opportunities for you.',
       ),
       _JourneyStage(
         '2',
-        'Create access',
-        'Account sign-up, verification, and recovery stay part of the real product entry.',
+        'Connect your mailbox',
+        'OAuth handshake with Gmail or Microsoft 365 happens entirely backend-side. Tokens are sealed in an external vault — never your browser, never the database.',
       ),
       _JourneyStage(
         '3',
-        'Define sourcing and outreach preferences',
-        'Markets, regions, industries, offer context, and representation boundaries become execution input.',
+        'Verify sending identity',
+        'Publish SPF, DKIM, and DMARC records for your domain. Orchestrate verifies them with live DNS and re-checks automatically as they propagate.',
       ),
       _JourneyStage(
         '4',
-        'Activate subscription',
-        'Secure checkout follows readiness instead of forcing commitment too early.',
+        'Readiness orchestration',
+        'Subscription, authorization, mailbox, and sending identity are continuously checked. When everything is green, Orchestrate activates execution on its own.',
       ),
       _JourneyStage(
         '5',
-        'Operate from the system',
-        'Client visibility and operator execution stay aligned to the same record of sourcing, outreach, replies, meetings, billing, and support.',
+        'Managed execution begins',
+        'Discovery, qualification, dispatch governance, follow-up continuity, recovery, and reply handling run as managed infrastructure. You watch the outcomes — never the buttons.',
       ),
     ];
 
@@ -386,12 +386,12 @@ class _JourneySection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'How the product moves',
+            'How activation works',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Text(
-            'The system is structured so entry, setup, activation, and live operations happen in the right order.',
+            'Client identity, mailbox, and sending-domain verification on your side — then Orchestrate takes over readiness orchestration and managed execution. The handoff is the product.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -433,24 +433,34 @@ class _CapabilitySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = const [
       _Capability(
-        title: 'Sourcing that is not vendor-locked',
+        title: 'Signal-driven discovery',
         body:
-            'Provider-flexible sourcing starts from target market instead of a single static list.',
+            'Provider-agnostic discovery monitors market signals tied to your target segments, not a static list rented from one vendor.',
       ),
       _Capability(
-        title: 'Execution with follow-through',
+        title: 'Verified sending identity',
         body:
-            'First sends, follow-ups, replies, and meeting handoff are treated as one governed workflow.',
+            'Real DNS-based SPF, DKIM, and DMARC verification with continuous re-checks. Sending never starts on an unverified domain.',
       ),
       _Capability(
-        title: 'Deliverability and representation',
+        title: 'Vault-backed credentials',
         body:
-            'Mailbox posture, representation, suppressions, and formal records stay visible to the service.',
+            'OAuth tokens for connected mailboxes are sealed in an external secrets vault. Never stored in the database. Never exposed to the browser.',
       ),
       _Capability(
-        title: 'Billing and service records',
+        title: 'Governed dispatch + recovery',
         body:
-            'Plans, billing status, invoices, statements, reminders, and agreements stay attached after activation.',
+            'Every send passes a governance check. Pauses, errors, and provider hiccups are recovered automatically without client lifecycle controls.',
+      ),
+      _Capability(
+        title: 'Operational continuity',
+        body:
+            'Readiness transitions, deliverability posture, follow-up cadence, and revenue records are audited and explainable end to end.',
+      ),
+      _Capability(
+        title: 'Explainable execution',
+        body:
+            'Every readiness state, every recovery, every dispatch decision can be traced back to a single source-of-truth readiness engine.',
       ),
     ];
 
@@ -465,11 +475,11 @@ class _CapabilitySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('What Orchestrate operates',
+          Text('The infrastructure underneath',
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'Orchestrate is built around connected revenue work: governed sourcing, execution, deliverability, intake, billing, records, and support.',
+            'Six infrastructure surfaces a buyer should be able to verify before activating revenue automation.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
@@ -583,14 +593,14 @@ class _TruthSection extends StatelessWidget {
       builder: (context, constraints) {
         final stacked = constraints.maxWidth < 980;
         final left = _TruthCard(
-          title: 'What this product is',
+          title: 'What Orchestrate is',
           body:
-              'A managed service workspace for outbound execution and revenue continuity, built to carry the work forward after the first message.',
+              'Commercial intelligence + execution infrastructure. Managed revenue automation that operates governed dispatch, qualification, recovery, and continuity once your business identity is verified.',
         );
         final right = _TruthCard(
-          title: 'What this product is not',
+          title: 'What Orchestrate is not',
           body:
-              'Not a generic CRM, not a loose AI wrapper, and not a dashboard that leaves the real work scattered across other tools.',
+              'Not a CRM. Not an AI SDR. Not sequence software. Not a dashboard you operate manually. Orchestrate is infrastructure your business activates — not a tool you configure and run.',
         );
         if (stacked) {
           return Column(
@@ -653,13 +663,13 @@ class _PlansSection extends StatelessWidget {
       _PlanPeek(
         title: 'Opportunity',
         body:
-            'Lead generation, outreach, follow-up, replies, and meetings handled inside one system.',
+            'Managed execution scope: signal discovery, qualification, governed dispatch, follow-up continuity, and reply handling.',
         route: '/pricing?plan=opportunity&trial=15d',
       ),
       _PlanPeek(
         title: 'Revenue',
         body:
-            'Everything in Opportunity plus billing continuity, statements, reminders, and customer-facing financial movement.',
+            'Opportunity scope plus revenue continuity: agreements, invoices, statements, reminders, and customer-facing financial records governed alongside execution.',
         route: '/pricing?plan=revenue&trial=15d',
       ),
     ];
@@ -676,12 +686,12 @@ class _PlansSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose your service path',
+            'Pick the scope of managed execution',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Text(
-            'Each option can begin with a 15-day start period before monthly billing begins.',
+            'Both scopes can begin with a 15-day start period before monthly billing. The infrastructure is the same — the difference is how far Orchestrate carries revenue continuity for you.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -779,19 +789,19 @@ class _ClosingSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Ready to set up your target market?',
+                'Ready to activate revenue automation infrastructure?',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 12),
               Text(
-                'Start with pricing. If the fit is not obvious yet, use contact or quick guidance before you move into account setup.',
+                'Pick your managed-execution scope on the pricing page. If you want to walk through fit first, contact and quick guidance both work — no commitment until your business identity is in place.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppTheme.publicMuted,
                     ),
               ),
               const SizedBox(height: 12),
               Text(
-                'Secure billing powered by Stripe',
+                'Secure billing powered by Stripe.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.publicMuted,
                     ),

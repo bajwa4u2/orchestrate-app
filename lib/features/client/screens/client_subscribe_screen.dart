@@ -261,24 +261,24 @@ class _SubscribeHero extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radius),
           border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Checkout readiness',
+        Text('Activate managed execution',
             style: Theme.of(context)
                 .textTheme
                 .titleMedium
                 ?.copyWith(color: AppTheme.publicMuted)),
         const SizedBox(height: 10),
-        Text('Choose your plan',
+        Text('Confirm the scope of execution',
             style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
         Text(
-            'Your setup is in place. Confirm the plan that matches your selected servicePath before secure checkout begins.',
+            'Your business identity is in place. Confirm the scope of managed execution Orchestrate will operate, then activate. Readiness orchestration starts immediately after checkout.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
                 ?.copyWith(color: AppTheme.publicMuted)),
         const SizedBox(height: 16),
         Wrap(spacing: 10, runSpacing: 10, children: [
-          _Pill(label: 'Service: ${_title(planCode)}'),
+          _Pill(label: 'Scope: ${_title(planCode)}'),
           if (trialRequested)
             _Pill(label: '${trialDays}-day start period selected'),
         ]),
@@ -515,7 +515,7 @@ class _ReadinessCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radius),
           border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Ready for secure checkout',
+        Text('Ready to activate infrastructure',
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall
@@ -528,7 +528,7 @@ class _ReadinessCard extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
         Text(
-            'Secure checkout opens after this step. You can still review your workspace and account before payment is completed.',
+            'Secure checkout opens next. Once payment is confirmed, readiness orchestration begins — Orchestrate then waits on mailbox connection and sending-identity verification before activating execution.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge

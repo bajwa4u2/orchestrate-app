@@ -266,12 +266,12 @@ class _Hero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose what you want Orchestrate to handle.',
+            'Pick the scope of managed execution.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Text(
-            'Start with outreach, or add revenue follow-through when billing records, reminders, statements, and documents need to stay connected.',
+            'Both scopes use the same commercial-intelligence and execution infrastructure. The difference is how far Orchestrate carries revenue continuity — execution alone, or execution plus invoices, statements, reminders, and agreements.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -324,8 +324,8 @@ class _PlanSwitch extends StatelessWidget {
         children: [
           Expanded(
             child: _PlanButton(
-              title: 'Start with outreach',
-              subtitle: 'Sourcing, outreach, follow-up, replies, and meetings',
+              title: 'Managed execution',
+              subtitle: 'Discovery, qualification, governed dispatch, follow-up continuity, and reply handling.',
               selected: selectedPlan == 'opportunity',
               onTap: () => onChanged('opportunity'),
             ),
@@ -333,8 +333,8 @@ class _PlanSwitch extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _PlanButton(
-              title: 'Add revenue follow-through',
-              subtitle: 'Outreach plus billing, documents, and reminders',
+              title: 'Managed execution + revenue continuity',
+              subtitle: 'Adds invoices, statements, reminders, and agreements governed alongside execution.',
               selected: selectedPlan == 'revenue',
               onTap: () => onChanged('revenue'),
             ),

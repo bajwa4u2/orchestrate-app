@@ -599,11 +599,11 @@ class _SetupIntro extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Set up your managed service workspace',
+          Text('Activate your revenue execution infrastructure',
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'Choose your lane, target customers, target locations, offer context, and authorization before checkout.',
+            'Define your business identity — market, targets, offer context, and representation authorization. Once this is in place, Orchestrate handles signal discovery, qualification, and execution on top of it.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
@@ -614,7 +614,7 @@ class _SetupIntro extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _IntroPill(label: 'Service: $laneLabel'),
+              _IntroPill(label: 'Scope: $laneLabel'),
               _IntroPill(label: 'Coverage: $tierLabel'),
               if (trial == '15d')
                 const _IntroPill(label: '15-day start period selected'),

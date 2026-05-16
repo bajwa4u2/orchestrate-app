@@ -290,32 +290,46 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Product',
-            title: 'Turn target markets into qualified conversations.',
+            title: 'Commercial intelligence + execution infrastructure.',
             subtitle:
-                'Orchestrate helps businesses find the right accounts, start outreach, handle follow-up, manage replies, and move interested prospects toward booked meetings.',
+                'Orchestrate is managed revenue automation infrastructure. You connect your business identity and sending identity. Orchestrate detects opportunity, verifies readiness, runs governed execution, and keeps it running.',
             sideNote:
-                'Start with outreach. Add revenue follow-through when billing, documents, and reminders need to stay connected.',
+                'Pick the scope of managed execution at activation: execution alone, or execution plus revenue continuity (invoices, statements, reminders, agreements).',
             sideActions: [
               ContentAction(
-                  label: 'Start setup', path: '/auth/join', filled: true),
+                  label: 'Activate infrastructure',
+                  path: '/auth/join',
+                  filled: true),
               ContentAction(label: 'View pricing', path: '/pricing'),
             ],
             sections: [
               ContentSection(
-                title: 'What your business gets',
+                title: 'What you provide',
                 body:
-                    'A managed workspace for target market setup, outreach coverage, follow-up handling, replies, meetings, billing standing, service records, and support.',
+                    'Four inputs. Business identity, mailbox connection (OAuth, backend-owned), mailbox ownership, and sending-domain verification. That is the full client surface.',
                 points: [
-                  'More qualified conversations from the markets you choose',
-                  'Less manual prospecting and fewer missed follow-ups',
-                  'Clear sales activity without exposing operational clutter',
-                  'A faster path from target market to booked meetings',
+                  'Business identity, market, and offer context',
+                  'Mailbox connection via Gmail or Microsoft 365 OAuth',
+                  'Sending-domain verification (SPF / DKIM / DMARC)',
+                  'Representation authorization',
+                ],
+              ),
+              ContentSection(
+                title: 'What Orchestrate owns',
+                body:
+                    'Everything after readiness. Signal-driven discovery, qualification, readiness orchestration, governed dispatch, follow-up continuity, recovery, deliverability posture, and operational continuity — all visible, explainable, audited.',
+                points: [
+                  'Signal-driven opportunity detection',
+                  'Readiness orchestration + auto-activation',
+                  'Governed dispatch + follow-up continuity',
+                  'Automatic recovery, retry, and deliverability posture',
+                  'Explainable readiness transitions + audit trail',
                 ],
               ),
               ContentSection(
                 title: 'How it is organized',
                 body:
-                    'Public pages help you decide. The client workspace shows what is set up, what is running, what needs action, and what happens next. Operator tools keep the managed service moving.',
+                    'Public pages explain the category and the activation path. The client workspace shows what is verified, what is running, and what is awaiting your input — never lifecycle buttons. Operator tools run the deeper infrastructure controls.',
               ),
             ],
           ),
@@ -328,50 +342,69 @@ final router = GoRouter(
         child: PublicShell(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
-            eyebrow: 'Campaign journey',
-            title: 'From target market to booked meeting.',
+            eyebrow: 'Activation journey',
+            title: 'From business identity to managed revenue execution.',
             subtitle:
-                'The work starts with your business profile and target customers, then moves through sourcing, outreach, replies, meetings, billing records, and support.',
+                'A short, verifiable handoff. You verify business identity, mailbox, and sending domain. Orchestrate verifies readiness, then activates managed execution and keeps it running.',
             sideNote:
-                'You see business progress. Operators keep the deeper service controls out of your way.',
+                'You see verified state and outcomes. Lifecycle controls, retries, and dispatch governance stay inside Orchestrate.',
             sideActions: [
               ContentAction(
-                  label: 'View pricing', path: '/pricing', filled: true),
+                  label: 'Activate infrastructure',
+                  path: '/auth/join',
+                  filled: true),
               ContentAction(label: 'Talk through fit', path: '/contact'),
             ],
             sections: [
               ContentSection(
-                title: '1. Set up the business profile',
+                title: '1. Connect your business identity',
                 body:
-                    'Tell Orchestrate what you sell, who you want to reach, where you serve, and how outreach should represent your business.',
+                    'Define market, offer, target segments, and grant representation. The inputs Orchestrate needs before discovery can be tied to your business — no generic lists.',
                 points: [
-                  'Business profile',
-                  'Target customers',
-                  'Target location',
-                  'Representation authorization'
+                  'Business profile and offer context',
+                  'Target market, region, and industry',
+                  'Representation authorization',
                 ],
               ),
               ContentSection(
-                title: '2. Source and prepare the right leads',
+                title: '2. Connect your mailbox',
                 body:
-                    'Lead sourcing stays tied to your target market so contacted records are easier to understand and review.',
+                    'OAuth handshake with Gmail or Microsoft 365 runs entirely backend-side. Tokens are sealed in an external vault — never touch the browser, never persisted in the database.',
                 points: [
-                  'Lead records',
-                  'Contact readiness',
-                  'Target market fit',
-                  'Outreach readiness'
+                  'Gmail / Microsoft 365 OAuth',
+                  'Backend-owned token exchange',
+                  'External vault credential storage',
                 ],
               ),
               ContentSection(
-                title: '3. Run outreach and follow-up',
+                title: '3. Verify sending identity',
                 body:
-                    'First messages, follow-ups, replies, and meeting handoff stay connected so momentum does not depend on scattered manual tracking.',
+                    'Publish SPF, DKIM, and DMARC records for your domain. Orchestrate verifies them with live DNS, surfaces propagation progress, and re-checks automatically until they pass.',
                 points: [
-                  'Queued outreach',
-                  'Sent messages',
-                  'Follow-ups',
-                  'Replies',
-                  'Meetings'
+                  'Live SPF / DKIM / DMARC verification',
+                  'DNS propagation history visible to you',
+                  'Automatic re-verification',
+                ],
+              ),
+              ContentSection(
+                title: '4. Readiness orchestration takes over',
+                body:
+                    'A single readiness engine watches subscription, authorization, mailbox, and sending identity. When everything is green, execution activates automatically.',
+                points: [
+                  'Centralized readiness engine',
+                  'Auto-activation on readiness',
+                  'Audited readiness transitions',
+                ],
+              ),
+              ContentSection(
+                title: '5. Managed execution runs',
+                body:
+                    'Signal discovery, qualification, governed dispatch, follow-up continuity, reply handling, and recovery run as managed infrastructure. You watch outcomes, not buttons.',
+                points: [
+                  'Signal-driven discovery + qualification',
+                  'Governed dispatch + follow-up continuity',
+                  'Automatic recovery and deliverability posture',
+                  'Reply classification and meeting handoff',
                 ],
               ),
             ],
@@ -499,19 +532,24 @@ final router = GoRouter(
           child: const PublicContentScreen(
             eyebrow: 'About',
             title:
-                'Managed revenue operations for businesses that need follow-through.',
+                'Commercial intelligence + execution infrastructure.',
             subtitle:
-                'Orchestrate exists to connect opportunity creation, outreach execution, replies, meetings, billing continuity, records, and support.',
+                'Orchestrate exists because revenue automation deserves to be infrastructure, not another tool you operate. Connect business identity and sending identity — Orchestrate detects opportunity, verifies readiness, and runs governed execution end to end.',
             sections: [
+              ContentSection(
+                title: 'The category',
+                body:
+                    'Not a CRM. Not an AI SDR. Not sequence software. Managed revenue automation infrastructure: signal discovery, readiness orchestration, governed dispatch, follow-up continuity, recovery, and operational visibility — owned by the platform after the client verifies identity.',
+              ),
+              ContentSection(
+                title: 'The handoff',
+                body:
+                    'Clients own four inputs: business identity, mailbox, mailbox ownership, sending-domain verification. Everything after readiness belongs to Orchestrate. The infrastructure is the product — not a workspace of buttons.',
+              ),
               ContentSection(
                 title: 'Why the separation matters',
                 body:
-                    'Visitors get a buying journey, clients get a calm service workspace, and operators get the command tools needed to keep work moving.',
-              ),
-              ContentSection(
-                title: 'What stays fixed',
-                body:
-                    'Setup defines the business and target market. Campaigns guide sourcing and outreach. Replies and meetings carry the outcome forward.',
+                    'Visitors get a clear category. Clients get verified state and explainable outcomes. Operators get the deeper infrastructure controls. No surface tries to be all three.',
               ),
             ],
           ),
