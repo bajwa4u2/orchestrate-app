@@ -352,7 +352,9 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         ready: false,
         verifiedAt: null,
         lastCheckedAt: null,
+        failedReason: null,
         records: <_DnsRecord>[],
+        history: <_VerificationCheck>[],
       );
     }
     final rawRecords = asList(map['records']);
@@ -371,6 +373,29 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
           ),
         )
         .toList();
+    final history = asList(map['verificationHistory'])
+        .map(asMap)
+        .where((entry) => entry.isNotEmpty)
+        .map(
+          (entry) => _VerificationCheck(
+            id: readText(entry, 'id'),
+            checkedAt: readText(entry, 'checkedAt'),
+            allMatched: entry['allMatched'] == true,
+            status: readText(entry, 'status'),
+            failedReason: readText(entry, 'failedReason'),
+            perRecord: asList(entry['checks'])
+                .map(asMap)
+                .map(
+                  (raw) => _VerificationCheckRow(
+                    purpose: readText(raw, 'purpose'),
+                    matched: raw['matched'] == true,
+                    errorMessage: readText(raw, 'errorMessage'),
+                  ),
+                )
+                .toList(),
+          ),
+        )
+        .toList();
     return _SendingIdentity(
       present: true,
       domain: readText(map, 'domain'),
@@ -382,7 +407,11 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       lastCheckedAt: readText(map, 'lastCheckedAt').isEmpty
           ? null
           : readText(map, 'lastCheckedAt'),
+      failedReason: readText(map, 'failedReason').isEmpty
+          ? null
+          : readText(map, 'failedReason'),
       records: records,
+      history: history,
     );
   }
 
@@ -554,7 +583,9 @@ class _SendingIdentity {
     required this.ready,
     required this.verifiedAt,
     required this.lastCheckedAt,
+    required this.failedReason,
     required this.records,
+    required this.history,
   });
 
   final bool present;
@@ -563,7 +594,39 @@ class _SendingIdentity {
   final bool ready;
   final String? verifiedAt;
   final String? lastCheckedAt;
+  final String? failedReason;
   final List<_DnsRecord> records;
+  final List<_VerificationCheck> history;
+}
+
+class _VerificationCheck {
+  const _VerificationCheck({
+    required this.id,
+    required this.checkedAt,
+    required this.allMatched,
+    required this.status,
+    required this.failedReason,
+    required this.perRecord,
+  });
+
+  final String id;
+  final String checkedAt;
+  final bool allMatched;
+  final String status;
+  final String failedReason;
+  final List<_VerificationCheckRow> perRecord;
+}
+
+class _VerificationCheckRow {
+  const _VerificationCheckRow({
+    required this.purpose,
+    required this.matched,
+    required this.errorMessage,
+  });
+
+  final String purpose;
+  final bool matched;
+  final String errorMessage;
 }
 
 class _DnsRecord {
@@ -682,6 +745,16 @@ class _SendingIdentityPanel extends StatelessWidget {
             ),
           ),
         ],
+        if (identity.failedReason != null && identity.failedReason!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Text(
+              identity.failedReason!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -698,7 +771,51 @@ class _SendingIdentityPanel extends StatelessWidget {
             ),
           ],
         ),
+        if (identity.history.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Recent verification checks',
+            style: theme.textTheme.titleSmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Orchestrate re-checks pending domains automatically. This is the recent history so you can watch DNS propagation.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.75),
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final check in identity.history)
+            _VerificationCheckTile(check: check),
+        ],
       ],
+    );
+  }
+}
+
+class _VerificationCheckTile extends StatelessWidget {
+  const _VerificationCheckTile({required this.check});
+
+  final _VerificationCheck check;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final breakdown = check.perRecord
+        .map((row) => '${row.purpose.toUpperCase()}: ${row.matched ? 'OK' : 'missing'}')
+        .join(' · ');
+    final secondary = [
+      breakdown,
+      if (!check.allMatched && check.failedReason.isNotEmpty)
+        check.failedReason,
+    ].where((s) => s.isNotEmpty).join(' · ');
+    return ClientInfoRow(
+      title: dateLabel(check.checkedAt),
+      primary: check.allMatched
+          ? 'All DNS records found'
+          : 'Verification did not pass',
+      secondary: secondary,
+      trailing: ClientBadge(label: check.allMatched ? 'Pass' : 'Pending'),
     );
   }
 }
