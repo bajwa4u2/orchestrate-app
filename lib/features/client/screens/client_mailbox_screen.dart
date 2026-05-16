@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 
-import 'package:orchestrate_app/core/network/api_client.dart';
-import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
+/// Mailbox is the one infrastructure surface where the client genuinely
+/// owns an action: connecting and verifying the sending identity Orchestrate
+/// will send outreach from. Everything else (campaign lifecycle, dispatch,
+/// recovery) is Orchestrate's responsibility.
+///
+/// This screen frames mailbox state as identity readiness, not as a console
+/// of operational toggles. There is at most one client CTA at a time — the
+/// next concrete identity step Orchestrate needs from the client.
 class ClientMailboxScreen extends StatefulWidget {
   const ClientMailboxScreen({super.key});
 
@@ -15,37 +21,42 @@ class ClientMailboxScreen extends StatefulWidget {
 
 class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   final ClientMailboxRepository _mailboxRepository = ClientMailboxRepository();
+  final ClientOutreachRepository _outreachRepository =
+      ClientOutreachRepository();
   late Future<_MailboxViewData> _future = _load();
-  bool _activating = false;
-  String? _result;
+  bool _provisioning = false;
+  String? _resultMessage;
 
-  Future<void> _activate() async {
-    setState(() => _activating = true);
+  Future<void> _provisionDefaultMailbox() async {
+    setState(() => _provisioning = true);
     try {
       final result = await _mailboxRepository.activateMailbox();
       final ready = result['ready'] == true;
-      final blockers = _asList(result['blockers']);
-      final blocker = blockers.isEmpty ? '' : _read(_asMap(blockers.first), 'message');
+      final blockers = asList(result['blockers']).map(asMap).toList();
+      final firstBlocker = blockers.isEmpty ? const <String, dynamic>{} : blockers.first;
       setState(() {
-        _result = ready
-            ? 'Mailbox is ready.'
-            : blocker.isNotEmpty
-                ? blocker
-                : 'Mailbox activation is still blocked.';
+        _resultMessage = ready
+            ? 'Sending identity is ready.'
+            : readText(firstBlocker, 'message',
+                fallback:
+                    'We could not provision a mailbox automatically. Contact support so we can help.');
         _future = _load();
       });
     } catch (error) {
       setState(() {
-        _result = error is ApiException ? error.displayMessage : error.toString();
+        _resultMessage = ClientErrorView.classifyError(error);
         _future = _load();
       });
     } finally {
-      if (mounted) setState(() => _activating = false);
+      if (mounted) setState(() => _provisioning = false);
     }
   }
 
   void _refresh() {
-    setState(() => _future = _load());
+    setState(() {
+      _resultMessage = null;
+      _future = _load();
+    });
   }
 
   @override
@@ -56,110 +67,317 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         if (snapshot.connectionState != ConnectionState.done) {
           return const ClientLoadingView(
             eyebrow: 'Mailbox',
-            label: 'Loading mailbox state',
+            label: 'Loading sending identity status',
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
           return ClientErrorView.fromError(
             snapshot.error,
             title: 'Mailbox is temporarily unavailable',
+            onRetry: _refresh,
           );
         }
         final data = snapshot.data!;
-        return SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 12, bottom: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Hero(data: data),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
+        return ClientPage(
+          eyebrow: 'Sending identity',
+          title: data.headline,
+          subtitle: data.subtitle,
+          banner: ClientStatusBanner(
+            tone: data.bannerTone,
+            title: data.bannerTitle,
+            message: data.bannerMessage,
+          ),
+          actions: _buildActions(data),
+          children: [
+            if (_resultMessage != null) ...[
+              ClientPanel(
+                title: 'Latest result',
                 children: [
-                  FilledButton.icon(
-                    onPressed: _activating ? null : _activate,
-                    icon: _activating
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.outgoing_mail, size: 18),
-                    label: Text(_activating ? 'Activating' : 'Activate mailbox'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: _refresh,
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Refresh mailbox status'),
+                  ClientInfoRow(
+                    title: 'Status',
+                    primary: _resultMessage!,
                   ),
                 ],
               ),
-              if (_result != null) ...[
-                const SizedBox(height: 10),
-                Text(_result!, style: Theme.of(context).textTheme.bodyMedium),
-              ],
               const SizedBox(height: 18),
-              _Stats(data: data),
-              const SizedBox(height: 18),
-              _Panel(
-                title: 'Recent dispatch movement',
-                emptyLabel:
-                    'No dispatches yet. Once a campaign is active and the mailbox is connected, outbound activity surfaces here.',
-                items: data.dispatchRows,
-              ),
             ],
-          ),
+            ClientPanel(
+              title: 'Identity readiness',
+              subtitle:
+                  'Orchestrate sends from this mailbox on your behalf. Each item below must be completed before outreach can run.',
+              children: [
+                for (final step in data.identitySteps)
+                  ClientInfoRow(
+                    title: step.label,
+                    primary: step.description,
+                    trailing: ClientBadge(
+                      label: step.complete ? 'Ready' : 'Needs you',
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            ClientPanel(
+              title: 'Recent sending activity',
+              subtitle:
+                  'Outbound dispatches from your mailbox. Orchestrate manages the cadence; this is here so you can verify what was sent.',
+              children: data.dispatchRows.isEmpty
+                  ? const [
+                      ClientEmptyState(
+                          message:
+                              'No outbound dispatches yet. Once identity is ready, Orchestrate will begin sending automatically.')
+                    ]
+                  : [
+                      for (final row in data.dispatchRows)
+                        ClientInfoRow(
+                          title: row.title,
+                          primary: row.primary,
+                          secondary: row.secondary,
+                        ),
+                    ],
+            ),
+            const SizedBox(height: 18),
+            ClientPanel(
+              title: 'Activity summary',
+              children: [
+                ClientInfoRow(
+                  title: 'Dispatches',
+                  primary: '${data.dispatchCount} outbound message(s) recorded.',
+                ),
+                ClientInfoRow(
+                  title: 'Replies',
+                  primary: '${data.replyCount} inbound reply event(s) recorded.',
+                ),
+                ClientInfoRow(
+                  title: 'Account notices',
+                  primary:
+                      '${data.noticeCount} account notice(s) open in your workspace.',
+                ),
+              ],
+            ),
+          ],
         );
       },
     );
   }
 
-  Future<_MailboxViewData> _load() async {
-    final repo = ClientOutreachRepository();
-    final dispatches = await repo.fetchEmailDispatches();
-    final replies = await repo.fetchReplies();
-    final notices = await repo.fetchNotifications();
-    final readiness = await _mailboxRepository.fetchMailbox();
-    final mailbox = _asMap(readiness['mailbox']);
-    final blockers = _asList(readiness['blockers']).map(_asMap).toList();
-    final firstBlocker = blockers.isEmpty ? const <String, dynamic>{} : blockers.first;
+  List<Widget> _buildActions(_MailboxViewData data) {
+    final widgets = <Widget>[];
+    final primary = data.primaryAction;
+    if (primary != null) {
+      final isProvision = primary.code == 'provision_mailbox';
+      final isInflight = isProvision && _provisioning;
+      widgets.add(
+        FilledButton.icon(
+          onPressed: isInflight
+              ? null
+              : isProvision
+                  ? _provisionDefaultMailbox
+                  : null,
+          icon: isInflight
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(primary.icon, size: 18),
+          label: Text(isInflight ? 'Provisioning' : primary.label),
+        ),
+      );
+      if (!isProvision) {
+        // Non-provision flows (reconnect/verify) need a backend OAuth or
+        // domain verification path that this build does not yet expose.
+        // Surface the contact path so the client is never stuck.
+        widgets.add(
+          OutlinedButton.icon(
+            onPressed: () {},
+            icon: const Icon(Icons.support_agent_outlined, size: 18),
+            label: const Text('Contact support to complete'),
+          ),
+        );
+      }
+    }
+    widgets.add(
+      OutlinedButton.icon(
+        onPressed: _refresh,
+        icon: const Icon(Icons.refresh, size: 18),
+        label: const Text('Refresh status'),
+      ),
+    );
+    return widgets;
+  }
 
-    final dispatchRows = dispatches.take(12).map((raw) {
-      final map = _asMap(raw);
+  Future<_MailboxViewData> _load() async {
+    final dispatches = await _outreachRepository.fetchEmailDispatches();
+    final replies = await _outreachRepository.fetchReplies();
+    final notices = await _outreachRepository.fetchNotifications();
+    final readiness = await _mailboxRepository.fetchMailbox();
+
+    final mailbox = asMap(readiness['mailbox']);
+    final blockers = asList(readiness['blockers']).map(asMap).toList();
+    final ready = readiness['ready'] == true;
+
+    final dispatchRows = dispatches.take(8).map((raw) {
+      final m = asMap(raw);
       return _MailboxRow(
-        title: _firstNonEmpty([
-          _read(map, 'subject'),
-          _read(map, 'recipientEmail'),
-          'Dispatch',
-        ]),
-        primary: _join([
-          _title(_read(map, 'status')),
-          _read(map, 'recipientEmail'),
-        ]),
-        secondary: _join([
-          _formatDateTime(_read(map, 'sentAt')),
-          _formatDateTime(_read(map, 'createdAt')),
-        ]),
+        title: readText(m, 'subject',
+            fallback:
+                readText(m, 'recipientEmail', fallback: 'Outbound dispatch')),
+        primary: [
+          titleCase(readText(m, 'status')),
+          readText(m, 'recipientEmail'),
+        ].where((value) => value.isNotEmpty).join(' · '),
+        secondary: [
+          dateLabel(m['sentAt']),
+          dateLabel(m['createdAt']),
+        ].where((value) => value.isNotEmpty).join(' · '),
       );
     }).toList();
+
+    final identitySteps = <_IdentityStep>[
+      _IdentityStep(
+        label: 'Mailbox connected',
+        complete: mailbox.isNotEmpty,
+        description: mailbox.isNotEmpty
+            ? 'Connected: ${readText(mailbox, 'address', fallback: readText(mailbox, 'fromEmail'))}.'
+            : 'No mailbox is connected yet. Orchestrate cannot send without one.',
+      ),
+      _IdentityStep(
+        label: 'Connection authorized',
+        complete: readText(mailbox, 'connected').toLowerCase() == 'true',
+        description: readText(mailbox, 'connected').toLowerCase() == 'true'
+            ? 'The mailbox is connected and authorized for sending.'
+            : 'The mailbox lost authorization. Reconnect to resume sending.',
+      ),
+      _IdentityStep(
+        label: 'Sending identity verified',
+        complete: readText(mailbox, 'verified').toLowerCase() == 'true',
+        description: readText(mailbox, 'verified').toLowerCase() == 'true'
+            ? 'Your sending identity has been verified for outbound delivery.'
+            : 'Verify the sending identity so Orchestrate can deliver on your behalf.',
+      ),
+    ];
+
+    final primaryAction = _primaryActionFor(
+      blockers: blockers,
+      hasMailbox: mailbox.isNotEmpty,
+      ready: ready,
+    );
+
+    final hero = _heroFor(
+      ready: ready,
+      hasMailbox: mailbox.isNotEmpty,
+      blockers: blockers,
+    );
 
     return _MailboxViewData(
       dispatchCount: dispatches.length,
       replyCount: replies.length,
       noticeCount: notices.length,
-      ready: readiness['ready'] == true,
-      status: _title(_read(readiness, 'status')),
-      blocker: _read(firstBlocker, 'message'),
-      lastCheckedAt: _read(mailbox, 'lastCheckedAt'),
-      mailboxLine: _join([
-        _firstNonEmpty([_read(mailbox, 'fromEmail'), _read(mailbox, 'address')]),
-        _title(_read(mailbox, 'provider')),
-        _read(mailbox, 'replyToEmail').isEmpty ? '' : 'Reply-to ${_read(mailbox, 'replyToEmail')}',
-        _read(mailbox, 'connected') == 'true' ? 'Connected' : '',
-        _read(mailbox, 'verified') == 'true' ? 'Verified' : '',
-      ]),
+      headline: hero.headline,
+      subtitle: hero.subtitle,
+      bannerTitle: hero.bannerTitle,
+      bannerMessage: hero.bannerMessage,
+      bannerTone: hero.bannerTone,
       dispatchRows: dispatchRows,
+      identitySteps: identitySteps,
+      primaryAction: primaryAction,
+    );
+  }
+
+  _MailboxPrimaryAction? _primaryActionFor({
+    required List<Map<String, dynamic>> blockers,
+    required bool hasMailbox,
+    required bool ready,
+  }) {
+    if (ready) return null;
+
+    final byCode = <String, Map<String, dynamic>>{
+      for (final blocker in blockers)
+        readText(blocker, 'code'): blocker,
+    };
+
+    if (byCode.containsKey('MAILBOX_MISSING') || !hasMailbox) {
+      return const _MailboxPrimaryAction(
+        code: 'provision_mailbox',
+        label: 'Let Orchestrate set up a mailbox',
+        icon: Icons.outgoing_mail,
+      );
+    }
+    if (byCode.containsKey('MAILBOX_DISCONNECTED')) {
+      return const _MailboxPrimaryAction(
+        code: 'reconnect_mailbox',
+        label: 'Reconnect mailbox',
+        icon: Icons.link,
+      );
+    }
+    if (byCode.containsKey('MAILBOX_UNVERIFIED')) {
+      return const _MailboxPrimaryAction(
+        code: 'verify_mailbox',
+        label: 'Verify sending identity',
+        icon: Icons.verified_user_outlined,
+      );
+    }
+    if (byCode.containsKey('AUTHORIZATION_MISSING')) {
+      return const _MailboxPrimaryAction(
+        code: 'complete_representation_authorization',
+        label: 'Authorize Orchestrate',
+        icon: Icons.assignment_turned_in_outlined,
+      );
+    }
+    // MAILBOX_PROVIDER_ERROR or anything else is Orchestrate-side; no client
+    // CTA. Banner already explains that we are recovering.
+    return null;
+  }
+
+  _MailboxHero _heroFor({
+    required bool ready,
+    required bool hasMailbox,
+    required List<Map<String, dynamic>> blockers,
+  }) {
+    if (ready) {
+      return const _MailboxHero(
+        headline: 'Sending identity is ready',
+        subtitle:
+            'Orchestrate is using your verified mailbox to send outreach on your behalf.',
+        bannerTitle: 'Ready to send',
+        bannerMessage:
+            'You do not need to do anything here unless your mailbox provider asks you to re-authorize.',
+        bannerTone: ClientBannerTone.success,
+      );
+    }
+    final providerError = blockers
+        .any((b) => readText(b, 'code') == 'MAILBOX_PROVIDER_ERROR');
+    if (providerError) {
+      return const _MailboxHero(
+        headline: 'Orchestrate is restoring outbound delivery',
+        subtitle:
+            'Our outbound provider configuration is being repaired. No client action is required.',
+        bannerTitle: 'Orchestrate is handling this',
+        bannerMessage:
+            'Sending will resume automatically once provider configuration is restored. Contact support if this persists.',
+        bannerTone: ClientBannerTone.warning,
+      );
+    }
+    if (!hasMailbox) {
+      return const _MailboxHero(
+        headline: 'Connect a sending mailbox',
+        subtitle:
+            'Orchestrate needs one mailbox to send outreach from. We can provision a managed mailbox or you can connect your own.',
+        bannerTitle: 'A mailbox is required to start',
+        bannerMessage:
+            'Use the action above to let Orchestrate provision a sending mailbox for your account.',
+        bannerTone: ClientBannerTone.warning,
+      );
+    }
+    return const _MailboxHero(
+      headline: 'Finish verifying your sending identity',
+      subtitle:
+          'A mailbox is connected but one identity step is still pending. Complete it so Orchestrate can begin sending.',
+      bannerTitle: 'One identity step remaining',
+      bannerMessage:
+          'Resolve the pending identity step. Orchestrate will start outreach automatically as soon as it clears.',
+      bannerTone: ClientBannerTone.warning,
     );
   }
 }
@@ -169,306 +387,77 @@ class _MailboxViewData {
     required this.dispatchCount,
     required this.replyCount,
     required this.noticeCount,
-    required this.ready,
-    required this.status,
-    required this.blocker,
-    required this.lastCheckedAt,
-    required this.mailboxLine,
+    required this.headline,
+    required this.subtitle,
+    required this.bannerTitle,
+    required this.bannerMessage,
+    required this.bannerTone,
     required this.dispatchRows,
+    required this.identitySteps,
+    required this.primaryAction,
   });
 
   final int dispatchCount;
   final int replyCount;
   final int noticeCount;
-  final bool ready;
-  final String status;
-  final String blocker;
-  final String lastCheckedAt;
-  final String mailboxLine;
+  final String headline;
+  final String subtitle;
+  final String bannerTitle;
+  final String bannerMessage;
+  final ClientBannerTone bannerTone;
   final List<_MailboxRow> dispatchRows;
+  final List<_IdentityStep> identitySteps;
+  final _MailboxPrimaryAction? primaryAction;
+}
+
+class _MailboxHero {
+  const _MailboxHero({
+    required this.headline,
+    required this.subtitle,
+    required this.bannerTitle,
+    required this.bannerMessage,
+    required this.bannerTone,
+  });
+
+  final String headline;
+  final String subtitle;
+  final String bannerTitle;
+  final String bannerMessage;
+  final ClientBannerTone bannerTone;
 }
 
 class _MailboxRow {
-  const _MailboxRow(
-      {required this.title, required this.primary, required this.secondary});
+  const _MailboxRow({
+    required this.title,
+    required this.primary,
+    required this.secondary,
+  });
 
   final String title;
   final String primary;
   final String secondary;
 }
 
-class _Hero extends StatelessWidget {
-  const _Hero({required this.data});
-
-  final _MailboxViewData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Mailbox',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(color: AppTheme.publicMuted),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            data.ready
-                ? 'Outbound email is ready'
-                : 'Outbound email is not ready',
-            style: Theme.of(context)
-                .textTheme
-                .headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            _join([
-              data.status,
-              data.mailboxLine.isEmpty
-                  ? 'No mailbox is available for this client.'
-                  : data.mailboxLine,
-              data.lastCheckedAt.isEmpty
-                  ? ''
-                  : 'Last checked ${_formatDateTime(data.lastCheckedAt)}',
-            ]),
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: AppTheme.publicMuted),
-          ),
-          if (data.blocker.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              data.blocker,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppTheme.rose),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Stats extends StatelessWidget {
-  const _Stats({required this.data});
-
-  final _MailboxViewData data;
-
-  @override
-  Widget build(BuildContext context) {
-    final metrics = [
-      ('Dispatches', '${data.dispatchCount}'),
-      ('Replies', '${data.replyCount}'),
-      ('Notices', '${data.noticeCount}'),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cards = metrics
-            .map(
-              (entry) => Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
-                  border: Border.all(color: AppTheme.publicLine),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(entry.$1,
-                        style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: 10),
-                    Text(
-                      entry.$2,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-              ),
-            )
-            .toList();
-
-        if (constraints.maxWidth < 840) {
-          return Column(
-            children: [
-              for (int i = 0; i < cards.length; i++) ...[
-                cards[i],
-                if (i != cards.length - 1) const SizedBox(height: 12),
-              ],
-            ],
-          );
-        }
-
-        return Row(
-          children: [
-            for (int i = 0; i < cards.length; i++) ...[
-              Expanded(child: cards[i]),
-              if (i != cards.length - 1) const SizedBox(width: 12),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _Panel extends StatelessWidget {
-  const _Panel({
-    required this.title,
-    required this.emptyLabel,
-    required this.items,
+class _IdentityStep {
+  const _IdentityStep({
+    required this.label,
+    required this.complete,
+    required this.description,
   });
 
-  final String title;
-  final String emptyLabel;
-  final List<_MailboxRow> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context)
-                .textTheme
-                .headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 16),
-          if (items.isEmpty)
-            Text(emptyLabel, style: Theme.of(context).textTheme.bodyMedium)
-          else
-            for (int i = 0; i < items.length; i++) ...[
-              _Item(item: items[i]),
-              if (i != items.length - 1) const Divider(height: 22),
-            ],
-        ],
-      ),
-    );
-  }
+  final String label;
+  final bool complete;
+  final String description;
 }
 
-class _Item extends StatelessWidget {
-  const _Item({required this.item});
+class _MailboxPrimaryAction {
+  const _MailboxPrimaryAction({
+    required this.code,
+    required this.label,
+    required this.icon,
+  });
 
-  final _MailboxRow item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(item.title, style: Theme.of(context).textTheme.titleLarge),
-        if (item.primary.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          Text(item.primary, style: Theme.of(context).textTheme.bodyLarge),
-        ],
-        if (item.secondary.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            item.secondary,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: AppTheme.publicMuted),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-Map<String, dynamic> _asMap(dynamic value) {
-  if (value is Map<String, dynamic>) return value;
-  if (value is Map) {
-    return value.map((key, item) => MapEntry('$key', item));
-  }
-  return const <String, dynamic>{};
-}
-
-List<dynamic> _asList(dynamic value) =>
-    value is List ? value : const <dynamic>[];
-
-String _read(Map<String, dynamic> map, String key) {
-  final value = map[key];
-  if (value == null) return '';
-  return value.toString().trim();
-}
-
-String _title(String value) {
-  if (value.trim().isEmpty) return '';
-  return value
-      .split(RegExp(r'[_\s-]+'))
-      .where((part) => part.isNotEmpty)
-      .map((part) =>
-          '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
-      .join(' ');
-}
-
-String _firstNonEmpty(List<String> values) {
-  for (final value in values) {
-    if (value.trim().isNotEmpty) return value.trim();
-  }
-  return '';
-}
-
-String _join(List<String> values) =>
-    values.where((entry) => entry.trim().isNotEmpty).join(' · ');
-
-String _formatDateTime(String value) {
-  if (value.trim().isEmpty) return '';
-  final parsed = DateTime.tryParse(value);
-  if (parsed == null) return value;
-  final local = parsed.toLocal();
-  final minute = local.minute.toString().padLeft(2, '0');
-  final hour =
-      local.hour == 0 ? 12 : (local.hour > 12 ? local.hour - 12 : local.hour);
-  final suffix = local.hour >= 12 ? 'PM' : 'AM';
-  return '${_monthName(local.month)} ${local.day}, ${local.year} · $hour:$minute $suffix';
-}
-
-String _monthName(int month) {
-  const names = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-  return names[(month - 1).clamp(0, 11)];
+  final String code;
+  final String label;
+  final IconData icon;
 }
