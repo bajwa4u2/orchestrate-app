@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
+import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
 
 /// Mailbox is the one infrastructure surface where the client genuinely
 /// owns an action: connecting and verifying the sending identity Orchestrate
@@ -768,6 +770,14 @@ class _SendingIdentityPanel extends StatelessWidget {
                     )
                   : const Icon(Icons.verified_outlined, size: 18),
               label: Text(verifying ? 'Checking' : 'Check verification'),
+            ),
+            const SizedBox(width: 8),
+            WhyAffordance(
+              target: identity.ready
+                  ? GuidanceTarget.sendingIdentity
+                  : GuidanceTarget.dnsVerificationPending,
+              surface: 'client_mailbox_sending_identity_panel',
+              label: 'Explain this state',
             ),
           ],
         ),

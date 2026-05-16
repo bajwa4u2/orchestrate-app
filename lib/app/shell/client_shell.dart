@@ -7,6 +7,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 
 class ClientShell extends StatefulWidget {
   const ClientShell(
@@ -63,6 +64,10 @@ class _ClientShellState extends State<ClientShell> {
         label: 'Support',
         path: '/client/support',
         icon: Icons.support_agent_outlined),
+    _ClientNavItem(
+        label: 'Guidance',
+        path: '__guidance__',
+        icon: Icons.help_outline),
     _ClientNavItem(
         label: 'Settings',
         path: '/client/settings',
@@ -558,7 +563,18 @@ class _NavButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppTheme.radius),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        onTap: () => context.go(item.path),
+        onTap: () {
+          // Sentinel routes open a deliberate drawer instead of navigating.
+          if (item.path == '__guidance__') {
+            openGuidanceDrawer(
+              context,
+              target: GuidanceTarget.readiness,
+              surface: 'client_shell',
+            );
+            return;
+          }
+          context.go(item.path);
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(

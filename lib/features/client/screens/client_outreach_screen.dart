@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
+import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
 
 /// Outreach is a managed-execution status surface — never a manual
 /// infrastructure console. The client should only ever see:
@@ -123,6 +125,13 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         ),
       );
     }
+    widgets.add(
+      WhyAffordance(
+        target: GuidanceTarget.readiness,
+        surface: 'client_outreach_managed_execution_banner',
+        label: 'Explain this state',
+      ),
+    );
     return widgets;
   }
 
