@@ -76,10 +76,14 @@ class _OperationalContinuityStripState
         ));
         break;
       case 'orchestrate_working':
+        // Honest read: this bucket means readiness has cleared activation
+        // but sustained dispatch has not started yet. We do NOT know from
+        // the bucket flag alone whether any messages are actually queued
+        // — that lives in the Operations view's queue depth.
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.preparing,
           text:
-              'Orchestrate is preparing dispatch — messages are queued under governed pacing.',
+              'Orchestrate is preparing dispatch — activation cleared, dispatch governor controls when first sends leave.',
         ));
         break;
       case 'ready_to_execute':
