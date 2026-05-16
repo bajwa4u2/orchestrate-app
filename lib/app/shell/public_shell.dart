@@ -501,7 +501,7 @@ class _PublicMenuButton extends StatelessWidget {
           _isActive(const ['/how-it-works']),
         ),
         _menuItem(
-          'Sourcing',
+          'Intelligence',
           '/lead-sourcing',
           _isActive(const ['/lead-sourcing']),
         ),

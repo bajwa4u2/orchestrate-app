@@ -843,31 +843,31 @@ _TierContent _tierContent(String tier) {
     case 'precision':
       return const _TierContent(
         summary:
-            'For controlled targeting with city, metro, include or exclude logic, and priority-market ordering.',
+            'Highest-resolution execution scope: city, metro, include/exclude logic, and priority-market ordering for managed execution.',
         items: [
-          'City and metro targeting plus include or exclude logic',
-          'Priority-market ordering and tighter operational control',
-          'Built for complex market maps and sharper targeting demands',
+          'City and metro execution scope plus include / exclude logic',
+          'Priority-market ordering for governed dispatch sequencing',
+          'Built for complex market maps where signal discovery and managed execution need sharp scope',
         ],
       );
     case 'multi':
       return const _TierContent(
         summary:
-            'For businesses expanding across countries while keeping one service path.',
+            'Cross-country execution scope while keeping one infrastructure scope.',
         items: [
-          'Multiple countries and multiple regions',
-          'Broader market coverage across one service path',
-          'Good fit for distributed teams and cross-market coverage',
+          'Multiple countries and multiple regions inside one execution scope',
+          'Broader signal-discovery coverage without splitting infrastructure',
+          'Fits distributed teams running managed execution across markets',
         ],
       );
     default:
       return const _TierContent(
         summary:
-            'For a disciplined launch inside one country with room to work across regions.',
+            'Single-country execution scope with room for regional coverage. The disciplined starting scope for managed execution.',
         items: [
-          'One country with multiple regions',
-          'Lead generation, writing, follow-up, and meeting movement',
-          'Strong fit for contained market testing and steady outreach',
+          'One country with multiple regions inside the execution scope',
+          'Signal discovery, qualification, governed dispatch, follow-up continuity',
+          'Right scope for a focused market entry running on managed infrastructure',
         ],
       );
   }

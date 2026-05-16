@@ -65,28 +65,28 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
 
     final cards = [
       _FlowCard(
-        title: 'Leads',
+        title: 'Opportunities',
         value: leadsActive.toString(),
-        suffix: 'active',
+        suffix: 'qualified',
         tone: _FlowTone.normal,
       ),
       _FlowCard(
-        title: 'Outreach',
+        title: 'Dispatch',
         value: outreachSent.toString(),
-        suffix: 'sent',
+        suffix: 'governed sends',
         tone: _FlowTone.normal,
       ),
       _FlowCard(
         title: 'Replies',
         value: repliesReceived.toString(),
-        suffix: 'received',
+        suffix: 'classified',
         tone: _FlowTone.normal,
       ),
       _FlowCard(
         title: 'Meetings',
         value: meetingsScheduled.toString(),
-        suffix: 'scheduled',
-        detail: 'Current pipeline',
+        suffix: 'handed off',
+        detail: 'Managed-execution outcome',
         tone: _FlowTone.emphasis,
       ),
       _FlowCard(
@@ -94,8 +94,8 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
         value: _formatCurrency(invoicesIssuedAmount),
         suffix: 'issued',
         detail: paymentsDueAmount > 0
-            ? '${_formatCurrency(paymentsDueAmount)} due'
-            : 'Issued inside the same flow',
+            ? '${_formatCurrency(paymentsDueAmount)} open'
+            : 'Issued under revenue continuity',
         tone: _FlowTone.strong,
       ),
       _FlowCard(
@@ -104,7 +104,7 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
         suffix: 'cleared',
         detail: paymentsDueAmount > 0
             ? '${_formatCurrency(paymentsDueAmount)} open'
-            : 'Settlement carried forward',
+            : 'Revenue continuity completed',
         tone: _FlowTone.strongest,
       ),
     ];

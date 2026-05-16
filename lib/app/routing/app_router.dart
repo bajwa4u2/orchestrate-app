@@ -454,21 +454,38 @@ final router = GoRouter(
         child: PublicShell(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
-            eyebrow: 'Lead sourcing',
+            eyebrow: 'Commercial intelligence',
             title:
-                'Sourcing starts from your target market, not a generic list.',
+                'Signal-driven opportunity detection, not a rented contact list.',
             subtitle:
-                'Orchestrate is designed to find opportunities from the market, region, industry, and offer context you provide.',
+                'Orchestrate continuously watches your defined market for commercial signals and turns them into qualified, contactable opportunities. The discovery layer is provider-agnostic and bound to your business identity — never a generic database.',
+            sideActions: [
+              ContentAction(
+                  label: 'Activate infrastructure',
+                  path: '/auth/join',
+                  filled: true),
+              ContentAction(label: 'See how it operates', path: '/how-it-works'),
+            ],
             sections: [
               ContentSection(
-                title: 'Sourcing philosophy',
+                title: 'How discovery works',
                 body:
-                    'The goal is qualified conversations, so sourcing is tied to target clarity, contact readiness, and business fit.',
+                    'Signal discovery runs against the market, region, industry, and offer context you provide. Each opportunity is qualified against contact readiness, reachability, and business fit before it enters governed dispatch.',
+                points: [
+                  'Provider-agnostic signal sources',
+                  'Tied to your defined business identity, not a vendor list',
+                  'Qualification gates run before any send',
+                ],
               ),
               ContentSection(
                 title: 'What you see',
                 body:
-                    'Clients see sourced leads, readiness, contact status, and outreach progress. Operator-only provider details stay out of the client workspace.',
+                    'You see qualified opportunities with explainable reasoning — why each one matched your scope, the contact path Orchestrate found, and where it sits in managed execution. Operator-only signal-source plumbing stays out of the client surface.',
+              ),
+              ContentSection(
+                title: 'Why this matters',
+                body:
+                    'A contact list rented from one vendor goes stale and locks you in. Signal-driven discovery scales with your scope, stays explainable, and lets the rest of the infrastructure (governed dispatch, follow-up continuity, recovery) operate against high-quality input.',
               ),
             ],
           ),
@@ -483,9 +500,9 @@ final router = GoRouter(
           child: const PublicContentScreen(
             eyebrow: 'Trust and compliance',
             title:
-                'Deliverability, permission, and records are part of the service.',
+                'Verified sending identity, governed dispatch, audited execution.',
             subtitle:
-                'Outbound work needs a clear sender posture, representation authorization, suppression handling, and service records.',
+                'Trust is infrastructure, not marketing. Real DNS-based SPF / DKIM / DMARC verification, backend-owned OAuth, vault-backed credentials, governed dispatch, and an auditable readiness trail are all first-class.',
             sideActions: [
               ContentAction(
                   label: 'Deliverability policy',
@@ -496,14 +513,29 @@ final router = GoRouter(
             ],
             sections: [
               ContentSection(
-                title: 'Deliverability posture',
+                title: 'Verified sending identity',
                 body:
-                    'The system tracks domains, mailboxes, policies, suppressions, bounces, complaints, and mailbox health.',
+                    'Orchestrate verifies SPF, DKIM, and DMARC with live DNS before any non-sandbox dispatch. A background poller keeps re-verifying pending domains so propagation is visible — you do not chase records manually.',
+                points: [
+                  'Live DNS verification (no third-party deliverability vendor)',
+                  'Per-record propagation history visible to the client',
+                  'Sending is blocked until the domain is ACTIVE',
+                ],
+              ),
+              ContentSection(
+                title: 'Backend-owned OAuth + vault-backed credentials',
+                body:
+                    'Mailbox OAuth runs entirely backend-side. Refresh tokens are sealed with AES-256-GCM (transitional, behind the same abstraction as future HashiCorp Vault / AWS / GCP / Azure adapters). Tokens never touch the browser and never live in the database in plaintext.',
+              ),
+              ContentSection(
+                title: 'Governed dispatch + auditable readiness',
+                body:
+                    'Every send passes a readiness check and a governance check. Readiness transitions, credential reads, OAuth callbacks, and DNS verification outcomes are all recorded in an append-only audit trail tied to the account.',
               ),
               ContentSection(
                 title: 'Authorization and records',
                 body:
-                    'Client representation authorization, agreements, statements, reminders, notifications, and formal documents stay tied to system records.',
+                    'Representation authorization, agreements, statements, reminders, notifications, and formal documents are governed alongside execution under the revenue-continuity scope — same infrastructure, same audit trail.',
               ),
             ],
           ),
@@ -631,19 +663,19 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Updates',
-            title: 'Updates will appear here when available.',
+            title: 'Infrastructure updates will appear here.',
             subtitle:
-                'Public product notes and revenue operations updates are not available yet. Account-specific notices appear inside the client workspace.',
+                'Public infrastructure notes — provider adapters, readiness-orchestration changes, sending-identity verification updates — are not published here yet. Account-specific notices appear inside the client workspace.',
             sections: [
               ContentSection(
-                title: 'Public updates',
+                title: 'What goes here',
                 body:
-                    'This page will hold public product updates when the update subscription is enabled.',
+                    'When enabled, this page will publish updates to the managed-execution infrastructure: new mailbox provider adapters, deliverability posture changes, readiness-engine behavior, and similar operational notes that matter to verified clients.',
               ),
               ContentSection(
                 title: 'Client communications',
                 body:
-                    'Client notices, reminders, and service records appear after sign-in when they are available for the account.',
+                    'Per-account notices, reminders, and audit records appear inside the client workspace after sign-in when they are available for the account.',
               ),
             ],
             sideActions: [
@@ -663,12 +695,12 @@ final router = GoRouter(
             eyebrow: 'Updates',
             title: 'Update subscription is not available yet.',
             subtitle:
-                'Public update subscriptions are not connected yet. Use contact for now if you want to talk through fit or timing.',
+                'Public update subscriptions for infrastructure notes are not connected yet. Use contact in the meantime if you want to talk through scope, fit, or activation timing.',
             sections: [
               ContentSection(
                 title: 'Status',
                 body:
-                    'This feature will appear here when it is available. For now, contact is the useful next action.',
+                    'When enabled, this page will let you subscribe to public infrastructure updates. Until then, contact is the right next action.',
               ),
             ],
           ),

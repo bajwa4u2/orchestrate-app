@@ -354,9 +354,9 @@ PublicContentScreen buildBillingPolicyScreen() => const PublicContentScreen(
           'This policy explains how service tiers, invoicing, subscriptions, reminders, and payment responsibilities are handled through Orchestrate.',
       sections: [
         ContentSection(
-          title: 'Service tiers',
+          title: 'Managed-execution scopes',
           body:
-              'Orchestrate is structured around Opportunity and Revenue. Revenue includes Opportunity and extends the service into billing administration, reminders, statements, agreements, and payment accountability records.',
+              'Orchestrate is structured around two managed-infrastructure scopes — Opportunity (signal discovery, qualification, governed dispatch, follow-up continuity, reply handling) and Revenue (Opportunity plus revenue continuity: billing administration, reminders, statements, agreements, and payment accountability records).',
         ),
         ContentSection(
           title: 'Billing cycle and charges',
@@ -406,7 +406,7 @@ PublicContentScreen buildAcceptableUseScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',
       title: 'Acceptable use policy',
       subtitle:
-          'Orchestrate is meant for legitimate business communication, billing administration, records, and accountable client service operations.',
+          'Orchestrate is managed execution infrastructure for legitimate business communication, governed dispatch, revenue continuity, and accountable client records — not a tool for unsolicited bulk sending or sender-identity manipulation.',
       sections: [
         ContentSection(
           title: 'Prohibited behavior',
@@ -430,17 +430,17 @@ PublicContentScreen buildServiceAgreementScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',
       title: 'Service agreement',
       subtitle:
-          'The service agreement defines the actual service relationship between Orchestrate and the client once service fit is accepted.',
+          'The service agreement defines the operational relationship between Orchestrate and the client once the managed-execution scope is accepted.',
       sections: [
         ContentSection(
           title: 'What the agreement should establish',
           body:
-              'The agreement should state the managed-execution scope, plan, billing cadence, deliverables, account visibility, communication posture, reminder handling, records responsibility, and any limits or exclusions that shape the working relationship.',
+              'The agreement should state the managed-execution scope, plan, billing cadence, deliverables, account visibility, communication posture, reminder handling, records responsibility, and any limits or exclusions that shape the operational relationship.',
         ),
         ContentSection(
           title: 'Why it matters here',
           body:
-              'Because Orchestrate can carry both opportunity creation and billing administration, the service agreement is the place where responsibilities stop being implied and become explicit.',
+              'Because Orchestrate runs both signal-driven opportunity detection and revenue continuity under the same infrastructure, the service agreement is the place where responsibilities stop being implied and become explicit — what Orchestrate operates, what the client owns (business identity, sending identity), and where the boundary sits.',
           highlight:
               'This page does not replace a signed agreement. It marks that the signed agreement is structurally required.',
         ),
@@ -459,9 +459,9 @@ PublicContentScreen buildDeliverabilityScreen() => const PublicContentScreen(
               'Inbox placement and outbound performance depend on sender domain condition, mailbox health, recipient filtering systems, message quality, targeting discipline, list quality, complaint behavior, and broader third-party infrastructure conditions.',
         ),
         ContentSection(
-          title: 'What Orchestrate does',
+          title: 'What Orchestrate operates',
           body:
-              'The service may support sender setup, visibility into mailbox condition, sending posture, and operational monitoring intended to improve stability and accountability.',
+              'Orchestrate runs verified sending-identity setup (live SPF / DKIM / DMARC verification + automated re-checks), backend-owned mailbox OAuth with vault-backed credentials, governed dispatch, and continuous mailbox-health monitoring. The infrastructure improves the variables Orchestrate controls.',
         ),
         ContentSection(
           title: 'What cannot be promised',

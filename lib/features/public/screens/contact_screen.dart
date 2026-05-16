@@ -145,33 +145,33 @@ class _ContactIntro extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Talk through fit, service fit, pricing, or next steps.',
+            'Talk through whether managed execution infrastructure is the right fit.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 16),
           Text(
-            'Use this page when you want a direct conversation before moving forward. Contact is the full support area for public entry. Quick guidance remains available if you want help to stay open while reviewing another page.',
+            'Use this page when you want a direct conversation before activating. Orchestrate is commercial intelligence + execution infrastructure, not outreach software — so the right conversation is usually about scope, sending identity readiness, and which infrastructure scope (Opportunity or revenue continuity) you want Orchestrate to operate.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
           ),
           const SizedBox(height: 28),
           const _DetailCard(
-            title: 'Best use of this page',
+            title: 'Good reasons to use this page',
             body:
-                'Use contact for service fit, pricing clarity, onboarding questions, billing questions, or service fit decisions before account setup.',
+                'Scope and pricing clarity, sending-identity / domain questions, onboarding flow, or deciding between Opportunity (managed execution) and Opportunity + revenue continuity before account setup.',
           ),
           const SizedBox(height: 14),
           const _DetailCard(
-            title: 'What helps most',
+            title: 'What helps the conversation',
             body:
-                'Share what your business is trying to achieve, the market you serve, what is already in place, and anything that changes the service fit or pace of the work.',
+                'Share what your business sells, the market and segments you target, the mailbox / sending domain you would connect, and any constraint (compliance, internal infrastructure, deliverability history) that shapes how Orchestrate would activate for you.',
           ),
           const SizedBox(height: 14),
           const _DetailCard(
             title: 'When quick guidance helps',
             body:
-                'Use quick guidance if you want support to stay open while you compare pricing or review another public page.',
+                'Use quick guidance if you want support to stay open while you compare scopes or review another public page — it is faster than booking a call when the question is short.',
           ),
           const SizedBox(height: 22),
           OutlinedButton(
