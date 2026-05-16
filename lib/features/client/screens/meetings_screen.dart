@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/data/repositories/client/client_meetings_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workflow_state_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
@@ -39,10 +38,9 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
           return const ClientLoadingView(label: 'Loading meetings');
         }
         if (snapshot.hasError) {
-          final error = snapshot.error;
-          return ClientErrorView(
-            message:
-                error is ApiException ? error.displayMessage : error.toString(),
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Meetings are temporarily unavailable',
             onRetry: _retry,
           );
         }

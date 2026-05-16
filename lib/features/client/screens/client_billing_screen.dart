@@ -86,10 +86,9 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
           return const ClientLoadingView(label: 'Loading billing');
         }
         if (snapshot.hasError) {
-          final error = snapshot.error;
-          return ClientErrorView(
-            message:
-                error is ApiException ? error.displayMessage : error.toString(),
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Billing is temporarily unavailable',
             onRetry: _retry,
           );
         }
@@ -172,7 +171,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
                   ? const [
                       ClientEmptyState(
                           message:
-                              'No invoices are currently visible. When billing documents are issued for this account, they will appear here.')
+                              'No invoices issued yet. Invoices for this account are generated automatically each billing cycle once your subscription is active.')
                     ]
                   : [
                       for (final raw in data.invoices.take(20))

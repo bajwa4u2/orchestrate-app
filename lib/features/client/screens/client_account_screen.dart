@@ -7,6 +7,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientAccountScreen extends StatefulWidget {
   const ClientAccountScreen({super.key});
@@ -92,12 +93,17 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const ClientLoadingView(
+            eyebrow: 'Account',
+            label: 'Loading your account',
+          );
         }
 
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(
-              child: Text('This area could not load at the moment.'));
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Account is temporarily unavailable',
+          );
         }
 
         final data = snapshot.data!;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientContactsScreen extends StatelessWidget {
   const ClientContactsScreen({super.key});
@@ -12,11 +13,15 @@ class ClientContactsScreen extends StatelessWidget {
       future: _load(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const ClientLoadingView(
+            eyebrow: 'Contacts',
+            label: 'Loading contact records',
+          );
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(
-            child: Text('Contacts could not load at the moment.'),
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Contacts are temporarily unavailable',
           );
         }
 
@@ -44,7 +49,7 @@ class ClientContactsScreen extends StatelessWidget {
               _Panel(
                 title: 'Contacts in system memory',
                 emptyLabel:
-                    'Contact records will appear here once sourcing begins.',
+                    'No contacts yet. Sourcing fills this list automatically once a campaign is active. Open Campaigns to confirm targeting if it stays empty for long.',
                 items: data.rows,
               ),
             ],

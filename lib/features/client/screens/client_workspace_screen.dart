@@ -5,6 +5,7 @@ import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 enum ClientSection { home, billing }
 
@@ -18,11 +19,16 @@ class ClientHomeScreen extends StatelessWidget {
       future: _load(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const ClientLoadingView(
+            eyebrow: 'Workspace home',
+            label: 'Loading your workspace',
+          );
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(
-              child: Text('This area could not load at the moment.'));
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Workspace home is temporarily unavailable',
+          );
         }
         final data = snapshot.data!;
         return SingleChildScrollView(

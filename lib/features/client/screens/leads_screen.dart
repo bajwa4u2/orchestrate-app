@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class LeadsScreen extends StatelessWidget {
   const LeadsScreen({super.key});
@@ -12,10 +13,16 @@ class LeadsScreen extends StatelessWidget {
       future: _load(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const _LeadsLoadingState();
+          return const ClientLoadingView(
+            eyebrow: 'Lead intelligence',
+            label: 'Loading lead intelligence',
+          );
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return _LeadsErrorState(error: snapshot.error);
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Lead intelligence is temporarily unavailable',
+          );
         }
         final data = snapshot.data!;
         return SingleChildScrollView(
@@ -517,110 +524,6 @@ class _LeadIntelligenceStrip extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _LeadsLoadingState extends StatelessWidget {
-  const _LeadsLoadingState();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final placeholder = Container(
-      height: 96,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-      ),
-    );
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(top: 12, bottom: 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppTheme.radius),
-              border: Border.all(color: AppTheme.publicLine),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Lead generation',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(color: AppTheme.publicMuted)),
-                const SizedBox(height: 10),
-                Text('Loading lead intelligence…',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 14),
-                const LinearProgressIndicator(minHeight: 3),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          placeholder,
-          const SizedBox(height: 12),
-          placeholder,
-        ],
-      ),
-    );
-  }
-}
-
-class _LeadsErrorState extends StatelessWidget {
-  const _LeadsErrorState({this.error});
-
-  final Object? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final message = _classifyError(error);
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: Container(
-          margin: const EdgeInsets.all(24),
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppTheme.radius),
-            border: Border.all(color: AppTheme.publicLine),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Lead intelligence is temporarily unavailable',
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 10),
-              Text(message,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: AppTheme.publicMuted)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _classifyError(Object? error) {
-    if (error == null) {
-      return 'We could not load this view right now. Please pull to refresh in a moment.';
-    }
-    final text = error.toString();
-    if (text.contains('SocketException') || text.contains('Failed host')) {
-      return 'We could not reach the workspace. Check your network connection and try again.';
-    }
-    if (text.contains('TimeoutException')) {
-      return 'The workspace took too long to respond. We will keep retrying in the background.';
-    }
-    return 'We could not load this view right now. Please refresh shortly. If it keeps failing, contact support.';
   }
 }
 

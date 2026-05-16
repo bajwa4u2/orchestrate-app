@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
@@ -35,10 +34,9 @@ class _ClientNotificationsScreenState extends State<ClientNotificationsScreen> {
           return const ClientLoadingView(label: 'Loading notifications');
         }
         if (snapshot.hasError) {
-          final error = snapshot.error;
-          return ClientErrorView(
-            message:
-                error is ApiException ? error.displayMessage : error.toString(),
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Notifications are temporarily unavailable',
             onRetry: _retry,
           );
         }

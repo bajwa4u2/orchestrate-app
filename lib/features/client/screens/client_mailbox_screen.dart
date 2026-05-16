@@ -4,6 +4,7 @@ import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientMailboxScreen extends StatefulWidget {
   const ClientMailboxScreen({super.key});
@@ -53,11 +54,16 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const ClientLoadingView(
+            eyebrow: 'Mailbox',
+            label: 'Loading mailbox state',
+          );
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(
-              child: Text('Mailbox could not load at the moment.'));
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Mailbox is temporarily unavailable',
+          );
         }
         final data = snapshot.data!;
         return SingleChildScrollView(
@@ -99,7 +105,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
               _Panel(
                 title: 'Recent dispatch movement',
                 emptyLabel:
-                    'Dispatch activity will appear here once sending begins.',
+                    'No dispatches yet. Once a campaign is active and the mailbox is connected, outbound activity surfaces here.',
                 items: data.dispatchRows,
               ),
             ],

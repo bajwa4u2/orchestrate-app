@@ -3,20 +3,67 @@ import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 
 class ClientLoadingView extends StatelessWidget {
-  const ClientLoadingView({super.key, this.label = 'Loading workspace data'});
+  const ClientLoadingView({
+    super.key,
+    this.label = 'Loading workspace data',
+    this.eyebrow,
+  });
 
   final String label;
+  final String? eyebrow;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    final theme = Theme.of(context);
+    final eyebrowText = eyebrow ?? 'Workspace';
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: 12, bottom: 28),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircularProgressIndicator(),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(28),
+            decoration: _panelDecoration(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  eyebrowText,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: AppTheme.publicMuted),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  label,
+                  style: theme.textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 14),
+                const LinearProgressIndicator(minHeight: 3),
+              ],
+            ),
+          ),
           const SizedBox(height: 14),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          const _LoadingPlaceholderBlock(),
+          const SizedBox(height: 12),
+          const _LoadingPlaceholderBlock(),
         ],
+      ),
+    );
+  }
+}
+
+class _LoadingPlaceholderBlock extends StatelessWidget {
+  const _LoadingPlaceholderBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 96,
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
       ),
     );
   }
@@ -26,42 +73,78 @@ class ClientErrorView extends StatelessWidget {
   const ClientErrorView({
     super.key,
     required this.message,
-    required this.onRetry,
+    this.onRetry,
+    this.title,
   });
 
+  ClientErrorView.fromError(
+    Object? error, {
+    super.key,
+    this.onRetry,
+    this.title,
+  }) : message = classifyError(error);
+
   final String message;
-  final VoidCallback onRetry;
+  final VoidCallback? onRetry;
+  final String? title;
+
+  static String classifyError(Object? error) {
+    if (error == null) {
+      return 'We could not load this view right now. Please refresh in a moment.';
+    }
+    final text = error.toString();
+    if (text.contains('SocketException') ||
+        text.contains('Failed host') ||
+        text.contains('Network is unreachable')) {
+      return 'We could not reach the workspace. Check your network connection and try again.';
+    }
+    if (text.contains('TimeoutException')) {
+      return 'The workspace took too long to respond. We will keep retrying in the background.';
+    }
+    if (text.contains('401') || text.contains('unauthor')) {
+      return 'Your session has ended. Sign in again to refresh the workspace.';
+    }
+    if (text.contains('403') || text.contains('forbidden')) {
+      return 'This area is not available on your current plan. Contact support if you expected access.';
+    }
+    return 'We could not load this view right now. Please refresh shortly. If it keeps failing, contact support.';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 720),
-        padding: const EdgeInsets.all(24),
-        decoration: _panelDecoration(),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('This area could not load',
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 10),
-            Text(message, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Retry the request. If this continues, sign out and back in so the workspace can refresh your session.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppTheme.publicMuted),
-            ),
-            const SizedBox(height: 18),
-            OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Retry'),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Container(
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(28),
+          decoration: _panelDecoration(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title ?? 'This area is temporarily unavailable',
+                style: theme.textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                message,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: AppTheme.publicText),
+              ),
+              if (onRetry != null) ...[
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Try again'),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

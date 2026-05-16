@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
@@ -63,10 +62,8 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
       _retry();
     } catch (error) {
       if (!mounted) return;
-      final message =
-          error is ApiException ? error.displayMessage : error.toString();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ClientErrorView.classifyError(error))));
     } finally {
       if (mounted) {
         setState(() {
@@ -97,10 +94,8 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
       _retry();
     } catch (error) {
       if (!mounted) return;
-      final message =
-          error is ApiException ? error.displayMessage : error.toString();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ClientErrorView.classifyError(error))));
     } finally {
       if (mounted) setState(() => _activatingMailbox = false);
     }
@@ -115,10 +110,9 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
           return const ClientLoadingView(label: 'Loading outreach');
         }
         if (snapshot.hasError) {
-          final error = snapshot.error;
-          return ClientErrorView(
-            message:
-                error is ApiException ? error.displayMessage : error.toString(),
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Outreach is temporarily unavailable',
             onRetry: _retry,
           );
         }

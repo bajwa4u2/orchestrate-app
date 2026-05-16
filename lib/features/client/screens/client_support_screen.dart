@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/support/services/support_service.dart';
 
@@ -52,9 +51,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(error is ApiException
-              ? error.displayMessage
-              : error.toString())));
+          content: Text(ClientErrorView.classifyError(error))));
     } finally {
       if (mounted) setState(() => _loadingThread = false);
     }
@@ -73,9 +70,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(error is ApiException
-              ? error.displayMessage
-              : error.toString())));
+          content: Text(ClientErrorView.classifyError(error))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -101,9 +96,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(error is ApiException
-              ? error.displayMessage
-              : error.toString())));
+          content: Text(ClientErrorView.classifyError(error))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -118,10 +111,9 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
           return const ClientLoadingView(label: 'Loading support');
         }
         if (snapshot.hasError) {
-          final error = snapshot.error;
-          return ClientErrorView(
-            message:
-                error is ApiException ? error.displayMessage : error.toString(),
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Support is temporarily unavailable',
             onRetry: _retry,
           );
         }

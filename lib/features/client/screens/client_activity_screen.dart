@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientActivityScreen extends StatelessWidget {
   const ClientActivityScreen({super.key});
@@ -13,11 +14,16 @@ class ClientActivityScreen extends StatelessWidget {
       future: _load(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const ClientLoadingView(
+            eyebrow: 'Activity',
+            label: 'Loading activity feed',
+          );
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(
-              child: Text('Activity could not load at the moment.'));
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Activity is temporarily unavailable',
+          );
         }
         final data = snapshot.data!;
 
@@ -36,13 +42,13 @@ class ClientActivityScreen extends StatelessWidget {
                   final left = _Panel(
                     title: 'Reply movement',
                     emptyLabel:
-                        'Replies will appear here once conversations begin to move.',
+                        'No replies yet. Once a campaign is active and outreach sends, replies surface here automatically — no manual refresh needed.',
                     items: data.replyRows,
                   );
                   final right = _Panel(
                     title: 'Meeting and mailbox readiness',
                     emptyLabel:
-                        'Meeting handoff and mailbox readiness will appear here as execution begins to move.',
+                        'No handoffs yet. Confirm the connected mailbox in the Mailbox screen so the system can send and receive on your behalf.',
                     items: data.meetingRows,
                   );
 

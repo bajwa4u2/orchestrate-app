@@ -45,10 +45,9 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
           return const ClientLoadingView(label: 'Loading replies');
         }
         if (snapshot.hasError) {
-          final error = snapshot.error;
-          return ClientErrorView(
-            message:
-                error is ApiException ? error.displayMessage : error.toString(),
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Replies are temporarily unavailable',
             onRetry: _retry,
           );
         }

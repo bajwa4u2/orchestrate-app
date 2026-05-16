@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
-import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
@@ -88,10 +87,9 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
           return const ClientLoadingView(label: 'Loading settings');
         }
         if (snapshot.hasError) {
-          final error = snapshot.error;
-          return ClientErrorView(
-            message:
-                error is ApiException ? error.displayMessage : error.toString(),
+          return ClientErrorView.fromError(
+            snapshot.error,
+            title: 'Settings are temporarily unavailable',
             onRetry: _retry,
           );
         }

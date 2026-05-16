@@ -5,6 +5,7 @@ import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class CampaignsScreen extends StatefulWidget {
   const CampaignsScreen({super.key});
@@ -1004,15 +1005,17 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const ClientLoadingView(
+        eyebrow: 'Campaign',
+        label: 'Loading campaign configuration',
+      );
     }
 
     if (_error != null && !_saving) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(_error!),
-        ),
+      return ClientErrorView.fromError(
+        _error,
+        title: 'Campaign configuration could not load',
+        onRetry: _load,
       );
     }
 
