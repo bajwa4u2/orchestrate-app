@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
@@ -24,23 +25,38 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   final ClientOutreachRepository _outreachRepository =
       ClientOutreachRepository();
   late Future<_MailboxViewData> _future = _load();
-  bool _provisioning = false;
+  String? _oauthInflightProvider;
   bool _verifyingDomain = false;
   String? _resultMessage;
 
-  Future<void> _provisionDefaultMailbox() async {
-    setState(() => _provisioning = true);
+  /// Open the backend-owned OAuth flow for [provider] (`google` or
+  /// `microsoft`). The backend returns an authorize URL; the app opens
+  /// it in the system browser. Tokens never touch the app. Pass
+  /// [mailboxId] when re-authorizing an existing REQUIRES_REAUTH mailbox.
+  Future<void> _startOAuth(String provider, {String? mailboxId}) async {
+    setState(() => _oauthInflightProvider = provider);
     try {
-      final result = await _mailboxRepository.activateMailbox();
-      final ready = result['ready'] == true;
-      final blockers = asList(result['blockers']).map(asMap).toList();
-      final firstBlocker = blockers.isEmpty ? const <String, dynamic>{} : blockers.first;
+      final response = await _mailboxRepository.startMailboxOAuth(
+        provider: provider,
+        mailboxId: mailboxId,
+      );
+      final authorizeUrl = readText(response, 'authorizeUrl');
+      if (authorizeUrl.isEmpty) {
+        throw const FormatException('Backend did not return an authorize URL');
+      }
+      final uri = Uri.tryParse(authorizeUrl);
+      if (uri == null) {
+        throw FormatException('Authorize URL is not a valid URI: $authorizeUrl');
+      }
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        throw StateError(
+          'Could not open the consent page in a browser on this device.',
+        );
+      }
       setState(() {
-        _resultMessage = ready
-            ? 'Sending identity is ready.'
-            : readText(firstBlocker, 'message',
-                fallback:
-                    'We could not provision a mailbox automatically. Contact support so we can help.');
+        _resultMessage = 'Opened ${_providerLabel(provider)} consent in your '
+            'browser. Approve the request — Orchestrate will finish the connection.';
         _future = _load();
       });
     } catch (error) {
@@ -49,7 +65,18 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         _future = _load();
       });
     } finally {
-      if (mounted) setState(() => _provisioning = false);
+      if (mounted) setState(() => _oauthInflightProvider = null);
+    }
+  }
+
+  String _providerLabel(String provider) {
+    switch (provider.toLowerCase()) {
+      case 'google':
+        return 'Gmail';
+      case 'microsoft':
+        return 'Microsoft 365';
+      default:
+        return provider;
     }
   }
 
@@ -191,39 +218,38 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
 
   List<Widget> _buildActions(_MailboxViewData data) {
     final widgets = <Widget>[];
-    final primary = data.primaryAction;
-    if (primary != null) {
-      final isProvision = primary.code == 'provision_mailbox';
-      final isInflight = isProvision && _provisioning;
-      widgets.add(
-        FilledButton.icon(
-          onPressed: isInflight
-              ? null
-              : isProvision
-                  ? _provisionDefaultMailbox
-                  : null,
-          icon: isInflight
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Icon(primary.icon, size: 18),
-          label: Text(isInflight ? 'Provisioning' : primary.label),
-        ),
-      );
-      if (!isProvision) {
-        // Non-provision flows (reconnect/verify) need a backend OAuth or
-        // domain verification path that this build does not yet expose.
-        // Surface the contact path so the client is never stuck.
-        widgets.add(
-          OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.support_agent_outlined, size: 18),
-            label: const Text('Contact support to complete'),
-          ),
-        );
-      }
+    for (var i = 0; i < data.primaryActions.length; i++) {
+      final action = data.primaryActions[i];
+      final inflight = _oauthInflightProvider == action.oauthProvider;
+      final isPrimary = i == 0;
+      final button = isPrimary
+          ? FilledButton.icon(
+              onPressed: inflight
+                  ? null
+                  : () => _startOAuth(action.oauthProvider, mailboxId: action.mailboxId),
+              icon: inflight
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(action.icon, size: 18),
+              label: Text(inflight ? 'Opening consent…' : action.label),
+            )
+          : OutlinedButton.icon(
+              onPressed: inflight
+                  ? null
+                  : () => _startOAuth(action.oauthProvider, mailboxId: action.mailboxId),
+              icon: inflight
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(action.icon, size: 18),
+              label: Text(inflight ? 'Opening consent…' : action.label),
+            );
+      widgets.add(button);
     }
     widgets.add(
       OutlinedButton.icon(
@@ -287,9 +313,9 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       ),
     ];
 
-    final primaryAction = _primaryActionFor(
+    final primaryActions = _primaryActionsFor(
       blockers: blockers,
-      hasMailbox: mailbox.isNotEmpty,
+      mailbox: mailbox,
       ready: ready,
     );
 
@@ -312,7 +338,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       bannerTone: hero.bannerTone,
       dispatchRows: dispatchRows,
       identitySteps: identitySteps,
-      primaryAction: primaryAction,
+      primaryActions: primaryActions,
       sendingIdentity: sendingIdentity,
     );
   }
@@ -360,49 +386,82 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     );
   }
 
-  _MailboxPrimaryAction? _primaryActionFor({
+  /// Determines the OAuth connect / reconnect actions to surface as the
+  /// page CTAs. Mailbox-missing offers Gmail and Microsoft 365 side by
+  /// side; an existing mailbox's reconnect button uses its own provider
+  /// so the user re-grants the same scopes against the same account.
+  List<_MailboxPrimaryAction> _primaryActionsFor({
     required List<Map<String, dynamic>> blockers,
-    required bool hasMailbox,
+    required Map<String, dynamic> mailbox,
     required bool ready,
   }) {
-    if (ready) return null;
+    if (ready) return const <_MailboxPrimaryAction>[];
 
     final byCode = <String, Map<String, dynamic>>{
-      for (final blocker in blockers)
-        readText(blocker, 'code'): blocker,
+      for (final blocker in blockers) readText(blocker, 'code'): blocker,
     };
+    final hasMailbox = mailbox.isNotEmpty;
+    final providerRaw = readText(mailbox, 'provider').toUpperCase();
+    final mailboxId =
+        readText(mailbox, 'id').isEmpty ? null : readText(mailbox, 'id');
+
+    // Mailbox provider configuration is Orchestrate-side. No client CTA.
+    if (byCode.containsKey('MAILBOX_PROVIDER_ERROR')) {
+      return const <_MailboxPrimaryAction>[];
+    }
 
     if (byCode.containsKey('MAILBOX_MISSING') || !hasMailbox) {
-      return const _MailboxPrimaryAction(
-        code: 'provision_mailbox',
-        label: 'Let Orchestrate set up a mailbox',
-        icon: Icons.outgoing_mail,
-      );
+      return const <_MailboxPrimaryAction>[
+        _MailboxPrimaryAction(
+          code: 'connect_google',
+          label: 'Connect Gmail',
+          icon: Icons.alternate_email,
+          oauthProvider: 'google',
+        ),
+        _MailboxPrimaryAction(
+          code: 'connect_microsoft',
+          label: 'Connect Microsoft 365',
+          icon: Icons.business_center_outlined,
+          oauthProvider: 'microsoft',
+        ),
+      ];
     }
-    if (byCode.containsKey('MAILBOX_DISCONNECTED')) {
-      return const _MailboxPrimaryAction(
-        code: 'reconnect_mailbox',
-        label: 'Reconnect mailbox',
-        icon: Icons.link,
-      );
+
+    if (byCode.containsKey('MAILBOX_DISCONNECTED') ||
+        byCode.containsKey('MAILBOX_UNVERIFIED')) {
+      final provider = providerRaw == 'GOOGLE' || providerRaw == 'MICROSOFT'
+          ? providerRaw.toLowerCase()
+          : null;
+      if (provider != null) {
+        return <_MailboxPrimaryAction>[
+          _MailboxPrimaryAction(
+            code: 'reconnect_$provider',
+            label: 'Reconnect ${_providerLabel(provider)}',
+            icon: Icons.link,
+            oauthProvider: provider,
+            mailboxId: mailboxId,
+          ),
+        ];
+      }
+      // Unknown provider — show both as a fallback so the client can
+      // re-grant via whichever they originally used.
+      return const <_MailboxPrimaryAction>[
+        _MailboxPrimaryAction(
+          code: 'connect_google',
+          label: 'Connect Gmail',
+          icon: Icons.alternate_email,
+          oauthProvider: 'google',
+        ),
+        _MailboxPrimaryAction(
+          code: 'connect_microsoft',
+          label: 'Connect Microsoft 365',
+          icon: Icons.business_center_outlined,
+          oauthProvider: 'microsoft',
+        ),
+      ];
     }
-    if (byCode.containsKey('MAILBOX_UNVERIFIED')) {
-      return const _MailboxPrimaryAction(
-        code: 'verify_mailbox',
-        label: 'Verify sending identity',
-        icon: Icons.verified_user_outlined,
-      );
-    }
-    if (byCode.containsKey('AUTHORIZATION_MISSING')) {
-      return const _MailboxPrimaryAction(
-        code: 'complete_representation_authorization',
-        label: 'Authorize Orchestrate',
-        icon: Icons.assignment_turned_in_outlined,
-      );
-    }
-    // MAILBOX_PROVIDER_ERROR or anything else is Orchestrate-side; no client
-    // CTA. Banner already explains that we are recovering.
-    return null;
+
+    return const <_MailboxPrimaryAction>[];
   }
 
   _MailboxHero _heroFor({
@@ -436,12 +495,12 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     }
     if (!hasMailbox) {
       return const _MailboxHero(
-        headline: 'Connect a sending mailbox',
+        headline: 'Connect your sending mailbox',
         subtitle:
-            'Orchestrate needs one mailbox to send outreach from. We can provision a managed mailbox or you can connect your own.',
+            'Orchestrate sends outreach on your behalf from the mailbox you connect. Pick Gmail or Microsoft 365 — Orchestrate handles the OAuth handshake and stores no credentials in your browser.',
         bannerTitle: 'A mailbox is required to start',
         bannerMessage:
-            'Use the action above to let Orchestrate provision a sending mailbox for your account.',
+            'Use the buttons above to grant Orchestrate access to Gmail or Microsoft 365. You will be redirected to your provider to approve.',
         bannerTone: ClientBannerTone.warning,
       );
     }
@@ -469,7 +528,7 @@ class _MailboxViewData {
     required this.bannerTone,
     required this.dispatchRows,
     required this.identitySteps,
-    required this.primaryAction,
+    required this.primaryActions,
     required this.sendingIdentity,
   });
 
@@ -483,7 +542,7 @@ class _MailboxViewData {
   final ClientBannerTone bannerTone;
   final List<_MailboxRow> dispatchRows;
   final List<_IdentityStep> identitySteps;
-  final _MailboxPrimaryAction? primaryAction;
+  final List<_MailboxPrimaryAction> primaryActions;
   final _SendingIdentity sendingIdentity;
 }
 
@@ -649,9 +708,15 @@ class _MailboxPrimaryAction {
     required this.code,
     required this.label,
     required this.icon,
+    required this.oauthProvider,
+    this.mailboxId,
   });
 
   final String code;
   final String label;
   final IconData icon;
+  /// "google" | "microsoft" — passed to /client/mailbox/oauth/{provider}/start.
+  final String oauthProvider;
+  /// Set when reauthing an existing REQUIRES_REAUTH / DISCONNECTED mailbox.
+  final String? mailboxId;
 }

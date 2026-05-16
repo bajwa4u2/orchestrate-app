@@ -47,6 +47,27 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Kick off a backend-owned OAuth mailbox connect for [provider]
+  /// (`google` or `microsoft`). Returns `{ authorizeUrl, state,
+  /// mailboxId, expiresAtIso }` — the caller opens [authorizeUrl] in
+  /// the system browser. Pass [mailboxId] to re-auth an existing
+  /// REQUIRES_REAUTH mailbox; omit to create a fresh pending row.
+  Future<Map<String, dynamic>> startMailboxOAuth({
+    required String provider,
+    String? mailboxId,
+  }) async {
+    final body = <String, dynamic>{};
+    if (mailboxId != null && mailboxId.isNotEmpty) {
+      body['mailboxId'] = mailboxId;
+    }
+    final json = await _apiClient.postJson(
+      '/client/mailbox/oauth/$provider/start',
+      body: body,
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   Future<Map<String, dynamic>> fetchResponseEligibility(String replyId) async {
     final json = await _apiClient.getJson(
       '/client/replies/$replyId/response-eligibility',
