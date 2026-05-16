@@ -12,12 +12,10 @@ class LeadsScreen extends StatelessWidget {
       future: _load(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const _LeadsLoadingState();
         }
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(
-            child: Text('Lead records could not load at the moment.'),
-          );
+          return _LeadsErrorState(error: snapshot.error);
         }
         final data = snapshot.data!;
         return SingleChildScrollView(
@@ -60,10 +58,14 @@ class LeadsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
               ],
+              if (data.intelligenceCampaigns.isNotEmpty) ...[
+                _IntelligencePanel(campaigns: data.intelligenceCampaigns),
+                const SizedBox(height: 18),
+              ],
               _Panel(
                 title: 'Visible leads',
                 emptyLabel:
-                    'Lead records will appear here once sourcing begins.',
+                    'Lead records will appear here once sourcing begins. Open a campaign in Setup to confirm targeting.',
                 items: data.rows,
               ),
             ],
@@ -77,6 +79,7 @@ class LeadsScreen extends StatelessWidget {
     final workspaceRepo = ClientWorkspaceRepository();
     final overview = await workspaceRepo.fetchOverview();
     final leads = await workspaceRepo.fetchLeads();
+    final intelligence = await workspaceRepo.fetchIntelligenceCampaigns();
 
     final activity = _asMap(overview['activity']);
     final totalLeads = _countValue(
@@ -127,9 +130,12 @@ class LeadsScreen extends StatelessWidget {
           source: _title(_read(map, 'source')),
           createdDate: _formatDate(_read(map, 'createdAt')),
           blockReasons: blockReasons,
+          intelligence: _readIntelligence(map['intelligence']),
         ),
       );
     }
+
+    final intelligenceCampaigns = _readIntelligenceCampaigns(intelligence);
 
     return _LeadViewData(
       totalLeads: totalLeads,
@@ -139,6 +145,7 @@ class LeadsScreen extends StatelessWidget {
       phoneCount: phoneCount,
       campaignCount: campaignNames.length,
       rows: rows,
+      intelligenceCampaigns: intelligenceCampaigns,
     );
   }
 }
@@ -152,6 +159,7 @@ class _LeadViewData {
     required this.phoneCount,
     required this.campaignCount,
     required this.rows,
+    required this.intelligenceCampaigns,
   });
 
   final int totalLeads;
@@ -161,6 +169,31 @@ class _LeadViewData {
   final int phoneCount;
   final int campaignCount;
   final List<_LeadRow> rows;
+  final List<_IntelligenceCampaign> intelligenceCampaigns;
+}
+
+class _IntelligenceCampaign {
+  const _IntelligenceCampaign({
+    required this.name,
+    required this.discoveryEnabled,
+    required this.discoveryStatus,
+    required this.discoveryMode,
+    required this.lastRunAt,
+    required this.nextRunAt,
+    required this.signalsRecent,
+    required this.qualificationsRecent,
+    required this.qualificationBreakdown,
+  });
+
+  final String name;
+  final bool discoveryEnabled;
+  final String discoveryStatus;
+  final String discoveryMode;
+  final String? lastRunAt;
+  final String? nextRunAt;
+  final int signalsRecent;
+  final int qualificationsRecent;
+  final Map<String, int> qualificationBreakdown;
 }
 
 class _LeadRow {
@@ -176,6 +209,7 @@ class _LeadRow {
     required this.source,
     required this.createdDate,
     required this.blockReasons,
+    required this.intelligence,
   });
 
   final String name;
@@ -189,6 +223,34 @@ class _LeadRow {
   final String source;
   final String createdDate;
   final List<String> blockReasons;
+  final _LeadIntelligence? intelligence;
+}
+
+class _LeadIntelligence {
+  const _LeadIntelligence({
+    this.signalType,
+    this.signalSource,
+    this.signalHeadline,
+    this.signalConfidence,
+    this.signalDetectedAt,
+    this.qualificationDecision,
+    this.qualificationScore,
+    this.qualificationReasons,
+  });
+
+  final String? signalType;
+  final String? signalSource;
+  final String? signalHeadline;
+  final double? signalConfidence;
+  final String? signalDetectedAt;
+  final String? qualificationDecision;
+  final double? qualificationScore;
+  final List<String>? qualificationReasons;
+
+  bool get hasContent =>
+      (signalType?.isNotEmpty ?? false) ||
+      (signalHeadline?.isNotEmpty ?? false) ||
+      (qualificationDecision?.isNotEmpty ?? false);
 }
 
 class _Hero extends StatelessWidget {
@@ -386,6 +448,275 @@ class _LeadTile extends StatelessWidget {
                 ),
           ),
         ],
+        if (item.intelligence != null && item.intelligence!.hasContent) ...[
+          const SizedBox(height: 10),
+          _LeadIntelligenceStrip(intel: item.intelligence!),
+        ],
+      ],
+    );
+  }
+}
+
+class _LeadIntelligenceStrip extends StatelessWidget {
+  const _LeadIntelligenceStrip({required this.intel});
+
+  final _LeadIntelligence intel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final summary = <String>[];
+
+    final signalLabel = _formatSignalLabel(intel);
+    if (signalLabel.isNotEmpty) summary.add(signalLabel);
+
+    final qualification = _formatQualificationLabel(intel);
+    if (qualification.isNotEmpty) summary.add(qualification);
+
+    final headline = intel.signalHeadline?.trim();
+    if (headline != null && headline.isNotEmpty) summary.add(headline);
+
+    final reasons = intel.qualificationReasons ?? const <String>[];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F7FA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.publicLine.withOpacity(0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Why we surfaced this',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppTheme.publicMuted,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (final line in summary) ...[
+            const SizedBox(height: 4),
+            Text(
+              line,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: AppTheme.publicText),
+            ),
+          ],
+          if (reasons.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              reasons.join(' · '),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppTheme.publicMuted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LeadsLoadingState extends StatelessWidget {
+  const _LeadsLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final placeholder = Container(
+      height: 96,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F7FA),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+      ),
+    );
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(top: 12, bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+              border: Border.all(color: AppTheme.publicLine),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Lead generation',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(color: AppTheme.publicMuted)),
+                const SizedBox(height: 10),
+                Text('Loading lead intelligence…',
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 14),
+                const LinearProgressIndicator(minHeight: 3),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          placeholder,
+          const SizedBox(height: 12),
+          placeholder,
+        ],
+      ),
+    );
+  }
+}
+
+class _LeadsErrorState extends StatelessWidget {
+  const _LeadsErrorState({this.error});
+
+  final Object? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final message = _classifyError(error);
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Container(
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppTheme.radius),
+            border: Border.all(color: AppTheme.publicLine),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Lead intelligence is temporarily unavailable',
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              Text(message,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: AppTheme.publicMuted)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _classifyError(Object? error) {
+    if (error == null) {
+      return 'We could not load this view right now. Please pull to refresh in a moment.';
+    }
+    final text = error.toString();
+    if (text.contains('SocketException') || text.contains('Failed host')) {
+      return 'We could not reach the workspace. Check your network connection and try again.';
+    }
+    if (text.contains('TimeoutException')) {
+      return 'The workspace took too long to respond. We will keep retrying in the background.';
+    }
+    return 'We could not load this view right now. Please refresh shortly. If it keeps failing, contact support.';
+  }
+}
+
+class _IntelligencePanel extends StatelessWidget {
+  const _IntelligencePanel({required this.campaigns});
+
+  final List<_IntelligenceCampaign> campaigns;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Intelligence activity (last 7 days)',
+            style: theme.textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'What discovery saw, what qualification decided, and whether the system is actively listening for each campaign.',
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: AppTheme.publicMuted),
+          ),
+          const SizedBox(height: 14),
+          for (int i = 0; i < campaigns.length; i++) ...[
+            _IntelligenceCampaignTile(campaign: campaigns[i]),
+            if (i != campaigns.length - 1) const Divider(height: 22),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _IntelligenceCampaignTile extends StatelessWidget {
+  const _IntelligenceCampaignTile({required this.campaign});
+
+  final _IntelligenceCampaign campaign;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final qualifyParts = <String>[];
+    for (final entry in campaign.qualificationBreakdown.entries) {
+      qualifyParts.add('${entry.value} ${entry.key.toLowerCase()}');
+    }
+    final qualifyLabel =
+        qualifyParts.isEmpty ? 'No qualification activity yet' : qualifyParts.join(' · ');
+    final discoveryLabel = campaign.discoveryEnabled
+        ? 'Discovery on · ${_title(campaign.discoveryMode)} · ${_title(campaign.discoveryStatus)}'
+        : 'Discovery paused (${_title(campaign.discoveryStatus)})';
+    final lastRun = campaign.lastRunAt;
+    final nextRun = campaign.nextRunAt;
+    final scheduleLine = <String>[
+      if (lastRun != null && lastRun.isNotEmpty)
+        'Last run ${_formatDate(lastRun)}',
+      if (nextRun != null && nextRun.isNotEmpty && campaign.discoveryEnabled)
+        'Next scheduled ${_formatDate(nextRun)}',
+    ].join(' · ');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(campaign.name.isEmpty ? 'Untitled campaign' : campaign.name,
+            style: theme.textTheme.titleLarge),
+        const SizedBox(height: 6),
+        Text(
+          discoveryLabel,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: campaign.discoveryEnabled
+                ? AppTheme.publicText
+                : Colors.orange.shade700,
+          ),
+        ),
+        if (scheduleLine.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(scheduleLine,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppTheme.publicMuted)),
+        ],
+        const SizedBox(height: 6),
+        Text(
+          '${campaign.signalsRecent} signals detected · $qualifyLabel',
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: AppTheme.publicText),
+        ),
       ],
     );
   }
@@ -546,4 +877,134 @@ String _monthName(int month) {
   ];
   if (month < 1 || month > 12) return '';
   return months[month - 1];
+}
+
+List<_IntelligenceCampaign> _readIntelligenceCampaigns(
+    Map<String, dynamic> payload) {
+  final raw = payload['campaigns'];
+  if (raw is! List) return const <_IntelligenceCampaign>[];
+  final list = <_IntelligenceCampaign>[];
+  for (final entry in raw) {
+    final map = _asMap(entry);
+    if (map.isEmpty) continue;
+    final discovery = _asMap(map['discovery']);
+    final signals = _asMap(map['signals']);
+    final qualifications = _asMap(map['qualifications']);
+    final breakdown = _asMap(qualifications['byDecision']);
+    final breakdownInts = <String, int>{};
+    breakdown.forEach((key, value) {
+      final count = _countValue(value);
+      if (count > 0) breakdownInts[key] = count;
+    });
+
+    list.add(
+      _IntelligenceCampaign(
+        name: _read(map, 'name'),
+        discoveryEnabled:
+            discovery.isNotEmpty && (discovery['enabled'] == true),
+        discoveryStatus: _read(discovery, 'status').isEmpty
+            ? (discovery.isEmpty ? 'NOT_CONFIGURED' : 'UNKNOWN')
+            : _read(discovery, 'status'),
+        discoveryMode: _read(discovery, 'sourceMode').isEmpty
+            ? 'AUTO'
+            : _read(discovery, 'sourceMode'),
+        lastRunAt:
+            _read(discovery, 'lastRunAt').isEmpty ? null : _read(discovery, 'lastRunAt'),
+        nextRunAt:
+            _read(discovery, 'nextRunAt').isEmpty ? null : _read(discovery, 'nextRunAt'),
+        signalsRecent: _countValue(signals['recent']),
+        qualificationsRecent: _countValue(qualifications['recent']),
+        qualificationBreakdown: breakdownInts,
+      ),
+    );
+  }
+  return list;
+}
+
+_LeadIntelligence? _readIntelligence(dynamic value) {
+  final map = _asMap(value);
+  if (map.isEmpty) return null;
+  final signal = _asMap(map['signal']);
+  final qualification = _asMap(map['qualification']);
+  final reasonMap = _asMap(qualification['reason']);
+
+  final reasons = <String>[];
+  if (reasonMap.isNotEmpty) {
+    final policy = _asMap(reasonMap['executionPolicy']);
+    final policyStatus = _read(policy, 'status');
+    if (policyStatus.isNotEmpty && policyStatus.toUpperCase() != 'OK') {
+      reasons.add('Execution policy: ${_title(policyStatus)}');
+    }
+    final bonus = _readDouble(reasonMap['signalEvidenceBonus']);
+    if (bonus != null && bonus > 0) {
+      reasons.add('Signal evidence boost +${bonus.toStringAsFixed(0)}');
+    }
+    if (_readBool(reasonMap['hasEmailCandidate']) == false) {
+      reasons.add('No verified email candidate yet');
+    }
+    final inferredRole = _read(reasonMap, 'inferredRole');
+    if (inferredRole.isNotEmpty) reasons.add('Role: $inferredRole');
+  }
+
+  final intel = _LeadIntelligence(
+    signalType: _readOptional(signal, 'type'),
+    signalSource: _readOptional(signal, 'sourceType'),
+    signalHeadline: _readOptional(signal, 'headline'),
+    signalConfidence: _readDouble(signal['confidence']),
+    signalDetectedAt: _readOptional(signal, 'detectedAt'),
+    qualificationDecision: _readOptional(qualification, 'decision'),
+    qualificationScore: _readDouble(qualification['finalScore']),
+    qualificationReasons: reasons.isEmpty ? null : reasons,
+  );
+
+  return intel.hasContent || intel.qualificationReasons != null ? intel : null;
+}
+
+String _formatSignalLabel(_LeadIntelligence intel) {
+  final parts = <String>[];
+  final type = intel.signalType?.trim();
+  if (type != null && type.isNotEmpty) {
+    parts.add('Signal: ${_title(type)}');
+  }
+  final source = intel.signalSource?.trim();
+  if (source != null && source.isNotEmpty) {
+    parts.add('Source: ${_title(source)}');
+  }
+  final confidence = intel.signalConfidence;
+  if (confidence != null) {
+    parts.add('Confidence ${confidence.toStringAsFixed(0)}');
+  }
+  return parts.join(' · ');
+}
+
+String _formatQualificationLabel(_LeadIntelligence intel) {
+  final decision = intel.qualificationDecision?.trim();
+  if (decision == null || decision.isEmpty) return '';
+  final score = intel.qualificationScore;
+  if (score == null) return 'Qualification: ${_title(decision)}';
+  return 'Qualification: ${_title(decision)} · Score ${score.toStringAsFixed(0)}';
+}
+
+String? _readOptional(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value == null) return null;
+  final text = value.toString().trim();
+  return text.isEmpty ? null : text;
+}
+
+double? _readDouble(dynamic value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
+  return null;
+}
+
+bool? _readBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed == 'true') return true;
+    if (trimmed == 'false') return false;
+  }
+  return null;
 }

@@ -95,6 +95,26 @@ class ClientWorkspaceRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  Future<Map<String, dynamic>> fetchIntelligenceCampaigns() async {
+    try {
+      final json = await _apiClient.getJson(
+        '/client/intelligence/campaigns',
+        surface: ApiSurface.client,
+      );
+      if (json is Map) return Map<String, dynamic>.from(json);
+      return const <String, dynamic>{};
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      if (error is ApiException && error.statusCode == 404) {
+        return const <String, dynamic>{};
+      }
+      debugPrint(
+        '[client_workspace_repository] /client/intelligence/campaigns failed: $error',
+      );
+      return const <String, dynamic>{};
+    }
+  }
+
   Future<Map<String, dynamic>> _safeGetMap(String path) async {
     try {
       final json = await _apiClient.getJson(path, surface: ApiSurface.client);
