@@ -63,22 +63,30 @@ class _OperationalContinuityStripState
     // Readiness headline — always the first line.
     switch (bucket) {
       case 'executing':
+        // Honest read: the readiness engine flips `executing` when the
+        // primary campaign status is ACTIVE. That proves the platform
+        // considers the scope live; it does NOT independently prove
+        // every subsystem (discovery / qualification / dispatch /
+        // follow-up) is running healthily right now. Keep the claim
+        // narrow.
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.active,
           text:
-              'Managed execution is running — signal discovery, qualification, governed dispatch, and follow-up continuity are all live.',
+              'Readiness gates passed — Orchestrate is operating the active execution scope.',
         ));
         break;
       case 'orchestrate_working':
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.preparing,
-          text: 'Orchestrate is preparing dispatch — the next sends are queued under governed pacing.',
+          text:
+              'Orchestrate is preparing dispatch — messages are queued under governed pacing.',
         ));
         break;
       case 'ready_to_execute':
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.preparing,
-          text: 'Readiness gates passed — Orchestrate is activating managed execution.',
+          text:
+              'Readiness gates passed — Orchestrate is activating managed execution.',
         ));
         break;
       case 'recovering':
@@ -115,12 +123,16 @@ class _OperationalContinuityStripState
         ));
     }
 
-    // Sending identity continuity line.
+    // Sending identity — `status=ACTIVE` only proves the last DNS check
+    // passed; it does NOT prove DNS is still correct *right now*. The
+    // poll worker re-verifies on a cadence; until then "at the last
+    // check" is the honest read.
     final identityStatus = snap.sendingDomainStatus ?? '';
     if (identityStatus == 'ACTIVE') {
       lines.add(const _ContinuityLine(
         kind: _ContinuityKind.active,
-        text: 'Sending identity verified — SPF, DKIM, and DMARC are passing live DNS.',
+        text:
+            'Sending identity verified at the last DNS check — SPF, DKIM, and DMARC all matched.',
       ));
     } else if (identityStatus == 'PENDING') {
       lines.add(const _ContinuityLine(
@@ -135,7 +147,10 @@ class _OperationalContinuityStripState
       ));
     }
 
-    // Mailbox continuity line.
+    // Mailbox — `connectionState=AUTHORIZED` only proves OAuth completed;
+    // it does NOT prove a refresh would succeed right now. State is
+    // sourced from the latest connection record; a live refresh probe
+    // is not part of this snapshot.
     final mailboxState = snap.mailboxConnectionState ?? '';
     if (mailboxState == 'REQUIRES_REAUTH' || mailboxState == 'REVOKED') {
       lines.add(const _ContinuityLine(
@@ -147,7 +162,7 @@ class _OperationalContinuityStripState
       lines.add(const _ContinuityLine(
         kind: _ContinuityKind.active,
         text:
-            'Mailbox connection authorized — vault-backed credential is active and refreshable.',
+            'Mailbox is connected — the credential is stored in the vault; Orchestrate will surface a reconnect prompt if a refresh ever fails.',
       ));
     } else if (mailboxState == 'PENDING_AUTH') {
       lines.add(const _ContinuityLine(
