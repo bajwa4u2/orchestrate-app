@@ -11,6 +11,7 @@ import 'package:orchestrate_app/features/client/screens/client_mailbox_screen.da
 import 'package:orchestrate_app/features/client/screens/client_newsletter_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_account_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_billing_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_business_identity_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_setup_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_subscribe_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_workspace_screen.dart';
@@ -781,6 +782,9 @@ final router = GoRouter(
         GoRoute(
             path: '/client/setup',
             builder: (context, state) => const ClientSetupScreen()),
+        GoRoute(
+            path: '/client/business-identity',
+            builder: (context, state) => const ClientBusinessIdentityScreen()),
         GoRoute(
             path: '/client/subscribe',
             builder: (context, state) => const ClientSubscribeScreen()),

@@ -35,6 +35,10 @@ class _ClientShellState extends State<ClientShell> {
         path: '/client/overview',
         icon: Icons.space_dashboard_outlined),
     _ClientNavItem(
+        label: 'Business identity',
+        path: '/client/business-identity',
+        icon: Icons.fingerprint),
+    _ClientNavItem(
         label: 'Campaign', path: '/client/campaign', icon: Icons.flag_outlined),
     _ClientNavItem(
         label: 'Leads', path: '/client/leads', icon: Icons.people_alt_outlined),
