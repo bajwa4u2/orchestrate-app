@@ -223,3 +223,30 @@ class AppTheme {
     );
   }
 }
+
+/// Shared responsive thresholds for shells and screens.
+///
+/// Use these named constants instead of inline `< 760`/`< 860`/`< 980`
+/// magic numbers so every surface (public, client, operator) interprets
+/// "mobile" or "stacked" the same way. Changing one breakpoint here
+/// updates the entire product.
+class WorkspaceBreakpoints {
+  WorkspaceBreakpoints._();
+
+  /// Below this width the workspace rail collapses into a drawer.
+  static const double mobile = 760;
+
+  /// Below this width small two-column compositions (metric strips,
+  /// short side-by-side cards) stack into a single column.
+  static const double compact = 860;
+
+  /// Below this width large two-pane layouts (overview hero + side panel,
+  /// leads list + intelligence panel, reply detail + thread) stack into a
+  /// single column.
+  static const double stacked = 980;
+
+  /// Maximum content column width inside the workspace shell. Keeps lines
+  /// readable on ultrawide monitors without leaving cramped side voids on
+  /// tablet/desktop.
+  static const double contentMax = 1320;
+}

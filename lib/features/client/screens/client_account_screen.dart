@@ -164,7 +164,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
               const SizedBox(height: 18),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final stacked = constraints.maxWidth < 980;
+                  final stacked =
+                      constraints.maxWidth < WorkspaceBreakpoints.stacked;
                   final profilePanel = _Panel(
                     title: 'Profile and links',
                     rows: [
@@ -577,7 +578,7 @@ class _Hero extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 980;
+          final compact = constraints.maxWidth < WorkspaceBreakpoints.stacked;
           final text = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

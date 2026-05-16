@@ -41,7 +41,8 @@ class ClientHomeScreen extends StatelessWidget {
               _MetricRow(metrics: data.metrics),
               const SizedBox(height: 18),
               LayoutBuilder(builder: (context, constraints) {
-                final stacked = constraints.maxWidth < 980;
+                final stacked =
+                    constraints.maxWidth < WorkspaceBreakpoints.stacked;
                 final left = _Panel(
                     title: data.primaryTitle,
                     rows: data.primaryRows,

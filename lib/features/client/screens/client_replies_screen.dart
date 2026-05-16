@@ -98,7 +98,8 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
             ]),
             const SizedBox(height: 18),
             LayoutBuilder(builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 980;
+              final stacked =
+                  constraints.maxWidth < WorkspaceBreakpoints.stacked;
               final list = ClientPanel(
                 title: 'Reply inbox',
                 children: replies.isEmpty

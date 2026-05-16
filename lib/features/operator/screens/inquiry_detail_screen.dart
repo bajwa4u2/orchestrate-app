@@ -197,7 +197,8 @@ class _InquiryDetailScreenState extends State<InquiryDetailScreen> {
           const SizedBox(height: 18),
           LayoutBuilder(
             builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 980;
+              final stacked =
+                  constraints.maxWidth < WorkspaceBreakpoints.stacked;
               final left = _Card(
                 title: 'Conversation',
                 child: _thread.isEmpty

@@ -313,7 +313,7 @@ class ClientMetricStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      final compact = constraints.maxWidth < 860;
+      final compact = constraints.maxWidth < WorkspaceBreakpoints.compact;
       final tiles = metrics
           .map((metric) => ClientMetricTile(metric: metric))
           .toList(growable: false);

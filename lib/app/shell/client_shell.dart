@@ -6,6 +6,7 @@ import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientShell extends StatefulWidget {
   const ClientShell(
@@ -25,7 +26,7 @@ class _ClientShellState extends State<ClientShell> {
   bool _signingOut = false;
 
   static const double _sidebarWidth = 284;
-  static const double _maxContentWidth = 1320;
+  static const double _maxContentWidth = WorkspaceBreakpoints.contentMax;
 
   static const List<_ClientNavItem> _primaryItems = [
     _ClientNavItem(
@@ -280,7 +281,7 @@ class _ClientShellState extends State<ClientShell> {
     return Theme(
       data: AppTheme.lightTheme,
       child: LayoutBuilder(builder: (context, constraints) {
-        final mobile = constraints.maxWidth < 760;
+        final mobile = constraints.maxWidth < WorkspaceBreakpoints.mobile;
         return Scaffold(
           backgroundColor: AppTheme.publicBackground,
           drawer: mobile
@@ -468,7 +469,8 @@ class _ContentArea extends StatelessWidget {
                       maxWidth: _ClientShellState._maxContentWidth),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final compact = constraints.maxWidth < 980;
+                      final compact =
+                          constraints.maxWidth < WorkspaceBreakpoints.stacked;
                       final titleBlock = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

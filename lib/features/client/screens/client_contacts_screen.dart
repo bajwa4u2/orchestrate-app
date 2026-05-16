@@ -231,7 +231,7 @@ class _StatusRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 860) {
+        if (constraints.maxWidth < WorkspaceBreakpoints.compact) {
           return Column(
             children: [
               for (int i = 0; i < cards.length; i++) ...[

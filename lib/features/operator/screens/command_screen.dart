@@ -245,7 +245,7 @@ class _CommandScreenState extends State<CommandScreen> {
                         ),
                         const SizedBox(height: 18),
                         _DualCardRow(
-                          stacked: constraints.maxWidth < 860,
+                          stacked: constraints.maxWidth < WorkspaceBreakpoints.compact,
                           left: _CardSection(
                             title: 'Dispatch pressure',
                             subtitle:
@@ -261,7 +261,7 @@ class _CommandScreenState extends State<CommandScreen> {
                         ),
                         const SizedBox(height: 18),
                         _DualCardRow(
-                          stacked: constraints.maxWidth < 860,
+                          stacked: constraints.maxWidth < WorkspaceBreakpoints.compact,
                           left: _CardSection(
                             title: 'Failed jobs',
                             subtitle:
@@ -387,7 +387,7 @@ class _CommandHero extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 860;
+          final stacked = constraints.maxWidth < WorkspaceBreakpoints.compact;
 
           final intro = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
