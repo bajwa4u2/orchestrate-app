@@ -117,20 +117,20 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const ClientLoadingView(
-            eyebrow: 'Mailbox',
-            label: 'Loading sending identity status',
+            eyebrow: 'Infrastructure',
+            label: 'Loading mailbox + sending-identity infrastructure',
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
           return ClientErrorView.fromError(
             snapshot.error,
-            title: 'Mailbox is temporarily unavailable',
+            title: 'Infrastructure is temporarily unavailable',
             onRetry: _refresh,
           );
         }
         final data = snapshot.data!;
         return ClientPage(
-          eyebrow: 'Sending identity',
+          eyebrow: 'Infrastructure',
           title: data.headline,
           subtitle: data.subtitle,
           banner: ClientStatusBanner(

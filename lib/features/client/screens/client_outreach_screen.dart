@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/operational_continuity_strip.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
 
@@ -67,14 +68,17 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         final meetings = _intValue(summary['meetings']);
 
         return ClientPage(
-          eyebrow: 'Outreach',
+          eyebrow: 'Operations',
           title: managed.headline,
           subtitle: managed.description,
           banner: _ManagedExecutionBanner(state: managed),
           actions: _buildActions(context, managed: managed, replies: replies),
           children: [
+            const OperationalContinuityStrip(
+                surface: 'client_operations_runtime'),
+            const SizedBox(height: 18),
             ClientMetricStrip(metrics: [
-              ClientMetric('Campaigns', '${summary['campaigns'] ?? 0}'),
+              ClientMetric('Scopes', '${summary['campaigns'] ?? 0}'),
               ClientMetric('Queued', '${summary['queued'] ?? 0}'),
               ClientMetric('Sent', '${summary['sent'] ?? 0}'),
               ClientMetric('Replies', '$replies'),
@@ -144,13 +148,20 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         context.go('/client/billing');
         return;
       case 'complete_representation_authorization':
-        context.go('/client/campaign');
+        // Inline action continuity — Representation owns the
+        // authorize-in-place gate. No scavenger hunt back to Campaign.
+        context.go('/client/representation');
+        return;
+      case 'complete_business_identity':
+      case 'open_business_identity':
+        context.go('/client/representation');
         return;
       case 'provision_mailbox':
       case 'connect_mailbox':
       case 'reconnect_mailbox':
       case 'verify_mailbox':
-        context.go('/client/mailbox');
+      case 'verify_sending_identity':
+        context.go('/client/infrastructure');
         return;
       default:
         context.go('/client/settings');

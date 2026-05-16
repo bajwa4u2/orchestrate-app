@@ -14,14 +14,14 @@ class LeadsScreen extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const ClientLoadingView(
-            eyebrow: 'Lead intelligence',
-            label: 'Loading lead intelligence',
+            eyebrow: 'Opportunities',
+            label: 'Loading commercial-intelligence outcomes',
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
           return ClientErrorView.fromError(
             snapshot.error,
-            title: 'Lead intelligence is temporarily unavailable',
+            title: 'Opportunities are temporarily unavailable',
           );
         }
         final data = snapshot.data!;
@@ -37,7 +37,7 @@ class LeadsScreen extends StatelessWidget {
               const SizedBox(height: 18),
               _StatusRow(
                 cards: [
-                  _StatusCardData(label: 'Leads', value: '${data.totalLeads}'),
+                  _StatusCardData(label: 'Under qualification', value: '${data.totalLeads}'),
                   _StatusCardData(
                     label: 'Sendable',
                     value: '${data.sendableLeads}',
@@ -59,7 +59,7 @@ class LeadsScreen extends StatelessWidget {
               const SizedBox(height: 18),
               if (data.blockedLeads > 0) ...[
                 _ExplanationPanel(
-                  title: 'Why some outreach is paused',
+                  title: 'Why some opportunities are held',
                   summary:
                       _buildClientBlockingSummary(data.blockedReasonCounts),
                 ),
@@ -70,9 +70,9 @@ class LeadsScreen extends StatelessWidget {
                 const SizedBox(height: 18),
               ],
               _Panel(
-                title: 'Visible leads',
+                title: 'Opportunities visible to your workspace',
                 emptyLabel:
-                    'Lead records will appear here once sourcing begins. Open a campaign in Setup to confirm targeting.',
+                    'Signal discovery is watching for ICP-aligned opportunities. None have reached the client surface yet — refine the representation scope or wait for the next discovery pass.',
                 items: data.rows,
               ),
             ],
@@ -282,7 +282,7 @@ class _Hero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Lead generation',
+            'Opportunities',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted),
@@ -290,8 +290,8 @@ class _Hero extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             total == 0
-                ? 'No leads are visible yet'
-                : '$total leads currently visible',
+                ? 'Signal discovery is watching — no qualified opportunities yet'
+                : '$total opportunities under qualification',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -300,9 +300,9 @@ class _Hero extends StatelessWidget {
           Text(
             sendable == 0
                 ? (blocked > 0
-                    ? 'Some records are being held back while the system validates timing, relevance, and contact readiness.'
-                    : 'This screen separates sourced records from sendable records so the client can see what is actually ready for outreach.')
-                : '$sendable leads appear ready for outreach from the current client-side view.',
+                    ? 'Some opportunities are held while the qualification engine validates business-fit, timing, and contact readiness — governed dispatch waits.'
+                    : 'Orchestrate separates monitored signals from dispatch-ready opportunities. Dispatch only proceeds after qualification passes.')
+                : '$sendable opportunities are dispatch-ready under your current representation scope.',
             style: Theme.of(
               context,
             ).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),

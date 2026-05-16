@@ -63,12 +63,20 @@ const _clientCanonicalRoutes = <String>{
   '/client/setup',
   '/client/subscribe',
   '/client/workspace',
+  // New operational IA — these are the canonical paths.
+  '/client/operations',
+  '/client/opportunities',
+  '/client/infrastructure',
+  '/client/representation',
+  // Legacy paths kept so deep links keep resolving via redirects.
   '/client/leads',
   '/client/outreach',
-  '/client/replies',
+  '/client/mailbox',
+  '/client/business-identity',
   '/client/campaign',
   '/client/campaign/targeting',
   '/client/campaigns',
+  '/client/replies',
   '/client/meetings',
   '/client/billing',
   '/client/records',
@@ -782,30 +790,58 @@ final router = GoRouter(
         GoRoute(
             path: '/client/setup',
             builder: (context, state) => const ClientSetupScreen()),
+        // Representation — the canonical client-owned commercial-profile
+        // surface. Old /client/business-identity + /client/campaign paths
+        // redirect here so the operational IA stays single-source.
+        GoRoute(
+            path: '/client/representation',
+            builder: (context, state) => const ClientBusinessIdentityScreen()),
         GoRoute(
             path: '/client/business-identity',
-            builder: (context, state) => const ClientBusinessIdentityScreen()),
+            redirect: (context, state) => '/client/representation'),
+        GoRoute(
+            path: '/client/campaign',
+            redirect: (context, state) => '/client/representation'),
+        GoRoute(
+            path: '/client/campaign/targeting',
+            redirect: (context, state) => '/client/representation'),
+        GoRoute(
+            path: '/client/campaigns',
+            redirect: (context, state) => '/client/representation'),
+        // Targeting scope editor (geographies + industries). Kept under
+        // /app/campaigns for now; representation links to it as
+        // "refine targeting".
+        GoRoute(
+            path: '/client/representation/targeting',
+            redirect: (context, state) => '/app/campaigns'),
         GoRoute(
             path: '/client/subscribe',
             builder: (context, state) => const ClientSubscribeScreen()),
+        // Opportunities — signal-driven intelligence (was "Leads").
         GoRoute(
-            path: '/client/leads',
+            path: '/client/opportunities',
             builder: (context, state) => const LeadsScreen()),
         GoRoute(
-            path: '/client/outreach',
+            path: '/client/leads',
+            redirect: (context, state) => '/client/opportunities'),
+        // Operations — managed execution runtime (was "Outreach").
+        GoRoute(
+            path: '/client/operations',
             builder: (context, state) => const ClientOutreachScreen()),
+        GoRoute(
+            path: '/client/outreach',
+            redirect: (context, state) => '/client/operations'),
         GoRoute(
             path: '/client/replies',
             builder: (context, state) => const ClientRepliesScreen()),
+        // Infrastructure — mailbox + sending identity + provider trust
+        // consolidated under one surface (was /client/mailbox).
         GoRoute(
-            path: '/client/campaign',
-            builder: (context, state) => const CampaignsScreen()),
+            path: '/client/infrastructure',
+            builder: (context, state) => const ClientMailboxScreen()),
         GoRoute(
-            path: '/client/campaign/targeting',
-            builder: (context, state) => const CampaignsScreen()),
-        GoRoute(
-            path: '/client/campaigns',
-            redirect: (context, state) => '/client/campaign'),
+            path: '/client/mailbox',
+            redirect: (context, state) => '/client/infrastructure'),
         GoRoute(
             path: '/client/meetings',
             builder: (context, state) => const MeetingsScreen()),

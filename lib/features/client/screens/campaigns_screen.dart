@@ -780,7 +780,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                               Text(_saving ? 'Saving...' : 'Save targeting'),
                         ),
                         OutlinedButton.icon(
-                          onPressed: () => context.go('/client/outreach'),
+                          onPressed: () => context.go('/client/operations'),
                           icon: const Icon(Icons.mark_email_read_outlined),
                           label: const Text('Open execution'),
                         ),

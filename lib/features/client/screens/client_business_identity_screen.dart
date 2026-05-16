@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_business_identity_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
@@ -183,14 +183,14 @@ class _ClientBusinessIdentityScreenState
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const ClientLoadingView(
-            eyebrow: 'Business identity',
-            label: 'Loading commercial profile',
+            eyebrow: 'Representation',
+            label: 'Loading representation infrastructure',
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
           return ClientErrorView.fromError(
             snapshot.error,
-            title: 'Business identity is temporarily unavailable',
+            title: 'Representation is temporarily unavailable',
             onRetry: () => setState(() => _future = _load()),
           );
         }
@@ -203,10 +203,10 @@ class _ClientBusinessIdentityScreenState
         final requiredComplete = readiness['requiredComplete'] == true;
 
         return ClientPage(
-          eyebrow: 'Business identity',
-          title: 'Teach Orchestrate how to represent your business',
+          eyebrow: 'Representation',
+          title: 'How Orchestrate represents your business operationally',
           subtitle:
-              'Six guided sections. Required vs recommended is named plainly. Partial saves work — Orchestrate re-checks readiness on each save and activates execution once the gates pass.',
+              'Five guided sections + authorization. Required vs recommended is named plainly. Partial saves work — readiness orchestration re-checks on each save and activates managed execution once the gates pass.',
           banner: ClientStatusBanner(
             tone: requiredComplete
                 ? ClientBannerTone.success
@@ -250,8 +250,8 @@ class _ClientBusinessIdentityScreenState
             ),
             const SizedBox(height: 18),
             _IdentitySectionCard(
-              title: '1. Business identity',
-              subtitle: 'Who should Orchestrate represent?',
+              title: 'Representation profile',
+              subtitle: 'Who Orchestrate represents — the entity facts that anchor every dispatch.',
               guidanceLabel: 'Why this matters',
               // ignore: sort_child_properties_last
               child: Column(
@@ -278,8 +278,8 @@ class _ClientBusinessIdentityScreenState
             ),
             const SizedBox(height: 16),
             _IdentitySectionCard(
-              title: '2. Market and offer',
-              subtitle: 'What do you sell, and where?',
+              title: 'Commercial positioning',
+              subtitle: 'Offer, value propositions, and differentiators that anchor message context for governed dispatch.',
               // ignore: sort_child_properties_last
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -314,8 +314,8 @@ class _ClientBusinessIdentityScreenState
             ),
             const SizedBox(height: 16),
             _IdentitySectionCard(
-              title: '3. Ideal client',
-              subtitle: 'Who should Orchestrate look for?',
+              title: 'Ideal customer profile',
+              subtitle: 'The qualification scope — what signal-driven discovery should watch for and what it should never dispatch against.',
               // ignore: sort_child_properties_last
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -361,8 +361,8 @@ class _ClientBusinessIdentityScreenState
             ),
             const SizedBox(height: 16),
             _IdentitySectionCard(
-              title: '4. Representation boundaries',
-              subtitle: 'What should Orchestrate never claim or do?',
+              title: 'Representation boundaries',
+              subtitle: 'Voice, forbidden claims, compliance constraints, and disclaimers enforced before any send.',
               // ignore: sort_child_properties_last
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -395,8 +395,8 @@ class _ClientBusinessIdentityScreenState
             ),
             const SizedBox(height: 16),
             _IdentitySectionCard(
-              title: '5. Execution preferences',
-              subtitle: 'How should Orchestrate operate commercially?',
+              title: 'Execution preferences',
+              subtitle: 'Posture, pacing, reply handling, and follow-up sensitivity that shape governed dispatch.',
               // ignore: sort_child_properties_last
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -433,26 +433,10 @@ class _ClientBusinessIdentityScreenState
                       }),
             ),
             const SizedBox(height: 18),
-            ClientPanel(
-              title: '6. Representation authorization',
-              subtitle:
-                  'Required acknowledgement that Orchestrate may send outbound on the business’s behalf. Lives in its own flow.',
-              children: [
-                ClientInfoRow(
-                  title: 'Status',
-                  primary: readiness.isEmpty
-                      ? 'Loading…'
-                      : (data.profile['representationAuthorized'] == true
-                          ? 'Authorized.'
-                          : 'Not yet authorized — open the authorization flow on Campaign / Setup.'),
-                  trailing: data.profile['representationAuthorized'] == true
-                      ? const ClientBadge(label: 'Ready')
-                      : OutlinedButton(
-                          onPressed: () => context.go('/client/setup'),
-                          child: const Text('Open authorization'),
-                        ),
-                ),
-              ],
+            _RepresentationAuthPanel(
+              authorized: data.profile['representationAuthorized'] == true,
+              loading: readiness.isEmpty,
+              onAuthorized: () => setState(() => _future = _load()),
             ),
             const SizedBox(height: 16),
             ClientPanel(
@@ -661,6 +645,114 @@ class _ReadinessSummaryPanel extends StatelessWidget {
                 ),
               ),
         ],
+      ],
+    );
+  }
+}
+
+/// Representation authorization gate — resolved inline. Tapping "Authorize
+/// representation" pops a confirmation modal that calls
+/// /client/campaigns/representation-auth on the backend and refreshes the
+/// representation screen in place. No scavenger-hunt navigation.
+class _RepresentationAuthPanel extends StatefulWidget {
+  const _RepresentationAuthPanel({
+    required this.authorized,
+    required this.loading,
+    required this.onAuthorized,
+  });
+
+  final bool authorized;
+  final bool loading;
+  final VoidCallback onAuthorized;
+
+  @override
+  State<_RepresentationAuthPanel> createState() =>
+      _RepresentationAuthPanelState();
+}
+
+class _RepresentationAuthPanelState extends State<_RepresentationAuthPanel> {
+  final ClientCampaignRepository _campaignRepository = ClientCampaignRepository();
+  bool _submitting = false;
+  String? _error;
+
+  Future<void> _confirmAndAuthorize() async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Authorize Orchestrate to represent your business'),
+        content: const Text(
+          'Confirming this acknowledges that Orchestrate may send governed outbound dispatch on behalf of your business. Messages are sent under the verified sending identity you connect; representation boundaries (forbidden claims, compliance constraints, required disclaimers) are enforced before every send.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Authorize representation'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted) return;
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await _campaignRepository.acceptRepresentationAuth();
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      widget.onAuthorized();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Representation authorized.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _error = ClientErrorView.classifyError(error);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClientPanel(
+      title: 'Representation authorization',
+      subtitle:
+          'Required acknowledgement that Orchestrate may send outbound on the business’s behalf. Resolved inline — no scavenger-hunt navigation.',
+      children: [
+        ClientInfoRow(
+          title: 'Status',
+          primary: widget.loading
+              ? 'Loading…'
+              : widget.authorized
+                  ? 'Authorized — managed execution can run under this representation.'
+                  : 'Not yet authorized. Authorization is a one-time client-owned acknowledgement.',
+          trailing: widget.authorized
+              ? const ClientBadge(label: 'Authorized')
+              : FilledButton.icon(
+                  onPressed:
+                      _submitting || widget.loading ? null : _confirmAndAuthorize,
+                  icon: _submitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.verified_user_outlined, size: 18),
+                  label: Text(_submitting
+                      ? 'Authorizing…'
+                      : 'Authorize representation'),
+                ),
+        ),
+        if (_error != null)
+          ClientInfoRow(
+            title: 'Error',
+            primary: _error!,
+          ),
       ],
     );
   }

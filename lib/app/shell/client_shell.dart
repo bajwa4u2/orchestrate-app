@@ -7,7 +7,6 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
-import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 
 class ClientShell extends StatefulWidget {
   const ClientShell(
@@ -29,37 +28,49 @@ class _ClientShellState extends State<ClientShell> {
   static const double _sidebarWidth = 284;
   static const double _maxContentWidth = WorkspaceBreakpoints.contentMax;
 
+  // Operational shell IA. Order matches how Orchestrate operates:
+  // home overview, the live execution runtime, the intelligence /
+  // outcome continuity stack, then the infrastructure + representation
+  // surfaces clients own, then records + support + settings. Guidance
+  // is no longer a primary destination — it dissolves into inline
+  // "Why?" affordances + the contextual drawer.
   static const List<_ClientNavItem> _primaryItems = [
     _ClientNavItem(
-        label: 'Overview',
+        label: 'Home',
         path: '/client/overview',
         icon: Icons.space_dashboard_outlined),
     _ClientNavItem(
-        label: 'Business identity',
-        path: '/client/business-identity',
-        icon: Icons.fingerprint),
+        label: 'Operations',
+        path: '/client/operations',
+        icon: Icons.timeline_outlined),
     _ClientNavItem(
-        label: 'Campaign', path: '/client/campaign', icon: Icons.flag_outlined),
+        label: 'Opportunities',
+        path: '/client/opportunities',
+        icon: Icons.insights_outlined),
     _ClientNavItem(
-        label: 'Leads', path: '/client/leads', icon: Icons.people_alt_outlined),
-    _ClientNavItem(
-        label: 'Execution',
-        path: '/client/outreach',
-        icon: Icons.mark_email_unread_outlined),
-    _ClientNavItem(
-        label: 'Replies', path: '/client/replies', icon: Icons.forum_outlined),
+        label: 'Replies',
+        path: '/client/replies',
+        icon: Icons.forum_outlined),
     _ClientNavItem(
         label: 'Meetings',
         path: '/client/meetings',
         icon: Icons.calendar_month_outlined),
     _ClientNavItem(
-        label: 'Billing',
-        path: '/client/billing',
-        icon: Icons.credit_card_outlined),
+        label: 'Infrastructure',
+        path: '/client/infrastructure',
+        icon: Icons.dns_outlined),
+    _ClientNavItem(
+        label: 'Representation',
+        path: '/client/representation',
+        icon: Icons.fingerprint),
     _ClientNavItem(
         label: 'Records',
         path: '/client/records',
         icon: Icons.description_outlined),
+    _ClientNavItem(
+        label: 'Billing',
+        path: '/client/billing',
+        icon: Icons.credit_card_outlined),
     _ClientNavItem(
         label: 'Notifications',
         path: '/client/notifications',
@@ -68,10 +79,6 @@ class _ClientShellState extends State<ClientShell> {
         label: 'Support',
         path: '/client/support',
         icon: Icons.support_agent_outlined),
-    _ClientNavItem(
-        label: 'Guidance',
-        path: '__guidance__',
-        icon: Icons.help_outline),
     _ClientNavItem(
         label: 'Settings',
         path: '/client/settings',
@@ -137,20 +144,27 @@ class _ClientShellState extends State<ClientShell> {
   String _topTitle() {
     switch (widget.currentPath) {
       case '/client/overview':
-        return 'Overview';
+        return 'Home';
       case '/client/setup':
         return 'Setup';
+      case '/client/representation':
+      case '/client/business-identity':
       case '/client/campaign':
       case '/client/campaign/targeting':
-        return 'Campaign';
+        return 'Representation';
+      case '/client/opportunities':
       case '/client/leads':
-        return 'Leads';
+        return 'Opportunities';
+      case '/client/operations':
       case '/client/outreach':
-        return 'Outreach';
+        return 'Operations';
       case '/client/replies':
         return 'Replies';
       case '/client/meetings':
         return 'Meetings';
+      case '/client/infrastructure':
+      case '/client/mailbox':
+        return 'Infrastructure';
       case '/client/invoices':
       case '/client/receipts':
       case '/client/records':
@@ -158,6 +172,8 @@ class _ClientShellState extends State<ClientShell> {
       case '/client/statements':
       case '/client/reminders':
         return 'Records';
+      case '/client/billing':
+        return 'Billing';
       case '/client/notifications':
         return 'Notifications';
       case '/client/support':
@@ -167,11 +183,11 @@ class _ClientShellState extends State<ClientShell> {
       case '/app/contacts':
         return 'Contacts';
       case '/app/campaigns':
-        return 'Campaigns';
+        return 'Representation';
       case '/app/activity':
         return 'Activity';
       case '/app/mailbox':
-        return 'Mailbox';
+        return 'Infrastructure';
       case '/app/newsletter':
         return 'Newsletter';
       case '/app/branding':
@@ -198,20 +214,27 @@ class _ClientShellState extends State<ClientShell> {
 
     switch (widget.currentPath) {
       case '/client/overview':
-        return 'Setup, execution state, replies, meetings, billing, and support stay readable in one workspace.';
+        return 'Operational continuity at a glance — what Orchestrate is doing right now, what is preparing, what is blocked, and what needs you.';
       case '/client/setup':
         return 'Setup captures your business profile, target customers, market, offer, and authorization.';
+      case '/client/representation':
+      case '/client/business-identity':
       case '/client/campaign':
       case '/client/campaign/targeting':
-        return 'Targeting holds the market, authorization, and scope Orchestrate runs managed execution against.';
+        return 'How Orchestrate represents your business operationally — identity, ICP, voice, constraints, authorization.';
+      case '/client/opportunities':
       case '/client/leads':
-        return 'Leads show whether records are sourced, qualified, contacted, or still waiting.';
+        return 'Signal-driven opportunities Orchestrate is qualifying against your ICP and representation scope.';
+      case '/client/operations':
       case '/client/outreach':
-        return 'Execution shows readiness state, governed dispatch, follow-up continuity, and reply movement.';
+        return 'Managed execution runtime — readiness chain, dispatch governance, pacing, recovery state.';
       case '/client/replies':
-        return 'Replies show real inbound outcomes from managed execution.';
+        return 'Conversation continuity and escalation handling from managed execution.';
       case '/client/meetings':
-        return 'Meetings stay tied to replies and handoff progress.';
+        return 'Outcome continuity — meeting handoff state tied to replies.';
+      case '/client/infrastructure':
+      case '/client/mailbox':
+        return 'Mailbox, sending identity, DNS readiness, provider trust, and reconnect/recovery state.';
       case '/client/billing':
       case '/client/invoices':
       case '/client/receipts':
@@ -222,17 +245,17 @@ class _ClientShellState extends State<ClientShell> {
       case '/client/notifications':
         return 'Notifications show account notices available for your workspace.';
       case '/client/support':
-        return 'Support uses your account context for setup, billing, and service questions.';
+        return 'Human escalation for setup, billing, or anything the runtime cannot resolve inline.';
       case '/client/settings':
         return 'Settings shows account details, setup status, and authorization.';
       case '/app/contacts':
         return 'Contacts show sourced records and readiness.';
       case '/app/campaigns':
-        return 'Targeting is where you set the market, geography, and scope Orchestrate runs execution against.';
+        return 'Representation scope — the market, geography, and ICP Orchestrate operates against.';
       case '/app/activity':
         return 'Activity shows replies, meetings, and execution movement.';
       case '/app/mailbox':
-        return 'Mailbox shows sending-identity readiness and recent dispatches.';
+        return 'Infrastructure: sending-identity readiness, mailbox health, and recent dispatch.';
       case '/app/newsletter':
         return 'Update controls will appear here when available for your account.';
       case '/app/branding':
@@ -248,8 +271,29 @@ class _ClientShellState extends State<ClientShell> {
 
   bool _isSelected(String path) {
     if (widget.currentPath == path) return true;
-    if (path == '/client/campaign' &&
-        widget.currentPath.startsWith('/client/campaign')) {
+    // Representation captures the old business-identity + campaign
+    // paths so deep links keep the right sidebar entry highlighted
+    // while redirects propagate.
+    if (path == '/client/representation' &&
+        const {
+          '/client/representation',
+          '/client/business-identity',
+          '/client/campaign',
+          '/client/campaign/targeting',
+          '/client/campaigns',
+        }.contains(widget.currentPath)) {
+      return true;
+    }
+    if (path == '/client/operations' &&
+        widget.currentPath == '/client/outreach') {
+      return true;
+    }
+    if (path == '/client/opportunities' &&
+        widget.currentPath == '/client/leads') {
+      return true;
+    }
+    if (path == '/client/infrastructure' &&
+        widget.currentPath == '/client/mailbox') {
       return true;
     }
     if (path == '/client/records' &&
@@ -567,18 +611,7 @@ class _NavButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppTheme.radius),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        onTap: () {
-          // Sentinel routes open a deliberate drawer instead of navigating.
-          if (item.path == '__guidance__') {
-            openGuidanceDrawer(
-              context,
-              target: GuidanceTarget.readiness,
-              surface: 'client_shell',
-            );
-            return;
-          }
-          context.go(item.path);
-        },
+        onTap: () => context.go(item.path),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(

@@ -6,6 +6,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/operational_continuity_strip.dart';
 
 enum ClientSection { home, billing }
 
@@ -38,6 +39,11 @@ class ClientHomeScreen extends StatelessWidget {
             children: [
               _Hero(title: data.title, subtitle: data.subtitle),
               const SizedBox(height: 18),
+              if (section == ClientSection.home) ...[
+                const OperationalContinuityStrip(
+                    surface: 'client_overview_home'),
+                const SizedBox(height: 18),
+              ],
               _MetricRow(metrics: data.metrics),
               const SizedBox(height: 18),
               LayoutBuilder(builder: (context, constraints) {
@@ -122,13 +128,13 @@ class ClientHomeScreen extends StatelessWidget {
         secondaryTitle: 'Direct actions',
         secondaryRows: [
           _Row(
-              title: 'Targeting & execution scope',
+              title: 'Representation scope',
               primary:
-                  'Keep target market in one place. Orchestrate runs signal discovery and managed execution against the saved scope.',
+                  'How Orchestrate represents your business operationally — identity, ICP, boundaries, authorization. Signal discovery and governed dispatch run against this scope.',
               secondary:
-                  'Countries, industries, notes, and boundaries live here.',
-              actionLabel: 'Open targeting',
-              route: '/app/campaigns'),
+                  'Identity, voice, ICP, and compliance constraints live under Representation.',
+              actionLabel: 'Open representation',
+              route: '/client/representation'),
           _Row(
               title: 'Contacts and intelligence',
               primary:
@@ -158,13 +164,13 @@ class ClientHomeScreen extends StatelessWidget {
       primaryTitle: 'Current flow',
       primaryRows: [
         _Row(
-            title: 'Targeting & execution scope',
+            title: 'Representation scope',
             primary:
-                'Set target market, industries, and market boundaries in one place. Orchestrate runs execution against this scope automatically.',
+                'How Orchestrate represents your business operationally — identity, ICP, voice, constraints, authorization. Signal discovery and governed dispatch run against this scope.',
             secondary:
-                'Targeting is the canonical input for signal discovery and managed execution.',
-            actionLabel: 'Open targeting',
-            route: '/app/campaigns'),
+                'Representation is the canonical input for signal-driven discovery and managed execution.',
+            actionLabel: 'Open representation',
+            route: '/client/representation'),
         _Row(
             title: 'Contacts and intelligence',
             primary: _join([
