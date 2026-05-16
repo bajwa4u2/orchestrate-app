@@ -53,10 +53,7 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
     try {
       final result = await action();
       if (!mounted) return;
-      final message = readText(result, 'message',
-          fallback: retry
-              ? 'Campaign retry has started.'
-              : 'Campaign activation has started.');
+      final message = _campaignActionMessage(result, retry: retry);
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
       _retry();
@@ -72,6 +69,33 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         });
       }
     }
+  }
+
+  String _campaignActionMessage(
+    Map<String, dynamic> result, {
+    required bool retry,
+  }) {
+    // Backend signals already-active via either `alreadyActive: true` or
+    // `status: 'active'` on the idempotent path. Treat that as a calm
+    // confirmation, not a noisy "your action has started" message that
+    // contradicts what the page is about to show after refresh.
+    final alreadyActive = result['alreadyActive'] == true ||
+        '${result['status'] ?? ''}'.toLowerCase() == 'active';
+    if (alreadyActive) {
+      return 'Campaign is already running — outreach will keep moving without further action.';
+    }
+    final success = result['success'] != false;
+    if (!success) {
+      final backendMessage = readText(result, 'message');
+      return backendMessage.isNotEmpty
+          ? backendMessage
+          : 'Campaign action is not available right now. Refresh outreach for the latest state.';
+    }
+    final backendMessage = readText(result, 'message');
+    if (backendMessage.isNotEmpty) return backendMessage;
+    return retry
+        ? 'Campaign retry has started.'
+        : 'Campaign activation has started.';
   }
 
   Future<void> _activateMailbox() async {
@@ -138,12 +162,15 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         final meetings = _intValue(summary['meetings']);
         final wfMetrics = asMap(workflowState['metrics']);
         final retryableFailed = _intValue(wfMetrics['retryableFailed']);
+        final primaryStatus =
+            readText(readiness, 'primaryCampaignStatus').toUpperCase();
         final status = _outreachStatus(
           blockers: blockers,
           canStart: canStart,
           canRetry: canRetry,
           sent: sent,
           replies: replies,
+          primaryCampaignStatus: primaryStatus,
         );
         final attention = _attentionItems(
           blockers: blockers,
@@ -163,7 +190,10 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
             message: status.bannerMessage,
           ),
           actions: [
-            if (canStart && blockers.isEmpty)
+            // Defense in depth: even if the action payload still carries a
+            // stale `startCampaign` flag, never expose the Start button when
+            // the authoritative campaign status says ACTIVE. Same for retry.
+            if (canStart && blockers.isEmpty && primaryStatus != 'ACTIVE')
               FilledButton.icon(
                 onPressed: _starting
                     ? null
@@ -178,7 +208,7 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
                     : const Icon(Icons.rocket_launch_outlined, size: 18),
                 label: Text(_starting ? 'Starting' : 'Start campaign'),
               ),
-            if (canRetry && blockers.isEmpty)
+            if (canRetry && blockers.isEmpty && primaryStatus != 'ACTIVE')
               OutlinedButton.icon(
                 onPressed: _retrying
                     ? null
@@ -392,6 +422,7 @@ _OutreachStatus _outreachStatus({
   required bool canRetry,
   required int sent,
   required int replies,
+  String primaryCampaignStatus = '',
 }) {
   if (blockers.isNotEmpty) {
     return _OutreachStatus(
@@ -402,15 +433,44 @@ _OutreachStatus _outreachStatus({
       tone: ClientBannerTone.blocked,
     );
   }
-  if (canStart || canRetry) {
+
+  // The authoritative campaign status takes precedence over derived
+  // action flags. If the backend says the primary campaign is ACTIVE,
+  // never tell the operator "campaign can move now" — even if a stale
+  // canStart/canRetry flag slipped through.
+  if (primaryCampaignStatus == 'ACTIVE') {
+    if (sent > 0 && replies == 0) {
+      return const _OutreachStatus(
+        title: 'Outreach is running',
+        bannerTitle: 'Sends are out, waiting for replies',
+        bannerMessage:
+            'Your campaign is active. No replies are visible yet — keep watching reply volume and mailbox readiness.',
+        tone: ClientBannerTone.info,
+      );
+    }
     return const _OutreachStatus(
-      title: 'Outreach is ready for action',
-      bannerTitle: 'Campaign can move now',
+      title: 'Outreach is running',
+      bannerTitle: 'Campaign is active',
       bannerMessage:
-          'Use the available campaign action when you are ready. If you do nothing, outreach remains in its current state.',
+          'Discovery, qualification, and outreach are running automatically. Review replies and meetings as they arrive.',
+      tone: ClientBannerTone.success,
+    );
+  }
+
+  if (canStart || canRetry) {
+    return _OutreachStatus(
+      title: canRetry
+          ? 'Outreach needs a retry'
+          : 'Outreach is ready to start',
+      bannerTitle:
+          canRetry ? 'Campaign needs a retry' : 'Campaign is ready to start',
+      bannerMessage: canRetry
+          ? 'Use Retry campaign to re-queue failed work. Discovery and qualification stay paused until you do.'
+          : 'Use Start campaign when you are ready. Discovery and qualification will begin once activation completes.',
       tone: ClientBannerTone.warning,
     );
   }
+
   if (sent > 0 && replies == 0) {
     return const _OutreachStatus(
       title: 'Outreach is waiting for replies',
