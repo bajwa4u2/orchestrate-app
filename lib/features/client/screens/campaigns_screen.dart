@@ -1170,31 +1170,36 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       ],
                       const SizedBox(height: 16),
                     ],
-                    SizedBox(
+                    // Campaign lifecycle is Orchestrate's responsibility.
+                    // The client edits targeting/scope/offer here; execution
+                    // (start, retry, resume, pause, recovery) is managed by
+                    // the platform and surfaced in Outreach. Save updates
+                    // here, then watch operational movement on Outreach.
+                    Container(
                       width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: (_starting ||
-                                _restarting ||
-                                _saving ||
-                                _campaignPrimaryAction ==
-                                    _CampaignPrimaryAction.waiting)
-                            ? null
-                            : _runCampaignPrimaryAction,
-                        icon: (_starting || _restarting || _saving)
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Icon(_campaignPrimaryActionIcon),
-                        label: Text(
-                          _starting
-                              ? 'Starting your campaign...'
-                              : (_restarting
-                                  ? 'Restarting your campaign...'
-                                  : _campaignPrimaryActionLabel),
-                        ),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(AppTheme.radius),
+                        border: Border.all(
+                            color: theme.colorScheme.outlineVariant),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Orchestrate runs the campaign for you',
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Update targeting here and save. Orchestrate will pick up your changes and continue running discovery, qualification, and outreach automatically. Open Outreach to watch what is happening.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1202,17 +1207,26 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                       spacing: 12,
                       runSpacing: 12,
                       children: <Widget>[
+                        FilledButton.icon(
+                          onPressed: _saving ? null : _save,
+                          icon: _saving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.check_circle_outline),
+                          label:
+                              Text(_saving ? 'Saving...' : 'Save targeting'),
+                        ),
                         OutlinedButton.icon(
-                          onPressed: (_saving || _starting || _restarting)
-                              ? null
-                              : _save,
-                          icon: const Icon(Icons.check_circle_outline),
-                          label: Text(_saving ? 'Saving...' : 'Save for later'),
+                          onPressed: () => context.go('/client/outreach'),
+                          icon: const Icon(Icons.mark_email_read_outlined),
+                          label: const Text('View managed execution'),
                         ),
                         TextButton.icon(
-                          onPressed: (_restarting || _starting)
-                              ? null
-                              : () => context.go('/app/home'),
+                          onPressed: () => context.go('/app/home'),
                           icon: const Icon(Icons.arrow_back),
                           label: const Text('Back to workspace'),
                         ),

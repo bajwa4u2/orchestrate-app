@@ -23,6 +23,30 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  Future<Map<String, dynamic>> fetchSendingDomain() async {
+    try {
+      final json = await _apiClient.getJson('/client/mailbox/domain',
+          surface: ApiSurface.client);
+      return _asMap(json);
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      if (error is ApiException && error.statusCode == 404) {
+        return const <String, dynamic>{};
+      }
+      debugPrint('[client_mailbox_repository] /client/mailbox/domain failed: $error');
+      return const <String, dynamic>{};
+    }
+  }
+
+  Future<Map<String, dynamic>> verifySendingDomain() async {
+    final json = await _apiClient.postJson(
+      '/client/mailbox/domain/verify',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   Future<Map<String, dynamic>> fetchResponseEligibility(String replyId) async {
     final json = await _apiClient.getJson(
       '/client/replies/$replyId/response-eligibility',

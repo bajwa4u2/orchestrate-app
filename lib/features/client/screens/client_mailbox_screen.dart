@@ -25,6 +25,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       ClientOutreachRepository();
   late Future<_MailboxViewData> _future = _load();
   bool _provisioning = false;
+  bool _verifyingDomain = false;
   String? _resultMessage;
 
   Future<void> _provisionDefaultMailbox() async {
@@ -57,6 +58,27 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       _resultMessage = null;
       _future = _load();
     });
+  }
+
+  Future<void> _checkSendingIdentity() async {
+    setState(() => _verifyingDomain = true);
+    try {
+      final result = await _mailboxRepository.verifySendingDomain();
+      final ready = result['ready'] == true;
+      setState(() {
+        _resultMessage = ready
+            ? 'Sending domain verified. Orchestrate can send on your behalf.'
+            : 'Verification did not pass yet. Make sure each record is published and try again — DNS can take time to propagate.';
+        _future = _load();
+      });
+    } catch (error) {
+      setState(() {
+        _resultMessage = ClientErrorView.classifyError(error);
+        _future = _load();
+      });
+    } finally {
+      if (mounted) setState(() => _verifyingDomain = false);
+    }
   }
 
   @override
@@ -115,6 +137,12 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
                     ),
                   ),
               ],
+            ),
+            const SizedBox(height: 18),
+            _SendingIdentityPanel(
+              identity: data.sendingIdentity,
+              verifying: _verifyingDomain,
+              onVerify: _checkSendingIdentity,
             ),
             const SizedBox(height: 18),
             ClientPanel(
@@ -212,6 +240,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     final replies = await _outreachRepository.fetchReplies();
     final notices = await _outreachRepository.fetchNotifications();
     final readiness = await _mailboxRepository.fetchMailbox();
+    final sendingDomain = await _mailboxRepository.fetchSendingDomain();
 
     final mailbox = asMap(readiness['mailbox']);
     final blockers = asList(readiness['blockers']).map(asMap).toList();
@@ -270,6 +299,8 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       blockers: blockers,
     );
 
+    final sendingIdentity = _readSendingDomain(sendingDomain);
+
     return _MailboxViewData(
       dispatchCount: dispatches.length,
       replyCount: replies.length,
@@ -282,6 +313,50 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       dispatchRows: dispatchRows,
       identitySteps: identitySteps,
       primaryAction: primaryAction,
+      sendingIdentity: sendingIdentity,
+    );
+  }
+
+  _SendingIdentity _readSendingDomain(Map<String, dynamic> map) {
+    if (map.isEmpty) {
+      return const _SendingIdentity(
+        present: false,
+        domain: '',
+        status: 'no_domain',
+        ready: false,
+        verifiedAt: null,
+        lastCheckedAt: null,
+        records: <_DnsRecord>[],
+      );
+    }
+    final rawRecords = asList(map['records']);
+    final records = rawRecords
+        .map(asMap)
+        .where((entry) => entry.isNotEmpty)
+        .map(
+          (entry) => _DnsRecord(
+            purpose: readText(entry, 'purpose'),
+            type: readText(entry, 'type'),
+            host: readText(entry, 'host'),
+            expectedValue: readText(entry, 'expectedValue'),
+            explanation: readText(entry, 'explanation'),
+            matched: entry['matched'] == true,
+            errorMessage: readText(entry, 'errorMessage'),
+          ),
+        )
+        .toList();
+    return _SendingIdentity(
+      present: true,
+      domain: readText(map, 'domain'),
+      status: readText(map, 'status', fallback: 'pending'),
+      ready: map['ready'] == true,
+      verifiedAt: readText(map, 'verifiedAt').isEmpty
+          ? null
+          : readText(map, 'verifiedAt'),
+      lastCheckedAt: readText(map, 'lastCheckedAt').isEmpty
+          ? null
+          : readText(map, 'lastCheckedAt'),
+      records: records,
     );
   }
 
@@ -395,6 +470,7 @@ class _MailboxViewData {
     required this.dispatchRows,
     required this.identitySteps,
     required this.primaryAction,
+    required this.sendingIdentity,
   });
 
   final int dispatchCount;
@@ -408,6 +484,47 @@ class _MailboxViewData {
   final List<_MailboxRow> dispatchRows;
   final List<_IdentityStep> identitySteps;
   final _MailboxPrimaryAction? primaryAction;
+  final _SendingIdentity sendingIdentity;
+}
+
+class _SendingIdentity {
+  const _SendingIdentity({
+    required this.present,
+    required this.domain,
+    required this.status,
+    required this.ready,
+    required this.verifiedAt,
+    required this.lastCheckedAt,
+    required this.records,
+  });
+
+  final bool present;
+  final String domain;
+  final String status;
+  final bool ready;
+  final String? verifiedAt;
+  final String? lastCheckedAt;
+  final List<_DnsRecord> records;
+}
+
+class _DnsRecord {
+  const _DnsRecord({
+    required this.purpose,
+    required this.type,
+    required this.host,
+    required this.expectedValue,
+    required this.explanation,
+    required this.matched,
+    required this.errorMessage,
+  });
+
+  final String purpose;
+  final String type;
+  final String host;
+  final String expectedValue;
+  final String explanation;
+  final bool matched;
+  final String errorMessage;
 }
 
 class _MailboxHero {
@@ -448,6 +565,83 @@ class _IdentityStep {
   final String label;
   final bool complete;
   final String description;
+}
+
+class _SendingIdentityPanel extends StatelessWidget {
+  const _SendingIdentityPanel({
+    required this.identity,
+    required this.verifying,
+    required this.onVerify,
+  });
+
+  final _SendingIdentity identity;
+  final bool verifying;
+  final VoidCallback onVerify;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (!identity.present) {
+      return ClientPanel(
+        title: 'Sending domain (SPF / DKIM / DMARC)',
+        subtitle:
+            'A sending domain is the public identity Orchestrate uses to send for you. We will set this up automatically once a mailbox is connected.',
+        children: const [
+          ClientEmptyState(
+              message:
+                  'No sending domain is attached yet. Connect a mailbox to start sending-identity setup.'),
+        ],
+      );
+    }
+    final subtitleParts = <String>[
+      'Domain: ${identity.domain}',
+      identity.ready ? 'Verified' : 'Needs verification',
+      if (identity.verifiedAt != null && identity.verifiedAt!.isNotEmpty)
+        'Verified ${dateLabel(identity.verifiedAt)}',
+      if (identity.lastCheckedAt != null && identity.lastCheckedAt!.isNotEmpty)
+        'Last checked ${dateLabel(identity.lastCheckedAt)}',
+    ];
+    return ClientPanel(
+      title: identity.ready
+          ? 'Sending domain verified'
+          : 'Publish these DNS records to verify your sending domain',
+      subtitle: subtitleParts.join(' · '),
+      children: [
+        for (final record in identity.records) ...[
+          ClientInfoRow(
+            title: '${record.purpose.toUpperCase()} · ${record.type}',
+            primary: 'Host: ${record.host}',
+            secondary:
+                'Expected: ${record.expectedValue}${record.errorMessage.isNotEmpty ? ' · ${record.errorMessage}' : ''}',
+            trailing: ClientBadge(label: record.matched ? 'Found' : 'Missing'),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 0, bottom: 4),
+            child: Text(
+              record.explanation,
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            FilledButton.icon(
+              onPressed: verifying ? null : onVerify,
+              icon: verifying
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.verified_outlined, size: 18),
+              label: Text(verifying ? 'Checking' : 'Check verification'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 class _MailboxPrimaryAction {
