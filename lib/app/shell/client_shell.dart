@@ -38,7 +38,7 @@ class _ClientShellState extends State<ClientShell> {
     _ClientNavItem(
         label: 'Leads', path: '/client/leads', icon: Icons.people_alt_outlined),
     _ClientNavItem(
-        label: 'Outreach',
+        label: 'Execution',
         path: '/client/outreach',
         icon: Icons.mark_email_unread_outlined),
     _ClientNavItem(
@@ -184,23 +184,23 @@ class _ClientShellState extends State<ClientShell> {
       return 'Finish setup so your target market and service preferences are ready.';
     }
     if (session.normalizedSubscriptionStatus != 'active') {
-      return 'Complete billing to keep service records and campaign activation moving.';
+      return 'Complete billing so readiness orchestration can activate managed execution.';
     }
 
     switch (widget.currentPath) {
       case '/client/overview':
-        return 'Setup, campaign movement, outreach, replies, meetings, billing, and support stay readable in one workspace.';
+        return 'Setup, execution state, replies, meetings, billing, and support stay readable in one workspace.';
       case '/client/setup':
         return 'Setup captures your business profile, target customers, market, offer, and authorization.';
       case '/client/campaign':
       case '/client/campaign/targeting':
-        return 'Campaign shows target market, authorization, status, and the next safe action.';
+        return 'Targeting holds the market, authorization, and scope Orchestrate runs managed execution against.';
       case '/client/leads':
-        return 'Leads show whether records are sourced, ready, contacted, or still waiting.';
+        return 'Leads show whether records are sourced, qualified, contacted, or still waiting.';
       case '/client/outreach':
-        return 'Outreach shows queued, sent, follow-up, and reply movement when records are available.';
+        return 'Execution shows readiness state, governed dispatch, follow-up continuity, and reply movement.';
       case '/client/replies':
-        return 'Replies show real inbound outcomes from your outreach.';
+        return 'Replies show real inbound outcomes from managed execution.';
       case '/client/meetings':
         return 'Meetings stay tied to replies and handoff progress.';
       case '/client/billing':
@@ -219,11 +219,11 @@ class _ClientShellState extends State<ClientShell> {
       case '/app/contacts':
         return 'Contacts show sourced records and readiness.';
       case '/app/campaigns':
-        return 'Campaigns is the place for target market, geography, and activation.';
+        return 'Targeting is where you set the market, geography, and scope Orchestrate runs execution against.';
       case '/app/activity':
-        return 'Activity shows replies, meetings, and outreach movement.';
+        return 'Activity shows replies, meetings, and execution movement.';
       case '/app/mailbox':
-        return 'Mailbox shows sent outreach and reply movement.';
+        return 'Mailbox shows sending-identity readiness and recent dispatches.';
       case '/app/newsletter':
         return 'Update controls will appear here when available for your account.';
       case '/app/branding':

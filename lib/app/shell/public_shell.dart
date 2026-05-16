@@ -146,7 +146,7 @@ class _PublicHeader extends StatelessWidget {
                       onTap: () => context.go('/how-it-works'),
                     ),
                     _HeaderLink(
-                      label: 'Sourcing',
+                      label: 'Intelligence',
                       active: _isActive(const ['/lead-sourcing']),
                       onTap: () => context.go('/lead-sourcing'),
                     ),
@@ -306,7 +306,7 @@ class _PublicFooter extends StatelessWidget {
                           label: 'How it works',
                           onTap: () => context.go('/how-it-works')),
                       _FooterLink(
-                          label: 'Sourcing',
+                          label: 'Intelligence',
                           onTap: () => context.go('/lead-sourcing')),
                       _FooterLink(
                           label: 'Trust',

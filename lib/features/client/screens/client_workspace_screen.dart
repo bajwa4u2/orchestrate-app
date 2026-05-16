@@ -122,19 +122,19 @@ class ClientHomeScreen extends StatelessWidget {
         secondaryTitle: 'Direct actions',
         secondaryRows: [
           _Row(
-              title: 'Campaign targeting',
+              title: 'Targeting & execution scope',
               primary:
-                  'Keep target market in one place before new sourcing runs.',
+                  'Keep target market in one place. Orchestrate runs signal discovery and managed execution against the saved scope.',
               secondary:
-                  'Countries, industries, notes, and boundaries live in campaigns.',
-              actionLabel: 'Open campaigns',
+                  'Countries, industries, notes, and boundaries live here.',
+              actionLabel: 'Open targeting',
               route: '/app/campaigns'),
           _Row(
-              title: 'Contacts and sourcing',
+              title: 'Contacts and intelligence',
               primary:
-                  'Lead sourcing and sendability are tracked separately from billing.',
+                  'Sourced contacts and sendability are tracked separately from billing.',
               secondary:
-                  'Use contacts to review sourced records, sendability, and outreach movement.',
+                  'Use contacts to review sourced records, sendability, and execution movement.',
               actionLabel: 'Open contacts',
               route: '/app/contacts'),
         ],
@@ -158,21 +158,21 @@ class ClientHomeScreen extends StatelessWidget {
       primaryTitle: 'Current flow',
       primaryRows: [
         _Row(
-            title: 'Campaign targeting',
+            title: 'Targeting & execution scope',
             primary:
-                'Set target market, industries, and market boundaries in one place only.',
+                'Set target market, industries, and market boundaries in one place. Orchestrate runs execution against this scope automatically.',
             secondary:
-                'Campaigns is now the canonical targeting area for lead generation.',
-            actionLabel: 'Open campaigns',
+                'Targeting is the canonical input for signal discovery and managed execution.',
+            actionLabel: 'Open targeting',
             route: '/app/campaigns'),
         _Row(
-            title: 'Contacts and sourcing',
+            title: 'Contacts and intelligence',
             primary: _join([
               '${_countValue(activity['leadCount'] ?? activity['leads'])} leads',
               '${_countValue(activity['sendableLeadCount'] ?? activity['sendableLeads'])} sendable',
             ]),
             secondary:
-                'Use contacts to review sourced records, sendability, outreach movement, and reply state.',
+                'Use contacts to review sourced records, sendability, execution movement, and reply state.',
             actionLabel: 'Open contacts',
             route: '/app/contacts'),
         _Row(

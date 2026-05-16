@@ -290,7 +290,7 @@ class _OrchestrateActivityPanel extends StatelessWidget {
       List<dynamic> campaigns) {
     if (campaigns.isEmpty) return null;
     final first = asMap(campaigns.first);
-    final name = readText(first, 'name', fallback: 'Primary Automation');
+    final name = readText(first, 'name', fallback: 'Primary execution');
     final status = titleCase(readText(first, 'status'));
     final counts = asMap(first['counts']);
     final primary = status.isEmpty ? name : '$name · $status';

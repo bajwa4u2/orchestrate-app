@@ -419,29 +419,29 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'AI governance',
-            title: 'AI helps run the work with service controls.',
+            title: 'AI runs inside the governance layer — never around it.',
             subtitle:
-                'AI assists with strategy, messages, sequences, revenue documents, and diagnosis while the managed service stays reviewable and controlled.',
+                'AI assists with strategy, message drafting, follow-up cadence, and revenue-document generation. Every action is reviewable, auditable, and gated by readiness checks before it affects live execution.',
             sideActions: [
               ContentAction(
                   label: 'Talk through fit', path: '/contact', filled: true),
-              ContentAction(label: 'See journey', path: '/how-it-works'),
+              ContentAction(label: 'See activation journey', path: '/how-it-works'),
             ],
             sections: [
               ContentSection(
                 title: 'Governed assistance',
                 body:
-                    'Operators can review readiness, trust status, diagnosis, and generation actions before service decisions affect live work.',
+                    'Operators can review readiness, trust status, diagnosis, and generation decisions before they affect live execution. AI is decision support inside the readiness engine, not an autonomous SDR running outside it.',
               ),
               ContentSection(
-                title: 'Client-safe trust',
+                title: 'Client-safe explainability',
                 body:
-                    'Clients see clear service progress, blocked states, and next steps without being asked to interpret technical logs.',
+                    'Clients see verified state, blocked states, and the next concrete step — never raw logs, never decision-tree internals. The readiness engine is the explanation surface.',
               ),
               ContentSection(
-                title: 'Service truth',
+                title: 'Execution truth',
                 body:
-                    'When a view is not available for an account yet, the workspace says so plainly and points to the next useful action.',
+                    'When a view is not available for an account yet, the workspace says so plainly and points to the next useful action. No fabricated dashboards. No invented metrics.',
               ),
             ],
           ),

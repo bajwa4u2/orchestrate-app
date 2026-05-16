@@ -238,7 +238,7 @@ ClientStatusBanner _meetingBanner({
     if (upstreamBlocker != null && upstreamBlocker.isNotEmpty) {
       return ClientStatusBanner(
         tone: ClientBannerTone.warning,
-        title: 'Meetings require active outreach',
+        title: 'Meetings require managed execution to be running',
         message: upstreamBlocker,
       );
     }

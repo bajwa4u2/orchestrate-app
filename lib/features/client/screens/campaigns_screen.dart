@@ -27,15 +27,12 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
 
   bool _loading = true;
   bool _saving = false;
-  bool _starting = false;
-  bool _restarting = false;
   String _campaignState = 'READY';
   String? _activationMessage;
   String? _campaignHealth;
   Map<String, dynamic> _campaignMetrics = const <String, dynamic>{};
   Map<String, dynamic> _campaignActionEligibility = const <String, dynamic>{};
   String? _error;
-  Map<String, dynamic>? _pendingActivationPayload;
 
   String _subscriptionPlanLabel = 'Current plan';
   String _subscriptionTier = '';
@@ -175,30 +172,30 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     final health = _string(_campaignHealth).toUpperCase();
     switch (_campaignState) {
       case 'ACTIVATING':
-        return 'Campaign activation in progress';
+        return 'Orchestrate is activating execution';
       case 'ACTIVE':
         switch (health) {
           case 'PAUSED':
-            return 'Campaign is paused';
+            return 'Execution is paused for recovery';
           case 'REFILLING':
-            return 'Refilling new leads';
+            return 'Replenishing the qualified pool';
           case 'SATURATED':
-            return 'Queue is full and processing';
+            return 'Dispatch queue is at capacity';
           case 'STALLED':
-            return 'Campaign needs attention';
+            return 'Execution slowed — operator review';
           default:
-            return 'Campaign is running';
+            return 'Managed execution is running';
         }
       case 'PAUSED':
-        return 'Campaign is paused';
+        return 'Execution is paused for recovery';
       case 'BLOCKED':
-        return 'Campaign is blocked';
+        return 'Execution is blocked';
       case 'ERROR':
-        return 'Campaign needs attention';
+        return 'Orchestrate is recovering execution';
       case 'NEEDS_REBUILD':
-        return 'Campaign needs rebuild';
+        return 'Targeting changed — execution will rebuild';
       default:
-        return 'Start your campaign';
+        return 'Targeting saved — execution will activate';
     }
   }
 
@@ -206,103 +203,46 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     final health = _string(_campaignHealth).toUpperCase();
     switch (_campaignState) {
       case 'ACTIVATING':
-        return 'We are preparing leads and outreach from your saved targeting.';
+        return 'Discovery, qualification, and governed dispatch are coming online against your saved targeting.';
       case 'ACTIVE':
         switch (health) {
           case 'PAUSED':
-            return 'Automation is paused. Your saved targeting is still here when you are ready to resume.';
+            return 'Orchestrate paused dispatch while it recovers. Your saved targeting is unchanged; execution will resume automatically.';
           case 'REFILLING':
-            return 'We are replenishing lead inventory from your saved targeting.';
+            return 'Signal discovery is replenishing the qualified pool from your saved targeting.';
           case 'SATURATED':
-            return 'Current outreach inventory is full and processing against your saved targeting.';
+            return 'Outbound queue is at governed capacity. New sends resume as in-flight messages clear.';
           case 'STALLED':
-            return 'Lead movement has slowed and the campaign may need attention.';
+            return 'Throughput slowed below expected. An operator review is queued — no client action.';
           default:
-            return 'We are actively finding businesses and preparing outreach from your saved targeting.';
+            return 'Signal discovery, qualification, and governed dispatch are running against your saved targeting.';
         }
       case 'PAUSED':
-        return 'Your campaign is saved and paused. Resume when you are ready to continue outreach.';
+        return 'Execution is paused. Orchestrate will resume automatically once recovery completes — your saved targeting is intact.';
       case 'BLOCKED':
         return _campaignBlockedReasonLabel;
       case 'ERROR':
-        return 'Activation did not finish cleanly. Review the campaign and try again.';
+        return 'Activation did not finish cleanly. Orchestrate is investigating — no client action.';
       case 'NEEDS_REBUILD':
-        return 'Your targeting changed after activation. Rebuild the campaign to apply the latest scope.';
+        return 'Targeting changed after activation. Orchestrate will rebuild the execution scope automatically on the next pass.';
       default:
-        return 'We will begin finding businesses and preparing outreach based on your targeting.';
-    }
-  }
-
-  _CampaignPrimaryAction get _campaignPrimaryAction {
-    final eligibility = _campaignActionEligibility;
-    final activeState = _string(eligibility['activeState']).toLowerCase();
-    if (activeState == 'running') return _CampaignPrimaryAction.viewOutreach;
-    if (activeState == 'queued') return _CampaignPrimaryAction.refreshStatus;
-    if (eligibility['canRetryFailed'] == true) {
-      return _CampaignPrimaryAction.retryFailed;
-    }
-    if (eligibility['canResume'] == true) return _CampaignPrimaryAction.resume;
-    if (eligibility['canStart'] == true) return _CampaignPrimaryAction.start;
-    if (eligibility['canRestart'] == true) return _CampaignPrimaryAction.resume;
-    if (_campaignState == 'ACTIVATING') return _CampaignPrimaryAction.waiting;
-    return _CampaignPrimaryAction.refreshStatus;
-  }
-
-  String get _campaignPrimaryActionLabel {
-    switch (_campaignPrimaryAction) {
-      case _CampaignPrimaryAction.viewOutreach:
-        return 'View outreach';
-      case _CampaignPrimaryAction.waiting:
-        return 'Activation in progress';
-      case _CampaignPrimaryAction.resume:
-        return 'Resume campaign';
-      case _CampaignPrimaryAction.retryFailed:
-        return 'Retry failed sends';
-      case _CampaignPrimaryAction.refreshStatus:
-        return 'Refresh status';
-      case _CampaignPrimaryAction.start:
-        return _campaignState == 'NEEDS_REBUILD'
-            ? 'Rebuild campaign'
-            : 'Start campaign';
-    }
-  }
-
-  IconData get _campaignPrimaryActionIcon {
-    switch (_campaignPrimaryAction) {
-      case _CampaignPrimaryAction.viewOutreach:
-        return Icons.mark_email_read_outlined;
-      case _CampaignPrimaryAction.waiting:
-        return Icons.hourglass_top_outlined;
-      case _CampaignPrimaryAction.resume:
-        return Icons.play_arrow_outlined;
-      case _CampaignPrimaryAction.retryFailed:
-        return Icons.refresh_outlined;
-      case _CampaignPrimaryAction.refreshStatus:
-        return Icons.sync_outlined;
-      case _CampaignPrimaryAction.start:
-        return _campaignState == 'NEEDS_REBUILD'
-            ? Icons.autorenew_outlined
-            : Icons.rocket_launch_outlined;
+        return 'Once readiness is verified, Orchestrate will activate signal discovery and governed dispatch against this targeting.';
     }
   }
 
   String get _campaignBlockedReasonLabel {
     final reason = _string(_campaignActionEligibility['blockedReason']);
-    final nextAvailableAt =
-        _string(_campaignActionEligibility['nextAvailableAt']);
     switch (reason) {
       case 'active_dispatch_in_progress':
-        return 'Outbound dispatch is already in progress. View outreach to monitor sends.';
+        return 'Governed dispatch is in flight. Open Execution to watch managed-execution state.';
       case 'activation_in_progress':
-        return 'Campaign activation is already queued. Refresh status to check progress.';
+        return 'Activation is already queued. Status will refresh as readiness orchestration completes.';
       case 'mailbox_not_ready':
-        return 'Mailbox readiness is blocking outreach. Reconnect or verify the mailbox before sending.';
+        return 'Mailbox readiness is not satisfied yet. Reconnect or verify the mailbox so execution can resume.';
       case 'recent_restart_already_processed':
-        return nextAvailableAt.isEmpty
-            ? 'A campaign action was just processed. Refresh status before trying again.'
-            : 'A campaign action was just processed. Try again after $nextAvailableAt.';
+        return 'Recent execution change was just processed. Orchestrate is settling state before the next pass.';
       default:
-        return 'A backend safety check is blocking campaign action right now.';
+        return 'A readiness-orchestration check is currently holding execution. Orchestrate will lift the hold automatically.';
     }
   }
 
@@ -334,14 +274,8 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       final nextCampaignMetrics = _asMap(campaignJson['metrics']);
       final nextActionEligibility = _asMap(campaignJson['actionEligibility']);
 
-      if (_pendingActivationPayload != null &&
-          _shouldPreserveInFlightState(_campaignState, nextCampaignState)) {
-        _activationMessage ??= nextActivationMessage;
-      } else {
-        _campaignState = nextCampaignState;
-        _activationMessage = nextActivationMessage;
-        _pendingActivationPayload = null;
-      }
+      _campaignState = nextCampaignState;
+      _activationMessage = nextActivationMessage;
       _campaignHealth = nextCampaignHealth.isEmpty ? null : nextCampaignHealth;
       _campaignMetrics = nextCampaignMetrics;
       _campaignActionEligibility = nextActionEligibility;
@@ -458,385 +392,10 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     }
   }
 
-  Future<bool> _confirmRestartCampaign() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Restart campaign with updated targeting?'),
-            content: const Text(
-              'Unsent outreach from the current run will be canceled. Leads already contacted will stay in your history. The system will fetch a fresh lead batch using your saved targeting.',
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Keep current run'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Restart campaign'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  Future<void> _restartCampaign({bool skipConfirmation = false}) async {
-    if (_countries.isEmpty) {
-      _showNotice('Add at least one market before restarting.');
-      return;
-    }
-    if (_industries.isEmpty) {
-      _showNotice('Add at least one business type before restarting.');
-      return;
-    }
-
-    final confirmed = skipConfirmation ? true : await _confirmRestartCampaign();
-    if (!confirmed || !mounted) return;
-
-    setState(() {
-      _restarting = true;
-      _error = null;
-      _activationMessage = null;
-    });
-
-    try {
-      await _campaignRepository.updateCampaignProfile(
-          profile: _buildProfilePayload());
-      final result = await _campaignRepository.restartCampaign();
-      if (!mounted) return;
-
-      final status = _string(result['status']).toLowerCase();
-      final message = _string(result['message']);
-
-      if (_isRepresentationAuthRequired(result)) {
-        setState(() {
-          _restarting = false;
-        });
-
-        final shouldRetry = await _ensureRepresentationAuthorization(result);
-        if (shouldRetry && mounted) {
-          await _restartCampaign(skipConfirmation: true);
-        }
-        return;
-      }
-
-      if (_isRestartCooldown(result)) {
-        setState(() {
-          _restarting = false;
-          _activationMessage = null;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              message.isEmpty
-                  ? 'Please wait before restarting again.'
-                  : message,
-            ),
-          ),
-        );
-        return;
-      }
-
-      if (status == 'upgrade_required') {
-        setState(() {
-          _restarting = false;
-        });
-        await _showPlanDialog(
-          _PlanIssue(
-            title: 'Expand your plan',
-            message: message.isEmpty
-                ? 'Your current plan does not cover this targeting.'
-                : message,
-          ),
-        );
-        return;
-      }
-
-      setState(() {
-        _restarting = false;
-        _pendingActivationPayload = result;
-        _campaignState =
-            _resolveCampaignState(result, _resolveCampaignProfile(result));
-        _activationMessage = message.isEmpty
-            ? 'Campaign restart has started. We are applying your updated targeting now.'
-            : message;
-        _campaignHealth = _string(result['health']).isEmpty
-            ? null
-            : _string(result['health']);
-        _campaignMetrics = _asMap(result['metrics']);
-        _campaignActionEligibility = _asMap(result['actionEligibility']);
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_activationMessage!)),
-      );
-
-      _load();
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _restarting = false;
-        _error = _displayError(
-          error,
-          fallback: 'Your campaign could not be restarted at the moment.',
-        );
-      });
-    }
-  }
-
-  Future<void> _runCampaignPrimaryAction() async {
-    switch (_campaignPrimaryAction) {
-      case _CampaignPrimaryAction.viewOutreach:
-        context.go('/client/outreach');
-        return;
-      case _CampaignPrimaryAction.refreshStatus:
-      case _CampaignPrimaryAction.waiting:
-        await _load();
-        return;
-      case _CampaignPrimaryAction.resume:
-      case _CampaignPrimaryAction.retryFailed:
-        await _restartCampaign(skipConfirmation: true);
-        return;
-      case _CampaignPrimaryAction.start:
-        await _startCampaign();
-        return;
-    }
-  }
-
-  bool _isRepresentationAuthRequired(Map<String, dynamic> result) {
-    final code = _string(result['code']).toUpperCase();
-    final status = _string(result['status']).toLowerCase();
-    return code == 'REPRESENTATION_AUTH_REQUIRED' ||
-        status == 'representation_auth_required';
-  }
-
-  bool _isRestartCooldown(Map<String, dynamic> result) {
-    final code = _string(result['code']).toUpperCase();
-    final status = _string(result['status']).toLowerCase();
-    final message = _string(result['message']).toLowerCase();
-    return code == 'RESTART_COOLDOWN_ACTIVE' ||
-        status == 'cooldown' ||
-        status == 'restart_cooldown_active' ||
-        message.contains('restart cooldown');
-  }
-
-  Future<bool> _ensureRepresentationAuthorization(
-      Map<String, dynamic> result) async {
-    final accepted = await _showRepresentationAuthorizationDialog(result);
-    if (!accepted || !mounted) return false;
-
-    try {
-      await _campaignRepository.acceptRepresentationAuth();
-      return true;
-    } catch (_) {
-      if (!mounted) return false;
-      _showNotice('We could not save your authorization at the moment.');
-      return false;
-    }
-  }
-
-  Future<bool> _showRepresentationAuthorizationDialog(
-      Map<String, dynamic> result) async {
-    bool agreed = false;
-    final message = _string(result['message']);
-
-    return await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => StatefulBuilder(
-            builder: (context, setModalState) => AlertDialog(
-              title: const Text('Authorization required'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    message.isEmpty
-                        ? 'Before Orchestrate can start outreach on your behalf, we need your authorization.'
-                        : message,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                      '• We may contact prospects representing your business'),
-                  const Text(
-                      '• Messages will clearly state they are sent on your behalf'),
-                  const Text('• Replies will go to your email'),
-                  const SizedBox(height: 16),
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: agreed,
-                    onChanged: (value) {
-                      setModalState(() {
-                        agreed = value ?? false;
-                      });
-                    },
-                    title: const Text(
-                        'I agree to authorize Orchestrate to represent my business'),
-                    controlAffinity: ListTileControlAffinity.leading,
-                  ),
-                ],
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Not now'),
-                ),
-                FilledButton(
-                  onPressed:
-                      agreed ? () => Navigator.of(context).pop(true) : null,
-                  child: const Text('Agree and continue'),
-                ),
-              ],
-            ),
-          ),
-        ) ??
-        false;
-  }
-
-  Future<void> _showPlanDialog(_PlanIssue issue) async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(issue.title),
-        content: Text(issue.message),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Adjust targeting'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.go('/app/billing');
-            },
-            child: const Text('View plans'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showNotice(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  Future<void> _startCampaign() async {
-    if (_countries.isEmpty) {
-      _showNotice('Add at least one market before starting.');
-      return;
-    }
-    if (_industries.isEmpty) {
-      _showNotice('Add at least one business type before starting.');
-      return;
-    }
-
-    setState(() {
-      _starting = true;
-      _error = null;
-      _activationMessage = null;
-    });
-
-    try {
-      await _campaignRepository.updateCampaignProfile(
-          profile: _buildProfilePayload());
-      final result = await _campaignRepository.startCampaign();
-      if (!mounted) return;
-
-      final status = _string(result['status']).toLowerCase();
-      final message = _string(result['message']);
-
-      if (_isRepresentationAuthRequired(result)) {
-        setState(() {
-          _starting = false;
-        });
-
-        final accepted = await _ensureRepresentationAuthorization(result);
-        if (accepted && mounted) {
-          await _startCampaign();
-        }
-        return;
-      }
-
-      if (_isRestartCooldown(result)) {
-        setState(() {
-          _starting = false;
-          _activationMessage = null;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              message.isEmpty ? 'Please wait before starting again.' : message,
-            ),
-          ),
-        );
-        return;
-      }
-
-      if (status == 'upgrade_required') {
-        setState(() {
-          _starting = false;
-        });
-        await _showPlanDialog(
-          _PlanIssue(
-            title: 'Expand your plan',
-            message: message.isEmpty
-                ? 'Your current plan does not cover this targeting.'
-                : message,
-          ),
-        );
-        return;
-      }
-
-      setState(() {
-        _starting = false;
-        _pendingActivationPayload = result;
-        _campaignState =
-            _resolveCampaignState(result, _resolveCampaignProfile(result));
-        _campaignHealth = _string(result['health']).isEmpty
-            ? null
-            : _string(result['health']);
-        _campaignMetrics = _asMap(result['metrics']);
-        _campaignActionEligibility = _asMap(result['actionEligibility']);
-        _activationMessage = message.isEmpty
-            ? _fallbackActivationMessageForState(_campaignState)
-            : message;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_activationMessage!)),
-      );
-
-      _load();
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _starting = false;
-        _error = _displayError(
-          error,
-          fallback: 'Your campaign could not be started at the moment.',
-        );
-      });
-    }
-  }
-
-  bool _shouldPreserveInFlightState(String currentState, String nextState) {
-    const inFlightStates = <String>{
-      'ACTIVATING',
-      'RETRY_SCHEDULED',
-      'ACTIVE',
-      'BLOCKED',
-    };
-
-    if (!inFlightStates.contains(currentState)) {
-      return false;
-    }
-
-    return nextState == 'READY' || nextState == 'NEEDS_REBUILD';
   }
 
   void _addCountry() {
@@ -1007,7 +566,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     if (_loading) {
       return const ClientLoadingView(
         eyebrow: 'Campaign',
-        label: 'Loading campaign configuration',
+        label: 'Loading targeting',
       );
     }
 
@@ -1189,13 +748,13 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'Orchestrate runs the campaign for you',
+                            'Orchestrate operates managed execution against this targeting',
                             style: theme.textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Update targeting here and save. Orchestrate will pick up your changes and continue running discovery, qualification, and outreach automatically. Open Outreach to watch what is happening.',
+                            'Update targeting here and save. Orchestrate continues signal discovery, qualification, and governed dispatch against the new scope automatically. Open Execution to watch managed-execution state.',
                             style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant),
                           ),
@@ -1223,7 +782,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                         OutlinedButton.icon(
                           onPressed: () => context.go('/client/outreach'),
                           icon: const Icon(Icons.mark_email_read_outlined),
-                          label: const Text('View managed execution'),
+                          label: const Text('Open execution'),
                         ),
                         TextButton.icon(
                           onPressed: () => context.go('/app/home'),
@@ -1710,13 +1269,6 @@ class _CampaignBlockedNotice extends StatelessWidget {
   }
 }
 
-class _PlanIssue {
-  const _PlanIssue({required this.title, required this.message});
-
-  final String title;
-  final String message;
-}
-
 class _NamedItem {
   const _NamedItem({required this.code, required this.label});
 
@@ -1752,15 +1304,6 @@ class _MetroItem {
   final String countryCode;
   final String regionCode;
   final String label;
-}
-
-enum _CampaignPrimaryAction {
-  start,
-  resume,
-  retryFailed,
-  refreshStatus,
-  waiting,
-  viewOutreach,
 }
 
 Map<String, dynamic> _asMap(dynamic value) {
@@ -1949,21 +1492,6 @@ String? _resolveActivationMessage(
           : lastError;
     default:
       return null;
-  }
-}
-
-String _fallbackActivationMessageForState(String state) {
-  switch (state) {
-    case 'ACTIVATING':
-      return 'Your campaign has started. We are finding businesses and preparing outreach now.';
-    case 'ACTIVE':
-      return 'Your campaign is active. Leads and outreach are moving.';
-    case 'ERROR':
-      return 'Activation did not finish cleanly. Please try again.';
-    case 'NEEDS_REBUILD':
-      return 'Your saved targeting changed. Rebuild the campaign to apply it.';
-    default:
-      return 'Your campaign request has been received.';
   }
 }
 

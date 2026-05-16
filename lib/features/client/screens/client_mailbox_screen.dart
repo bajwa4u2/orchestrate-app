@@ -153,7 +153,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
             ClientPanel(
               title: 'Identity readiness',
               subtitle:
-                  'Orchestrate sends from this mailbox on your behalf. Each item below must be completed before outreach can run.',
+                  'Orchestrate sends from this mailbox on your behalf. Each item below must be verified before managed execution can run.',
               children: [
                 for (final step in data.identitySteps)
                   ClientInfoRow(
@@ -502,7 +502,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       return const _MailboxHero(
         headline: 'Sending identity is ready',
         subtitle:
-            'Orchestrate is using your verified mailbox to send outreach on your behalf.',
+            'Orchestrate is running managed execution against your verified mailbox.',
         bannerTitle: 'Ready to send',
         bannerMessage:
             'You do not need to do anything here unless your mailbox provider asks you to re-authorize.',
@@ -526,7 +526,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       return const _MailboxHero(
         headline: 'Connect your sending mailbox',
         subtitle:
-            'Orchestrate sends outreach on your behalf from the mailbox you connect. Pick Gmail or Microsoft 365 — Orchestrate handles the OAuth handshake and stores no credentials in your browser.',
+            'Orchestrate dispatches from the mailbox you connect. Pick Gmail or Microsoft 365 — Orchestrate handles the OAuth handshake backend-side and stores no credentials in your browser.',
         bannerTitle: 'A mailbox is required to start',
         bannerMessage:
             'Use the buttons above to grant Orchestrate access to Gmail or Microsoft 365. You will be redirected to your provider to approve.',
@@ -539,7 +539,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
           'A mailbox is connected but one identity step is still pending. Complete it so Orchestrate can begin sending.',
       bannerTitle: 'One identity step remaining',
       bannerMessage:
-          'Resolve the pending identity step. Orchestrate will start outreach automatically as soon as it clears.',
+          'Resolve the pending identity step. Orchestrate will activate managed execution automatically as soon as it clears.',
       bannerTone: ClientBannerTone.warning,
     );
   }

@@ -281,126 +281,11 @@ class _SidePanel extends StatelessWidget {
   }
 }
 
-PublicContentScreen buildHowItWorksScreen() => const PublicContentScreen(
-      eyebrow: 'How it works',
-      title: 'One system from first outreach to paid work',
-      subtitle:
-          'Orchestrate keeps lead generation, outreach, follow-up, meetings, billing, and records connected instead of splitting them across separate tools and habits.',
-      sideNote:
-          'The point is simple: the work that starts the conversation should stay connected to the work that closes it.',
-      sideActions: [
-        ContentAction(
-            label: 'Create account', path: '/auth/join', filled: true),
-      ],
-      sections: [
-        ContentSection(
-          title: 'Lead generation starts the pipeline',
-          body:
-              'Businesses define the target, the market, and the kind of accounts they want to reach. From there, lead sourcing stays attached to the rest of the work instead of being treated as a separate spreadsheet exercise.',
-          points: [
-            'Target lists are built around the service and market.',
-            'Leads move with visible status instead of disappearing into loose notes.',
-            'The same record can continue through outreach, meetings, and billing.',
-          ],
-        ),
-        ContentSection(
-          title: 'Outreach and follow-up stay controlled',
-          body:
-              'Campaigns, replies, and meeting booking stay inside the same service workspace. The point is not just to send messages. It is to keep momentum visible until real conversations turn into meetings.',
-          highlight:
-              'Outreach is not finished when the first message is sent. The follow-through is part of the product.',
-        ),
-        ContentSection(
-          title: 'Billing does not get pushed off to the side',
-          body:
-              'When the work moves forward, invoices, reminders, payment tracking, statements, and records can stay tied to the same client relationship. That keeps the business trail intact after meetings are booked.',
-          points: [
-            'Client access stays separate from operator access.',
-            'Deliverability stays visible as an service responsibility.',
-            'Statements, receipts, agreements, and history remain attached to the account.',
-          ],
-        ),
-      ],
-    );
-
-PublicContentScreen buildPricingScreen() => const PublicContentScreen(
-      eyebrow: 'Pricing',
-      title: 'Two plans, clear plan fit',
-      subtitle:
-          'Orchestrate is structured around two service levels so businesses can choose whether they need outbound execution only or outbound execution plus billing support.',
-      sideNote:
-          'Revenue includes Opportunity by design. Billing is part of the service workspace, not an extra add-on.',
-      sideActions: [
-        ContentAction(
-            label: 'Create account', path: '/auth/join', filled: true),
-      ],
-      sections: [
-        ContentSection(
-          title: 'Opportunity',
-          body:
-              'For businesses that want leads, outreach, follow-up, and meetings handled with structure.',
-          points: [
-            'Lead sourcing and targeting',
-            'Outbound outreach execution',
-            'Follow-up handling',
-            'Reply management',
-            'Meeting booking',
-          ],
-        ),
-        ContentSection(
-          title: 'Revenue',
-          body:
-              'For businesses that want the outbound work plus the billing, reminder, payment, and record layer that follows service delivery.',
-          points: [
-            'Everything included in Opportunity',
-            'Invoice generation and payment tracking',
-            'Reminder scheduling and follow-through',
-            'Statements and account records',
-            'Agreements and billing support tied to service delivery',
-          ],
-          highlight:
-              'Revenue is the fuller service model because it carries the work from outreach into actual money movement and accountability.',
-        ),
-      ],
-    );
-
-PublicContentScreen buildContactScreen() => const PublicContentScreen(
-      eyebrow: 'Contact',
-      title: 'Talk through fit, service fit, and next steps',
-      subtitle:
-          'Use this page to talk through service fit, service fit, pricing, or onboarding before you move forward.',
-      sideNote:
-          'Ready to move forward? Create your account and continue from there.',
-      sideActions: [
-        ContentAction(
-            label: 'Create account', path: '/auth/join', filled: true),
-      ],
-      sections: [
-        ContentSection(
-          title: 'When to use this page',
-          body:
-              'Use contact when you want a direct business conversation before onboarding. This page is for clarifying fit, service fit, pricing, and next steps.',
-          points: [
-            'You want to confirm whether the service fits your business.',
-            'You want to understand Opportunity versus Revenue.',
-            'You want to talk through billing cadence, reminders, or statements.',
-            'You want to understand how onboarding and activation will work.',
-          ],
-        ),
-        ContentSection(
-          title: 'Client entry stays open',
-          body:
-              'Businesses can create a client account directly. Registration starts a clear progression into verification, onboarding, qualification, and activation.',
-          highlight:
-              'Account creation is the beginning of the pipeline, not full access before setup.',
-        ),
-        ContentSection(
-          title: 'Operator access stays controlled',
-          body:
-              'Operator access is not part of public self-serve sign-up. It is provisioned deliberately because the operator workspace carries execution responsibility across outreach, billing, deliverability, and records.',
-        ),
-      ],
-    );
+// Note: buildHowItWorksScreen / buildPricingScreen / buildContactScreen
+// were removed. The router renders inline PublicContentScreens for those
+// routes with the current category-coherent copy. Leaving the old
+// builders here let outreach-tinted fallback copy drift back in if any
+// future edit re-wired them. Legal builders below remain in use.
 
 PublicContentScreen buildTermsScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',
@@ -421,7 +306,7 @@ PublicContentScreen buildTermsScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Service boundaries',
           body:
-              'Orchestrate provides structured support for outreach, follow-up, meetings, billing administration, reminders, records, and related service functions. It does not guarantee recipient response, booked meetings, customer payment, or uninterrupted third-party system behavior.',
+              'Orchestrate provides managed execution infrastructure for outbound business communication, follow-up continuity, meeting handoff, billing administration, reminders, records, and related service functions. It does not guarantee recipient response, booked meetings, customer payment, or uninterrupted third-party system behavior.',
           highlight:
               'External systems, recipient behavior, data quality, and client responsiveness remain variables outside direct control.',
         ),
@@ -447,7 +332,7 @@ PublicContentScreen buildPrivacyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Purpose of collection and use',
           body:
-              'Information is used to operate outreach, preserve records, support billing workflows, maintain account access, provide client visibility, protect the service, and respond to support, contractual, or legal needs.',
+              'Information is used to operate managed execution, preserve records, support billing workflows, maintain account access, provide client visibility, protect the service, and respond to support, contractual, or legal needs.',
         ),
         ContentSection(
           title: 'Sharing posture',
@@ -502,7 +387,7 @@ PublicContentScreen buildRefundPolicyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'General rule',
           body:
-              'Fees already earned for completed service, delivered work, used subscription periods, configured accounts, or executed outreach are generally non-refundable unless otherwise stated in writing.',
+              'Fees already earned for completed service, delivered work, used subscription periods, activated infrastructure, or executed dispatch are generally non-refundable unless otherwise stated in writing.',
         ),
         ContentSection(
           title: 'When review may be appropriate',
@@ -550,7 +435,7 @@ PublicContentScreen buildServiceAgreementScreen() => const PublicContentScreen(
         ContentSection(
           title: 'What the agreement should establish',
           body:
-              'The agreement should state service service fit, plan, billing cadence, deliverables, account visibility, communication posture, reminder handling, records responsibility, and any limits or exclusions that shape the working relationship.',
+              'The agreement should state the managed-execution scope, plan, billing cadence, deliverables, account visibility, communication posture, reminder handling, records responsibility, and any limits or exclusions that shape the working relationship.',
         ),
         ContentSection(
           title: 'Why it matters here',

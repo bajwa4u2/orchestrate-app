@@ -43,13 +43,13 @@ class ClientActivityScreen extends StatelessWidget {
                   final left = _Panel(
                     title: 'Reply movement',
                     emptyLabel:
-                        'No replies yet. Once a campaign is active and outreach sends, replies surface here automatically — no manual refresh needed.',
+                        'No replies yet. Once managed execution is running, replies surface here automatically — Orchestrate keeps the inbound pipeline polling on your behalf.',
                     items: data.replyRows,
                   );
                   final right = _Panel(
                     title: 'Meeting and mailbox readiness',
                     emptyLabel:
-                        'No handoffs yet. Confirm the connected mailbox in the Mailbox screen so the system can send and receive on your behalf.',
+                        'No handoffs yet. Verify your sending identity from the Mailbox screen so Orchestrate can send and receive on your behalf.',
                     items: data.meetingRows,
                   );
 
