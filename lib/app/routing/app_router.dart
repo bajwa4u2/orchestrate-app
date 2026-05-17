@@ -33,6 +33,7 @@ import 'package:orchestrate_app/features/operator/screens/operator_workspace_scr
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
 import 'package:orchestrate_app/features/public/screens/pricing_screen.dart';
 import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_sequence_author_screen.dart';
 import 'package:orchestrate_app/features/public/screens/activation_preview_screen.dart';
 import 'package:orchestrate_app/features/public/screens/for_evaluators_screen.dart';
 import 'package:orchestrate_app/features/public/screens/orchestrate_operations_screen.dart';
@@ -1001,6 +1002,17 @@ final router = GoRouter(
         GoRoute(
             path: '/client/representation/targeting',
             redirect: (context, state) => '/app/campaigns'),
+        // Sequence authoring (governed template vs legacy custom body).
+        // Mounted under the client shell so the workspace chrome wraps
+        // it. Step CRUD posts directly to the new ClientPortalService
+        // endpoints (POST /client/sequences/:id/steps,
+        // PATCH /client/sequence-steps/:stepId,
+        // DELETE /client/sequence-steps/:stepId).
+        GoRoute(
+            path: '/client/sequences/:sequenceId',
+            builder: (context, state) => ClientSequenceAuthorScreen(
+                  sequenceId: state.pathParameters['sequenceId'] ?? '',
+                )),
         GoRoute(
             path: '/client/subscribe',
             builder: (context, state) => const ClientSubscribeScreen()),

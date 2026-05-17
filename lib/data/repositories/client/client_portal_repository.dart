@@ -42,6 +42,103 @@ class ClientPortalRepository {
     return _asMap(json);
   }
 
+  /// List sequences for the requesting client, optionally scoped to
+  /// a campaign via `campaignId`.
+  Future<List<dynamic>> fetchSequences({String? campaignId}) async {
+    final query =
+        campaignId == null ? '' : '?campaignId=${Uri.encodeQueryComponent(campaignId)}';
+    final json = await _apiClient.getJson(
+      '/client/sequences$query',
+      surface: ApiSurface.client,
+    );
+    return (json as List? ?? const []).cast<dynamic>();
+  }
+
+  /// Fetch one sequence's full step list.
+  Future<Map<String, dynamic>> fetchSequence(String sequenceId) async {
+    final json = await _apiClient.getJson(
+      '/client/sequences/$sequenceId',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Create a SequenceStep. Either `templateKey` (governed) or
+  /// `bodyTemplate` (legacy custom) must be set unless `type` is
+  /// non-email (WAIT / TASK / NOTE). Backend rejects invalid
+  /// templateKey or unbound required variables.
+  Future<Map<String, dynamic>> createSequenceStep({
+    required String sequenceId,
+    int? orderIndex,
+    int? waitDays,
+    String? type,
+    String? status,
+    String? subjectTemplate,
+    String? bodyTemplate,
+    String? templateKey,
+    Map<String, dynamic>? templateVariables,
+    String? instructionText,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/client/sequences/$sequenceId/steps',
+      surface: ApiSurface.client,
+      body: {
+        if (orderIndex != null) 'orderIndex': orderIndex,
+        if (waitDays != null) 'waitDays': waitDays,
+        if (type != null) 'type': type,
+        if (status != null) 'status': status,
+        if (subjectTemplate != null) 'subjectTemplate': subjectTemplate,
+        if (bodyTemplate != null) 'bodyTemplate': bodyTemplate,
+        if (templateKey != null) 'templateKey': templateKey,
+        if (templateVariables != null)
+          'templateVariablesJson': templateVariables,
+        if (instructionText != null) 'instructionText': instructionText,
+      },
+    );
+    return _asMap(json);
+  }
+
+  /// Update a SequenceStep in place. Same body shape as create.
+  Future<Map<String, dynamic>> updateSequenceStep({
+    required String stepId,
+    int? orderIndex,
+    int? waitDays,
+    String? type,
+    String? status,
+    String? subjectTemplate,
+    String? bodyTemplate,
+    String? templateKey,
+    Map<String, dynamic>? templateVariables,
+    String? instructionText,
+  }) async {
+    final json = await _apiClient.patchJson(
+      '/client/sequence-steps/$stepId',
+      surface: ApiSurface.client,
+      body: {
+        if (orderIndex != null) 'orderIndex': orderIndex,
+        if (waitDays != null) 'waitDays': waitDays,
+        if (type != null) 'type': type,
+        if (status != null) 'status': status,
+        if (subjectTemplate != null) 'subjectTemplate': subjectTemplate,
+        if (bodyTemplate != null) 'bodyTemplate': bodyTemplate,
+        if (templateKey != null) 'templateKey': templateKey,
+        if (templateVariables != null)
+          'templateVariablesJson': templateVariables,
+        if (instructionText != null) 'instructionText': instructionText,
+      },
+    );
+    return _asMap(json);
+  }
+
+  /// Soft-delete (archive) a SequenceStep.
+  Future<Map<String, dynamic>> archiveSequenceStep(String stepId) async {
+    final json = await _apiClient.deleteJson(
+      '/client/sequence-steps/$stepId',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// List the governed message-template catalog (client-scoped).
   Future<List<dynamic>> fetchMessageTemplates() async {
     final json = await _apiClient.getJson('/client/message-templates',
