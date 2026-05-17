@@ -908,7 +908,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
               _SectionCard(
                 title: 'Anything else we should keep in mind?',
                 subtitle:
-                    'Optional guidance helps us keep the campaign closer to your intent.',
+                    'Optional guidance helps Orchestrate keep the execution scope closer to your intent.',
                 child: TextField(
                   controller: _notesController,
                   maxLines: 5,
@@ -996,7 +996,7 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Tell us where to look and who you want to reach. The system will use this saved profile when your campaign runs.',
+            'Tell us where to look and who you want to reach. Orchestrate uses this saved profile as the targeting boundary for managed execution.',
             style: theme.textTheme.bodyLarge
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -1479,16 +1479,16 @@ String? _resolveActivationMessage(
 
   switch (bootstrapStatus) {
     case 'activation_requested':
-      return 'Your campaign has been accepted. We are preparing it now.';
+      return 'Activation request accepted. Orchestrate is preparing the execution scope now.';
     case 'activation_in_progress':
-      return 'We are finding businesses and preparing outreach now.';
+      return 'Activation in progress. Signal discovery and qualification are coming online.';
     case 'activation_retry_scheduled':
-      return 'Activation hit a temporary issue. The system will try again.';
+      return 'Activation hit a temporary issue. Orchestrate will retry automatically.';
     case 'activation_completed':
-      return 'Your campaign is active. Leads and outreach are moving.';
+      return 'Execution scope is active. Discovery, qualification, and governed dispatch are running.';
     case 'activation_failed':
       return lastError.isEmpty
-          ? 'Activation did not finish cleanly. Please try again.'
+          ? 'Activation did not finish cleanly. Operator review is queued.'
           : lastError;
     default:
       return null;

@@ -354,8 +354,8 @@ class _JourneySection extends StatelessWidget {
       ),
       _JourneyStage(
         '2',
-        'Connect your mailbox',
-        'OAuth handshake with Gmail or Microsoft 365 happens entirely backend-side. Tokens are sealed in an external vault — never your browser, never the database.',
+        'Connect your mailbox transport',
+        'Three first-class transports: Google Workspace OAuth, Microsoft 365 OAuth, or custom SMTP + IMAP (SES, Mailgun, SendGrid, regional providers, your own server). Credentials are sealed in an encrypted vault — never your browser, never the database.',
       ),
       _JourneyStage(
         '3',

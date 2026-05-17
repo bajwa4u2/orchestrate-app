@@ -178,7 +178,7 @@ class ClientHomeScreen extends StatelessWidget {
       title: title,
       subtitle: session.normalizedSubscriptionStatus == 'active'
           ? 'Home keeps the client system visible without duplicating targeting or operator views.'
-          : 'Home keeps setup, billing standing, and activation readiness visible before service is fully active.',
+          : 'Home keeps setup, billing standing, and readiness progression visible until every gate has cleared.',
       blockers: blockers,
       authorized: authorized,
       authAcceptedAt: authAcceptedAt,

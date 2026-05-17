@@ -106,7 +106,7 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
                     ? const [
                         ClientEmptyState(
                             message:
-                                'Replies appear here after prospects respond to sent outreach.')
+                                'Replies appear here when inbound mail is matched to outreach Orchestrate sent on your behalf. Unrelated mailbox content is not ingested.')
                       ]
                     : _groupedReplyItems(
                         selected: selected,

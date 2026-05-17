@@ -390,7 +390,7 @@ class _OrchestrateActivityPanel extends StatelessWidget {
     final campaignSummary = _summarizeCampaigns(campaigns);
     if (campaignSummary != null) {
       children.add(ClientInfoRow(
-        title: 'Active campaign',
+        title: 'Active execution scope',
         primary: campaignSummary.primary,
         secondary: campaignSummary.secondary,
       ));
