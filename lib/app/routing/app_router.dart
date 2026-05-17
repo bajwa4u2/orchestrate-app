@@ -38,6 +38,7 @@ import 'package:orchestrate_app/features/client/screens/client_sequence_author_s
 import 'package:orchestrate_app/features/public/screens/activation_preview_screen.dart';
 import 'package:orchestrate_app/features/public/screens/for_evaluators_screen.dart';
 import 'package:orchestrate_app/features/public/screens/orchestrate_operations_screen.dart';
+import 'package:orchestrate_app/features/public/screens/public_diagnostics_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_home_screen.dart';
 import 'package:orchestrate_app/app/shell/operator_shell.dart';
@@ -938,6 +939,21 @@ final router = GoRouter(
     GoRoute(
       path: '/security-evaluation',
       redirect: (context, state) => '/for-evaluators',
+    ),
+    // Public DNS diagnostic surface — visitors can verify SPF / DKIM /
+    // DMARC for their sending domain without signup. Live DNS lookups;
+    // no records stored.
+    GoRoute(
+      path: '/diagnostics',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: const PublicDiagnosticsScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/dns-diagnostic',
+      redirect: (context, state) => '/diagnostics',
     ),
     GoRoute(
       path: '/trust-review',

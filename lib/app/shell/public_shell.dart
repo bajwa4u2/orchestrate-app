@@ -318,6 +318,9 @@ class _PublicFooter extends StatelessWidget {
                           label: 'For evaluators',
                           onTap: () => context.go('/for-evaluators')),
                       _FooterLink(
+                          label: 'DNS readiness check',
+                          onTap: () => context.go('/diagnostics')),
+                      _FooterLink(
                           label: 'Trust architecture',
                           onTap: () => context.go('/trust-architecture')),
                       _FooterLink(

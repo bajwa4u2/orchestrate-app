@@ -12,6 +12,19 @@ class PublicRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  /// Public DNS diagnostic — runs SPF / DKIM / DMARC verification
+  /// against the caller-supplied domain WITHOUT signup. Returns the
+  /// same DnsRecordCheck[] shape the authenticated verifier uses.
+  Future<Map<String, dynamic>> diagnosticsDns(String domain) async {
+    final json = await _apiClient.postJson(
+      '/public/diagnostics/dns',
+      body: {'domain': domain.trim()},
+    );
+    if (json is Map<String, dynamic>) return json;
+    if (json is Map) return json.map((k, v) => MapEntry('$k', v));
+    return const <String, dynamic>{};
+  }
+
   Future<PricingCatalog> fetchPricing() async {
     final json = await _apiClient.getJson('/public/pricing');
     return PricingConfig.fromApi(Map<String, dynamic>.from(json as Map));
