@@ -40,10 +40,33 @@ class _OperatorGovernanceScreenState extends State<OperatorGovernanceScreen> {
   bool _loadingTrace = false;
   String? _traceError;
 
+  List<Map<String, dynamic>> _reviewQueue = const [];
+  bool _loadingReview = true;
+  String? _reviewError;
+
   @override
   void initState() {
     super.initState();
     _loadList();
+    _loadReviewQueue();
+  }
+
+  Future<void> _loadReviewQueue() async {
+    setState(() {
+      _loadingReview = true;
+      _reviewError = null;
+    });
+    try {
+      final rows = await _repository.fetchGovernanceReviewQueue(limit: 30);
+      _reviewQueue = rows
+          .map((r) =>
+              r is Map ? r.map((k, v) => MapEntry('$k', v)) : <String, dynamic>{})
+          .toList();
+    } catch (error) {
+      _reviewError = error.toString();
+    } finally {
+      if (mounted) setState(() => _loadingReview = false);
+    }
   }
 
   Future<void> _loadList() async {
@@ -92,6 +115,14 @@ class _OperatorGovernanceScreenState extends State<OperatorGovernanceScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _Hero(coverage: _coverage()),
+          const SizedBox(height: 18),
+          _ReviewQueueCard(
+            loading: _loadingReview,
+            error: _reviewError,
+            rows: _reviewQueue,
+            onRetry: _loadReviewQueue,
+            onSelect: (id) => _selectMessage(id),
+          ),
           const SizedBox(height: 18),
           if (_loadingList)
             const Center(
@@ -656,6 +687,196 @@ class _Error extends StatelessWidget {
           ),
           TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
+      ),
+    );
+  }
+}
+
+/// Operator review queue — recent FAILED / RETRYABLE_FAILED dispatches
+/// surfaced as a list so an operator can decide whether to retry,
+/// convert to legacy, or escalate. Tapping a row selects it in the
+/// main detail panel above.
+class _ReviewQueueCard extends StatelessWidget {
+  const _ReviewQueueCard({
+    required this.loading,
+    required this.error,
+    required this.rows,
+    required this.onRetry,
+    required this.onSelect,
+  });
+
+  final bool loading;
+  final String? error;
+  final List<Map<String, dynamic>> rows;
+  final VoidCallback onRetry;
+  final void Function(String id) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.priority_high_outlined,
+                  size: 16, color: AppTheme.publicMuted),
+              const SizedBox(width: 8),
+              Text(
+                'Operator review queue',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppTheme.publicMuted,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const Spacer(),
+              if (!loading)
+                GovernanceBadge(
+                  label: 'open',
+                  value: rows.length.toString(),
+                  tone: rows.isEmpty
+                      ? GovernanceTone.positive
+                      : GovernanceTone.cautious,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Dispatches the runtime could not complete. Each row carries the persisted error + governance metadata so retry, convert, or escalate decisions are made against truth — not guesswork.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.publicMuted,
+                  height: 1.45,
+                ),
+          ),
+          const SizedBox(height: 14),
+          if (loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (error != null)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+                TextButton(onPressed: onRetry, child: const Text('Retry')),
+              ],
+            )
+          else if (rows.isEmpty)
+            Text(
+              'No dispatches require review. Every recent outbound completed or is in flight.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.publicMuted,
+                  ),
+            )
+          else
+            Column(
+              children: [
+                for (var i = 0; i < rows.length; i++) ...[
+                  _ReviewRow(
+                    row: rows[i],
+                    onTap: () => onSelect(rows[i]['id']?.toString() ?? ''),
+                  ),
+                  if (i != rows.length - 1) const Divider(height: 14),
+                ],
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewRow extends StatelessWidget {
+  const _ReviewRow({required this.row, required this.onTap});
+
+  final Map<String, dynamic> row;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final subject = row['subject']?.toString() ?? '(no subject)';
+    final status = row['status']?.toString() ?? '';
+    final error = row['errorMessage']?.toString();
+    final clientId = row['clientId']?.toString();
+    final governance = (row['governance'] as Map?)?.cast<String, dynamic>();
+    final lane = governance?['lane']?.toString();
+    final lifecycle = governance?['lifecycleStage']?.toString();
+    final bodySource = row['bodySource']?.toString();
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppTheme.radius),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              subject,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppTheme.publicText,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                if (clientId != null && clientId.isNotEmpty)
+                  GovernanceBadge(
+                    label: 'client',
+                    value: clientId.length > 10
+                        ? '${clientId.substring(0, 10)}…'
+                        : clientId,
+                    monospace: true,
+                  ),
+                if (status.isNotEmpty)
+                  GovernanceBadge(
+                    label: 'status',
+                    value: status.toLowerCase(),
+                    tone: GovernanceTone.critical,
+                  ),
+                if (lane != null && lane.isNotEmpty)
+                  GovernanceBadge(label: 'lane', value: lane),
+                if (lifecycle != null && lifecycle.isNotEmpty)
+                  GovernanceBadge(label: 'stage', value: lifecycle),
+                BodySourcePill(
+                  bodySource: bodySource,
+                  templateKey: governance?['templateKey']?.toString(),
+                ),
+              ],
+            ),
+            if (error != null && error.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                error,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                      fontFamily: 'monospace',
+                    ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

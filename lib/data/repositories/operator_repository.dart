@@ -612,6 +612,18 @@ class OperatorRepository {
     return (json as List? ?? const []).cast<dynamic>();
   }
 
+  /// Operator review queue: recent dispatches in FAILED /
+  /// RETRYABLE_FAILED state across the org with persisted error +
+  /// governance metadata.
+  Future<List<dynamic>> fetchGovernanceReviewQueue({int? limit}) async {
+    final qs = limit == null ? '' : '?limit=$limit';
+    final json = await _apiClient.getJson(
+      '/operator/governance/review-queue$qs',
+      surface: ApiSurface.operator,
+    );
+    return (json as List? ?? const []).cast<dynamic>();
+  }
+
   /// Full provenance trace for one OutreachMessage in operator scope.
   Future<Map<String, dynamic>> fetchGovernanceMessage(String messageId) async {
     final json = await _apiClient.getJson(

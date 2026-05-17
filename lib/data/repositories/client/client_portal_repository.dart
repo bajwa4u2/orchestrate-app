@@ -42,6 +42,17 @@ class ClientPortalRepository {
     return _asMap(json);
   }
 
+  /// Read the operational support timeline: chronological union of
+  /// activity events, DNS verification history, recent dispatches,
+  /// and open alerts -- all client-scoped, no fabricated events.
+  Future<Map<String, dynamic>> fetchSupportTimeline() async {
+    final json = await _apiClient.getJson(
+      '/client/support/timeline',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Read the runtime-aware support context: subscription state,
   /// mailbox state, sending-domain state, recent governed dispatches,
   /// blockers derived from persisted state. No new business rules —
