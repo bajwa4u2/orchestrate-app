@@ -398,10 +398,10 @@ final router = GoRouter(
               ContentSection(
                 title: '4. Readiness orchestration takes over',
                 body:
-                    'A single readiness engine watches subscription, authorization, mailbox, and sending identity. When everything is green, execution activates automatically.',
+                    'A single readiness engine watches subscription, authorization, mailbox, and sending identity. Dispatch eligibility is granted when every layer is verified.',
                 points: [
                   'Centralized readiness engine',
-                  'Auto-activation on readiness',
+                  'Dispatch eligibility on full verification',
                   'Audited readiness transitions',
                 ],
               ),

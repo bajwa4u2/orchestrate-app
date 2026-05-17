@@ -23,6 +23,30 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Truthful provider availability for the Connect surface. Each entry
+  /// is `{ key: 'google'|'microsoft', label, available: bool, reason }`.
+  /// Providers without configured OAuth credentials report `available:
+  /// false, reason: 'provider_not_configured'` — the UI must not render
+  /// a Connect button for those.
+  Future<List<Map<String, dynamic>>> fetchProviderAvailability() async {
+    try {
+      final json = await _apiClient.getJson(
+        '/public/mailbox/providers',
+        surface: ApiSurface.public,
+      );
+      final list = _asList(_asMap(json)['providers']);
+      return list.map(_asMap).toList();
+    } catch (error) {
+      debugPrint(
+          '[client_mailbox_repository] /public/mailbox/providers failed: $error');
+      // Fall back to "neither known available" rather than fake parity.
+      // This is conservative: if availability is unknown, the UI surfaces
+      // a "Provider availability is unknown" line rather than a Connect
+      // button that would dead-end on the backend.
+      return const <Map<String, dynamic>>[];
+    }
+  }
+
   Future<Map<String, dynamic>> fetchSendingDomain() async {
     try {
       final json = await _apiClient.getJson('/client/mailbox/domain',

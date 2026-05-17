@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
@@ -26,6 +27,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   final ClientMailboxRepository _mailboxRepository = ClientMailboxRepository();
   final ClientOutreachRepository _outreachRepository =
       ClientOutreachRepository();
+  final ClientAccountRepository _accountRepository = ClientAccountRepository();
   late Future<_MailboxViewData> _future = _load();
   String? _oauthInflightProvider;
   bool _verifyingDomain = false;
@@ -152,10 +154,15 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
               ),
               const SizedBox(height: 18),
             ],
+            _OperationalIdentityPanel(
+              identity: data.operationalIdentity,
+              providerAvailability: data.providerAvailability,
+            ),
+            const SizedBox(height: 18),
             ClientPanel(
               title: 'Identity readiness',
               subtitle:
-                  'Orchestrate sends from this mailbox on your behalf. Each item below must be verified before managed execution can run.',
+                  'Orchestrate dispatches from this mailbox on your behalf. Each item below must be verified before dispatch eligibility is granted.',
               children: [
                 for (final step in data.identitySteps)
                   ClientInfoRow(
@@ -182,7 +189,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
                   ? const [
                       ClientEmptyState(
                           message:
-                              'No outbound dispatches yet. Once identity is ready, Orchestrate will begin sending automatically.')
+                              'No outbound dispatches yet. Dispatch eligibility is granted once every identity layer above is verified.')
                     ]
                   : [
                       for (final row in data.dispatchRows)
@@ -269,6 +276,15 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     final notices = await _outreachRepository.fetchNotifications();
     final readiness = await _mailboxRepository.fetchMailbox();
     final sendingDomain = await _mailboxRepository.fetchSendingDomain();
+    final providers = await _mailboxRepository.fetchProviderAvailability();
+    Map<String, dynamic> profile = const <String, dynamic>{};
+    try {
+      profile = await _accountRepository.fetchClientProfile();
+      final inner = asMap(profile['profile']);
+      if (inner.isNotEmpty) profile = inner;
+    } catch (_) {
+      profile = const <String, dynamic>{};
+    }
 
     final mailbox = asMap(readiness['mailbox']);
     final blockers = asList(readiness['blockers']).map(asMap).toList();
@@ -315,10 +331,13 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       ),
     ];
 
+    final providerAvailability = _readProviderAvailability(providers);
+
     final primaryActions = _primaryActionsFor(
       blockers: blockers,
       mailbox: mailbox,
       ready: ready,
+      availability: providerAvailability,
     );
 
     final hero = _heroFor(
@@ -328,6 +347,13 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     );
 
     final sendingIdentity = _readSendingDomain(sendingDomain);
+
+    final operationalIdentity = _buildOperationalIdentity(
+      profile: profile,
+      mailbox: mailbox,
+      sendingIdentity: sendingIdentity,
+      ready: ready,
+    );
 
     return _MailboxViewData(
       dispatchCount: dispatches.length,
@@ -342,6 +368,89 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       identitySteps: identitySteps,
       primaryActions: primaryActions,
       sendingIdentity: sendingIdentity,
+      providerAvailability: providerAvailability,
+      operationalIdentity: operationalIdentity,
+    );
+  }
+
+  /// Maps the backend availability list into a `{providerKey: state}`
+  /// lookup. Missing keys default to `unknown`, which the UI renders
+  /// as a neutral "Provider availability is unknown" — never as a
+  /// Connect button that would dead-end.
+  Map<String, _ProviderAvailabilityEntry> _readProviderAvailability(
+    List<Map<String, dynamic>> list,
+  ) {
+    final out = <String, _ProviderAvailabilityEntry>{};
+    for (final raw in list) {
+      final key = readText(raw, 'key').toLowerCase();
+      if (key.isEmpty) continue;
+      final reason = readText(raw, 'reason');
+      out[key] = _ProviderAvailabilityEntry(
+        key: key,
+        label: readText(raw, 'label', fallback: _providerLabel(key)),
+        available: raw['available'] == true,
+        reason: reason.isEmpty ? null : reason,
+      );
+    }
+    return out;
+  }
+
+  /// Domain-first operational identity composition. The five-layer
+  /// hierarchy the directive prescribes — business → domain → mailbox
+  /// → provider → trust → dispatch — derived from real fields with
+  /// honest inference where direct data is absent.
+  _OperationalIdentity _buildOperationalIdentity({
+    required Map<String, dynamic> profile,
+    required Map<String, dynamic> mailbox,
+    required _SendingIdentity sendingIdentity,
+    required bool ready,
+  }) {
+    final business = readText(profile, 'legalName',
+        fallback: readText(profile, 'displayName'));
+    final websiteUrl = readText(profile, 'websiteUrl');
+    final mailboxAddress = readText(mailbox, 'address',
+        fallback: readText(mailbox, 'fromEmail'));
+
+    // Domain inference: prefer the configured sending domain, then the
+    // mailbox address domain (after @), then the representation website
+    // host. Each fallback is honest — we label the source.
+    String domain = sendingIdentity.present ? sendingIdentity.domain : '';
+    String domainSource = sendingIdentity.present && domain.isNotEmpty
+        ? 'configured'
+        : '';
+    if (domain.isEmpty && mailboxAddress.contains('@')) {
+      domain = mailboxAddress.split('@').last.trim();
+      if (domain.isNotEmpty) domainSource = 'inferred_from_mailbox';
+    }
+    if (domain.isEmpty && websiteUrl.isNotEmpty) {
+      final uri = Uri.tryParse(websiteUrl);
+      final host = uri?.host ?? '';
+      if (host.isNotEmpty) {
+        domain = host.replaceFirst(RegExp(r'^www\.'), '');
+        domainSource = 'inferred_from_representation';
+      }
+    }
+
+    final providerCode = readText(mailbox, 'provider').toUpperCase();
+    final providerLabel = providerCode.isEmpty
+        ? ''
+        : (providerCode == 'GOOGLE'
+            ? 'Google Workspace / Gmail'
+            : providerCode == 'MICROSOFT'
+                ? 'Microsoft 365'
+                : providerCode);
+    final authorized = readText(mailbox, 'connected').toLowerCase() == 'true';
+
+    return _OperationalIdentity(
+      businessName: business,
+      domain: domain,
+      domainSource: domainSource,
+      mailboxAddress: mailboxAddress,
+      providerLabel: providerLabel,
+      authorized: authorized,
+      sendingIdentityReady: sendingIdentity.ready,
+      sendingIdentityStatus: sendingIdentity.status,
+      dispatchEligible: ready,
     );
   }
 
@@ -418,13 +527,17 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   }
 
   /// Determines the OAuth connect / reconnect actions to surface as the
-  /// page CTAs. Mailbox-missing offers Gmail and Microsoft 365 side by
-  /// side; an existing mailbox's reconnect button uses its own provider
-  /// so the user re-grants the same scopes against the same account.
+  /// page CTAs. Only providers reported as `available: true` by the
+  /// backend get a Connect button — providers without configured OAuth
+  /// credentials (Microsoft when MICROSOFT_MAILBOX_CLIENT_ID is unset,
+  /// for example) are rendered as a neutral "Provider setup pending"
+  /// row by the Operational identity panel and not as a CTA. No fake
+  /// provider parity.
   List<_MailboxPrimaryAction> _primaryActionsFor({
     required List<Map<String, dynamic>> blockers,
     required Map<String, dynamic> mailbox,
     required bool ready,
+    required Map<String, _ProviderAvailabilityEntry> availability,
   }) {
     if (ready) return const <_MailboxPrimaryAction>[];
 
@@ -436,26 +549,48 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     final mailboxId =
         readText(mailbox, 'id').isEmpty ? null : readText(mailbox, 'id');
 
+    bool isAvailable(String key) {
+      final entry = availability[key];
+      // If the backend signal is missing entirely, fall back to optimistic
+      // visibility so the experience does not regress when the new
+      // endpoint is not yet deployed. Only suppress a button when the
+      // backend explicitly reports `available: false`.
+      if (entry == null) return availability.isEmpty;
+      return entry.available;
+    }
+
+    List<_MailboxPrimaryAction> connectActions({String? mailboxId}) {
+      final actions = <_MailboxPrimaryAction>[];
+      if (isAvailable('google')) {
+        actions.add(_MailboxPrimaryAction(
+          code: 'connect_google',
+          label: mailboxId == null ? 'Connect Gmail' : 'Reconnect Gmail',
+          icon: Icons.alternate_email,
+          oauthProvider: 'google',
+          mailboxId: mailboxId,
+        ));
+      }
+      if (isAvailable('microsoft')) {
+        actions.add(_MailboxPrimaryAction(
+          code: 'connect_microsoft',
+          label: mailboxId == null
+              ? 'Connect Microsoft 365'
+              : 'Reconnect Microsoft 365',
+          icon: Icons.business_center_outlined,
+          oauthProvider: 'microsoft',
+          mailboxId: mailboxId,
+        ));
+      }
+      return actions;
+    }
+
     // Mailbox provider configuration is Orchestrate-side. No client CTA.
     if (byCode.containsKey('MAILBOX_PROVIDER_ERROR')) {
       return const <_MailboxPrimaryAction>[];
     }
 
     if (byCode.containsKey('MAILBOX_MISSING') || !hasMailbox) {
-      return const <_MailboxPrimaryAction>[
-        _MailboxPrimaryAction(
-          code: 'connect_google',
-          label: 'Connect Gmail',
-          icon: Icons.alternate_email,
-          oauthProvider: 'google',
-        ),
-        _MailboxPrimaryAction(
-          code: 'connect_microsoft',
-          label: 'Connect Microsoft 365',
-          icon: Icons.business_center_outlined,
-          oauthProvider: 'microsoft',
-        ),
-      ];
+      return connectActions();
     }
 
     if (byCode.containsKey('MAILBOX_DISCONNECTED') ||
@@ -463,7 +598,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       final provider = providerRaw == 'GOOGLE' || providerRaw == 'MICROSOFT'
           ? providerRaw.toLowerCase()
           : null;
-      if (provider != null) {
+      if (provider != null && isAvailable(provider)) {
         return <_MailboxPrimaryAction>[
           _MailboxPrimaryAction(
             code: 'reconnect_$provider',
@@ -474,22 +609,9 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
           ),
         ];
       }
-      // Unknown provider — show both as a fallback so the client can
-      // re-grant via whichever they originally used.
-      return const <_MailboxPrimaryAction>[
-        _MailboxPrimaryAction(
-          code: 'connect_google',
-          label: 'Connect Gmail',
-          icon: Icons.alternate_email,
-          oauthProvider: 'google',
-        ),
-        _MailboxPrimaryAction(
-          code: 'connect_microsoft',
-          label: 'Connect Microsoft 365',
-          icon: Icons.business_center_outlined,
-          oauthProvider: 'microsoft',
-        ),
-      ];
+      // Either the original provider is now unavailable, or we never
+      // recorded one. Offer whichever providers are currently available.
+      return connectActions(mailboxId: mailboxId);
     }
 
     return const <_MailboxPrimaryAction>[];
@@ -520,7 +642,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
             'Our outbound provider configuration is being repaired. No client action is required.',
         bannerTitle: 'Orchestrate is handling this',
         bannerMessage:
-            'Sending will resume automatically once provider configuration is restored. Contact support if this persists.',
+            'Dispatch eligibility resumes once provider configuration is restored. Contact support if this persists.',
         bannerTone: ClientBannerTone.warning,
       );
     }
@@ -528,20 +650,20 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       return const _MailboxHero(
         headline: 'Connect your sending mailbox',
         subtitle:
-            'Orchestrate dispatches from the mailbox you connect. Pick Gmail or Microsoft 365 — Orchestrate handles the OAuth handshake backend-side and stores no credentials in your browser.',
-        bannerTitle: 'A mailbox is required to start',
+            'Orchestrate dispatches from the mailbox you connect. The OAuth handshake runs backend-side and no credentials are stored in the browser.',
+        bannerTitle: 'A mailbox is required for dispatch eligibility',
         bannerMessage:
-            'Use the buttons above to grant Orchestrate access to Gmail or Microsoft 365. You will be redirected to your provider to approve.',
+            'Use the buttons above to grant Orchestrate access to a sending mailbox. You will be redirected to your provider to approve.',
         bannerTone: ClientBannerTone.warning,
       );
     }
     return const _MailboxHero(
       headline: 'Finish verifying your sending identity',
       subtitle:
-          'A mailbox is connected but one identity step is still pending. Complete it so Orchestrate can begin sending.',
-      bannerTitle: 'One identity step remaining',
+          'A mailbox is connected but one identity layer is still pending. Resolve it to unlock dispatch eligibility.',
+      bannerTitle: 'One identity layer remaining',
       bannerMessage:
-          'Resolve the pending identity step. Orchestrate will activate managed execution automatically as soon as it clears.',
+          'Resolve the pending identity layer. Dispatch eligibility is granted as soon as it clears.',
       bannerTone: ClientBannerTone.warning,
     );
   }
@@ -561,6 +683,8 @@ class _MailboxViewData {
     required this.identitySteps,
     required this.primaryActions,
     required this.sendingIdentity,
+    required this.providerAvailability,
+    required this.operationalIdentity,
   });
 
   final int dispatchCount;
@@ -575,6 +699,47 @@ class _MailboxViewData {
   final List<_IdentityStep> identitySteps;
   final List<_MailboxPrimaryAction> primaryActions;
   final _SendingIdentity sendingIdentity;
+  final Map<String, _ProviderAvailabilityEntry> providerAvailability;
+  final _OperationalIdentity operationalIdentity;
+}
+
+class _ProviderAvailabilityEntry {
+  const _ProviderAvailabilityEntry({
+    required this.key,
+    required this.label,
+    required this.available,
+    required this.reason,
+  });
+
+  final String key;
+  final String label;
+  final bool available;
+  final String? reason;
+}
+
+class _OperationalIdentity {
+  const _OperationalIdentity({
+    required this.businessName,
+    required this.domain,
+    required this.domainSource,
+    required this.mailboxAddress,
+    required this.providerLabel,
+    required this.authorized,
+    required this.sendingIdentityReady,
+    required this.sendingIdentityStatus,
+    required this.dispatchEligible,
+  });
+
+  final String businessName;
+  final String domain;
+  /// 'configured' | 'inferred_from_mailbox' | 'inferred_from_representation' | ''
+  final String domainSource;
+  final String mailboxAddress;
+  final String providerLabel;
+  final bool authorized;
+  final bool sendingIdentityReady;
+  final String sendingIdentityStatus;
+  final bool dispatchEligible;
 }
 
 class _SendingIdentity {
@@ -709,17 +874,18 @@ class _SendingIdentityPanel extends StatelessWidget {
       return ClientPanel(
         title: 'Sending domain (SPF / DKIM / DMARC)',
         subtitle:
-            'A sending domain is the public identity Orchestrate uses to send for you. We will set this up automatically once a mailbox is connected.',
+            'A sending domain is the public identity Orchestrate uses to dispatch on your behalf. Orchestrate attaches one to your mailbox once a connection is established.',
         children: const [
           ClientEmptyState(
               message:
-                  'No sending domain is attached yet. Connect a mailbox to start sending-identity setup.'),
+                  'No sending domain configured. Connect a mailbox to start sending-identity verification.'),
         ],
       );
     }
+    final hasDomain = identity.domain.trim().isNotEmpty;
     final subtitleParts = <String>[
-      'Domain: ${identity.domain}',
-      identity.ready ? 'Verified' : 'Needs verification',
+      hasDomain ? 'Domain: ${identity.domain}' : 'Domain: not yet attached',
+      identity.ready ? 'Verified at last DNS check' : 'Verification pending',
       if (identity.verifiedAt != null && identity.verifiedAt!.isNotEmpty)
         'Verified ${dateLabel(identity.verifiedAt)}',
       if (identity.lastCheckedAt != null && identity.lastCheckedAt!.isNotEmpty)
@@ -846,4 +1012,132 @@ class _MailboxPrimaryAction {
   final String oauthProvider;
   /// Set when reauthing an existing REQUIRES_REAUTH / DISCONNECTED mailbox.
   final String? mailboxId;
+}
+
+/// Domain-first operational identity. Renders the five-layer hierarchy
+/// the directive prescribes — business → domain → mailbox → provider →
+/// trust → dispatch — so the client domain identity is the conceptual
+/// center, not the provider. Each row reports the truthful current
+/// state; missing layers render as explicit "not yet" rather than
+/// blank or optimistic.
+class _OperationalIdentityPanel extends StatelessWidget {
+  const _OperationalIdentityPanel({
+    required this.identity,
+    required this.providerAvailability,
+  });
+
+  final _OperationalIdentity identity;
+  final Map<String, _ProviderAvailabilityEntry> providerAvailability;
+
+  @override
+  Widget build(BuildContext context) {
+    final domainPrimary = identity.domain.isNotEmpty
+        ? identity.domain
+        : 'No sending domain configured';
+    final domainSecondary = _domainSourceLabel(identity.domainSource);
+    final mailboxPrimary = identity.mailboxAddress.isNotEmpty
+        ? identity.mailboxAddress
+        : 'No operational mailbox connected';
+    final providerPrimary = identity.providerLabel.isNotEmpty
+        ? identity.providerLabel
+        : 'No provider connected';
+    final providerSecondary = _providerSecondary();
+    final trustPrimary = identity.sendingIdentityReady
+        ? 'SPF / DKIM / DMARC matched at the last DNS check'
+        : 'SPF / DKIM / DMARC verification pending';
+    final trustBadge =
+        identity.sendingIdentityReady ? 'Verified' : 'Pending';
+    final dispatchPrimary = identity.dispatchEligible
+        ? 'Dispatch eligibility granted'
+        : 'Dispatch eligibility pending — every layer above must be verified';
+    final dispatchBadge =
+        identity.dispatchEligible ? 'Eligible' : 'Blocked';
+
+    return ClientPanel(
+      title: 'Operational identity',
+      subtitle:
+          'Orchestrate operates against your domain identity. Provider infrastructure is interchangeable beneath it.',
+      children: [
+        ClientInfoRow(
+          title: 'Business',
+          primary: identity.businessName.isNotEmpty
+              ? identity.businessName
+              : 'Business identity not yet recorded',
+        ),
+        ClientInfoRow(
+          title: 'Sending domain',
+          primary: domainPrimary,
+          secondary: domainSecondary,
+        ),
+        ClientInfoRow(
+          title: 'Operational mailbox',
+          primary: mailboxPrimary,
+        ),
+        ClientInfoRow(
+          title: 'Provider',
+          primary: providerPrimary,
+          secondary: providerSecondary,
+          trailing: identity.providerLabel.isEmpty
+              ? null
+              : ClientBadge(
+                  label: identity.authorized ? 'Authorized' : 'Not authorized',
+                ),
+        ),
+        ClientInfoRow(
+          title: 'Trust (SPF · DKIM · DMARC)',
+          primary: trustPrimary,
+          trailing: ClientBadge(label: trustBadge),
+        ),
+        ClientInfoRow(
+          title: 'Dispatch eligibility',
+          primary: dispatchPrimary,
+          trailing: ClientBadge(label: dispatchBadge),
+        ),
+        if (_unavailableProviders().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          for (final entry in _unavailableProviders())
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '${entry.label}: provider setup pending — not yet operational on this deployment.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
+  String _domainSourceLabel(String source) {
+    switch (source) {
+      case 'configured':
+        return 'Configured sending domain.';
+      case 'inferred_from_mailbox':
+        return 'Inferred from the connected mailbox address.';
+      case 'inferred_from_representation':
+        return 'Inferred from the website on your Representation profile.';
+      default:
+        return '';
+    }
+  }
+
+  String _providerSecondary() {
+    if (identity.providerLabel.isEmpty) {
+      final available = providerAvailability.values
+          .where((entry) => entry.available)
+          .map((entry) => entry.label)
+          .toList();
+      if (available.isEmpty) return '';
+      return 'Available providers: ${available.join(' · ')}';
+    }
+    return identity.authorized
+        ? 'OAuth grant active.'
+        : 'OAuth grant required.';
+  }
+
+  List<_ProviderAvailabilityEntry> _unavailableProviders() {
+    return providerAvailability.values
+        .where((entry) => !entry.available)
+        .toList();
+  }
 }

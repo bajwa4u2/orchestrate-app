@@ -172,7 +172,7 @@ class _OperationalContinuityStripState
       lines.add(const _ContinuityLine(
         kind: _ContinuityKind.action,
         text:
-            'Mailbox awaiting OAuth — connect Gmail or Microsoft 365 from Infrastructure to proceed.',
+            'Mailbox awaiting OAuth — open Infrastructure to grant access to a sending mailbox.',
       ));
     }
 
@@ -196,7 +196,7 @@ class _OperationalContinuityStripState
       case 'SENDING_IDENTITY_UNVERIFIED':
         return 'Awaiting sending-identity verification — Orchestrate is watching DNS for SPF / DKIM / DMARC.';
       case 'MAILBOX_MISSING':
-        return 'Awaiting mailbox connection — connect Gmail or Microsoft 365 from Infrastructure.';
+        return 'Awaiting mailbox connection — open Infrastructure to connect the sending mailbox.';
       case 'MAILBOX_DISCONNECTED':
         return 'Mailbox connection lost — reconnect from Infrastructure to resume dispatch.';
       case 'MAILBOX_UNVERIFIED':

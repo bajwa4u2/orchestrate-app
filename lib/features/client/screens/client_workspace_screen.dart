@@ -183,8 +183,13 @@ class ClientHomeScreen extends StatelessWidget {
       authorized: authorized,
       authAcceptedAt: authAcceptedAt,
       metrics: [
-        _Metric('Account state',
-            session.hasSetupCompleted ? 'Setup complete' : 'Setup incomplete'),
+        _Metric(
+            'Account state',
+            !session.hasSetupCompleted
+                ? 'Setup incomplete'
+                : (blockers.isEmpty && authorized)
+                    ? 'Setup recorded'
+                    : 'Operational readiness pending'),
         _Metric('Replies', _countLabel(activity['replies'])),
         _Metric('Meetings',
             _countLabel(activity['meetings'] ?? activity['meetingCount'])),

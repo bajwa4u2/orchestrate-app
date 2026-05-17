@@ -147,8 +147,18 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
           ],
           children: [
             ClientMetricStrip(metrics: [
-              ClientMetric('Setup',
-                  session.hasSetupCompleted ? 'Complete' : 'Incomplete'),
+              // Truthful setup state: "Complete" is only honest when no
+              // downstream readiness items are pending. With blockers
+              // present, the setup record exists but operational
+              // readiness is not actually complete.
+              ClientMetric(
+                'Setup',
+                !session.hasSetupCompleted
+                    ? 'Incomplete'
+                    : blockers.isEmpty && authorized
+                        ? 'Recorded'
+                        : 'Recorded · readiness pending',
+              ),
               ClientMetric(
                   'Billing',
                   titleCase(readText(data.subscription, 'status',
@@ -158,8 +168,8 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                   data.auth['authorized'] == true
                       ? 'Recorded'
                       : 'Not recorded'),
-              ClientMetric(
-                  'Mailbox', mailbox['ready'] == true ? 'Ready' : 'Not ready'),
+              ClientMetric('Mailbox',
+                  mailbox['ready'] == true ? 'Ready' : 'Not ready'),
             ]),
             const SizedBox(height: 18),
             ClientPanel(
@@ -186,16 +196,18 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
             ClientPanel(
               title: 'Setup',
               subtitle:
-                  'Setup controls whether targeting and service preferences are ready for execution.',
+                  'Setup controls whether targeting and service preferences are recorded. Operational readiness is reported separately below.',
               children: [
                 ClientInfoRow(
                   title: 'Setup state',
-                  primary: session.hasSetupCompleted
-                      ? 'Setup is complete.'
-                      : 'Setup is incomplete.',
+                  primary: !session.hasSetupCompleted
+                      ? 'Setup is incomplete.'
+                      : (blockers.isEmpty && authorized)
+                          ? 'Setup is recorded and no readiness blockers are pending.'
+                          : 'Setup is recorded; operational readiness is still pending below.',
                   secondary: session.hasSetupCompleted
-                      ? 'Campaign targeting and service preferences are available.'
-                      : 'Finish setup before outreach can run.',
+                      ? 'Targeting and service preferences are available. Dispatch eligibility is gated by the readiness items below, not by setup alone.'
+                      : 'Finish setup before downstream readiness can be evaluated.',
                 ),
               ],
             ),
