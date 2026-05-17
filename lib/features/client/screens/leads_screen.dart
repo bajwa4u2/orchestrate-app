@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
@@ -30,34 +31,17 @@ class LeadsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Hero(
-                  total: data.totalLeads,
-                  sendable: data.sendableLeads,
-                  blocked: data.blockedLeads),
+              _Hero(summary: data.summary),
               const SizedBox(height: 18),
-              _StatusRow(
-                cards: [
-                  _StatusCardData(label: 'Under qualification', value: '${data.totalLeads}'),
-                  _StatusCardData(
-                    label: 'Sendable',
-                    value: '${data.sendableLeads}',
-                  ),
-                  _StatusCardData(
-                    label: 'With phone',
-                    value: '${data.phoneCount}',
-                  ),
-                  _StatusCardData(
-                    label: 'Campaigns',
-                    value: '${data.campaignCount}',
-                  ),
-                  _StatusCardData(
-                    label: 'Blocked',
-                    value: '${data.blockedLeads}',
-                  ),
-                ],
-              ),
+              _SummaryGrid(summary: data.summary),
               const SizedBox(height: 18),
-              if (data.blockedLeads > 0) ...[
+              if (data.summary.governanceReviewQueue > 0)
+                _GovernanceQueueCallout(
+                  count: data.summary.governanceReviewQueue,
+                ),
+              if (data.summary.governanceReviewQueue > 0)
+                const SizedBox(height: 18),
+              if (data.summary.blockedByGovernance > 0) ...[
                 _ExplanationPanel(
                   title: 'Why some opportunities are held',
                   summary:
@@ -84,44 +68,24 @@ class LeadsScreen extends StatelessWidget {
 
   Future<_LeadViewData> _load() async {
     final workspaceRepo = ClientWorkspaceRepository();
-    final overview = await workspaceRepo.fetchOverview();
+    final portalRepo = ClientPortalRepository();
+    final summaryFuture = portalRepo.fetchOpportunitySummary();
     final leads = await workspaceRepo.fetchLeads();
     final intelligence = await workspaceRepo.fetchIntelligenceCampaigns();
-
-    final activity = _asMap(overview['activity']);
-    final totalLeads = _countValue(
-      activity['leadCount'] ?? activity['leads'] ?? activity['prospects'],
-    );
-    final sendableLeads = _countValue(
-      activity['sendableLeadCount'] ??
-          activity['sendableLeads'] ??
-          activity['queuedLeads'],
-    );
+    final summaryJson = await summaryFuture;
 
     final rows = <_LeadRow>[];
-    final campaignNames = <String>{};
     final blockedReasonCounts = <String, int>{};
-    var phoneCount = 0;
-    var blockedLeads = 0;
 
     for (final item in leads) {
       final map = _asMap(item);
       final campaign = _read(map, 'campaign');
       final phone = _read(map, 'phone');
-      if (campaign.isNotEmpty) {
-        campaignNames.add(campaign);
-      }
-      if (phone.isNotEmpty) {
-        phoneCount += 1;
-      }
 
       final blockReasons = _extractBlockReasons(map);
-      if (blockReasons.isNotEmpty) {
-        blockedLeads += 1;
-        for (final reason in blockReasons) {
-          blockedReasonCounts.update(reason, (value) => value + 1,
-              ifAbsent: () => 1);
-        }
+      for (final reason in blockReasons) {
+        blockedReasonCounts.update(reason, (value) => value + 1,
+            ifAbsent: () => 1);
       }
 
       rows.add(
@@ -145,12 +109,8 @@ class LeadsScreen extends StatelessWidget {
     final intelligenceCampaigns = _readIntelligenceCampaigns(intelligence);
 
     return _LeadViewData(
-      totalLeads: totalLeads,
-      sendableLeads: sendableLeads,
-      blockedLeads: blockedLeads,
+      summary: _OpportunitySummary.fromJson(summaryJson),
       blockedReasonCounts: blockedReasonCounts,
-      phoneCount: phoneCount,
-      campaignCount: campaignNames.length,
       rows: rows,
       intelligenceCampaigns: intelligenceCampaigns,
     );
@@ -159,24 +119,88 @@ class LeadsScreen extends StatelessWidget {
 
 class _LeadViewData {
   const _LeadViewData({
-    required this.totalLeads,
-    required this.sendableLeads,
-    required this.blockedLeads,
+    required this.summary,
     required this.blockedReasonCounts,
-    required this.phoneCount,
-    required this.campaignCount,
     required this.rows,
     required this.intelligenceCampaigns,
   });
 
-  final int totalLeads;
-  final int sendableLeads;
-  final int blockedLeads;
+  final _OpportunitySummary summary;
   final Map<String, int> blockedReasonCounts;
-  final int phoneCount;
-  final int campaignCount;
   final List<_LeadRow> rows;
   final List<_IntelligenceCampaign> intelligenceCampaigns;
+}
+
+/// Authoritative opportunity summary mirroring the
+/// /client/opportunities/summary response shape. Every field is
+/// read deterministically from persisted rows on the backend — no
+/// inferred or seeded numbers.
+class _OpportunitySummary {
+  const _OpportunitySummary({
+    required this.total,
+    required this.underQualification,
+    required this.qualified,
+    required this.dispatchReady,
+    required this.dispatched,
+    required this.suppressed,
+    required this.blockedByGovernance,
+    required this.governanceReviewQueue,
+    required this.runtime,
+  });
+
+  factory _OpportunitySummary.fromJson(Map<String, dynamic> json) {
+    final byQualification = _asMap(json['byQualification']);
+    final blocking = _asMap(json['blocking']);
+    return _OpportunitySummary(
+      total: _countValue(json['total']),
+      underQualification: _countValue(byQualification['underQualification']),
+      qualified: _countValue(byQualification['qualified']),
+      dispatchReady: _countValue(byQualification['dispatchReady']),
+      dispatched: _countValue(byQualification['dispatched']),
+      suppressed: _countValue(byQualification['suppressed']),
+      blockedByGovernance:
+          _countValue(blocking['blockedByGovernance']),
+      governanceReviewQueue:
+          _countValue(blocking['governanceReviewQueue']),
+      runtime: _OpportunityRuntime.fromJson(_asMap(json['runtime'])),
+    );
+  }
+
+  final int total;
+  final int underQualification;
+  final int qualified;
+  final int dispatchReady;
+  final int dispatched;
+  final int suppressed;
+  final int blockedByGovernance;
+  final int governanceReviewQueue;
+  final _OpportunityRuntime runtime;
+}
+
+class _OpportunityRuntime {
+  const _OpportunityRuntime({
+    required this.campaignActive,
+    required this.readinessReady,
+    required this.rateLimited,
+    required this.governanceBlocked,
+    required this.workloadCount,
+  });
+
+  factory _OpportunityRuntime.fromJson(Map<String, dynamic> json) {
+    return _OpportunityRuntime(
+      campaignActive: json['campaignActive'] == true,
+      readinessReady: json['readinessReady'] == true,
+      rateLimited: json['rateLimited'] == true,
+      governanceBlocked: json['governanceBlocked'] == true,
+      workloadCount: _countValue(json['workloadCount']),
+    );
+  }
+
+  final bool campaignActive;
+  final bool readinessReady;
+  final bool rateLimited;
+  final bool governanceBlocked;
+  final int workloadCount;
 }
 
 class _IntelligenceCampaign {
@@ -261,15 +285,15 @@ class _LeadIntelligence {
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero(
-      {required this.total, required this.sendable, required this.blocked});
+  const _Hero({required this.summary});
 
-  final int total;
-  final int sendable;
-  final int blocked;
+  final _OpportunitySummary summary;
 
   @override
   Widget build(BuildContext context) {
+    final headline = _buildHeadline(summary);
+    final detail = _buildDetail(summary);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(28),
@@ -283,84 +307,171 @@ class _Hero extends StatelessWidget {
         children: [
           Text(
             'Opportunities',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(color: AppTheme.publicMuted),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: AppTheme.publicMuted),
           ),
           const SizedBox(height: 10),
           Text(
-            total == 0
-                ? 'Signal discovery is watching — no qualified opportunities yet'
-                : '$total opportunities under qualification',
+            headline,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: 12),
           Text(
-            sendable == 0
-                ? (blocked > 0
-                    ? 'Some opportunities are held while the qualification engine validates business-fit, timing, and contact readiness — governed dispatch waits.'
-                    : 'Orchestrate separates monitored signals from dispatch-ready opportunities. Dispatch only proceeds after qualification passes.')
-                : '$sendable opportunities are dispatch-ready under your current representation scope.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
+            detail,
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(color: AppTheme.publicMuted),
           ),
         ],
       ),
     );
   }
-}
 
-class _StatusCardData {
-  const _StatusCardData({required this.label, required this.value});
+  String _buildHeadline(_OpportunitySummary s) {
+    if (s.total == 0) {
+      return 'Signal discovery is watching — no opportunities surfaced yet';
+    }
+    final parts = <String>[];
+    if (s.underQualification > 0) {
+      parts.add('${s.underQualification} under qualification');
+    }
+    if (s.qualified > 0) parts.add('${s.qualified} qualified');
+    if (s.dispatchReady > 0) parts.add('${s.dispatchReady} dispatch-ready');
+    if (parts.isEmpty) {
+      return '${s.total} opportunit${s.total == 1 ? 'y' : 'ies'} in workspace';
+    }
+    return parts.join(' · ');
+  }
 
-  final String label;
-  final String value;
-}
-
-class _StatusRow extends StatelessWidget {
-  const _StatusRow({required this.cards});
-
-  final List<_StatusCardData> cards;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < WorkspaceBreakpoints.compact) {
-          return Column(
-            children: [
-              for (int i = 0; i < cards.length; i++) ...[
-                _StatusTile(card: cards[i]),
-                if (i != cards.length - 1) const SizedBox(height: 12),
-              ],
-            ],
-          );
-        }
-        return Row(
-          children: [
-            for (int i = 0; i < cards.length; i++) ...[
-              Expanded(child: _StatusTile(card: cards[i])),
-              if (i != cards.length - 1) const SizedBox(width: 12),
-            ],
-          ],
-        );
-      },
-    );
+  String _buildDetail(_OpportunitySummary s) {
+    // Doctrine: dispatch-ready DOES NOT mean dispatching. The runtime
+    // line on the home screen is the only thing that can claim
+    // dispatch is in flight. Here we describe the bucket state, then
+    // defer to the runtime line.
+    if (s.dispatchReady == 0 && s.qualified == 0) {
+      if (s.suppressed > 0) {
+        return 'No qualified opportunities right now. ${s.suppressed} suppressed lead${s.suppressed == 1 ? '' : 's'} not in scope. Qualification continues — dispatch waits until a lead is dispatch-ready.';
+      }
+      return 'No qualified opportunities right now. The qualification engine validates business-fit, timing, and contact readiness before any lead becomes dispatch-ready.';
+    }
+    if (s.dispatchReady == 0) {
+      return '${s.qualified} qualified lead${s.qualified == 1 ? '' : 's'} await dispatch-readiness — outreach only proceeds after a lead clears qualification and has a verified contact path.';
+    }
+    if (!s.runtime.campaignActive) {
+      return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'}, but no campaign is currently ACTIVE. Dispatch will not move until a campaign is activated — readiness alone does not start outreach.';
+    }
+    if (s.runtime.governanceBlocked) {
+      return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Governance is currently holding dispatch — see the runtime line on Home for the named gate.';
+    }
+    if (s.runtime.rateLimited) {
+      return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Send policy pacing is currently active — dispatch resumes automatically when the window opens.';
+    }
+    if (!s.runtime.readinessReady) {
+      return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Readiness gates have not passed — dispatch is not yet eligible. Open the home runtime line for the named blocker.';
+    }
+    return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Readiness gates passed and a campaign is active. Whether messages are in flight right now is named on the runtime line on Home.';
   }
 }
 
-class _StatusTile extends StatelessWidget {
-  const _StatusTile({required this.card});
+class _SummaryGrid extends StatelessWidget {
+  const _SummaryGrid({required this.summary});
 
-  final _StatusCardData card;
+  final _OpportunitySummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    // Card definitions distinguish "under qualification" / "qualified"
+    // / "dispatch-ready" / "dispatched" / "suppressed" — each name
+    // means a specific persisted row state. No "sendable" or "ready"
+    // labels that conflate these.
+    final cards = <_SummaryCard>[
+      _SummaryCard(
+        label: 'Under qualification',
+        value: '${summary.underQualification}',
+        hint: 'Discovered, not yet decided',
+      ),
+      _SummaryCard(
+        label: 'Qualified',
+        value: '${summary.qualified}',
+        hint: 'Passed qualification, not yet dispatch-ready',
+      ),
+      _SummaryCard(
+        label: 'Dispatch-ready',
+        value: '${summary.dispatchReady}',
+        hint: 'Eligible for outreach when runtime allows',
+      ),
+      _SummaryCard(
+        label: 'Dispatched',
+        value: '${summary.dispatched}',
+        hint: 'Has at least one sent message',
+      ),
+      _SummaryCard(
+        label: 'Suppressed',
+        value: '${summary.suppressed}',
+        hint: 'Out of scope; not retried',
+      ),
+      _SummaryCard(
+        label: 'Blocked by governance',
+        value: '${summary.blockedByGovernance}',
+        hint: 'Hold from qualification or message-generation rules',
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth < 720
+            ? 1
+            : (constraints.maxWidth < 1080 ? 2 : 3);
+        return _grid(cards, columns);
+      },
+    );
+  }
+
+  Widget _grid(List<_SummaryCard> cards, int columns) {
+    final rows = <Widget>[];
+    for (int i = 0; i < cards.length; i += columns) {
+      final rowChildren = <Widget>[];
+      for (int c = 0; c < columns; c++) {
+        if (i + c >= cards.length) {
+          rowChildren.add(const Expanded(child: SizedBox.shrink()));
+        } else {
+          rowChildren.add(Expanded(child: _SummaryTile(card: cards[i + c])));
+        }
+        if (c != columns - 1) rowChildren.add(const SizedBox(width: 12));
+      }
+      rows.add(Row(children: rowChildren));
+      if (i + columns < cards.length) rows.add(const SizedBox(height: 12));
+    }
+    return Column(children: rows);
+  }
+}
+
+class _SummaryCard {
+  const _SummaryCard({
+    required this.label,
+    required this.value,
+    required this.hint,
+  });
+
+  final String label;
+  final String value;
+  final String hint;
+}
+
+class _SummaryTile extends StatelessWidget {
+  const _SummaryTile({required this.card});
+
+  final _SummaryCard card;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppTheme.radius),
@@ -369,9 +480,62 @@ class _StatusTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(card.label, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 10),
-          Text(card.value, style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            card.label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            card.value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            card.hint,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GovernanceQueueCallout extends StatelessWidget {
+  const _GovernanceQueueCallout({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF6E6),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: const Color(0xFFE7C97A)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded,
+              color: Colors.orange.shade800, size: 18),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '$count failed dispatch attempt${count == 1 ? '' : 's'} are queued for operator review. New dispatch may be held by governance until they clear.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.brown.shade800),
+            ),
+          ),
         ],
       ),
     );

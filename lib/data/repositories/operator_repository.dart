@@ -16,6 +16,20 @@ class OperatorRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  /// Per-organization operator runtime metrics. Returns counts of
+  /// clients per closed-enum ExecutionState plus org-wide totals for
+  /// queue depth, recent sends, recent failures, and the governance
+  /// review queue. Use to render runtime-bound operator categories
+  /// (`ready` vs `actively dispatching` vs `blocked` vs `degraded`)
+  /// instead of inferring activity from readiness alone.
+  Future<Map<String, dynamic>> fetchRuntimeMetrics() async {
+    final json = await _apiClient.getJson(
+      '/operator/runtime-metrics',
+      surface: ApiSurface.operator,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<Map<String, dynamic>> fetchCommandOverview() async {
     try {
       final json = await _apiClient.getJson(

@@ -55,6 +55,20 @@ class ClientPortalRepository {
     return _asMap(json);
   }
 
+  /// Authoritative opportunity-bucket summary. Each count is read
+  /// deterministically from persisted rows. Returns disjoint
+  /// qualification buckets (`underQualification` / `qualified` /
+  /// `dispatchReady` / `dispatched` / `suppressed`) plus an additive
+  /// blocking axis (`blockedByGovernance` / `governanceReviewQueue`)
+  /// and a runtime echo for cross-surface consistency.
+  Future<Map<String, dynamic>> fetchOpportunitySummary() async {
+    final json = await _apiClient.getJson(
+      '/client/opportunities/summary',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Read the operational support timeline: chronological union of
   /// activity events, DNS verification history, recent dispatches,
   /// and open alerts -- all client-scoped, no fabricated events.

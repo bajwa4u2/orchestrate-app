@@ -108,6 +108,10 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
             children: [
               _Header(data: data),
               const SizedBox(height: 18),
+              if (data.runtimeMetrics != null) ...[
+                _RuntimeMetricsPanel(metrics: data.runtimeMetrics!),
+                const SizedBox(height: 18),
+              ],
               _ActionPanel(
                 inFlight: _actionInFlight,
                 message: _actionMessage,
@@ -160,12 +164,25 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
     );
   }
 
+  Future<_RuntimeMetrics?> _safeRuntimeMetrics(OperatorRepository repo) async {
+    try {
+      final json = await repo.fetchRuntimeMetrics();
+      return _RuntimeMetrics.fromJson(json);
+    } catch (_) {
+      // Honest: when the operator runtime-metrics endpoint cannot
+      // load, we omit the panel rather than rendering placeholder
+      // numbers. The rest of the command surface stays available.
+      return null;
+    }
+  }
+
   Future<_OperatorData> _load(OperatorSection section) async {
     final repo = OperatorRepository();
 
     switch (section) {
       case OperatorSection.command:
         final workspace = await repo.fetchCommandWorkspace();
+        final runtimeMetrics = await _safeRuntimeMetrics(repo);
         final pulse = _asMap(workspace['pulse']);
         final totals = _asMap(pulse['totals']);
         final today = _asMap(pulse['today']);
@@ -184,6 +201,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           title: 'Command board for priority, health, and recovery',
           subtitle:
               'See what needs attention first, confirm operating health, and dispatch supported recovery actions.',
+          runtimeMetrics: runtimeMetrics,
           metrics: [
             _Metric('Sent today', _read(today, 'sent', fallback: '0')),
             _Metric('Replies', _read(today, 'replies', fallback: '0')),
@@ -1002,6 +1020,236 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
+class _RuntimeMetricsPanel extends StatelessWidget {
+  const _RuntimeMetricsPanel({required this.metrics});
+
+  final _RuntimeMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.panel,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Runtime metrics',
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 6),
+          Text(
+            'Per-client execution state across the org. "Ready" is not "dispatching" — categories below come from the same runtime model the client home uses.',
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: AppTheme.subdued),
+          ),
+          const SizedBox(height: 14),
+          _runtimeGrid(context),
+          const SizedBox(height: 14),
+          _activityRow(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _runtimeGrid(BuildContext context) {
+    final cards = <_RuntimeStateCard>[
+      _RuntimeStateCard(
+        label: 'Actively dispatching',
+        value: metrics.dispatching,
+        hint: 'Queue activity within the last hour',
+        tone: _Tone.positive,
+      ),
+      _RuntimeStateCard(
+        label: 'Ready, idle',
+        value: metrics.readyIdle,
+        hint: 'Eligible but no in-flight messages',
+        tone: _Tone.neutral,
+      ),
+      _RuntimeStateCard(
+        label: 'Awaiting workload',
+        value: metrics.awaitingWorkload,
+        hint: 'Active campaign, no qualified leads',
+        tone: _Tone.neutral,
+      ),
+      _RuntimeStateCard(
+        label: 'Awaiting campaign',
+        value: metrics.awaitingApproval,
+        hint: 'Readiness passed, no ACTIVE campaign',
+        tone: _Tone.neutral,
+      ),
+      _RuntimeStateCard(
+        label: 'Degraded',
+        value: metrics.degraded,
+        hint: 'Recent failures dominate sends',
+        tone: _Tone.critical,
+      ),
+      _RuntimeStateCard(
+        label: 'Recovering',
+        value: metrics.recovering,
+        hint: 'Queued, no recent sends',
+        tone: _Tone.cautious,
+      ),
+      _RuntimeStateCard(
+        label: 'Governance-blocked',
+        value: metrics.governanceBlocked,
+        hint: 'All recent dispatch held by review',
+        tone: _Tone.cautious,
+      ),
+      _RuntimeStateCard(
+        label: 'Rate-limited',
+        value: metrics.rateLimited,
+        hint: 'Send-policy cap reached',
+        tone: _Tone.cautious,
+      ),
+      _RuntimeStateCard(
+        label: 'Provider-blocked',
+        value: metrics.providerBlocked,
+        hint: 'Mailbox auth missing/expired',
+        tone: _Tone.cautious,
+      ),
+      _RuntimeStateCard(
+        label: 'Paused (subscription)',
+        value: metrics.paused,
+        hint: 'Billing gates new dispatch',
+        tone: _Tone.cautious,
+      ),
+      _RuntimeStateCard(
+        label: 'Not ready',
+        value: metrics.notReady,
+        hint: 'Readiness layer has not verified',
+        tone: _Tone.critical,
+      ),
+      _RuntimeStateCard(
+        label: 'Unknown / insufficient data',
+        value: metrics.unknown,
+        hint: 'No readiness snapshot available',
+        tone: _Tone.neutral,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns =
+            constraints.maxWidth < 720 ? 2 : (constraints.maxWidth < 1200 ? 3 : 4);
+        final rows = <Widget>[];
+        for (int i = 0; i < cards.length; i += columns) {
+          final row = <Widget>[];
+          for (int c = 0; c < columns; c++) {
+            if (i + c >= cards.length) {
+              row.add(const Expanded(child: SizedBox.shrink()));
+            } else {
+              row.add(Expanded(child: _RuntimeStateTile(card: cards[i + c])));
+            }
+            if (c != columns - 1) row.add(const SizedBox(width: 10));
+          }
+          rows.add(Row(children: row));
+          if (i + columns < cards.length) rows.add(const SizedBox(height: 10));
+        }
+        return Column(children: rows);
+      },
+    );
+  }
+
+  Widget _activityRow(BuildContext context) {
+    final pieces = <String>[
+      '${metrics.totalClients} client${metrics.totalClients == 1 ? '' : 's'} in scope',
+      '${metrics.recentSent} sent (last hour)',
+      '${metrics.recentFailed} failed (last hour)',
+      '${metrics.queueDepth} in queue right now',
+      '${metrics.governanceReviewQueue} in operator review',
+    ];
+    return Text(
+      pieces.join('  ·  '),
+      style: Theme.of(context)
+          .textTheme
+          .bodyMedium
+          ?.copyWith(color: AppTheme.subdued),
+    );
+  }
+}
+
+enum _Tone { positive, neutral, cautious, critical }
+
+class _RuntimeStateCard {
+  const _RuntimeStateCard({
+    required this.label,
+    required this.value,
+    required this.hint,
+    required this.tone,
+  });
+
+  final String label;
+  final int value;
+  final String hint;
+  final _Tone tone;
+}
+
+class _RuntimeStateTile extends StatelessWidget {
+  const _RuntimeStateTile({required this.card});
+
+  final _RuntimeStateCard card;
+
+  @override
+  Widget build(BuildContext context) {
+    Color borderColor;
+    switch (card.tone) {
+      case _Tone.positive:
+        borderColor = Colors.green.shade400;
+        break;
+      case _Tone.cautious:
+        borderColor = Colors.orange.shade400;
+        break;
+      case _Tone.critical:
+        borderColor = Colors.red.shade400;
+        break;
+      case _Tone.neutral:
+        borderColor = AppTheme.lineSoft;
+        break;
+    }
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.panelRaised,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            card.label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.subdued,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${card.value}',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            card.hint,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: AppTheme.subdued),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.error, required this.onRetry});
 
@@ -1135,6 +1383,7 @@ class _OperatorData {
     required this.secondaryTitle,
     required this.secondaryRows,
     required this.secondaryEmpty,
+    this.runtimeMetrics,
   });
 
   final String eyebrow;
@@ -1147,6 +1396,65 @@ class _OperatorData {
   final String secondaryTitle;
   final List<_Row> secondaryRows;
   final String secondaryEmpty;
+  final _RuntimeMetrics? runtimeMetrics;
+}
+
+/// Operator runtime metrics returned by /operator/runtime-metrics.
+/// Counts are runtime-derived (per closed-enum ExecutionState).
+class _RuntimeMetrics {
+  const _RuntimeMetrics({
+    required this.totalClients,
+    required this.byState,
+    required this.recentSent,
+    required this.recentFailed,
+    required this.queueDepth,
+    required this.governanceReviewQueue,
+  });
+
+  factory _RuntimeMetrics.fromJson(Map<String, dynamic> json) {
+    final byState = _asMap(json['byState']);
+    final activity = _asMap(json['activity']);
+    final counts = <String, int>{};
+    byState.forEach((key, value) {
+      final n = value is num ? value.toInt() : int.tryParse('$value') ?? 0;
+      counts[key.toString()] = n;
+    });
+    int readInt(dynamic v) {
+      if (v is num) return v.toInt();
+      return int.tryParse('$v') ?? 0;
+    }
+
+    return _RuntimeMetrics(
+      totalClients: readInt(json['totalClients']),
+      byState: counts,
+      recentSent: readInt(activity['recentSent']),
+      recentFailed: readInt(activity['recentFailed']),
+      queueDepth: readInt(activity['queueDepth']),
+      governanceReviewQueue: readInt(json['governanceReviewQueue']),
+    );
+  }
+
+  final int totalClients;
+  final Map<String, int> byState;
+  final int recentSent;
+  final int recentFailed;
+  final int queueDepth;
+  final int governanceReviewQueue;
+
+  int countOf(String state) => byState[state] ?? 0;
+
+  int get readyIdle => countOf('READY_IDLE');
+  int get awaitingWorkload => countOf('READY_AWAITING_WORKLOAD');
+  int get awaitingApproval => countOf('READY_AWAITING_APPROVAL');
+  int get dispatching => countOf('DISPATCHING');
+  int get degraded => countOf('DEGRADED');
+  int get recovering => countOf('RECOVERING');
+  int get notReady => countOf('NOT_READY');
+  int get paused => countOf('PAUSED');
+  int get providerBlocked => countOf('PROVIDER_BLOCKED');
+  int get governanceBlocked => countOf('GOVERNANCE_BLOCKED');
+  int get rateLimited => countOf('RATE_LIMITED');
+  int get unknown => countOf('UNKNOWN');
 }
 
 class _Metric {
