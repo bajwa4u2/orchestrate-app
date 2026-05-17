@@ -77,12 +77,20 @@ class PricingCatalog {
     required this.opportunity,
     required this.revenue,
     required this.plans,
+    this.sequence = const [],
   });
 
   final int trialDays;
   final List<PricingPlanOption> opportunity;
   final List<PricingPlanOption> revenue;
   final List<PricingPlanOption> plans;
+
+  /// Activation sequence the backend returns alongside the catalog, e.g.
+  /// ['Choose plan', 'Create account', 'Verify email',
+  ///  'Define operating profile', 'Activate subscription', 'Begin service'].
+  /// The pricing surface renders this verbatim instead of inventing its own
+  /// post-choice flow so the catalog remains the single source of truth.
+  final List<String> sequence;
 
   List<PricingPlanOption> plansForLane(String lane) {
     final normalized = lane.trim().toLowerCase();
@@ -120,12 +128,18 @@ class PricingCatalog {
       ...revenuePlans,
     ];
 
+    final sequence = ((json['sequence'] as List?) ?? const [])
+        .map((e) => e?.toString().trim() ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList(growable: false);
+
     return PricingCatalog(
       trialDays: _readInt(json['trialDays'] ?? 15),
       opportunity: _sortByTier(opportunityPlans),
       revenue: _sortByTier(revenuePlans),
       plans:
           _sortByLaneAndTier(mergedPlans.isNotEmpty ? mergedPlans : flatPlans),
+      sequence: sequence,
     );
   }
 

@@ -2,12 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
-import 'package:orchestrate_app/core/config/app_config.dart';
 import 'package:orchestrate_app/core/config/pricing_config.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/public_repository.dart';
 import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
 
+/// Pricing surface aligned with the backend plan catalog.
+///
+/// Backend reality (see orchestrate_backend/src/billing/pricing/plan-catalog.ts):
+///  - Two operational lanes: `opportunity`, `revenue`.
+///  - Three execution tiers per lane: `focused`, `multi`, `precision`.
+///  - Six concrete plans returned via /public/pricing as
+///    { trialDays, plans[], grouped: { opportunity, revenue }, sequence }.
+///
+/// This screen surfaces all six plans as a 2-lane x 3-tier matrix so the
+/// catalog reality is visible at a glance. The lane communicates *how far
+/// the operational runtime extends*; the tier communicates *the execution
+/// scope*. The boundary between client identity and Orchestrate operation
+/// stays constant — only the scope changes with the plan.
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
 
@@ -16,7 +28,11 @@ class PricingScreen extends StatefulWidget {
 }
 
 class _PricingScreenState extends State<PricingScreen> {
-  String _selectedPlan = 'opportunity';
+  // No "selected lane" state — both lanes are visible. The query parameter
+  // ?plan= is honored as a soft *highlight*, not a filter, so deep links
+  // from `/pricing?plan=revenue` still emphasize the requested lane while
+  // keeping the comparison visible.
+  String? _highlightLane;
   bool _trialRequested = false;
   bool _loading = true;
   String? _error;
@@ -32,7 +48,7 @@ class _PricingScreenState extends State<PricingScreen> {
       final trial = uri.queryParameters['trial']?.trim().toLowerCase();
 
       if (plan == 'revenue' || plan == 'opportunity') {
-        _selectedPlan = plan!;
+        _highlightLane = plan;
       }
 
       _trialRequested = trial == '15d';
@@ -102,25 +118,29 @@ class _PricingScreenState extends State<PricingScreen> {
     );
   }
 
-  Future<void> _goForward(BuildContext context, String tierCode) async {
+  /// Initiate activation for a specific (lane, tier) pair from the catalog.
+  /// The lane is sourced per-card so each of the six matrix cells routes
+  /// directly to its own Stripe price downstream — no shared lane state.
+  Future<void> _goForward(
+      BuildContext context, String lane, String tierCode) async {
     final session = AuthSessionController.instance;
-    await session.rememberSelection(plan: _selectedPlan, tier: tierCode);
+    await session.rememberSelection(plan: lane, tier: tierCode);
 
     final route = _route(
       '/auth/join',
-      plan: _selectedPlan,
+      plan: lane,
       tier: tierCode,
       trialRequested: _trialRequested,
     );
     final setupRoute = _route(
       '/app/setup',
-      plan: _selectedPlan,
+      plan: lane,
       tier: tierCode,
       trialRequested: _trialRequested,
     );
     final subscribeRoute = _route(
       '/app/subscribe',
-      plan: _selectedPlan,
+      plan: lane,
       tier: tierCode,
       trialRequested: _trialRequested,
     );
@@ -136,7 +156,7 @@ class _PricingScreenState extends State<PricingScreen> {
       context.go(
         _route(
           '/auth/verify-email',
-          plan: _selectedPlan,
+          plan: lane,
           tier: tierCode,
           trialRequested: _trialRequested,
         ),
@@ -173,11 +193,6 @@ class _PricingScreenState extends State<PricingScreen> {
           const SizedBox(height: 20),
           const _OperationalBoundaryCard(),
           const SizedBox(height: 20),
-          _PlanSwitch(
-            selectedPlan: _selectedPlan,
-            onChanged: (value) => setState(() => _selectedPlan = value),
-          ),
-          const SizedBox(height: 16),
           _TrialToggle(
             selected: _trialRequested,
             trialDays: catalog?.trialDays ?? 15,
@@ -194,54 +209,18 @@ class _PricingScreenState extends State<PricingScreen> {
           else if (_error != null)
             _ErrorCard(message: _error!, onRetry: _loadPricing)
           else if (catalog != null) ...[
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final stacked = constraints.maxWidth < 980;
-                final plans = catalog.plansForLane(_selectedPlan);
-
-                if (stacked) {
-                  return Column(
-                    children: [
-                      for (int i = 0; i < plans.length; i++) ...[
-                        _TierCard(
-                          plan: plans[i],
-                          trialRequested: _trialRequested,
-                          trialDays: catalog.trialDays,
-                          onSelect: (tierCode) => _goForward(context, tierCode),
-                        ),
-                        if (i != plans.length - 1) const SizedBox(height: 16),
-                      ],
-                    ],
-                  );
-                }
-
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (int i = 0; i < plans.length; i++) ...[
-                        Expanded(
-                          child: _TierCard(
-                            plan: plans[i],
-                            trialRequested: _trialRequested,
-                            trialDays: catalog.trialDays,
-                            onSelect: (tierCode) =>
-                                _goForward(context, tierCode),
-                          ),
-                        ),
-                        if (i != plans.length - 1) const SizedBox(width: 16),
-                      ],
-                    ],
-                  ),
-                );
-              },
+            _LaneMatrixSection(
+              catalog: catalog,
+              trialRequested: _trialRequested,
+              highlightLane: _highlightLane,
+              onSelect: _goForward,
             ),
             const SizedBox(height: 24),
+            const _TierScopeRow(),
+            const SizedBox(height: 20),
             const _InfrastructureBurdenCard(),
             const SizedBox(height: 20),
-            const _CapabilityMatrix(),
-            const SizedBox(height: 20),
-            const _AfterChoosingCard(),
+            _ActivationContinuationCard(sequence: catalog.sequence),
             const SizedBox(height: 20),
             _SupportAssistCard(onPressed: _openSupportDrawer),
             const SizedBox(height: 20),
@@ -291,12 +270,12 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Pick the scope of managed execution.',
+            'Pick the operational lane. Pick the execution tier.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Text(
-            'You are not buying seats, sequences, or AI credits. You are buying managed commercial execution infrastructure: signal discovery, qualification, governed dispatch, follow-up continuity, reply attribution, suppression, recovery, and audit — operated as a runtime beneath your identity. The plan picks the scope; the runtime is the same.',
+            'Two operational lanes. Three execution tiers per lane. You are not buying seats, sequences, or AI credits — you are buying the operational runtime beneath your identity. The boundary between client identity and Orchestrate operation stays constant. Only the scope of the runtime changes with the plan.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -314,7 +293,7 @@ class _Hero extends StatelessWidget {
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
-                '$trialDays-day start period selected. This will carry forward with the plan you choose.',
+                '$trialDays-day start period selected. This carries forward with whichever plan you pick.',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppTheme.publicAccent,
                     ),
@@ -322,90 +301,6 @@ class _Hero extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _PlanSwitch extends StatelessWidget {
-  const _PlanSwitch({
-    required this.selectedPlan,
-    required this.onChanged,
-  });
-
-  final String selectedPlan;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _PlanButton(
-              title: 'Managed execution',
-              subtitle: 'Discovery, qualification, governed dispatch, follow-up continuity, and reply handling.',
-              selected: selectedPlan == 'opportunity',
-              onTap: () => onChanged('opportunity'),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _PlanButton(
-              title: 'Managed execution + revenue continuity',
-              subtitle: 'Adds invoices, statements, reminders, and agreements governed alongside execution.',
-              selected: selectedPlan == 'revenue',
-              onTap: () => onChanged('revenue'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlanButton extends StatelessWidget {
-  const _PlanButton({
-    required this.title,
-    required this.subtitle,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTheme.radius),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radius),
-          border: Border.all(
-            color: selected ? AppTheme.publicText : Colors.transparent,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 6),
-            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
       ),
     );
   }
@@ -443,7 +338,7 @@ class _TrialToggle extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Use this if you want a $trialDays-day start period before monthly billing begins.',
+                  'Use this if you want a $trialDays-day start period before monthly billing begins. The choice carries forward to whichever plan you pick below.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -457,116 +352,259 @@ class _TrialToggle extends StatelessWidget {
   }
 }
 
+class _LaneMatrixSection extends StatelessWidget {
+  const _LaneMatrixSection({
+    required this.catalog,
+    required this.trialRequested,
+    required this.highlightLane,
+    required this.onSelect,
+  });
+
+  final PricingCatalog catalog;
+  final bool trialRequested;
+  final String? highlightLane;
+  final void Function(BuildContext, String lane, String tier) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Operational lanes.',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'The lane chooses how far the operational runtime extends. The tier chooses the execution scope inside that runtime.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppTheme.publicMuted,
+              ),
+        ),
+        const SizedBox(height: 20),
+        _LaneBlock(
+          laneCode: 'opportunity',
+          laneTitle: 'Opportunity lane',
+          laneCaption:
+              'Managed commercial execution. Signal-driven discovery, qualification, governed dispatch, follow-up continuity, reply attribution, suppression, recovery, and audit — all running as infrastructure beneath your sending identity.',
+          plans: catalog.opportunity,
+          trialRequested: trialRequested,
+          trialDays: catalog.trialDays,
+          highlight: highlightLane == 'opportunity',
+          onSelect: onSelect,
+        ),
+        const SizedBox(height: 20),
+        _LaneBlock(
+          laneCode: 'revenue',
+          laneTitle: 'Revenue lane',
+          laneCaption:
+              'Opportunity lane plus revenue continuity. Invoices, statements, reminders, agreements, and payment-accountability records governed alongside execution — same infrastructure, same audit trail.',
+          plans: catalog.revenue,
+          trialRequested: trialRequested,
+          trialDays: catalog.trialDays,
+          highlight: highlightLane == 'revenue',
+          onSelect: onSelect,
+        ),
+      ],
+    );
+  }
+}
+
+class _LaneBlock extends StatelessWidget {
+  const _LaneBlock({
+    required this.laneCode,
+    required this.laneTitle,
+    required this.laneCaption,
+    required this.plans,
+    required this.trialRequested,
+    required this.trialDays,
+    required this.highlight,
+    required this.onSelect,
+  });
+
+  final String laneCode;
+  final String laneTitle;
+  final String laneCaption;
+  final List<PricingPlanOption> plans;
+  final bool trialRequested;
+  final int trialDays;
+  final bool highlight;
+  final void Function(BuildContext, String lane, String tier) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(
+          color: highlight ? AppTheme.publicText : AppTheme.publicLine,
+          width: highlight ? 1.4 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.publicAccentSoft,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              laneTitle,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppTheme.publicAccent,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            laneCaption,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 760;
+              if (stacked) {
+                return Column(
+                  children: [
+                    for (var i = 0; i < plans.length; i++) ...[
+                      _TierCard(
+                        lane: laneCode,
+                        plan: plans[i],
+                        trialRequested: trialRequested,
+                        trialDays: trialDays,
+                        onSelect: onSelect,
+                      ),
+                      if (i != plans.length - 1) const SizedBox(height: 12),
+                    ],
+                  ],
+                );
+              }
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < plans.length; i++) ...[
+                      Expanded(
+                        child: _TierCard(
+                          lane: laneCode,
+                          plan: plans[i],
+                          trialRequested: trialRequested,
+                          trialDays: trialDays,
+                          onSelect: onSelect,
+                        ),
+                      ),
+                      if (i != plans.length - 1) const SizedBox(width: 12),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TierCard extends StatelessWidget {
   const _TierCard({
+    required this.lane,
     required this.plan,
     required this.trialRequested,
     required this.trialDays,
     required this.onSelect,
   });
 
+  final String lane;
   final PricingPlanOption plan;
   final bool trialRequested;
   final int trialDays;
-  final ValueChanged<String> onSelect;
+  final void Function(BuildContext, String lane, String tier) onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final content = _tierContent(plan.tier);
-    final highlight = plan.tier == 'multi';
-
+    final description = (plan.description ?? '').trim();
+    final fullName = (plan.name ?? '').trim();
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.publicSurfaceSoft,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(
-          color: highlight ? AppTheme.publicText : AppTheme.publicLine,
-        ),
+        border: Border.all(color: AppTheme.publicLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (highlight)
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: AppTheme.publicAccentSoft,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                'Best balance',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppTheme.publicAccent,
-                    ),
-              ),
-            ),
-          Text(plan.label, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
           Text(
-            plan.description?.isNotEmpty == true
-                ? plan.description!
-                : content.summary,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
+            plan.label,
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
-          const SizedBox(height: 16),
+          if (fullName.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              fullName,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.publicMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+          const SizedBox(height: 12),
           RichText(
             text: TextSpan(
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.publicMuted,
+                  ),
               children: [
                 TextSpan(
                   text: plan.priceLabel,
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  style:
+                      Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: AppTheme.publicText,
+                          ),
                 ),
-                const TextSpan(text: ' / month'),
+                TextSpan(text: ' / ${plan.interval}'),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          for (final item in content.items) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 5),
-                  child: Icon(
-                    Icons.check_circle_outline,
-                    size: 18,
-                    color: AppTheme.publicAccent,
+          if (description.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              description,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.publicText,
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    item,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.publicText,
-                        ),
-                  ),
-                ),
-              ],
             ),
-            const SizedBox(height: 10),
           ],
           if (trialRequested) ...[
+            const SizedBox(height: 14),
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(top: 6),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
               decoration: BoxDecoration(
-                color: AppTheme.publicSurfaceSoft,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(AppTheme.radius),
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
-                '$trialDays-day start period selected for this plan.',
-                style: Theme.of(context).textTheme.bodyMedium,
+                '$trialDays-day start period carries forward.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.publicMuted,
+                    ),
               ),
             ),
           ],
@@ -574,11 +612,11 @@ class _TierCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: () => onSelect(plan.tier),
+              onPressed: () => onSelect(context, lane, plan.tier),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.publicText,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppTheme.radius),
                 ),
@@ -586,7 +624,7 @@ class _TierCard extends StatelessWidget {
               child: Text(
                 trialRequested
                     ? 'Continue with ${plan.label}'
-                    : 'Start with this plan',
+                    : 'Start with ${plan.label}',
               ),
             ),
           ),
@@ -596,32 +634,29 @@ class _TierCard extends StatelessWidget {
   }
 }
 
-class _CapabilityMatrix extends StatelessWidget {
-  const _CapabilityMatrix();
+class _TierScopeRow extends StatelessWidget {
+  const _TierScopeRow();
+
+  static const _tiers = <(String, String, String)>[
+    (
+      'Focused',
+      'Single country, multiple regions',
+      'Disciplined market-entry scope. One country with regional coverage inside the execution runtime.',
+    ),
+    (
+      'Multi',
+      'Multiple countries, multiple regions',
+      'Cross-market scope. Multiple countries inside the same operational runtime — no infrastructure split.',
+    ),
+    (
+      'Precision',
+      'City-level, prioritized markets',
+      'High-resolution scope. City and metro targeting with include / exclude logic and priority-market sequencing.',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final rows = const [
-      [
-        'Geography',
-        'One country, multiple regions',
-        'Multiple countries and regions',
-        'City-level targeting with include or exclude logic',
-      ],
-      [
-        'Best fit',
-        'Contained launch',
-        'Cross-market expansion',
-        'High-control targeting across markets',
-      ],
-      [
-        'Use case',
-        'Disciplined rollout',
-        'Broader market coverage',
-        'Priority-market sequencing and tighter precision',
-      ],
-    ];
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -634,28 +669,250 @@ class _CapabilityMatrix extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose your coverage level',
+            'What changes operationally between tiers.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
-          const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingTextStyle: Theme.of(context).textTheme.titleMedium,
-              columns: const [
-                DataColumn(label: Text('Decision')),
-                DataColumn(label: Text('Focused')),
-                DataColumn(label: Text('Multi-Market')),
-                DataColumn(label: Text('Precision')),
-              ],
-              rows: [
-                for (final row in rows)
-                  DataRow(
-                    cells: [
-                      for (final cell in row) DataCell(Text(cell)),
+          const SizedBox(height: 10),
+          Text(
+            'Tier scope is the same axis in both lanes. The runtime stays the same; the execution scope widens.',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 760;
+              if (stacked) {
+                return Column(
+                  children: [
+                    for (var i = 0; i < _tiers.length; i++) ...[
+                      _TierScopeCell(
+                        tier: _tiers[i].$1,
+                        scope: _tiers[i].$2,
+                        body: _tiers[i].$3,
+                      ),
+                      if (i != _tiers.length - 1)
+                        const SizedBox(height: 12),
                     ],
+                  ],
+                );
+              }
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < _tiers.length; i++) ...[
+                      Expanded(
+                        child: _TierScopeCell(
+                          tier: _tiers[i].$1,
+                          scope: _tiers[i].$2,
+                          body: _tiers[i].$3,
+                        ),
+                      ),
+                      if (i != _tiers.length - 1)
+                        const SizedBox(width: 12),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TierScopeCell extends StatelessWidget {
+  const _TierScopeCell({
+    required this.tier,
+    required this.scope,
+    required this.body,
+  });
+
+  final String tier;
+  final String scope;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(tier, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 6),
+          Text(
+            scope,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicAccent,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            body,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicMuted,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivationContinuationCard extends StatelessWidget {
+  const _ActivationContinuationCard({required this.sequence});
+
+  final List<String> sequence;
+
+  // Hard-coded fallback if the backend ever returns an empty sequence —
+  // matches the current backend contract verbatim.
+  static const _fallbackSequence = <String>[
+    'Choose plan',
+    'Create account',
+    'Verify email',
+    'Define operating profile',
+    'Activate subscription',
+    'Begin service',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = sequence.isNotEmpty ? sequence : _fallbackSequence;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 720;
+              final lead = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'After you choose a plan.',
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-              ],
+                  const SizedBox(height: 10),
+                  Text(
+                    'The activation chain below is the same regardless of lane and tier. Pricing connects directly to the readiness runtime: identity is verified, transport is connected, sending domain is published, readiness flips, and managed execution starts.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppTheme.publicMuted,
+                        ),
+                  ),
+                ],
+              );
+              final cta = OutlinedButton(
+                onPressed: () => context.go('/activation'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.publicText,
+                  side: const BorderSide(color: AppTheme.publicLine),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
+                  ),
+                ),
+                child: const Text('See activation progression'),
+              );
+
+              if (stacked) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    lead,
+                    const SizedBox(height: 14),
+                    cta,
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: lead),
+                  const SizedBox(width: 18),
+                  cta,
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 18),
+          for (var i = 0; i < steps.length; i++) ...[
+            _SequenceStep(
+              index: (i + 1).toString(),
+              label: steps[i],
+            ),
+            if (i != steps.length - 1) const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SequenceStep extends StatelessWidget {
+  const _SequenceStep({required this.index, required this.label});
+
+  final String index;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppTheme.publicAccentSoft,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: AppTheme.publicLine),
+            ),
+            child: Text(
+              index,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.publicAccent,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppTheme.publicText,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ),
         ],
@@ -687,12 +944,12 @@ class _SupportAssistCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Need help choosing the right option?',
+                'Need help choosing lane or tier?',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 10),
               Text(
-                'Use guidance if the fit is unclear. Pricing should remain the primary path. Support is here when service fit, setup, or billing questions need a direct conversation.',
+                'Use guidance if the fit is unclear. Pricing remains the primary path. Support is here when scope, setup, or billing questions need a direct conversation.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppTheme.publicMuted,
                     ),
@@ -702,12 +959,6 @@ class _SupportAssistCard extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 6,
                 children: [
-                  Text(
-                    'Powered by OpenAI',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.publicMuted,
-                        ),
-                  ),
                   Text(
                     'Secure billing powered by Stripe',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1110,189 +1361,6 @@ class _BurdenRow extends StatelessWidget {
   }
 }
 
-class _AfterChoosingCard extends StatelessWidget {
-  const _AfterChoosingCard();
-
-  static const _steps = <(String, String, String)>[
-    (
-      '1',
-      'Account + identity',
-      'Create the account, confirm your business identity, and grant representation authorization.',
-    ),
-    (
-      '2',
-      'Mailbox transport',
-      'Connect via Google Workspace OAuth, Microsoft 365 OAuth, or custom SMTP + IMAP. Credentials are vaulted; tokens never touch the browser.',
-    ),
-    (
-      '3',
-      'Sending domain',
-      'Publish SPF, DKIM, and DMARC at your DNS host. Orchestrate verifies with live DNS and re-checks automatically until they pass.',
-    ),
-    (
-      '4',
-      'Readiness',
-      'The readiness engine evaluates the dependency chain. Dispatch eligibility flips when every layer is verified — no operator action.',
-    ),
-    (
-      '5',
-      'Managed execution',
-      'Signal discovery, qualification, governed dispatch, follow-up continuity, reply attribution, suppression, recovery — all running as infrastructure beneath your identity.',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 720;
-              final lead = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'After you choose a plan.',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Pricing connects directly to activation. The plan governs scope; the activation chain below brings the runtime online.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppTheme.publicMuted,
-                        ),
-                  ),
-                ],
-              );
-              final cta = OutlinedButton(
-                onPressed: () => context.go('/activation'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.publicText,
-                  side: const BorderSide(color: AppTheme.publicLine),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radius),
-                  ),
-                ),
-                child: const Text('See activation progression'),
-              );
-
-              if (stacked) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    lead,
-                    const SizedBox(height: 14),
-                    cta,
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: lead),
-                  const SizedBox(width: 18),
-                  cta,
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-          for (var i = 0; i < _steps.length; i++) ...[
-            _ActivationStepRow(
-              index: _steps[i].$1,
-              title: _steps[i].$2,
-              body: _steps[i].$3,
-            ),
-            if (i != _steps.length - 1) const SizedBox(height: 12),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ActivationStepRow extends StatelessWidget {
-  const _ActivationStepRow({
-    required this.index,
-    required this.title,
-    required this.body,
-  });
-
-  final String index;
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppTheme.publicAccentSoft,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppTheme.publicLine),
-            ),
-            child: Text(
-              index,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.publicAccent,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.publicText,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  body,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.publicMuted,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ErrorCard extends StatelessWidget {
   const _ErrorCard({
     required this.message,
@@ -1321,51 +1389,6 @@ class _ErrorCard extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _TierContent {
-  const _TierContent({
-    required this.summary,
-    required this.items,
-  });
-
-  final String summary;
-  final List<String> items;
-}
-
-_TierContent _tierContent(String tier) {
-  switch (tier) {
-    case 'precision':
-      return const _TierContent(
-        summary:
-            'Highest-resolution execution scope: city, metro, include/exclude logic, and priority-market ordering for managed execution.',
-        items: [
-          'City and metro execution scope plus include / exclude logic',
-          'Priority-market ordering for governed dispatch sequencing',
-          'Built for complex market maps where signal discovery and managed execution need sharp scope',
-        ],
-      );
-    case 'multi':
-      return const _TierContent(
-        summary:
-            'Cross-country execution scope while keeping one infrastructure scope.',
-        items: [
-          'Multiple countries and multiple regions inside one execution scope',
-          'Broader signal-discovery coverage without splitting infrastructure',
-          'Fits distributed teams running managed execution across markets',
-        ],
-      );
-    default:
-      return const _TierContent(
-        summary:
-            'Single-country execution scope with room for regional coverage. The disciplined starting scope for managed execution.',
-        items: [
-          'One country with multiple regions inside the execution scope',
-          'Signal discovery, qualification, governed dispatch, follow-up continuity',
-          'Right scope for a focused market entry running on managed infrastructure',
-        ],
-      );
   }
 }
 
