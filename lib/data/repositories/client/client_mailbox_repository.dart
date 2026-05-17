@@ -166,6 +166,26 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Combined custom mail transport setup. Validates SMTP outbound +
+  /// (optionally) IMAP inbound in a single backend call. SMTP is
+  /// required; IMAP is part of the same flow so a paying client never
+  /// lands in an outbound-only state without explicitly opting in.
+  Future<Map<String, dynamic>> connectCustomTransport({
+    required Map<String, dynamic> smtp,
+    Map<String, dynamic>? imap,
+  }) async {
+    final body = <String, dynamic>{
+      'smtp': smtp,
+      if (imap != null) 'imap': imap,
+    };
+    final json = await _apiClient.postJson(
+      '/client/mailbox/custom-transport/connect',
+      body: body,
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Persist an SMTP transport. Validates credentials, vaults the
   /// bundle, creates the Mailbox row, attaches the sending domain,
   /// and returns the DKIM TXT record the client must publish.

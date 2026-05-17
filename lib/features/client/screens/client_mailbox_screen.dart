@@ -354,7 +354,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         OutlinedButton.icon(
           onPressed: () => _openSmtpDialog(data),
           icon: const Icon(Icons.dns_outlined, size: 18),
-          label: const Text('Connect SMTP transport'),
+          label: const Text('Connect custom mail transport'),
         ),
       );
     }
@@ -378,7 +378,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     if (saved && mounted) {
       setState(() {
         _resultMessage =
-            'SMTP transport connected. Publish the DKIM TXT record at your DNS provider so trust verification can complete.';
+            'Custom mail transport connected. Publish the DKIM TXT record at your DNS provider so trust verification can complete. Reply continuity is wired through the IMAP block you provided in the same setup.';
         _future = _load();
       });
     }
@@ -1536,10 +1536,10 @@ class _TransportChoicesPanel extends StatelessWidget {
           badge: microsoft?.available == true ? 'Available' : 'Setup pending',
         ),
         tile(
-          title: 'SMTP / custom sending infrastructure',
+          title: 'Custom mail transport (SMTP + IMAP)',
           body: smtp?.available == false
               ? 'Provider setup pending.'
-              : 'Use any SMTP-capable infrastructure: your own server, SES, Mailgun, SendGrid, Postfix, Zoho, or a regional provider. Orchestrate validates against the upstream host before persisting, vaults the credentials, generates DKIM, and dispatches with full signing. Tap "Connect SMTP transport" in the page header.',
+              : 'One guided setup configures outbound SMTP and inbound IMAP together. Use any SMTP-capable infrastructure: your own server, SES, Mailgun, SendGrid, Postfix, Zoho, or a regional provider. Orchestrate validates against both hosts before persisting, vaults the credentials, generates DKIM, dispatches with full signing, and matches replies only to operations Orchestrate sent. Tap "Connect custom mail transport" in the page header.',
           badge: smtp?.available == false ? 'Setup pending' : 'Available',
         ),
         if (!hasMailbox) ...[

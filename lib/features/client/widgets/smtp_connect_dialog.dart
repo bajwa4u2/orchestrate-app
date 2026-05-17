@@ -4,18 +4,21 @@ import 'package:flutter/services.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
-/// First-class SMTP / custom-transport onboarding dialog.
+/// Combined custom mail transport onboarding dialog.
 ///
-/// SMTP sits next to Google Workspace and Microsoft 365 in the
-/// transport choices. The dialog gathers host + port + auth + from
-/// address, validates against the upstream SMTP server before any
-/// persistence, then completes the connect by POSTing to
-/// /v1/client/mailbox/smtp/connect. The dialog never logs or returns
-/// the password; that field is wiped on close.
+/// One guided flow that configures:
+///   • Outbound sending via SMTP
+///   • Inbound reply monitoring via IMAP
 ///
-/// On successful save the dialog reveals the DKIM TXT record the
-/// client must publish at their registrar. Copy buttons let them paste
-/// the values straight in.
+/// IMAP is part of the same flow — not a deferred future step. The
+/// dialog gathers both blocks at once and POSTs them together to
+/// /v1/client/mailbox/custom-transport/connect, so a paying client
+/// never lands in an inconsistent half-configured state. Inbound can
+/// be explicitly skipped (the dialog calls this "outbound-only mode")
+/// but it is a conscious operator choice, not a hidden default.
+///
+/// On success the dialog reveals the DKIM TXT record the client must
+/// publish at their registrar; copy buttons paste the values directly.
 class SmtpConnectDialog extends StatefulWidget {
   const SmtpConnectDialog({super.key, this.initialFromAddress});
 
@@ -46,14 +49,28 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
   final ClientMailboxRepository _repository = ClientMailboxRepository();
   final _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController _host;
-  late final TextEditingController _port;
-  late final TextEditingController _username;
-  late final TextEditingController _password;
+  // Outbound SMTP
+  late final TextEditingController _smtpHost;
+  late final TextEditingController _smtpPort;
+  late final TextEditingController _smtpUsername;
+  late final TextEditingController _smtpPassword;
   late final TextEditingController _fromAddress;
   late final TextEditingController _fromName;
   late final TextEditingController _replyTo;
-  String _secure = 'starttls';
+  String _smtpSecure = 'starttls';
+
+  // Inbound IMAP
+  bool _attachInbound = true;
+  late final TextEditingController _imapHost;
+  late final TextEditingController _imapPort;
+  late final TextEditingController _imapUsername;
+  late final TextEditingController _imapPassword;
+  late final TextEditingController _imapFolder;
+  String _imapSecure = 'tls';
+  /// When true, the IMAP username field mirrors the SMTP username.
+  /// Most relays use the same auth pair for both protocols.
+  bool _imapMirrorsSmtpAuth = true;
+
   bool _testing = false;
   bool _saving = false;
   String? _errorMessage;
@@ -63,29 +80,69 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
   @override
   void initState() {
     super.initState();
-    _host = TextEditingController();
-    _port = TextEditingController(text: '587');
-    _username = TextEditingController();
-    _password = TextEditingController();
+    _smtpHost = TextEditingController();
+    _smtpPort = TextEditingController(text: '587');
+    _smtpUsername = TextEditingController();
+    _smtpPassword = TextEditingController();
     _fromAddress = TextEditingController(text: widget.initialFromAddress ?? '');
     _fromName = TextEditingController();
     _replyTo = TextEditingController();
+    _imapHost = TextEditingController();
+    _imapPort = TextEditingController(text: '993');
+    _imapUsername = TextEditingController();
+    _imapPassword = TextEditingController();
+    _imapFolder = TextEditingController(text: 'INBOX');
   }
 
   @override
   void dispose() {
-    _host.dispose();
-    _port.dispose();
-    _username.dispose();
-    _password.clear();
-    _password.dispose();
+    _smtpHost.dispose();
+    _smtpPort.dispose();
+    _smtpUsername.dispose();
+    _smtpPassword.clear();
+    _smtpPassword.dispose();
     _fromAddress.dispose();
     _fromName.dispose();
     _replyTo.dispose();
+    _imapHost.dispose();
+    _imapPort.dispose();
+    _imapUsername.dispose();
+    _imapPassword.clear();
+    _imapPassword.dispose();
+    _imapFolder.dispose();
     super.dispose();
   }
 
-  int get _portValue => int.tryParse(_port.text.trim()) ?? 0;
+  int get _smtpPortValue => int.tryParse(_smtpPort.text.trim()) ?? 0;
+  int get _imapPortValue => int.tryParse(_imapPort.text.trim()) ?? 0;
+
+  String get _effectiveImapUsername =>
+      _imapMirrorsSmtpAuth ? _smtpUsername.text.trim() : _imapUsername.text.trim();
+  String get _effectiveImapPassword =>
+      _imapMirrorsSmtpAuth ? _smtpPassword.text : _imapPassword.text;
+
+  Map<String, dynamic> _smtpPayload() => <String, dynamic>{
+        'host': _smtpHost.text.trim(),
+        'port': _smtpPortValue,
+        'secure': _smtpSecure,
+        'username': _smtpUsername.text.trim(),
+        'password': _smtpPassword.text,
+        'fromAddress': _fromAddress.text.trim(),
+        if (_fromName.text.trim().isNotEmpty) 'fromName': _fromName.text.trim(),
+        if (_replyTo.text.trim().isNotEmpty) 'replyTo': _replyTo.text.trim(),
+      };
+
+  Map<String, dynamic>? _imapPayload() {
+    if (!_attachInbound) return null;
+    return <String, dynamic>{
+      'host': _imapHost.text.trim(),
+      'port': _imapPortValue,
+      'secure': _imapSecure,
+      'username': _effectiveImapUsername,
+      'password': _effectiveImapPassword,
+      if (_imapFolder.text.trim().isNotEmpty) 'folder': _imapFolder.text.trim(),
+    };
+  }
 
   Future<void> _runTest() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -95,19 +152,38 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       _testOkMessage = null;
     });
     try {
+      // Test SMTP first; abort before touching IMAP if it fails.
       await _repository.testSmtpConnection(
-        host: _host.text.trim(),
-        port: _portValue,
-        secure: _secure,
-        username: _username.text.trim(),
-        password: _password.text,
+        host: _smtpHost.text.trim(),
+        port: _smtpPortValue,
+        secure: _smtpSecure,
+        username: _smtpUsername.text.trim(),
+        password: _smtpPassword.text,
         fromAddress: _fromAddress.text.trim(),
         fromName: _fromName.text,
         replyTo: _replyTo.text,
       );
+      String message =
+          'Outbound SMTP server accepted the credentials.';
+      if (_attachInbound) {
+        final imap = await _repository.testImapConnection(
+          host: _imapHost.text.trim(),
+          port: _imapPortValue,
+          secure: _imapSecure,
+          username: _effectiveImapUsername,
+          password: _effectiveImapPassword,
+          folder: _imapFolder.text.trim(),
+        );
+        final folder = imap['folder'] ?? 'INBOX';
+        final count = imap['messageCount'] ?? 0;
+        message =
+            'Outbound SMTP accepted; inbound IMAP accepted (folder $folder, $count message(s) currently visible). Save to persist.';
+      } else {
+        message =
+            '$message Inbound monitoring is not part of this setup — outbound-only mode confirmed.';
+      }
       if (!mounted) return;
-      setState(() => _testOkMessage =
-          'SMTP server accepted the credentials. Save to persist.');
+      setState(() => _testOkMessage = message);
     } catch (error) {
       if (!mounted) return;
       setState(() => _errorMessage =
@@ -125,20 +201,13 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       _testOkMessage = null;
     });
     try {
-      final result = await _repository.connectSmtpMailbox(
-        host: _host.text.trim(),
-        port: _portValue,
-        secure: _secure,
-        username: _username.text.trim(),
-        password: _password.text,
-        fromAddress: _fromAddress.text.trim(),
-        fromName: _fromName.text,
-        replyTo: _replyTo.text,
+      final result = await _repository.connectCustomTransport(
+        smtp: _smtpPayload(),
+        imap: _imapPayload(),
       );
       if (!mounted) return;
-      // Clear the password from controller state once persistence
-      // succeeds. The vault has the only copy.
-      _password.clear();
+      _smtpPassword.clear();
+      _imapPassword.clear();
       setState(() => _result = result);
     } catch (error) {
       if (!mounted) return;
@@ -157,7 +226,7 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
+        constraints: const BoxConstraints(maxWidth: 760),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: SingleChildScrollView(
@@ -176,72 +245,68 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Connect a custom SMTP transport',
+          'Connect custom mail transport',
           style: theme.textTheme.headlineSmall
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Text(
-          'Use any SMTP-capable infrastructure — your own mail server, SES, '
-          'Mailgun, SendGrid, Postfix, Zoho, or a regional provider. '
-          'Orchestrate verifies the credentials against the SMTP host '
-          'before saving and generates a DKIM keypair scoped to your '
-          'sending domain.',
+          'Use any SMTP-capable infrastructure (your own server, SES, '
+          'Mailgun, SendGrid, Postfix, Zoho, a regional provider). One '
+          'guided setup configures outbound dispatch via SMTP and '
+          'inbound reply monitoring via IMAP. Credentials are sealed in '
+          'the vault and never returned to the browser.',
           style: theme.textTheme.bodyMedium,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 8),
+        Text(
+          'Orchestrate only processes mail tied to its outbound '
+          'operations. Inbox messages without a Message-ID, References, '
+          'or X-Orchestrate-Operation-Id match are not stored, '
+          'classified, surfaced, or fed to AI. Inbox is header-inspected '
+          'first; bodies are fetched only for matched operations.',
+          style: theme.textTheme.bodySmall
+              ?.copyWith(fontStyle: FontStyle.italic),
+        ),
+        const SizedBox(height: 20),
+        _sectionHeader(theme, 'Outbound sending (SMTP)'),
+        const SizedBox(height: 12),
         _row([
           _field(
-            controller: _host,
+            controller: _smtpHost,
             label: 'SMTP host',
             hint: 'e.g. smtp.gmail.com',
             validator: (v) =>
                 (v ?? '').trim().isEmpty ? 'Host is required' : null,
           ),
           _field(
-            controller: _port,
+            controller: _smtpPort,
             label: 'Port',
             hint: '587',
             keyboardType: TextInputType.number,
-            validator: (v) {
-              final n = int.tryParse((v ?? '').trim());
-              return (n == null || n < 1 || n > 65535)
-                  ? 'Port must be 1–65535'
-                  : null;
-            },
+            validator: _portValidator,
           ),
         ]),
         const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          value: _secure,
-          decoration: const InputDecoration(
-            labelText: 'Encryption',
-            border: OutlineInputBorder(),
-            isDense: true,
-          ),
-          items: const [
-            DropdownMenuItem(
-                value: 'starttls', child: Text('STARTTLS (typically port 587)')),
-            DropdownMenuItem(
-                value: 'tls', child: Text('Implicit TLS / SMTPS (typically port 465)')),
-            DropdownMenuItem(
-                value: 'none', child: Text('Plain (internal relays only)')),
-          ],
+        _secureDropdown(
+          value: _smtpSecure,
           onChanged: _testing || _saving
               ? null
-              : (value) => setState(() => _secure = value ?? 'starttls'),
+              : (value) => setState(() => _smtpSecure = value ?? 'starttls'),
+          starttlsHint: 'STARTTLS (typically port 587)',
+          tlsHint: 'Implicit TLS / SMTPS (typically port 465)',
         ),
         const SizedBox(height: 12),
         _row([
           _field(
-            controller: _username,
+            controller: _smtpUsername,
             label: 'SMTP username',
             hint: 'Often the from-address or a relay-issued account',
             validator: (v) =>
                 (v ?? '').trim().isEmpty ? 'Username is required' : null,
           ),
           _field(
-            controller: _password,
+            controller: _smtpPassword,
             label: 'SMTP password / app password',
             obscure: true,
             validator: (v) => (v ?? '').isEmpty ? 'Password is required' : null,
@@ -274,7 +339,104 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
           hint: 'Defaults to the from-address',
           validator: (_) => null,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+              child: _sectionHeader(theme, 'Inbound reply monitoring (IMAP)'),
+            ),
+            Switch.adaptive(
+              value: _attachInbound,
+              onChanged: _testing || _saving
+                  ? null
+                  : (value) => setState(() => _attachInbound = value),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _attachInbound
+              ? 'Replies arriving in the configured folder are matched to '
+                  'Orchestrate-managed outbound and ingested into the '
+                  'Replies workspace. Follow-ups against the same lead '
+                  'are suppressed automatically.'
+              : 'Outbound-only mode. Reply continuity will not be wired — '
+                  'replies arriving in the mailbox will not be ingested or '
+                  'auto-suppressed. You can attach IMAP later from '
+                  'Infrastructure.',
+          style: theme.textTheme.bodySmall,
+        ),
+        if (_attachInbound) ...[
+          const SizedBox(height: 14),
+          CheckboxListTile(
+            value: _imapMirrorsSmtpAuth,
+            onChanged: _testing || _saving
+                ? null
+                : (value) =>
+                    setState(() => _imapMirrorsSmtpAuth = value ?? true),
+            controlAffinity: ListTileControlAffinity.leading,
+            title: const Text('Use the same auth as SMTP'),
+            subtitle: const Text(
+              'Most relays accept the same username + password on IMAP. '
+              'Uncheck if your provider uses a separate IMAP account.',
+            ),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 12),
+          _row([
+            _field(
+              controller: _imapHost,
+              label: 'IMAP host',
+              hint: 'e.g. imap.gmail.com',
+              validator: (v) =>
+                  (v ?? '').trim().isEmpty ? 'Host is required' : null,
+            ),
+            _field(
+              controller: _imapPort,
+              label: 'Port',
+              hint: '993',
+              keyboardType: TextInputType.number,
+              validator: _portValidator,
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _secureDropdown(
+            value: _imapSecure,
+            onChanged: _testing || _saving
+                ? null
+                : (value) => setState(() => _imapSecure = value ?? 'tls'),
+            starttlsHint: 'STARTTLS (typically port 143)',
+            tlsHint: 'Implicit TLS (typically port 993)',
+          ),
+          if (!_imapMirrorsSmtpAuth) ...[
+            const SizedBox(height: 12),
+            _row([
+              _field(
+                controller: _imapUsername,
+                label: 'IMAP username',
+                validator: (v) => (v ?? '').trim().isEmpty
+                    ? 'Username is required'
+                    : null,
+              ),
+              _field(
+                controller: _imapPassword,
+                label: 'IMAP password',
+                obscure: true,
+                validator: (v) =>
+                    (v ?? '').isEmpty ? 'Password is required' : null,
+              ),
+            ]),
+          ],
+          const SizedBox(height: 12),
+          _field(
+            controller: _imapFolder,
+            label: 'Folder to monitor',
+            hint: 'INBOX',
+            validator: (_) => null,
+          ),
+        ],
+        const SizedBox(height: 16),
         if (_errorMessage != null) ...[
           Text(
             _errorMessage!,
@@ -291,13 +453,7 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
           ),
           const SizedBox(height: 8),
         ],
-        Text(
-          'Reply monitoring via IMAP is not part of this connect flow — outbound '
-          'dispatch is fully supported, and inbound webhook integration is the '
-          'documented path for replies on SMTP transports today.',
-          style: theme.textTheme.bodySmall,
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -345,25 +501,39 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
     final host = selector.isNotEmpty && domain.isNotEmpty
         ? '$selector._domainkey.$domain'
         : '';
+    final inbound = (_result?['inbound'] as Map?) ?? const {};
+    final inboundKind = (inbound['kind'] ?? '').toString();
+    final folder = (inbound['folder'] ?? '').toString();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'SMTP transport connected',
+          'Custom mail transport connected',
           style: theme.textTheme.headlineSmall
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Text(
           'Credentials are vaulted. Orchestrate generated a DKIM keypair '
-          'for this transport — publish the TXT record below at your DNS '
-          'provider so dispatch trust can verify.',
+          'for the outbound transport — publish the TXT record below at '
+          'your DNS provider so dispatch trust can verify.',
           style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 18),
         _DkimRow(label: 'TXT host', value: host),
         const SizedBox(height: 12),
         _DkimRow(label: 'TXT value', value: txt, longValue: true),
+        const SizedBox(height: 18),
+        Text(
+          inboundKind == 'imap_attached'
+              ? 'Inbound reply monitoring is active on folder '
+                  '${folder.isNotEmpty ? folder : 'INBOX'}. Replies are '
+                  'matched only to Orchestrate-managed outbound; '
+                  'unrelated mailbox content is not stored or processed.'
+              : 'Outbound-only mode. You can attach IMAP inbound later '
+                  'from Infrastructure to enable reply continuity.',
+          style: theme.textTheme.bodyMedium,
+        ),
         const SizedBox(height: 12),
         Text(
           'SPF and DMARC records are listed on the Sending domain panel. '
@@ -385,6 +555,36 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
     );
   }
 
+  Widget _sectionHeader(ThemeData theme, String text) {
+    return Text(
+      text,
+      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+    );
+  }
+
+  Widget _secureDropdown({
+    required String value,
+    required ValueChanged<String?>? onChanged,
+    required String starttlsHint,
+    required String tlsHint,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: const InputDecoration(
+        labelText: 'Encryption',
+        border: OutlineInputBorder(),
+        isDense: true,
+      ),
+      items: [
+        DropdownMenuItem(value: 'starttls', child: Text(starttlsHint)),
+        DropdownMenuItem(value: 'tls', child: Text(tlsHint)),
+        const DropdownMenuItem(
+            value: 'none', child: Text('Plain (internal relays only)')),
+      ],
+      onChanged: onChanged,
+    );
+  }
+
   Widget _row(List<Widget> children) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,6 +595,11 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
         ],
       ],
     );
+  }
+
+  String? _portValidator(String? value) {
+    final n = int.tryParse((value ?? '').trim());
+    return (n == null || n < 1 || n > 65535) ? 'Port must be 1–65535' : null;
   }
 
   Widget _field({
@@ -444,7 +649,6 @@ class _DkimRowState extends State<_DkimRow> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return ClientInfoRow(
       title: widget.label,
       primary: widget.value.isEmpty ? '—' : widget.value,
