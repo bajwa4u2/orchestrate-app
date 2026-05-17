@@ -58,6 +58,8 @@ class PublicHomeScreen extends StatelessWidget {
           const SizedBox(height: 24),
           const _SystemStrip(),
           const SizedBox(height: 24),
+          const _BurdenTransformSection(),
+          const SizedBox(height: 24),
           const PublicOverviewWidget(),
           const SizedBox(height: 24),
           const _CapabilitySection(),
@@ -846,6 +848,203 @@ class _ClosingSection extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Operational burden → managed-execution transformation narrative.
+///
+/// Two columns side-by-side: the burden businesses carry today vs the
+/// operational layer Orchestrate absorbs. Reinforces that the platform
+/// is managed infrastructure, not a campaign-SaaS tool.
+class _BurdenTransformSection extends StatelessWidget {
+  const _BurdenTransformSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = constraints.maxWidth < 900;
+        final left = _BurdenColumn(
+          tone: _BurdenTone.problem,
+          eyebrow: 'Operational burden today',
+          title: 'Outbound tooling makes operators do infrastructure work.',
+          items: const [
+            'SPF / DKIM / DMARC at the registrar, then chase propagation',
+            'Mailbox tokens, reconnects, warmups, throttles',
+            'Sequence builders that drift into spam folders',
+            'Reply triage between inbox and CRM, by hand',
+            'Suppression entries kept up by memory',
+            'AI prompts re-engineered every time the tone drifts',
+            'Transport failures with no clear next action',
+            'Dashboards that show numbers but not operational state',
+          ],
+        );
+        final right = _BurdenColumn(
+          tone: _BurdenTone.solution,
+          eyebrow: 'What Orchestrate absorbs',
+          title: 'Identity is yours. Operation belongs to the platform.',
+          items: const [
+            'DNS verification runs continuously, no registrar trips',
+            'Encrypted vault, OAuth + custom SMTP/IMAP, no token drift',
+            'Governed dispatch under per-mailbox pacing — no manual cadence',
+            'Operation-scoped IMAP reply ingestion, follow-ups auto-cancelled',
+            'Suppression enforced before every send — no bypass path',
+            'AI bounded by attribution, every invocation auditable',
+            'Recovery branches re-converge readiness, ownership clear',
+            'One readiness authority across Operations / Infrastructure / Home',
+          ],
+          actions: [
+            _BurdenAction(
+              label: 'Read why Orchestrate exists',
+              onTap: () => context.go('/why-orchestrate'),
+              filled: true,
+            ),
+            _BurdenAction(
+              label: 'See how it operates',
+              onTap: () => context.go('/how-orchestrate-operates'),
+            ),
+          ],
+        );
+        if (stacked) {
+          return Column(
+            children: [
+              left,
+              const SizedBox(height: 18),
+              right,
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: left),
+            const SizedBox(width: 18),
+            Expanded(child: right),
+          ],
+        );
+      },
+    );
+  }
+}
+
+enum _BurdenTone { problem, solution }
+
+class _BurdenAction {
+  const _BurdenAction({
+    required this.label,
+    required this.onTap,
+    this.filled = false,
+  });
+  final String label;
+  final VoidCallback onTap;
+  final bool filled;
+}
+
+class _BurdenColumn extends StatelessWidget {
+  const _BurdenColumn({
+    required this.tone,
+    required this.eyebrow,
+    required this.title,
+    required this.items,
+    this.actions = const [],
+  });
+
+  final _BurdenTone tone;
+  final String eyebrow;
+  final String title;
+  final List<String> items;
+  final List<_BurdenAction> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isProblem = tone == _BurdenTone.problem;
+    final background = isProblem
+        ? AppTheme.publicSurfaceSoft
+        : AppTheme.publicSurface;
+    final accent = isProblem
+        ? theme.colorScheme.outline
+        : AppTheme.publicAccent;
+    final eyebrowColor = isProblem
+        ? theme.colorScheme.outline
+        : AppTheme.publicAccent;
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            eyebrow,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: eyebrowColor,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final item in items) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 7, right: 12),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.publicText,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final action in actions)
+                  if (action.filled)
+                    FilledButton(
+                      onPressed: action.onTap,
+                      child: Text(action.label),
+                    )
+                  else
+                    OutlinedButton(
+                      onPressed: action.onTap,
+                      child: Text(action.label),
+                    ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

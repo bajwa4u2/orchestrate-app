@@ -300,16 +300,30 @@ class _PublicFooter extends StatelessWidget {
                     title: 'Product',
                     links: [
                       _FooterLink(
+                          label: 'Why Orchestrate exists',
+                          onTap: () => context.go('/why-orchestrate')),
+                      _FooterLink(
+                          label: 'How Orchestrate operates',
+                          onTap: () => context.go('/how-orchestrate-operates')),
+                      _FooterLink(
                           label: 'Product',
                           onTap: () => context.go('/product')),
                       _FooterLink(
-                          label: 'How it works',
+                          label: 'Activation journey',
                           onTap: () => context.go('/how-it-works')),
                       _FooterLink(
                           label: 'Intelligence',
                           onTap: () => context.go('/lead-sourcing')),
+                    ],
+                  ),
+                  _FooterGroup(
+                    title: 'Trust architecture',
+                    links: [
                       _FooterLink(
-                          label: 'Trust',
+                          label: 'Trust architecture',
+                          onTap: () => context.go('/trust-architecture')),
+                      _FooterLink(
+                          label: 'Trust + compliance',
                           onTap: () => context.go('/trust-compliance')),
                     ],
                   ),

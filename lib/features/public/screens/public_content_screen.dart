@@ -632,6 +632,239 @@ PublicContentScreen buildAbusePolicyScreen() => const PublicContentScreen(
       ],
     );
 
+PublicContentScreen buildWhyOrchestrateExistsScreen() =>
+    const PublicContentScreen(
+      eyebrow: 'Why Orchestrate exists',
+      title:
+          'Businesses are forced to operate the infrastructure they should be running on.',
+      subtitle:
+          'Outbound revenue tooling today exposes operational burden as a feature surface. The operator becomes a deliverability engineer, a prompting expert, a credential manager, a reply triage worker, and a CRM hygienist — for a job that should be infrastructure.',
+      sideActions: [
+        ContentAction(
+            label: 'See how Orchestrate operates',
+            path: '/how-it-works',
+            filled: true),
+        ContentAction(
+            label: 'Trust architecture', path: '/trust-architecture'),
+      ],
+      sections: [
+        ContentSection(
+          title: 'The operational burden every outbound team is carrying',
+          body:
+              'Pick any week of running outbound through current SaaS and the operator is doing infrastructure work: chasing SPF / DKIM / DMARC at the registrar, watching mailbox reputation, debugging why dispatch stalled, rewriting sequences that triggered spam filters, copying replies between an inbox and a CRM, manually suppressing recipients who replied "stop", reconnecting mailboxes after a token expired, and prompting AI to draft messages that match their voice. None of that is the work the business is trying to do.',
+          points: [
+            'Deliverability: SPF, DKIM, DMARC at the registrar, then chasing propagation',
+            'Mailbox operations: connecting, reconnecting, token expiry, warmup, throttling',
+            'Sequencing: rebuilding cadence logic in someone else\'s sequence-builder',
+            'Reply triage: copying responses from inbox to CRM, classifying by hand',
+            'Suppression: manually marking opt-outs, hard bounces, complaints',
+            'AI prompting: re-engineering prompts every time the tone drifts',
+            'Recovery: figuring out what to do when a transport fails mid-send',
+            'Monitoring: dashboards that show numbers but not operational state',
+          ],
+        ),
+        ContentSection(
+          title: 'Why current tooling does not absorb this',
+          body:
+              'Campaign-SaaS platforms expose the infrastructure surface because that is their architecture — they are sequence builders dressed up as automation. AI tools surface the prompting burden because they are language models behind a chat UI, not governed execution. CRMs surface fragmentation because they were never designed to operate revenue infrastructure; they are systems of record. Each tool optimizes its own surface; the operational burden falls in the gaps between them, on the operator.',
+          highlight:
+              'When the operator is the integration layer between tools, the operational burden is not reduced — it is hidden under multiple subscription lines.',
+        ),
+        ContentSection(
+          title: 'What Orchestrate is, structurally',
+          body:
+              'Managed commercial execution infrastructure. The client provides the identity layer — business identity, mailbox transport, sending domain, representation authorization. Orchestrate provides the operational layer beneath that — signal-driven discovery, qualification, governed dispatch, follow-up continuity, trust verification, reply ingestion, suppression enforcement, recovery, audit. The boundary is intentional: identity is yours, operation is ours.',
+        ),
+        ContentSection(
+          title: 'What changes for the operator',
+          body:
+              'The operator stops doing infrastructure work. No registrar trips for propagation chasing — DNS verification runs continuously. No sequence-builder UX — Orchestrate generates and paces governed dispatch under the readiness engine. No manual reply triage — operation-scoped IMAP ingestion attaches matched replies to the right outbound and cancels follow-ups against responded leads. No prompt engineering — AI assists inside the governance layer, with traceability and operator oversight. No silent transport failures — health checks surface degraded state with the next concrete action, ownership badge attached.',
+        ),
+        ContentSection(
+          title: 'What does not change',
+          body:
+              'The client remains the legal and commercial author. Representation authorization is recorded explicitly; sender attribution is enforced on every outbound. Suppression entries from opt-outs are honored before every dispatch. The audit trail records what the system did and on whose behalf. Orchestrate is operational infrastructure; it is not autonomous impersonation.',
+          highlight:
+              'Identity belongs to the client. Operation belongs to Orchestrate. The boundary is the product.',
+        ),
+      ],
+    );
+
+PublicContentScreen buildHowOrchestrateOperatesScreen() =>
+    const PublicContentScreen(
+      eyebrow: 'How Orchestrate operates',
+      title:
+          'Identity → trust → transport → readiness → governed execution → continuity.',
+      subtitle:
+          'A linear walkthrough of what actually happens after a client connects identity to the platform. Every layer is operationally truthful — runtime behavior, not feature copy.',
+      sideActions: [
+        ContentAction(
+            label: 'Why Orchestrate exists',
+            path: '/why-orchestrate',
+            filled: true),
+        ContentAction(label: 'Trust architecture', path: '/trust-architecture'),
+        ContentAction(label: 'Pricing', path: '/pricing'),
+      ],
+      sections: [
+        ContentSection(
+          title: '1. Domain attached',
+          body:
+              'The client confirms or attaches their sending domain — auraplatform.org, outreach.company.com, mail.company.com, or any apex / subdomain they control. The domain is the operational identity center; transports plug in beneath. Orchestrate creates a SendingDomain row with status=PENDING and surfaces the SPF, DKIM, and DMARC records to publish.',
+          points: [
+            'Domain inferred from Representation profile when available',
+            'Manual domain entry supported for clients with separate sending infrastructure',
+            'No transport required to begin DNS verification',
+          ],
+        ),
+        ContentSection(
+          title: '2. DNS verified',
+          body:
+              'Orchestrate runs live DNS lookups against the published records. SPF, DKIM, and DMARC are checked individually; per-record propagation history is recorded so the client can watch the verification window land. A polling worker re-checks pending domains automatically — the operator does not chase the registrar.',
+          points: [
+            'Live DNS queries via node:dns (no third-party deliverability vendor)',
+            'Per-record verification history kept for audit',
+            'Trust classification: pending → limited → warmup → full-trust',
+          ],
+        ),
+        ContentSection(
+          title: '3. Transport connected',
+          body:
+              'Three first-class transports: Google Workspace OAuth, Microsoft 365 OAuth, or custom SMTP + IMAP. OAuth runs entirely backend-side — tokens never touch the browser. Custom SMTP + IMAP is one guided dialog: outbound credentials, inbound credentials (optional), and Orchestrate generates a per-transport DKIM keypair, vaults everything, and seeds the IMAP cursor at the current highest UID so no historical inbox is ever inspected.',
+          points: [
+            'Google / Microsoft via OAuth (send-only scope)',
+            'Custom SMTP + IMAP for SES, Mailgun, SendGrid, Postfix, regional providers',
+            'Per-transport DKIM keypair on custom SMTP',
+            'IMAP cursor seeded at current highest UID — no historical scan',
+          ],
+        ),
+        ContentSection(
+          title: '4. Readiness governed',
+          body:
+              'A single backend authority (ExecutionEligibilityService) evaluates the full dependency chain: subscription, representation, business identity, sending domain, trust classification, sending transport, reply monitoring, dispatch eligibility. Every client surface — Operations, Infrastructure, Settings, Home, guidance drawer — reads from this one authority. There is no per-screen readiness composition that can drift.',
+          points: [
+            '8-layer dependency chain with per-layer state (ready / pending / waiting / blocked)',
+            'Single backend authority — no per-screen recomposition',
+            'Owner tagging: client / Orchestrate / operator per layer',
+            'Inline resolution CTA on every client-pending layer',
+          ],
+        ),
+        ContentSection(
+          title: '5. Outbound execution activated',
+          body:
+              'When every layer is ready, dispatch eligibility flips. Outbound messages are generated against the business identity, paced under a per-mailbox governor, signed via DKIM at the adapter layer, and stamped with a custom X-Orchestrate-Operation-Id header so reply matching survives relays that strip standard threading headers. Every send passes a suppression check, a governance check, and a readiness check before leaving the process.',
+          points: [
+            'Per-message DKIM signing inside Orchestrate',
+            'Custom operation-fingerprint header on outbound',
+            'Suppression check at every FIRST_SEND and FOLLOWUP_SEND',
+            'Governed pacing under per-mailbox in-flight cap',
+          ],
+        ),
+        ContentSection(
+          title: '6. Replies matched',
+          body:
+              'Operation-scoped IMAP ingestion runs against custom SMTP+IMAP transports. Phase 1 fetches headers only; phase 2 matches inbound against this client\'s outbound by In-Reply-To, References, or the operation-id header; phase 3 fetches bodies ONLY for matched UIDs. Unmatched mail stays in the upstream mailbox — bodies never read, content never stored, AI never reached. Matched replies land in the Replies workspace.',
+          points: [
+            'Header-first, body-on-match-only',
+            'No general inbox reading — operation-scoped attribution required',
+            'Deduplication keyed by upstream message-id',
+            'Unmatched mail never persisted, classified, surfaced, or fed to AI',
+          ],
+        ),
+        ContentSection(
+          title: '7. Follow-ups governed',
+          body:
+              'A matched reply against a lead automatically cancels queued FOLLOWUP_SEND jobs and any QUEUED / SCHEDULED OutreachMessage rows targeting that lead. The platform stops dispatching the moment a recipient responds — no operator action required, no race condition between inbox triage and the next-send timer.',
+        ),
+        ContentSection(
+          title: '8. Suppression enforced',
+          body:
+              'Opt-out signals, hard bounces, complaints, and operator blocks create SuppressionEntry rows scoped per organization and per client. The dispatch path checks suppression before every FIRST_SEND, every FOLLOWUP_SEND, and every direct email. There is no code path that bypasses the suppression check.',
+        ),
+        ContentSection(
+          title: '9. Operational continuity maintained',
+          body:
+              'When something degrades — OAuth grant revoked, SMTP host throttling, DNS regression on an ACTIVE domain — the readiness chain reports the dependency by name, with ownership and a concrete next action. Recovery is automatic where Orchestrate owns it (transient provider hiccups, deliverability re-checks); the client sees what is happening and who owns the next step. No fake "everything green" while a subsystem is degraded.',
+          highlight:
+              'The runtime reports operational truth. "Recovering" / "Degraded" / "Reconnect required" name the real dependency, not a marketing state.',
+        ),
+      ],
+    );
+
+PublicContentScreen buildTrustArchitectureScreen() =>
+    const PublicContentScreen(
+      eyebrow: 'Trust architecture',
+      title:
+          'Operation-scoped access, encrypted vault, governed dispatch, AI bounded by attribution.',
+      subtitle:
+          'A consolidated view of how trust is architected at runtime — not a list of legal pages, but the structural design of the system. Each layer below maps to a dedicated policy page for the formal commitment.',
+      sideActions: [
+        ContentAction(
+            label: 'Mailbox access policy',
+            path: '/legal/mailbox-access',
+            filled: true),
+        ContentAction(label: 'Credential handling', path: '/legal/credentials'),
+        ContentAction(label: 'AI usage', path: '/legal/ai-usage'),
+        ContentAction(
+            label: 'Reply monitoring', path: '/legal/reply-monitoring'),
+        ContentAction(
+            label: 'Provider boundaries', path: '/legal/providers'),
+        ContentAction(
+            label: 'Suppression / opt-out', path: '/legal/suppression'),
+        ContentAction(label: 'Retention / deletion', path: '/legal/retention'),
+        ContentAction(label: 'Abuse policy', path: '/legal/abuse'),
+      ],
+      sections: [
+        ContentSection(
+          title: 'Mailbox access is operation-scoped at the read layer',
+          body:
+              'Orchestrate is not a general inbox reader. For custom IMAP transports, the platform fetches envelope + a narrow header set (Message-ID, In-Reply-To, References, From, To, Subject, X-Orchestrate-Operation-Id) BEFORE any matching decision. Bodies are only fetched after a message resolves to an OutreachMessage Orchestrate sent. Unmatched mail stays in the upstream mailbox — body never read, content never stored, AI never reached. The full disclosure is the Mailbox access policy.',
+          points: [
+            'Header-first fetch on every IMAP poll',
+            'Body fetched only after operation attribution',
+            'Initial IMAP connect seeds cursor at current highest UID — no historical scan',
+            'OAuth transports today use send-only scopes',
+          ],
+        ),
+        ContentSection(
+          title: 'Credentials are sealed by an encrypted vault',
+          body:
+              'OAuth refresh tokens, SMTP passwords, IMAP passwords, and DKIM private keys live behind a vault adapter (encrypted-DB AES-256-GCM or HashiCorp Vault). Production runtime refuses to boot with the in-memory adapter. Service code never imports a vault adapter directly; every read, write, rotation, and revocation is auditable. Audit log entries are metadata-only by construction — no credential content, no message body.',
+        ),
+        ContentSection(
+          title: 'AI is bounded to operation-attributed data',
+          body:
+              'AI workers consume OutreachMessage rows (Orchestrate-generated) and Reply rows (operation-matched only). They do not receive raw IMAP messages, unmatched inbound mail, or the contents of a mailbox outside what Orchestrate generated or matched. Every AI invocation produces a stored decision record.',
+        ),
+        ContentSection(
+          title: 'Transport is provider-agnostic, domain identity is primary',
+          body:
+              'Google Workspace, Microsoft 365, and custom SMTP+IMAP are interchangeable transport layers beneath the client\'s sending domain. Changing providers does not change operational identity. The trust classification (pending / limited / warmup / full-trust) is informed by SPF / DKIM / DMARC verification, mailbox health, and recent transport events — and it gates dispatch eligibility at the platform layer.',
+        ),
+        ContentSection(
+          title: 'Suppression is enforced at every dispatch path',
+          body:
+              'UNSUBSCRIBE / HARD_BOUNCE / COMPLAINT / MANUAL_BLOCK suppression entries block FIRST_SEND, FOLLOWUP_SEND, and direct email. There is no code path that skips the suppression check. Opt-out replies are auto-converted to UNSUBSCRIBE entries.',
+        ),
+        ContentSection(
+          title: 'Dispatch is governed, not autonomous',
+          body:
+              'Every send passes a readiness check, a suppression check, and a governance check. The dispatch governor enforces a per-mailbox in-flight cap so sending posture stays stable. Recovery branches re-converge the readiness state without requiring client lifecycle controls.',
+        ),
+        ContentSection(
+          title: 'Operational state is audited and explainable',
+          body:
+              'Connect, reconnect, disconnect, credential rotation, IMAP-inbound attached, reply ingested, follow-up suppressed by reply, readiness transitions, and dispatch decisions all leave append-only audit rows. Audit content is metadata only — never credentials, never message bodies. The readiness engine renders the same authoritative state across Operations, Infrastructure, Settings, and the guidance drawer.',
+          highlight:
+              'No screen recomputes readiness independently. One backend authority, one truth, multiple read surfaces.',
+        ),
+        ContentSection(
+          title: 'Runtime reports operational truth',
+          body:
+              'The platform does not over-claim. "Ready" only appears when the underlying state proves it. "Recovering" / "Degraded" / "Reconnect required" name the real dependency. Trust classification distinguishes "full-trust" from "warmup-allowed" from "pending". Reply monitoring is reported as "outbound-only" until inbound is genuinely wired. Operator-owned and client-owned next actions are tagged explicitly.',
+        ),
+      ],
+    );
+
 PublicContentScreen buildRetentionPolicyScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',
       title: 'Data retention and deletion',

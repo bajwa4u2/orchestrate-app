@@ -867,6 +867,30 @@ final router = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/why-orchestrate',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: buildWhyOrchestrateExistsScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/how-orchestrate-operates',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: buildHowOrchestrateOperatesScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/trust-architecture',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: buildTrustArchitectureScreen()),
+      ),
+    ),
+    GoRoute(
         path: '/app/setup',
         builder: (context, state) => const ClientSetupScreen()),
     GoRoute(
