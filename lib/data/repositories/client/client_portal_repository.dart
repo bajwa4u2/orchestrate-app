@@ -42,6 +42,19 @@ class ClientPortalRepository {
     return _asMap(json);
   }
 
+  /// Authoritative runtime execution state. Returns a closed-enum
+  /// state derived from real runtime signals — queue depth, recent
+  /// dispatch activity, recent failures, workload count — not from
+  /// optimistic readiness latches. Use to render runtime-truthful
+  /// labels instead of bucket-driven over-confident claims.
+  Future<Map<String, dynamic>> fetchRuntimeState() async {
+    final json = await _apiClient.getJson(
+      '/client/runtime-state',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Read the operational support timeline: chronological union of
   /// activity events, DNS verification history, recent dispatches,
   /// and open alerts -- all client-scoped, no fabricated events.

@@ -62,43 +62,44 @@ class _OperationalContinuityStripState
     final blocker = snap.readinessBlockerCode ?? '';
 
     // Readiness headline — always the first line.
+    //
+    // Important doctrine fix: the readiness engine's bucket flips on
+    // CAMPAIGN STATUS, not on actual runtime activity. The labels
+    // below were previously over-confident ("Orchestrate is
+    // operating the active execution scope", "Recovery branch is
+    // active", etc.) — they implied runtime activity the bucket
+    // could not prove. Each label has been narrowed to assert only
+    // what the bucket actually proves. The authoritative runtime
+    // state (queue depth, recent activity, recent failures) lands
+    // on a SEPARATE line below, sourced from /client/runtime-state
+    // and rendered by the parent screen.
     switch (bucket) {
       case 'executing':
-        // Honest read: the readiness engine flips `executing` when the
-        // primary campaign status is ACTIVE. That proves the platform
-        // considers the scope live; it does NOT independently prove
-        // every subsystem (discovery / qualification / dispatch /
-        // follow-up) is running healthily right now. Keep the claim
-        // narrow.
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.active,
           text:
-              'Readiness gates passed — Orchestrate is operating the active execution scope.',
+              'Readiness gates passed and at least one campaign is active. Whether dispatch is in flight right now is named on the runtime line.',
         ));
         break;
       case 'orchestrate_working':
-        // Honest read: this bucket means readiness has cleared activation
-        // but sustained dispatch has not started yet. We do NOT know from
-        // the bucket flag alone whether any messages are actually queued
-        // — that lives in the Operations view's queue depth.
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.preparing,
           text:
-              'Orchestrate is preparing dispatch — activation cleared, dispatch governor controls when first sends leave.',
+              'Readiness has cleared activation. The dispatch governor decides when first sends leave; the runtime line names what is in flight.',
         ));
         break;
       case 'ready_to_execute':
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.preparing,
           text:
-              'Readiness gates passed — Orchestrate is activating managed execution.',
+              'Readiness gates passed. No claim about runtime activity is made from this signal alone — see the runtime line below.',
         ));
         break;
       case 'recovering':
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.recovering,
           text:
-              'Recovery branch is active — dispatch is paused while Orchestrate stabilizes provider state.',
+              'Readiness reports a recovery state on at least one subsystem. The runtime line below names what is actually in flight; check Operations for the named dependency.',
         ));
         break;
       case 'orchestrate_blocked_internal':

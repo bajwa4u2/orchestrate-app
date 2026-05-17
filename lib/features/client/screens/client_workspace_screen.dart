@@ -9,6 +9,7 @@ import 'package:orchestrate_app/data/repositories/client/client_workspace_reposi
 import 'package:orchestrate_app/features/client/widgets/blocker_resolution_card.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/operational_continuity_strip.dart';
+import 'package:orchestrate_app/features/client/widgets/runtime_state_card.dart';
 import 'package:orchestrate_app/features/client/widgets/subscription_continuity_card.dart';
 
 enum ClientSection { home, billing }
@@ -45,6 +46,8 @@ class ClientHomeScreen extends StatelessWidget {
               if (section == ClientSection.home) ...[
                 const OperationalContinuityStrip(
                     surface: 'client_overview_home'),
+                const SizedBox(height: 12),
+                const RuntimeStateCard(),
                 const SizedBox(height: 18),
                 SubscriptionContinuityCard(
                     subscription: data.subscription),
