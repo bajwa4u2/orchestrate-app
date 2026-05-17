@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
+import 'package:orchestrate_app/features/system/widgets/governance_primitives.dart';
 
 /// Workspace governance visibility surface.
 ///
@@ -199,26 +200,36 @@ class _MessageRowState extends State<_MessageRow> {
               spacing: 6,
               runSpacing: 6,
               children: [
-                if (lane.isNotEmpty) _pill(context, 'lane', lane),
-                if (lifecycle.isNotEmpty) _pill(context, 'stage', lifecycle),
-                _bodySourcePill(context, bodySource, templateKey),
+                if (lane.isNotEmpty)
+                  GovernanceBadge(label: 'lane', value: lane),
+                if (lifecycle.isNotEmpty)
+                  GovernanceBadge(label: 'stage', value: lifecycle),
+                BodySourcePill(
+                  bodySource: bodySource.isEmpty ? null : bodySource,
+                  templateKey: templateKey.isEmpty ? null : templateKey,
+                ),
+                BoundedAIIndicator(
+                  bodySource: bodySource.isEmpty ? null : bodySource,
+                ),
                 if (signatureApplied)
-                  _pill(context, 'signature', 'applied'),
+                  const GovernanceBadge(
+                    label: 'signature applied',
+                    tone: GovernanceTone.positive,
+                  ),
                 if (status.isNotEmpty)
-                  _pill(context, 'status', status.toLowerCase()),
+                  GovernanceBadge(label: 'status', value: status.toLowerCase()),
               ],
             ),
             if (_expanded) ...[
               const SizedBox(height: 12),
-              _traceField('Operation id', operationId),
-              _traceField('Thread id', threadId),
-              if (templateKey.isNotEmpty)
-                _traceField(
-                  'Template',
-                  templateVersion != null
-                      ? '$templateKey · v$templateVersion'
-                      : templateKey,
-                ),
+              ProvenanceChainStrip(
+                operationId: operationId.isEmpty ? null : operationId,
+                threadId: threadId.isEmpty ? null : threadId,
+                templateKey: templateKey.isEmpty ? null : templateKey,
+                templateVersion:
+                    templateVersion is num ? templateVersion.toInt() : null,
+              ),
+              const SizedBox(height: 10),
               if (attempt.isNotEmpty)
                 _traceField('Dispatch attempt', attempt),
               if (sentAt != null && sentAt.isNotEmpty)

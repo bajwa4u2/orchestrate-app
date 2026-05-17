@@ -498,3 +498,485 @@ class GovernanceCoverageMeter extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------
+// LifecycleTimeline — vertical timeline of operation stages.
+// ---------------------------------------------------------------------
+
+/// One row in a lifecycle timeline. `state` controls the dot tone:
+///   'done' (positive)  'pending' (neutral)  'attention' (cautious)
+///   'failed' (critical)  'missing' (neutral, dim)
+class LifecycleStep {
+  const LifecycleStep({
+    required this.label,
+    required this.state,
+    this.detail,
+    this.timestamp,
+  });
+  final String label;
+  final String state;
+  final String? detail;
+  final String? timestamp;
+}
+
+class LifecycleTimeline extends StatelessWidget {
+  const LifecycleTimeline({super.key, required this.steps});
+
+  final List<LifecycleStep> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    if (steps.isEmpty) {
+      return Text(
+        'No lifecycle events recorded.',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppTheme.publicMuted,
+            ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < steps.length; i++)
+          _LifecycleStepRow(
+            step: steps[i],
+            isFirst: i == 0,
+            isLast: i == steps.length - 1,
+          ),
+      ],
+    );
+  }
+}
+
+class _LifecycleStepRow extends StatelessWidget {
+  const _LifecycleStepRow({
+    required this.step,
+    required this.isFirst,
+    required this.isLast,
+  });
+  final LifecycleStep step;
+  final bool isFirst;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _dotColor(step.state);
+    final dim = step.state == 'missing' || step.state == 'pending';
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Rail + dot.
+          Column(
+            children: [
+              Container(
+                width: 2,
+                height: 8,
+                color: isFirst ? Colors.transparent : AppTheme.publicLine,
+              ),
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color,
+                  border: Border.all(color: AppTheme.publicLine),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  width: 2,
+                  color: isLast ? Colors.transparent : AppTheme.publicLine,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    step.label,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: dim ? AppTheme.publicMuted : AppTheme.publicText,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  if (step.timestamp != null && step.timestamp!.isNotEmpty)
+                    Text(
+                      step.timestamp!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.publicMuted,
+                            fontFamily: 'monospace',
+                            fontSize: 11.5,
+                          ),
+                    ),
+                  if (step.detail != null && step.detail!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        step.detail!,
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppTheme.publicMuted,
+                                  height: 1.4,
+                                ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _dotColor(String state) {
+    switch (state) {
+      case 'done':
+        return const Color(0xFF1D4ED8);
+      case 'attention':
+        return const Color(0xFFB45309);
+      case 'failed':
+        return const Color(0xFFB1361B);
+      case 'missing':
+        return const Color(0xFFD1D5DB);
+      case 'pending':
+      default:
+        return const Color(0xFF9CA3AF);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------
+// OperationContinuityRail — compact horizontal continuity track.
+// ---------------------------------------------------------------------
+
+class OperationContinuityRail extends StatelessWidget {
+  const OperationContinuityRail({
+    super.key,
+    required this.markers,
+  });
+
+  /// Each marker is (label, state). State accepts the same values as
+  /// LifecycleStep.state.
+  final List<({String label, String state})> markers;
+
+  @override
+  Widget build(BuildContext context) {
+    if (markers.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 26,
+      child: Row(
+        children: [
+          for (var i = 0; i < markers.length; i++) ...[
+            _RailMarker(label: markers[i].label, state: markers[i].state),
+            if (i != markers.length - 1)
+              Expanded(
+                child: Container(
+                  height: 2,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  color: AppTheme.publicLine,
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RailMarker extends StatelessWidget {
+  const _RailMarker({required this.label, required this.state});
+  final String label;
+  final String state;
+
+  @override
+  Widget build(BuildContext context) {
+    Color color;
+    switch (state) {
+      case 'done':
+        color = const Color(0xFF1D4ED8);
+        break;
+      case 'attention':
+        color = const Color(0xFFB45309);
+        break;
+      case 'failed':
+        color = const Color(0xFFB1361B);
+        break;
+      case 'missing':
+        color = const Color(0xFFD1D5DB);
+        break;
+      default:
+        color = const Color(0xFF9CA3AF);
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color,
+            border: Border.all(color: AppTheme.publicLine),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.publicMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------
+// TemplateLineageMap — names the body-source lineage in plain text.
+// ---------------------------------------------------------------------
+
+class TemplateLineageMap extends StatelessWidget {
+  const TemplateLineageMap({
+    super.key,
+    required this.bodySource,
+    this.templateKey,
+    this.templateVersion,
+    this.aiToneModifier,
+  });
+
+  final String? bodySource;
+  final String? templateKey;
+  final int? templateVersion;
+  final String? aiToneModifier;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = _entriesFor(bodySource);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final e in entries) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  e.isDone ? Icons.check : Icons.remove,
+                  size: 14,
+                  color: e.isDone
+                      ? const Color(0xFF1D4ED8)
+                      : AppTheme.publicMuted,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    e.text,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.publicText,
+                          height: 1.45,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if ((templateKey ?? '').isNotEmpty) ...[
+          const SizedBox(height: 4),
+          ProvenanceChainStrip(
+            templateKey: templateKey,
+            templateVersion: templateVersion,
+          ),
+        ],
+        if ((aiToneModifier ?? '').isNotEmpty) ...[
+          const SizedBox(height: 6),
+          GovernanceBadge(
+            label: 'tone',
+            value: aiToneModifier,
+            tone: GovernanceTone.neutral,
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<_LineageEntry> _entriesFor(String? source) {
+    switch (source) {
+      case 'catalog':
+        return [
+          _LineageEntry('Sequence step bound a governed template.', true),
+          _LineageEntry('Renderer produced subject + body from the catalog.', true),
+          _LineageEntry('Template provenance stamped on the wire.', true),
+        ];
+      case 'bounded_ai_catalog':
+        return [
+          _LineageEntry(
+            'Bounded AI selected a governed template from the allowed set.',
+            true,
+          ),
+          _LineageEntry('AI bound approved variables (renderer-validated).', true),
+          _LineageEntry('Renderer produced subject + body from the catalog.', true),
+          _LineageEntry('Template provenance stamped on the wire.', true),
+        ];
+      case 'ai_fallback_catalog':
+        return [
+          _LineageEntry('Freeform AI generation failed.', false),
+          _LineageEntry(
+            'Governed catalog fallback rendered the body.',
+            true,
+          ),
+          _LineageEntry('Template provenance stamped on the wire.', true),
+        ];
+      case 'sequence_legacy':
+        return [
+          _LineageEntry('Sequence step used a legacy subject/body string.', true),
+          _LineageEntry(
+            'No governed-template provenance claimed (honest).',
+            false,
+          ),
+        ];
+      case 'ai_draft':
+        return [
+          _LineageEntry(
+            'Freeform AI produced subject + body (WriterAgent path).',
+            true,
+          ),
+          _LineageEntry(
+            'No governed-template provenance claimed (honest).',
+            false,
+          ),
+        ];
+      default:
+        return [
+          _LineageEntry('Body source not labeled on this row.', false),
+          _LineageEntry(
+            'Operation, thread, lane, lifecycle, attempt still attached.',
+            true,
+          ),
+        ];
+    }
+  }
+}
+
+class _LineageEntry {
+  const _LineageEntry(this.text, this.isDone);
+  final String text;
+  final bool isDone;
+}
+
+// ---------------------------------------------------------------------
+// AttributionChainView — outbound op → thread → (reply | not yet).
+// ---------------------------------------------------------------------
+
+class AttributionChainView extends StatelessWidget {
+  const AttributionChainView({
+    super.key,
+    required this.operationId,
+    required this.threadId,
+    this.replyId,
+    this.replyAt,
+    this.followUpCancelled,
+  });
+
+  final String? operationId;
+  final String? threadId;
+  final String? replyId;
+  final String? replyAt;
+  final bool? followUpCancelled;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasReply = (replyId ?? '').isNotEmpty;
+    final steps = <LifecycleStep>[
+      LifecycleStep(
+        label: 'Outbound operation',
+        state: (operationId ?? '').isNotEmpty ? 'done' : 'missing',
+        detail: operationId == null
+            ? 'Operation id not recorded'
+            : 'X-Orchestrate-Operation-Id stamped on the wire',
+      ),
+      LifecycleStep(
+        label: 'Thread continuity',
+        state: (threadId ?? '').isNotEmpty ? 'done' : 'missing',
+        detail: threadId == null
+            ? 'Thread id not recorded'
+            : 'X-Orchestrate-Thread-Id stamped on the wire',
+      ),
+      LifecycleStep(
+        label: hasReply ? 'Reply attributed' : 'Reply attribution',
+        state: hasReply ? 'done' : 'pending',
+        detail: hasReply
+            ? 'Reply matched via In-Reply-To / References / X-Operation-Id'
+            : 'No reply attributed yet (or not recorded in this view)',
+        timestamp: replyAt,
+      ),
+      if (followUpCancelled == true)
+        const LifecycleStep(
+          label: 'Follow-up cancelled by reply',
+          state: 'done',
+          detail:
+              'Pending follow-up jobs against this operation were cancelled when the reply landed.',
+        ),
+    ];
+    return LifecycleTimeline(steps: steps);
+  }
+}
+
+// ---------------------------------------------------------------------
+// DispatchRecoveryTrack — retries / failures / recovery.
+// ---------------------------------------------------------------------
+
+class DispatchRecoveryTrack extends StatelessWidget {
+  const DispatchRecoveryTrack({
+    super.key,
+    required this.attempt,
+    required this.status,
+    this.lastError,
+  });
+
+  final int? attempt;
+  final String? status;
+  final String? lastError;
+
+  @override
+  Widget build(BuildContext context) {
+    final normalized = (status ?? '').toUpperCase();
+    final failed =
+        normalized == 'FAILED' || normalized == 'RETRYABLE_FAILED';
+    final recovering = normalized == 'SENDING' && (attempt ?? 0) > 1;
+
+    final steps = <LifecycleStep>[
+      LifecycleStep(
+        label: 'Attempt ${attempt ?? 1}',
+        state: failed
+            ? 'failed'
+            : recovering
+                ? 'attention'
+                : 'done',
+        detail: failed
+            ? (lastError ?? 'Last attempt failed; awaiting retry')
+            : recovering
+                ? 'Retry in flight'
+                : 'Dispatched successfully',
+      ),
+      if (failed && (lastError ?? '').isNotEmpty)
+        LifecycleStep(
+          label: 'Last provider error',
+          state: 'failed',
+          detail: lastError,
+        ),
+    ];
+    return LifecycleTimeline(steps: steps);
+  }
+}
+

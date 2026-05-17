@@ -55,6 +55,7 @@ class OperatorShell extends StatelessWidget {
       _NavItem('Documents', '/operator/documents', Icons.description_outlined),
       _NavItem('Support', '/operator/support', Icons.support_agent_outlined),
       _NavItem('Activity', '/operator/activity', Icons.history_outlined),
+      _NavItem('Governance', '/ops/governance', Icons.shield_outlined),
       _NavItem('Analytics', '/operator/analytics', Icons.query_stats_outlined),
       _NavItem('System checks', '/ops/debug', Icons.tune_outlined),
     ]),

@@ -27,6 +27,7 @@ import 'package:orchestrate_app/features/client/screens/meetings_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_support_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_backend_surface_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_debug_screen.dart';
+import 'package:orchestrate_app/features/operator/screens/operator_governance_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_providers_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_system_doctor_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_workspace_screen.dart';
@@ -1288,6 +1289,14 @@ final router = GoRouter(
         GoRoute(
             path: '/ops/debug',
             builder: (context, state) => const OperatorDebugScreen()),
+        // Operator governance workspace — cross-client provenance + lifecycle
+        // visibility. Reads /operator/governance/messages/{recent,:id}.
+        GoRoute(
+            path: '/ops/governance',
+            builder: (context, state) => const OperatorGovernanceScreen()),
+        GoRoute(
+            path: '/operator/governance',
+            redirect: (context, state) => '/ops/governance'),
       ],
     ),
   ],

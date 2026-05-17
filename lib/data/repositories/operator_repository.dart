@@ -592,6 +592,35 @@ class OperatorRepository {
         .toList();
   }
 
+  /// Recent governed dispatches across the operator's organization.
+  /// Returns the last N outreach rows with their governance block,
+  /// bodySource flag, and signatureApplied flag.
+  Future<List<dynamic>> fetchGovernanceRecent({
+    String? clientId,
+    int? limit,
+  }) async {
+    final params = <String, String>{};
+    if (clientId != null && clientId.isNotEmpty) params['clientId'] = clientId;
+    if (limit != null) params['limit'] = '$limit';
+    final qs = params.isEmpty
+        ? ''
+        : '?${params.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&')}';
+    final json = await _apiClient.getJson(
+      '/operator/governance/messages/recent$qs',
+      surface: ApiSurface.operator,
+    );
+    return (json as List? ?? const []).cast<dynamic>();
+  }
+
+  /// Full provenance trace for one OutreachMessage in operator scope.
+  Future<Map<String, dynamic>> fetchGovernanceMessage(String messageId) async {
+    final json = await _apiClient.getJson(
+      '/operator/governance/messages/$messageId',
+      surface: ApiSurface.operator,
+    );
+    return _asMap(json);
+  }
+
   Map<String, dynamic> _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) {
