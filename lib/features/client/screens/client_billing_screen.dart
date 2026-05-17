@@ -218,41 +218,83 @@ ClientStatusBanner _billingBanner({
           'The portal could not open. If you do nothing, billing changes must wait until portal access is available.',
     );
   }
-  final normalized = status.toLowerCase();
+  final normalized = status.toLowerCase().trim();
   final end = DateTime.tryParse('${periodEnd ?? ''}');
   final expiring = end != null &&
       end.toLocal().isAfter(DateTime.now()) &&
       end.toLocal().difference(DateTime.now()).inDays <= 7;
-  if (normalized == 'past_due' || normalized == 'past due') {
-    return const ClientStatusBanner(
-      tone: ClientBannerTone.blocked,
-      title: 'Billing requires attention',
-      message:
-          'The subscription is past due. Open the billing portal to resolve payment so service is not interrupted.',
-    );
+
+  switch (normalized) {
+    case 'active':
+      return const ClientStatusBanner(
+        tone: ClientBannerTone.success,
+        title: 'Billing is active',
+        message:
+            'Managed execution is running under your lane. No billing action is required. The portal is here when you need to manage payment or subscription details.',
+      );
+    case 'trialing':
+    case 'trial':
+      return ClientStatusBanner(
+        tone: expiring ? ClientBannerTone.warning : ClientBannerTone.info,
+        title: expiring ? 'Trial ends soon' : 'Trial is active',
+        message:
+            'Full managed execution runs during the trial. Use the portal to update payment details before the trial ends, or leave it — billing follows the current subscription terms automatically.',
+      );
+    case 'past_due':
+    case 'past due':
+      return const ClientStatusBanner(
+        tone: ClientBannerTone.blocked,
+        title: 'Billing past due — dispatch gated',
+        message:
+            'New dispatch is paused until billing is current. Reply ingestion on engaged threads continues, and mailbox transport, sending domain, and audit trail remain attached. Open the billing portal to resolve payment and restore dispatch.',
+      );
+    case 'paused':
+      return const ClientStatusBanner(
+        tone: ClientBannerTone.warning,
+        title: 'Subscription paused',
+        message:
+            'Dispatch is paused. Reply ingestion continues for matched threads. Mailbox transport and sending domain stay attached so resuming does not require reconnect.',
+      );
+    case 'canceled':
+    case 'cancelled':
+      return const ClientStatusBanner(
+        tone: ClientBannerTone.warning,
+        title: 'Subscription canceled — paid period continues',
+        message:
+            'Dispatch runs through the end of the current paid period. Reply ingestion continues until then. Mailbox transport stays attached so reactivation does not require reconnect.',
+      );
+    case 'expired':
+      return const ClientStatusBanner(
+        tone: ClientBannerTone.warning,
+        title: 'Subscription expired — dispatch ended',
+        message:
+            'Dispatch has ended. Reply ingestion continues as long as the mailbox transport remains attached. Reactivate the plan to restore managed execution under the same lane and tier.',
+      );
+    case 'incomplete':
+    case 'incomplete_expired':
+    case 'unpaid':
+      return const ClientStatusBanner(
+        tone: ClientBannerTone.blocked,
+        title: 'Activation incomplete at billing provider',
+        message:
+            'The initial payment has not posted at the billing provider yet. Dispatch is gated until activation completes. Open the billing portal to resolve.',
+      );
+    case 'none':
+    case '':
+      return const ClientStatusBanner(
+        tone: ClientBannerTone.info,
+        title: 'Subscription not yet activated',
+        message:
+            'Identity, sending domain, and mailbox transport can be prepared in parallel. Managed execution starts once a plan is activated.',
+      );
+    default:
+      return ClientStatusBanner(
+        tone: ClientBannerTone.warning,
+        title: 'Subscription status: $normalized',
+        message:
+            'Mailbox transport and reply ingestion remain attached. Open the billing portal to review subscription state with the billing provider.',
+      );
   }
-  if (normalized == 'trialing') {
-    return ClientStatusBanner(
-      tone: expiring ? ClientBannerTone.warning : ClientBannerTone.info,
-      title: expiring ? 'Trial ends soon' : 'Trial is active',
-      message:
-          'Open the billing portal when you need to manage payment details. If you do nothing, billing follows the current subscription terms.',
-    );
-  }
-  if (normalized == 'active') {
-    return const ClientStatusBanner(
-      tone: ClientBannerTone.success,
-      title: 'Billing is active',
-      message:
-          'No billing action is required right now. Use the portal only when you need to manage payment or subscription details.',
-    );
-  }
-  return const ClientStatusBanner(
-    tone: ClientBannerTone.warning,
-    title: 'Billing status is not active',
-    message:
-        'Open the billing portal or review subscription setup. If you do nothing, service activation may remain limited.',
-  );
 }
 
 class _InvoiceRow extends StatelessWidget {

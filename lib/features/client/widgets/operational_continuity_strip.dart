@@ -177,15 +177,68 @@ class _OperationalContinuityStripState
       ));
     }
 
-    // Subscription guard.
+    // Subscription degradation line. ACTIVE and TRIALING are
+    // healthy execution states — no line is added so the strip
+    // stays calm. The SubscriptionContinuityCard on the workspace
+    // home carries the full lifecycle narrative; this line just
+    // signals the operational consequence inside the readiness
+    // continuity rhythm.
     final sub = (snap.subscriptionStatus ?? '').toUpperCase();
-    if (sub.isNotEmpty && sub != 'ACTIVE' && sub != 'TRIALING') {
-      lines.add(_ContinuityLine(
-        kind: _ContinuityKind.action,
-        text: 'Subscription status is $sub — readiness orchestration is gated until billing is current.',
-      ));
+    final subLine = _subscriptionLine(sub);
+    if (subLine != null) {
+      lines.add(subLine);
     }
     return lines;
+  }
+
+  _ContinuityLine? _subscriptionLine(String upperStatus) {
+    switch (upperStatus) {
+      case '':
+      case 'ACTIVE':
+      case 'TRIALING':
+      case 'TRIAL':
+        return null;
+      case 'PAST_DUE':
+        return const _ContinuityLine(
+          kind: _ContinuityKind.action,
+          text:
+              'Billing past due — new dispatch is gated. Reply ingestion on engaged threads continues. Open billing to resolve.',
+        );
+      case 'PAUSED':
+        return const _ContinuityLine(
+          kind: _ContinuityKind.recovering,
+          text:
+              'Subscription paused — dispatch is paused; reply ingestion continues; transport stays attached.',
+        );
+      case 'CANCELED':
+      case 'CANCELLED':
+        return const _ContinuityLine(
+          kind: _ContinuityKind.recovering,
+          text:
+              'Subscription canceled — dispatch runs through the end of the paid period; reply ingestion continues until then.',
+        );
+      case 'EXPIRED':
+        return const _ContinuityLine(
+          kind: _ContinuityKind.action,
+          text:
+              'Subscription expired — dispatch has ended. Reply ingestion continues while the mailbox transport remains attached.',
+        );
+      case 'INCOMPLETE':
+      case 'INCOMPLETE_EXPIRED':
+      case 'UNPAID':
+        return const _ContinuityLine(
+          kind: _ContinuityKind.action,
+          text:
+              'Activation incomplete at the billing provider — dispatch is gated until initial payment posts.',
+        );
+      case 'NONE':
+        return null;
+      default:
+        return _ContinuityLine(
+          kind: _ContinuityKind.muted,
+          text: 'Subscription status: ${upperStatus.toLowerCase()}.',
+        );
+    }
   }
 
   String _clientActionLine(String blockerCode) {

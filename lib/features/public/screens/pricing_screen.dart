@@ -209,6 +209,8 @@ class _PricingScreenState extends State<PricingScreen> {
           else if (_error != null)
             _ErrorCard(message: _error!, onRetry: _loadPricing)
           else if (catalog != null) ...[
+            const _LaneAlignmentDisclosure(),
+            const SizedBox(height: 14),
             _LaneMatrixSection(
               catalog: catalog,
               trialRequested: _trialRequested,
@@ -406,6 +408,45 @@ class _LaneMatrixSection extends StatelessWidget {
           onSelect: onSelect,
         ),
       ],
+    );
+  }
+}
+
+class _LaneAlignmentDisclosure extends StatelessWidget {
+  const _LaneAlignmentDisclosure();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2, right: 10),
+            child: Icon(
+              Icons.info_outline,
+              size: 16,
+              color: AppTheme.publicMuted,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              'Operational pricing alignment. Opportunity and Revenue lanes currently share the same introductory operational pricing while Orchestrate expands lane-specific execution infrastructure. The boundary between identity and operation, and the runtime each lane operates, are unchanged.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.publicMuted,
+                    height: 1.45,
+                  ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

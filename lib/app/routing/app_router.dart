@@ -182,11 +182,21 @@ final router = GoRouter(
         return _clientRoute('/app/setup', plan: plan, tier: tier, trial: trial);
       }
 
+      // Routes that remain reachable during subscription degradation
+      // (past_due / paused / canceled / expired / incomplete).
+      // Doctrine: subscription degradation is governed operational
+      // degradation, not hard SaaS lockout. The workspace home stays
+      // reachable so the SubscriptionContinuityCard names what
+      // dispatch is gated, what reply ingestion continues, and what
+      // resolution restores. Hard-redirect to /app/subscribe is
+      // reserved for the fully-uninitialised state (status='none').
       final subscriptionAllowed = <String>{
+        '/app/home',
         '/app/subscribe',
         '/app/billing',
         '/app/account',
         '/app/campaigns',
+        '/client/overview',
         '/client/subscribe',
         '/client/billing',
         '/client/account',
@@ -194,7 +204,19 @@ final router = GoRouter(
         '/client/campaign',
         '/client/campaigns',
       };
-      if (session.normalizedSubscriptionStatus != 'active') {
+      // Subscription gate. The backend ExecutionEligibilityService
+      // treats both ACTIVE and TRIALING as dispatch-eligible — the
+      // frontend gate must mirror that, otherwise a trialing client
+      // gets redirected to /app/subscribe from /app/home even though
+      // their managed execution is running. Every other state
+      // (past_due, paused, canceled, expired, incomplete, none)
+      // routes to the subscribe surface so the lifecycle can be
+      // resolved there; the workspace SubscriptionContinuityCard
+      // names the operational consequence calmly while billing is
+      // resolved.
+      final subStatus = session.normalizedSubscriptionStatus;
+      final subEligible = subStatus == 'active' || subStatus == 'trialing';
+      if (!subEligible) {
         if (subscriptionAllowed.contains(path)) return null;
         return _clientRoute('/app/subscribe',
             plan: plan, tier: tier, trial: trial);

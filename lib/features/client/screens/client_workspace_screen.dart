@@ -9,6 +9,7 @@ import 'package:orchestrate_app/data/repositories/client/client_workspace_reposi
 import 'package:orchestrate_app/features/client/widgets/blocker_resolution_card.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/operational_continuity_strip.dart';
+import 'package:orchestrate_app/features/client/widgets/subscription_continuity_card.dart';
 
 enum ClientSection { home, billing }
 
@@ -44,6 +45,9 @@ class ClientHomeScreen extends StatelessWidget {
               if (section == ClientSection.home) ...[
                 const OperationalContinuityStrip(
                     surface: 'client_overview_home'),
+                const SizedBox(height: 18),
+                SubscriptionContinuityCard(
+                    subscription: data.subscription),
                 const SizedBox(height: 18),
                 if (data.blockers.isNotEmpty || !data.authorized) ...[
                   _BlockerCard(
@@ -124,6 +128,7 @@ class ClientHomeScreen extends StatelessWidget {
         title: 'Billing and service standing',
         subtitle:
             'Billing stays separate from targeting, leads, and meetings so account standing remains clear.',
+        subscription: subscription ?? const {},
         blockers: blockers,
         authorized: authorized,
         authAcceptedAt: authAcceptedAt,
@@ -176,9 +181,11 @@ class ClientHomeScreen extends StatelessWidget {
 
     return _ViewData(
       title: title,
-      subtitle: session.normalizedSubscriptionStatus == 'active'
+      subtitle: session.normalizedSubscriptionStatus == 'active' ||
+              session.normalizedSubscriptionStatus == 'trialing'
           ? 'Home keeps the client system visible without duplicating targeting or operator views.'
           : 'Home keeps setup, billing standing, and readiness progression visible until every gate has cleared.',
+      subscription: subscription ?? const {},
       blockers: blockers,
       authorized: authorized,
       authAcceptedAt: authAcceptedAt,
@@ -271,6 +278,7 @@ class _ViewData {
       required this.secondaryTitle,
       required this.secondaryRows,
       required this.secondaryEmpty,
+      this.subscription = const <String, dynamic>{},
       this.blockers = const <dynamic>[],
       this.authorized = true,
       this.authAcceptedAt});
@@ -283,6 +291,7 @@ class _ViewData {
   final String secondaryTitle;
   final List<_Row> secondaryRows;
   final String secondaryEmpty;
+  final Map<String, dynamic> subscription;
   final List<dynamic> blockers;
   final bool authorized;
   final dynamic authAcceptedAt;
