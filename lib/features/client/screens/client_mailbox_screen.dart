@@ -6,6 +6,7 @@ import 'package:orchestrate_app/data/repositories/client/client_account_reposito
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/imap_connect_dialog.dart';
 import 'package:orchestrate_app/features/client/widgets/smtp_connect_dialog.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
@@ -223,6 +224,12 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
               providerAvailability: data.providerAvailability,
             ),
             const SizedBox(height: 18),
+            if (data.mailboxProvider == 'SMTP') ...[
+              _ReplyMonitoringPanel(
+                onAttach: () => _openImapDialog(data, data.mailboxId),
+              ),
+              const SizedBox(height: 18),
+            ],
             // Sending domain panel comes BEFORE transport / mailbox
             // readiness. Domain identity is primary; provider transport
             // is interchangeable infrastructure beneath it.
@@ -377,6 +384,21 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     }
   }
 
+  Future<void> _openImapDialog(_MailboxViewData data, String mailboxId) async {
+    final saved = await ImapConnectDialog.show(
+      context,
+      mailboxId: mailboxId,
+      initialUsername: data.operationalIdentity.mailboxAddress,
+    );
+    if (saved && mounted) {
+      setState(() {
+        _resultMessage =
+            'IMAP inbound monitoring attached. The poll worker will ingest new replies on the next sweep and suppress pending follow-ups against the same lead.';
+        _future = _load();
+      });
+    }
+  }
+
   Future<_MailboxViewData> _load() async {
     final dispatches = await _outreachRepository.fetchEmailDispatches();
     final replies = await _outreachRepository.fetchReplies();
@@ -510,6 +532,8 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       ready: ready,
     );
 
+    final mailboxId = readText(mailbox, 'id');
+    final mailboxProvider = readText(mailbox, 'provider').toUpperCase();
     return _MailboxViewData(
       dispatchCount: dispatches.length,
       replyCount: replies.length,
@@ -525,6 +549,8 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       sendingIdentity: sendingIdentity,
       providerAvailability: providerAvailability,
       operationalIdentity: operationalIdentity,
+      mailboxId: mailboxId,
+      mailboxProvider: mailboxProvider,
     );
   }
 
@@ -848,6 +874,8 @@ class _MailboxViewData {
     required this.sendingIdentity,
     required this.providerAvailability,
     required this.operationalIdentity,
+    required this.mailboxId,
+    required this.mailboxProvider,
   });
 
   final int dispatchCount;
@@ -864,6 +892,8 @@ class _MailboxViewData {
   final _SendingIdentity sendingIdentity;
   final Map<String, _ProviderAvailabilityEntry> providerAvailability;
   final _OperationalIdentity operationalIdentity;
+  final String mailboxId;
+  final String mailboxProvider;
 }
 
 class _ProviderAvailabilityEntry {
@@ -1376,6 +1406,36 @@ class _OperationalIdentityPanel extends StatelessWidget {
     return providerAvailability.values
         .where((entry) => !entry.available)
         .toList();
+  }
+}
+
+/// Reply monitoring affordance shown when an SMTP transport is
+/// connected but IMAP inbound is not yet attached. Surfaces the
+/// truthful state ("Outbound only — reply monitoring pending") and
+/// the inline CTA that opens the IMAP onboarding dialog.
+class _ReplyMonitoringPanel extends StatelessWidget {
+  const _ReplyMonitoringPanel({required this.onAttach});
+
+  final VoidCallback onAttach;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClientPanel(
+      title: 'Reply monitoring',
+      subtitle:
+          'Outbound dispatch is connected. Reply ingestion needs IMAP credentials so Orchestrate can match inbound mail to outbound sends, persist replies into the Replies workspace, and suppress pending follow-ups against the same lead automatically.',
+      children: [
+        ClientInfoRow(
+          title: 'IMAP inbound',
+          primary:
+              'Not attached. Custom transport is operating outbound-only until IMAP credentials are provided.',
+          trailing: FilledButton.tonal(
+            onPressed: onAttach,
+            child: const Text('Attach IMAP inbound'),
+          ),
+        ),
+      ],
+    );
   }
 }
 

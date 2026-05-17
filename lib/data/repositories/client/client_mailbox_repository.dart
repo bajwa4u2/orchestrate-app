@@ -114,6 +114,58 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Validate IMAP credentials without persisting anything.
+  Future<Map<String, dynamic>> testImapConnection({
+    required String host,
+    required int port,
+    required String secure,
+    required String username,
+    required String password,
+    String? folder,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/client/mailbox/imap/test-connection',
+      body: <String, dynamic>{
+        'host': host,
+        'port': port,
+        'secure': secure,
+        'username': username,
+        'password': password,
+        if (folder != null && folder.trim().isNotEmpty) 'folder': folder,
+      },
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Attach IMAP inbound monitoring to an existing SMTP mailbox.
+  /// Returns the folder name + message count from the upstream IMAP
+  /// server so the client sees the connection was real.
+  Future<Map<String, dynamic>> connectImapMailbox({
+    required String mailboxId,
+    required String host,
+    required int port,
+    required String secure,
+    required String username,
+    required String password,
+    String? folder,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/client/mailbox/imap/connect',
+      body: <String, dynamic>{
+        'mailboxId': mailboxId,
+        'host': host,
+        'port': port,
+        'secure': secure,
+        'username': username,
+        'password': password,
+        if (folder != null && folder.trim().isNotEmpty) 'folder': folder,
+      },
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Persist an SMTP transport. Validates credentials, vaults the
   /// bundle, creates the Mailbox row, attaches the sending domain,
   /// and returns the DKIM TXT record the client must publish.
