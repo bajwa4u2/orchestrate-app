@@ -168,6 +168,17 @@ class _ImapConnectDialogState extends State<ImapConnectDialog> {
                     'to the browser.',
                     style: theme.textTheme.bodyMedium,
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Orchestrate only processes mail tied to its outbound '
+                    'operations. Inbox messages without a Message-ID, '
+                    'References, or X-Orchestrate-Operation-Id match are '
+                    'not stored, classified, surfaced, or fed to AI. A '
+                    'dedicated sending mailbox is recommended.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                   const SizedBox(height: 18),
                   Row(
                     children: [
