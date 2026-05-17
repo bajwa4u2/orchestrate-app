@@ -84,6 +84,68 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Validate SMTP credentials without persisting anything. Used by
+  /// the pre-save "Test connection" affordance on the SMTP onboarding
+  /// form. Throws ApiException on failure with the upstream SMTP error.
+  Future<Map<String, dynamic>> testSmtpConnection({
+    required String host,
+    required int port,
+    required String secure,
+    required String username,
+    required String password,
+    required String fromAddress,
+    String? fromName,
+    String? replyTo,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/client/mailbox/smtp/test-connection',
+      body: <String, dynamic>{
+        'host': host,
+        'port': port,
+        'secure': secure,
+        'username': username,
+        'password': password,
+        'fromAddress': fromAddress,
+        if (fromName != null && fromName.trim().isNotEmpty) 'fromName': fromName,
+        if (replyTo != null && replyTo.trim().isNotEmpty) 'replyTo': replyTo,
+      },
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Persist an SMTP transport. Validates credentials, vaults the
+  /// bundle, creates the Mailbox row, attaches the sending domain,
+  /// and returns the DKIM TXT record the client must publish.
+  Future<Map<String, dynamic>> connectSmtpMailbox({
+    required String host,
+    required int port,
+    required String secure,
+    required String username,
+    required String password,
+    required String fromAddress,
+    String? fromName,
+    String? replyTo,
+    String? mailboxId,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/client/mailbox/smtp/connect',
+      body: <String, dynamic>{
+        'host': host,
+        'port': port,
+        'secure': secure,
+        'username': username,
+        'password': password,
+        'fromAddress': fromAddress,
+        if (fromName != null && fromName.trim().isNotEmpty) 'fromName': fromName,
+        if (replyTo != null && replyTo.trim().isNotEmpty) 'replyTo': replyTo,
+        if (mailboxId != null && mailboxId.isNotEmpty) 'mailboxId': mailboxId,
+      },
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Kick off a backend-owned OAuth mailbox connect for [provider]
   /// (`google` or `microsoft`). Returns `{ authorizeUrl, state,
   /// mailboxId, expiresAtIso }` — the caller opens [authorizeUrl] in

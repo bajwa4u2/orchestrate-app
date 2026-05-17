@@ -6,6 +6,7 @@ import 'package:orchestrate_app/data/repositories/client/client_account_reposito
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/smtp_connect_dialog.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
 
@@ -337,6 +338,19 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
             );
       widgets.add(button);
     }
+    // SMTP / custom transport is a first-class connect path. It does
+    // not depend on operator-side OAuth env, so the CTA is always
+    // visible when the workspace has no connected transport.
+    final smtpAvailable = data.providerAvailability['smtp']?.available ?? true;
+    if (smtpAvailable && data.operationalIdentity.mailboxAddress.isEmpty) {
+      widgets.add(
+        OutlinedButton.icon(
+          onPressed: () => _openSmtpDialog(data),
+          icon: const Icon(Icons.dns_outlined, size: 18),
+          label: const Text('Connect SMTP transport'),
+        ),
+      );
+    }
     widgets.add(
       OutlinedButton.icon(
         onPressed: _refresh,
@@ -345,6 +359,22 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       ),
     );
     return widgets;
+  }
+
+  Future<void> _openSmtpDialog(_MailboxViewData data) async {
+    final inferred = data.operationalIdentity.domain;
+    final initial = inferred.isNotEmpty ? 'you@$inferred' : null;
+    final saved = await SmtpConnectDialog.show(
+      context,
+      initialFromAddress: initial,
+    );
+    if (saved && mounted) {
+      setState(() {
+        _resultMessage =
+            'SMTP transport connected. Publish the DKIM TXT record at your DNS provider so trust verification can complete.';
+        _future = _load();
+      });
+    }
   }
 
   Future<_MailboxViewData> _load() async {
@@ -1392,9 +1422,9 @@ class _CopyRecordButtonState extends State<_CopyRecordButton> {
 
 /// Sending transport choices. Providers sit beneath the domain layer:
 /// the domain is identity, the transport is interchangeable infrastructure.
-/// Connect buttons for Google / Microsoft live in the page actions; this
-/// panel exists so the client sees the full transport landscape (including
-/// SMTP / custom adapters) and understands provider parity is not implied.
+/// Connect buttons for Google / Microsoft / SMTP live in the page actions;
+/// this panel exists so the client sees the full transport landscape and
+/// understands no provider monopolises operational identity.
 class _TransportChoicesPanel extends StatelessWidget {
   const _TransportChoicesPanel({
     required this.providerAvailability,
@@ -1409,6 +1439,7 @@ class _TransportChoicesPanel extends StatelessWidget {
     final theme = Theme.of(context);
     final google = providerAvailability['google'];
     final microsoft = providerAvailability['microsoft'];
+    final smtp = providerAvailability['smtp'];
     Widget tile({
       required String title,
       required String body,
@@ -1424,7 +1455,7 @@ class _TransportChoicesPanel extends StatelessWidget {
     return ClientPanel(
       title: 'Sending transport',
       subtitle:
-          'Transport is how Orchestrate physically dispatches messages — interchangeable infrastructure beneath your domain identity. Pick one when ready.',
+          'Transport is how Orchestrate physically dispatches messages — interchangeable infrastructure beneath your domain identity. SMTP / custom transports are a first-class path: no operator-side OAuth required, full DKIM signing inside Orchestrate.',
       children: [
         tile(
           title: 'Google Workspace mailbox',
@@ -1432,7 +1463,7 @@ class _TransportChoicesPanel extends StatelessWidget {
               ? 'OAuth-based connection. Tap "Connect a Google mailbox" in the page header.'
               : google.available
                   ? 'OAuth-based connection. Use the Connect action in the page header.'
-                  : 'Provider setup pending on this deployment — not yet operational.',
+                  : 'Provider setup pending on this deployment — not yet operational. Use SMTP if your sending infrastructure is ready.',
           badge: google?.available == true ? 'Available' : 'Setup pending',
         ),
         tile(
@@ -1441,14 +1472,15 @@ class _TransportChoicesPanel extends StatelessWidget {
               ? 'OAuth-based connection. Tap "Connect a Microsoft 365 mailbox" in the page header.'
               : microsoft.available
                   ? 'OAuth-based connection. Use the Connect action in the page header.'
-                  : 'Provider setup pending on this deployment — not yet operational.',
+                  : 'Provider setup pending on this deployment — not yet operational. Use SMTP if your sending infrastructure is ready.',
           badge: microsoft?.available == true ? 'Available' : 'Setup pending',
         ),
         tile(
           title: 'SMTP / custom sending infrastructure',
-          body:
-              'For dedicated infrastructure, custom mail servers, or third-party SMTP. Adapter is on the roadmap — contact support to scope a deployment-specific configuration.',
-          badge: 'Coming soon',
+          body: smtp?.available == false
+              ? 'Provider setup pending.'
+              : 'Use any SMTP-capable infrastructure: your own server, SES, Mailgun, SendGrid, Postfix, Zoho, or a regional provider. Orchestrate validates against the upstream host before persisting, vaults the credentials, generates DKIM, and dispatches with full signing. Tap "Connect SMTP transport" in the page header.',
+          badge: smtp?.available == false ? 'Setup pending' : 'Available',
         ),
         if (!hasMailbox) ...[
           const SizedBox(height: 8),
