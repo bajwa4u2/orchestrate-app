@@ -42,6 +42,58 @@ class ClientPortalRepository {
     return _asMap(json);
   }
 
+  /// List the governed message-template catalog (client-scoped).
+  Future<List<dynamic>> fetchMessageTemplates() async {
+    final json = await _apiClient.getJson('/client/message-templates',
+        surface: ApiSurface.client);
+    return (json as List? ?? const []).cast<dynamic>();
+  }
+
+  /// Get a single template's full shape (subject + body templates,
+  /// required + allowed variables, compliance notes).
+  Future<Map<String, dynamic>> fetchMessageTemplate(String key) async {
+    final json = await _apiClient.getJson(
+      '/client/message-templates/$key',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Render a template preview with caller-supplied variables. On
+  /// success the response is `{ ok: true, rendered: {...} }`. On
+  /// missing/unknown variables the response is
+  /// `{ ok: false, reason: 'MISSING_REQUIRED_VARIABLE' | 'UNKNOWN_VARIABLE', ... }`.
+  Future<Map<String, dynamic>> previewMessageTemplate(
+    String key,
+    Map<String, dynamic> variables,
+  ) async {
+    final json = await _apiClient.postJson(
+      '/client/message-templates/$key/preview',
+      surface: ApiSurface.client,
+      body: {'variables': variables},
+    );
+    return _asMap(json);
+  }
+
+  /// List recent governed dispatches (last 25 outreach messages).
+  /// Each entry carries a `governance` block when present.
+  Future<List<dynamic>> fetchRecentMessages() async {
+    final json = await _apiClient.getJson(
+      '/client/messages/recent',
+      surface: ApiSurface.client,
+    );
+    return (json as List? ?? const []).cast<dynamic>();
+  }
+
+  /// Full provenance trace for a single outreach message.
+  Future<Map<String, dynamic>> fetchMessageTrace(String messageId) async {
+    final json = await _apiClient.getJson(
+      '/client/messages/$messageId/trace',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Read the governed outbound signature for the current client.
   /// Backend returns `{ signature: { ... } | null, preview: '<plaintext>' }`.
   Future<Map<String, dynamic>> fetchSignature() async {

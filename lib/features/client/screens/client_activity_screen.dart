@@ -4,6 +4,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/message_governance_panel.dart';
 
 class ClientActivityScreen extends StatelessWidget {
   const ClientActivityScreen({super.key});
@@ -35,6 +36,8 @@ class ClientActivityScreen extends StatelessWidget {
               _Hero(data: data),
               const SizedBox(height: 18),
               _MetricRow(data: data),
+              const SizedBox(height: 18),
+              const MessageGovernancePanel(),
               const SizedBox(height: 18),
               LayoutBuilder(
                 builder: (context, constraints) {
