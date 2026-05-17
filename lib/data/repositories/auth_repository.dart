@@ -257,10 +257,32 @@ class AuthRepository {
     });
   }
 
-  Future<void> verifyEmail(String token) async {
-    await _apiClient.postJson('/auth/email/verify', body: {
+  /// Verify an email-verification token. When the response includes
+  /// `trustedDeviceToken` (the backend issues one for the device that
+  /// clicked the link), persist it locally so the next JWT expiry on
+  /// this device does not force a 2FA code challenge. Without this
+  /// step the user has to do one code-challenge round after their
+  /// initial session expires, just to bootstrap the first trusted
+  /// device — the doctrine is to start the trusted window at email
+  /// verification time, since the link was delivered to the user's
+  /// own email and the click happens in their browser.
+  Future<Map<String, dynamic>> verifyEmail(String token) async {
+    final json = await _apiClient.postJson('/auth/email/verify', body: {
       'token': token,
+      'deviceName': 'Current device',
     });
+    final payload = json is Map
+        ? json.map((k, v) => MapEntry('$k', v))
+        : <String, dynamic>{};
+    final trustedDeviceToken =
+        payload['trustedDeviceToken']?.toString() ?? '';
+    if (trustedDeviceToken.isNotEmpty) {
+      await AuthSessionController.instance.saveTrustedDeviceToken(
+        trustedDeviceToken,
+        surface: 'client',
+      );
+    }
+    return payload;
   }
 
   Future<void> requestEmailVerification(String email) async {
