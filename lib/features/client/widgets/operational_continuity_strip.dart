@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/features/guidance/guidance_models.dart';
 import 'package:orchestrate_app/features/guidance/guidance_repository.dart';
+import 'package:orchestrate_app/features/system/widgets/trust_primitives.dart';
 
 /// Calm operational-continuity strip. Renders deterministic motion
 /// lines derived from real backend state (readiness bucket, mailbox
@@ -262,16 +263,22 @@ class _ContinuityRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final spec = _spec(line.kind, theme);
+    // Calm operational motion: pulse the dot for kinds that represent
+    // actively-progressing or attention-requiring states. Terminal
+    // states stay static so the strip reads as calm continuity rather
+    // than constant blinking.
+    final shouldPulse = line.kind == _ContinuityKind.preparing ||
+        line.kind == _ContinuityKind.recovering ||
+        line.kind == _ContinuityKind.action;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          margin: const EdgeInsets.only(top: 6, right: 10),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
+        Padding(
+          padding: const EdgeInsets.only(top: 2, right: 6),
+          child: PulsingDot(
             color: spec.color,
-            shape: BoxShape.circle,
+            size: 8,
+            pulse: shouldPulse,
           ),
         ),
         Expanded(

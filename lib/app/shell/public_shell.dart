@@ -306,6 +306,9 @@ class _PublicFooter extends StatelessWidget {
                           label: 'How Orchestrate operates',
                           onTap: () => context.go('/how-orchestrate-operates')),
                       _FooterLink(
+                          label: 'Activation progression',
+                          onTap: () => context.go('/activation')),
+                      _FooterLink(
                           label: 'Product',
                           onTap: () => context.go('/product')),
                       _FooterLink(
@@ -319,6 +322,9 @@ class _PublicFooter extends StatelessWidget {
                   _FooterGroup(
                     title: 'Trust architecture',
                     links: [
+                      _FooterLink(
+                          label: 'For evaluators',
+                          onTap: () => context.go('/for-evaluators')),
                       _FooterLink(
                           label: 'Trust architecture',
                           onTap: () => context.go('/trust-architecture')),

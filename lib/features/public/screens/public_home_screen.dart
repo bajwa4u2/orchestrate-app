@@ -916,13 +916,20 @@ class _BurdenTransformSection extends StatelessWidget {
             ],
           );
         }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: left),
-            const SizedBox(width: 18),
-            Expanded(child: right),
-          ],
+        // IntrinsicHeight is required so CrossAxisAlignment.stretch has
+        // a bounded vertical extent — the public shell wraps the home
+        // body in a SingleChildScrollView (unbounded height), and a
+        // stretching Row inside an unbounded height fails layout and
+        // blanks the body subtree on release builds.
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: left),
+              const SizedBox(width: 18),
+              Expanded(child: right),
+            ],
+          ),
         );
       },
     );

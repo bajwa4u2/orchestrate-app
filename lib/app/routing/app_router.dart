@@ -33,6 +33,8 @@ import 'package:orchestrate_app/features/operator/screens/operator_workspace_scr
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
 import 'package:orchestrate_app/features/public/screens/pricing_screen.dart';
 import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart';
+import 'package:orchestrate_app/features/public/screens/activation_preview_screen.dart';
+import 'package:orchestrate_app/features/public/screens/for_evaluators_screen.dart';
 import 'package:orchestrate_app/features/public/screens/orchestrate_operations_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_home_screen.dart';
@@ -892,6 +894,30 @@ final router = GoRouter(
             currentPath: state.uri.path,
             child: buildTrustArchitectureScreen()),
       ),
+    ),
+    GoRoute(
+      path: '/for-evaluators',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: const ForEvaluatorsScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/activation',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: const ActivationPreviewScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/security-evaluation',
+      redirect: (context, state) => '/for-evaluators',
+    ),
+    GoRoute(
+      path: '/trust-review',
+      redirect: (context, state) => '/for-evaluators',
     ),
     GoRoute(
         path: '/app/setup',
