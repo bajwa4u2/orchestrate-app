@@ -14,29 +14,21 @@ class PublicShell extends StatelessWidget {
   static const double _maxFrameWidth = 1320;
   static const double _footerReserveHeight = 168;
 
-  bool _shouldUsePublicChrome(String path) {
-    return path == '/' ||
-        path == '/product' ||
-        path == '/how-it-works' ||
-        path == '/ai-governed-revenue' ||
-        path == '/lead-sourcing' ||
-        path == '/trust-compliance' ||
-        path == '/pricing' ||
-        path == '/about' ||
-        path == '/contact' ||
-        path == '/intake' ||
-        path == '/newsletter' ||
-        path == '/newsletter/subscribe' ||
-        path.startsWith('/auth/') ||
-        path.startsWith('/legal/');
-  }
+  // PublicShell is the canonical chrome for every public route. The
+  // router never mounts it on a path that should bypass the chrome —
+  // every GoRoute that wraps a child in PublicShell wants the full
+  // header / footer / scroll experience. Previously a whitelist here
+  // silently dropped the chrome (and the SingleChildScrollView) for
+  // any path it did not know about, which caused new public routes
+  // such as /why-orchestrate, /how-orchestrate-operates,
+  // /trust-architecture, /for-evaluators, /activation, and
+  // /account-deletion to render shell-less + unscrollable ("frozen").
+  // Always rendering the chrome is the correct posture: a route that
+  // wants different chrome must mount its own scaffold instead of
+  // using PublicShell.
 
   @override
   Widget build(BuildContext context) {
-    if (!_shouldUsePublicChrome(currentPath)) {
-      return Theme(data: AppTheme.lightTheme, child: child);
-    }
-
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
