@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/operational_continuity_strip.dart';
@@ -26,7 +27,9 @@ class ClientOutreachScreen extends StatefulWidget {
 
 class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
   final ClientPortalRepository _repository = ClientPortalRepository();
-  late Future<Map<String, dynamic>> _future;
+  final ClientOutreachRepository _outreachRepository =
+      ClientOutreachRepository();
+  late Future<_OperationsData> _future;
 
   @override
   void initState() {
@@ -34,7 +37,19 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
     _future = _load();
   }
 
-  Future<Map<String, dynamic>> _load() => _repository.fetchOutreach();
+  Future<_OperationsData> _load() async {
+    final outreach = await _repository.fetchOutreach();
+    // Eligibility is the single backend authority. Failing fetches
+    // fall back to the per-screen-derived readiness so the page still
+    // renders during a transient outage rather than blank.
+    Map<String, dynamic> eligibility = const <String, dynamic>{};
+    try {
+      eligibility = await _outreachRepository.fetchExecutionEligibility();
+    } catch (_) {
+      eligibility = const <String, dynamic>{};
+    }
+    return _OperationsData(outreach: outreach, eligibility: eligibility);
+  }
 
   void _refresh() {
     setState(() => _future = _load());
@@ -42,7 +57,7 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
+    return FutureBuilder<_OperationsData>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
@@ -58,7 +73,9 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
             onRetry: _refresh,
           );
         }
-        final data = snapshot.data ?? const <String, dynamic>{};
+        final bundle = snapshot.data!;
+        final data = bundle.outreach;
+        final eligibility = bundle.eligibility;
         final readiness = asMap(data['readiness']);
         final summary = asMap(data['summary']);
         final mailbox = asMap(data['mailbox']);
@@ -93,15 +110,72 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'What Orchestrate is watching for you',
+              title: 'Readiness chain',
               subtitle:
-                  'These are the inputs Orchestrate needs from you. When everything reads "Ready", outreach runs without your involvement.',
-              children: _buildReadinessRows(readiness),
+                  'Single authoritative dependency chain from the backend. Each layer reports its real state; "waiting" rows are not your action yet.',
+              children: _buildEligibilityChainRows(eligibility) ??
+                  _buildReadinessRows(readiness),
             ),
           ],
         );
       },
     );
+  }
+
+  List<Widget>? _buildEligibilityChainRows(Map<String, dynamic> eligibility) {
+    final chain = eligibility['chain'];
+    if (chain is! List || chain.isEmpty) return null;
+    return [
+      for (final raw in chain)
+        _buildChainRow(asMap(raw)),
+    ];
+  }
+
+  Widget _buildChainRow(Map<String, dynamic> layer) {
+    final label = readText(layer, 'label');
+    final description = readText(layer, 'description');
+    final state = readText(layer, 'state');
+    final owner = readText(layer, 'owner');
+    final action = asMap(layer['action']);
+    final hasAction =
+        action.isNotEmpty && readText(action, 'route').isNotEmpty;
+    final badge = _stateBadge(state);
+    final isClientPending =
+        state == 'pending' && owner == 'client' && hasAction;
+    return ClientInfoRow(
+      title: label,
+      primary: description,
+      trailing: isClientPending
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClientBadge(label: badge),
+                const SizedBox(width: 8),
+                FilledButton.tonal(
+                  onPressed: () => context.push(readText(action, 'route')),
+                  child: Text(readText(action, 'label')),
+                ),
+              ],
+            )
+          : ClientBadge(label: badge),
+    );
+  }
+
+  String _stateBadge(String state) {
+    switch (state) {
+      case 'ready':
+        return 'Ready';
+      case 'pending':
+        return 'Needs you';
+      case 'waiting_for_prerequisite':
+        return 'Waiting';
+      case 'blocked':
+        return 'Blocked';
+      case 'not_applicable':
+        return 'N/A';
+      default:
+        return state.isEmpty ? 'Unknown' : state;
+    }
   }
 
   List<Widget> _buildActions(
@@ -253,6 +327,12 @@ class _ReadinessEntry {
   final String notReadyMessage;
   final String notReadyCtaLabel;
   final String notReadyRoute;
+}
+
+class _OperationsData {
+  const _OperationsData({required this.outreach, required this.eligibility});
+  final Map<String, dynamic> outreach;
+  final Map<String, dynamic> eligibility;
 }
 
 class _ManagedExecutionBanner extends StatelessWidget {

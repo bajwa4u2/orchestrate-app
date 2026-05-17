@@ -757,12 +757,12 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   }) {
     if (ready) {
       return const _MailboxHero(
-        headline: 'Sending identity is ready',
+        headline: 'Sending infrastructure is ready',
         subtitle:
-            'Orchestrate is running managed execution against your verified mailbox.',
-        bannerTitle: 'Ready to send',
+            'Domain identity, sending transport, and trust posture are all in place. Managed execution dispatches against this infrastructure.',
+        bannerTitle: 'Dispatch eligibility granted',
         bannerMessage:
-            'You do not need to do anything here unless your mailbox provider asks you to re-authorize.',
+            'No action required here unless your provider asks you to re-authorize the OAuth grant.',
         bannerTone: ClientBannerTone.success,
       );
     }

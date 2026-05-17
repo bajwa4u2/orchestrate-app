@@ -6,6 +6,18 @@ class ClientOutreachRepository {
 
   final ApiClient _apiClient;
 
+  /// Single execution-eligibility authority. Every readiness-aware
+  /// surface reads from this one endpoint so state never drifts
+  /// between Operations, Infrastructure, Settings, Home, and the
+  /// guidance drawer.
+  Future<Map<String, dynamic>> fetchExecutionEligibility() async {
+    final json = await _apiClient.getJson(
+      '/client/execution-eligibility',
+      surface: ApiSurface.client,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<List<dynamic>> fetchReplies({int limit = 12}) async {
     final json = await _apiClient.getJson(
       '/replies',
