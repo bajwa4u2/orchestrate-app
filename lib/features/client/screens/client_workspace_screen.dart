@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/blocker_resolution_card.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/operational_continuity_strip.dart';
 
@@ -43,6 +45,14 @@ class ClientHomeScreen extends StatelessWidget {
                 const OperationalContinuityStrip(
                     surface: 'client_overview_home'),
                 const SizedBox(height: 18),
+                if (data.blockers.isNotEmpty || !data.authorized) ...[
+                  _BlockerCard(
+                    blockers: data.blockers,
+                    authorized: data.authorized,
+                    authAcceptedAt: data.authAcceptedAt,
+                  ),
+                  const SizedBox(height: 18),
+                ],
               ],
               _MetricRow(metrics: data.metrics),
               const SizedBox(height: 18),
@@ -80,10 +90,23 @@ class ClientHomeScreen extends StatelessWidget {
     final session = AuthSessionController.instance;
     final workspaceRepo = ClientWorkspaceRepository();
     final billingRepo = ClientBillingRepository();
+    final portalRepo = ClientPortalRepository();
     final overview = await workspaceRepo.fetchOverview();
     final notifications = await workspaceRepo.fetchNotifications();
     final subscription = await workspaceRepo.fetchSubscription();
     final invoices = await billingRepo.fetchInvoices();
+    final outreach = section == ClientSection.home
+        ? await _safeFetch(() => portalRepo.fetchOutreach())
+        : const <String, dynamic>{};
+    final auth = section == ClientSection.home
+        ? await _safeFetch(() => portalRepo.fetchRepresentationAuth())
+        : const <String, dynamic>{};
+    final readiness = _asMap(outreach['readiness']);
+    final blockers = (readiness['blockers'] is List)
+        ? readiness['blockers'] as List<dynamic>
+        : const <dynamic>[];
+    final authorized = auth['authorized'] == true;
+    final authAcceptedAt = _asMap(auth['latest'])['acceptedAt'];
 
     final client = _asMap(overview['client']);
     final activity = _asMap(overview['activity']);
@@ -101,6 +124,9 @@ class ClientHomeScreen extends StatelessWidget {
         title: 'Billing and service standing',
         subtitle:
             'Billing stays separate from targeting, leads, and meetings so account standing remains clear.',
+        blockers: blockers,
+        authorized: authorized,
+        authAcceptedAt: authAcceptedAt,
         metrics: [
           _Metric(
               'Status',
@@ -153,6 +179,9 @@ class ClientHomeScreen extends StatelessWidget {
       subtitle: session.normalizedSubscriptionStatus == 'active'
           ? 'Home keeps the client system visible without duplicating targeting or operator views.'
           : 'Home keeps setup, billing standing, and activation readiness visible before service is fully active.',
+      blockers: blockers,
+      authorized: authorized,
+      authAcceptedAt: authAcceptedAt,
       metrics: [
         _Metric('Account state',
             session.hasSetupCompleted ? 'Setup complete' : 'Setup incomplete'),
@@ -236,7 +265,10 @@ class _ViewData {
       required this.primaryEmpty,
       required this.secondaryTitle,
       required this.secondaryRows,
-      required this.secondaryEmpty});
+      required this.secondaryEmpty,
+      this.blockers = const <dynamic>[],
+      this.authorized = true,
+      this.authAcceptedAt});
   final String title;
   final String subtitle;
   final List<_Metric> metrics;
@@ -246,6 +278,60 @@ class _ViewData {
   final String secondaryTitle;
   final List<_Row> secondaryRows;
   final String secondaryEmpty;
+  final List<dynamic> blockers;
+  final bool authorized;
+  final dynamic authAcceptedAt;
+}
+
+Future<Map<String, dynamic>> _safeFetch(
+    Future<Map<String, dynamic>> Function() fetch) async {
+  try {
+    return await fetch();
+  } catch (_) {
+    return const <String, dynamic>{};
+  }
+}
+
+class _BlockerCard extends StatelessWidget {
+  const _BlockerCard({
+    required this.blockers,
+    required this.authorized,
+    required this.authAcceptedAt,
+  });
+
+  final List<dynamic> blockers;
+  final bool authorized;
+  final dynamic authAcceptedAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Readiness blockers — paths to resolve',
+            style: theme.textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 14),
+          BlockerResolutionList(
+            blockers: blockers,
+            authorized: authorized,
+            authAcceptedAt: authAcceptedAt,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _Metric {

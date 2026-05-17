@@ -176,6 +176,8 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         readyMessage: 'Complete — Orchestrate has your offer and market.',
         notReadyMessage:
             'Open Setup to give Orchestrate your offer and target market.',
+        notReadyCtaLabel: 'Complete setup',
+        notReadyRoute: '/client/setup',
       ),
       _ReadinessEntry(
         label: 'Representation authorization',
@@ -183,20 +185,27 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         readyMessage:
             'You have authorized Orchestrate to send outreach on your behalf.',
         notReadyMessage:
-            'Authorize Orchestrate from the Campaign screen so we can send for you.',
+            'Authorize Orchestrate from Representation so we can send for you.',
+        notReadyCtaLabel: 'Authorize representation',
+        notReadyRoute: '/client/representation',
       ),
       _ReadinessEntry(
         label: 'Sending mailbox',
         ready: readiness['mailboxReady'] == true,
         readyMessage: 'Connected and verified.',
-        notReadyMessage: 'Connect or verify the mailbox we should send from.',
+        notReadyMessage:
+            'Connect or verify the mailbox we should send from. Google sign-in does not connect your sending mailbox.',
+        notReadyCtaLabel: 'Connect mailbox',
+        notReadyRoute: '/client/infrastructure',
       ),
       _ReadinessEntry(
         label: 'Outbound sending identity',
         ready: readiness['outboundEmailReady'] == true,
         readyMessage: 'Sending identity is ready.',
         notReadyMessage:
-            'Sending identity is not yet verified. Open Mailbox to complete it.',
+            'Sending identity is not yet verified. Open Infrastructure to complete it.',
+        notReadyCtaLabel: 'Verify sending identity',
+        notReadyRoute: '/client/infrastructure',
       ),
     ];
 
@@ -205,7 +214,19 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         ClientInfoRow(
           title: entry.label,
           primary: entry.ready ? entry.readyMessage : entry.notReadyMessage,
-          trailing: ClientBadge(label: entry.ready ? 'Ready' : 'Needs you'),
+          trailing: entry.ready
+              ? const ClientBadge(label: 'Ready')
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const ClientBadge(label: 'Needs you'),
+                    const SizedBox(width: 8),
+                    FilledButton.tonal(
+                      onPressed: () => context.push(entry.notReadyRoute),
+                      child: Text(entry.notReadyCtaLabel),
+                    ),
+                  ],
+                ),
         ),
     ];
   }
@@ -217,12 +238,16 @@ class _ReadinessEntry {
     required this.ready,
     required this.readyMessage,
     required this.notReadyMessage,
+    required this.notReadyCtaLabel,
+    required this.notReadyRoute,
   });
 
   final String label;
   final bool ready;
   final String readyMessage;
   final String notReadyMessage;
+  final String notReadyCtaLabel;
+  final String notReadyRoute;
 }
 
 class _ManagedExecutionBanner extends StatelessWidget {

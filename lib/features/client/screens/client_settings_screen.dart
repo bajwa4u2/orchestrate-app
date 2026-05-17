@@ -6,6 +6,7 @@ import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/blocker_resolution_card.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientSettingsScreen extends StatefulWidget {
@@ -215,27 +216,15 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Permissions',
+              title: 'Permissions and readiness',
               subtitle:
-                  'Permissions determine whether Orchestrate can represent your business in outreach.',
+                  'Each item below names what is blocked, who owns it, and the path to resolve it.',
               children: [
-                ClientInfoRow(
-                  title: 'Representation authorization',
-                  primary: data.auth['authorized'] == true
-                      ? 'Current authorization is recorded.'
-                      : 'Representation authorization is not recorded yet.',
-                  secondary:
-                      dateLabel(asMap(data.auth['latest'])['acceptedAt']),
-                ),
-                ClientInfoRow(
-                  title: 'Outreach readiness',
-                  primary: blockers.isEmpty
-                      ? 'No blockers reported.'
-                      : '${blockers.length} blockers reported.',
-                  secondary: blockers
-                      .map((item) => readText(asMap(item), 'label'))
-                      .where((item) => item.isNotEmpty)
-                      .join(' · '),
+                BlockerResolutionList(
+                  blockers: blockers,
+                  authorized: authorized,
+                  authAcceptedAt: asMap(data.auth['latest'])['acceptedAt'],
+                  onReturned: _retry,
                 ),
               ],
             ),
@@ -377,3 +366,4 @@ class _TrustedDeviceRow extends StatelessWidget {
     );
   }
 }
+
