@@ -71,6 +71,19 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Attach a sending domain independently of mailbox connection.
+  /// Lets a client publish SPF / DMARC and begin DNS verification
+  /// before selecting a transport (Google / Microsoft / SMTP / future
+  /// adapters). Returns the same shape as [fetchSendingDomain].
+  Future<Map<String, dynamic>> attachSendingDomain(String domain) async {
+    final json = await _apiClient.postJson(
+      '/client/mailbox/domain/attach',
+      body: <String, dynamic>{'domain': domain},
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Kick off a backend-owned OAuth mailbox connect for [provider]
   /// (`google` or `microsoft`). Returns `{ authorizeUrl, state,
   /// mailboxId, expiresAtIso }` — the caller opens [authorizeUrl] in

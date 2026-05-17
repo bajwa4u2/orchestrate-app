@@ -18,7 +18,13 @@ import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
 /// of operational toggles. There is at most one client CTA at a time — the
 /// next concrete identity step Orchestrate needs from the client.
 class ClientMailboxScreen extends StatefulWidget {
-  const ClientMailboxScreen({super.key});
+  const ClientMailboxScreen({super.key, this.focus});
+
+  /// Optional deep-link hint. `focus=domain` scrolls the page to the
+  /// Sending domain panel on first build so "Verify sending identity"
+  /// from Operations lands directly on DNS, not on the transport
+  /// section.
+  final String? focus;
 
   @override
   State<ClientMailboxScreen> createState() => _ClientMailboxScreenState();
@@ -30,9 +36,55 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       ClientOutreachRepository();
   final ClientAccountRepository _accountRepository = ClientAccountRepository();
   late Future<_MailboxViewData> _future = _load();
+  final GlobalKey _sendingDomainAnchor = GlobalKey();
+  final TextEditingController _domainAttachController = TextEditingController();
   String? _oauthInflightProvider;
   bool _verifyingDomain = false;
+  bool _attachingDomain = false;
   String? _resultMessage;
+  bool _focusHandled = false;
+
+  @override
+  void dispose() {
+    _domainAttachController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _attachDomain(String domain) async {
+    final trimmed = domain.trim();
+    if (trimmed.isEmpty) return;
+    setState(() {
+      _attachingDomain = true;
+      _resultMessage = null;
+    });
+    try {
+      await _mailboxRepository.attachSendingDomain(trimmed);
+      if (!mounted) return;
+      setState(() {
+        _resultMessage =
+            'Sending domain $trimmed attached. Publish SPF and DMARC at your registrar, then check verification.';
+        _future = _load();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _resultMessage = 'Could not attach $trimmed: $error';
+      });
+    } finally {
+      if (mounted) setState(() => _attachingDomain = false);
+    }
+  }
+
+  void _scrollToSendingDomain() {
+    final ctx = _sendingDomainAnchor.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      alignment: 0.05,
+    );
+  }
 
   /// Open the backend-owned OAuth flow for [provider] (`google` or
   /// `microsoft`). The backend returns an authorize URL; the app opens
@@ -132,6 +184,16 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
           );
         }
         final data = snapshot.data!;
+        // First time we land with focus=domain, scroll to the sending
+        // domain panel once the layout settles. This is what makes
+        // "Verify sending identity" from Operations route directly to
+        // DNS instead of looping through transport.
+        if (!_focusHandled && widget.focus == 'domain') {
+          _focusHandled = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _scrollToSendingDomain();
+          });
+        }
         return ClientPage(
           eyebrow: 'Infrastructure',
           title: data.headline,
@@ -160,28 +222,40 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
               providerAvailability: data.providerAvailability,
             ),
             const SizedBox(height: 18),
+            // Sending domain panel comes BEFORE transport / mailbox
+            // readiness. Domain identity is primary; provider transport
+            // is interchangeable infrastructure beneath it.
+            KeyedSubtree(
+              key: _sendingDomainAnchor,
+              child: _SendingDomainPanel(
+                identity: data.sendingIdentity,
+                inferredDomain: data.operationalIdentity.domain,
+                inferredDomainSource: data.operationalIdentity.domainSource,
+                attaching: _attachingDomain,
+                verifying: _verifyingDomain,
+                onAttach: _attachDomain,
+                onVerify: _checkSendingIdentity,
+                domainController: _domainAttachController,
+              ),
+            ),
+            const SizedBox(height: 18),
+            _TransportChoicesPanel(
+              providerAvailability: data.providerAvailability,
+              hasMailbox: data.operationalIdentity.mailboxAddress.isNotEmpty,
+            ),
+            const SizedBox(height: 18),
             ClientPanel(
-              title: 'Identity readiness',
+              title: 'Readiness chain',
               subtitle:
-                  'Orchestrate dispatches from this mailbox on your behalf. Each item below must be verified before dispatch eligibility is granted.',
+                  'Each layer below depends on the one above. "Waiting" rows are not your action yet — they unblock automatically once the prerequisite clears.',
               children: [
                 for (final step in data.identitySteps)
                   ClientInfoRow(
                     title: step.label,
                     primary: step.description,
-                    trailing: ClientBadge(
-                      label: step.complete ? 'Ready' : 'Needs you',
-                    ),
+                    trailing: ClientBadge(label: step.badge),
                   ),
               ],
-            ),
-            const SizedBox(height: 18),
-            _SendingIdentityPanel(
-              identity: data.sendingIdentity,
-              inferredDomain: data.operationalIdentity.domain,
-              inferredDomainSource: data.operationalIdentity.domainSource,
-              verifying: _verifyingDomain,
-              onVerify: _checkSendingIdentity,
             ),
             const SizedBox(height: 18),
             ClientPanel(
@@ -310,27 +384,75 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       );
     }).toList();
 
+    // Build a dependency-aware readiness chain. The directive forbids
+    // "lost authorization" language when no mailbox was ever connected
+    // and forbids downstream steps showing "Needs you" when they are
+    // actually waiting on a prerequisite. The chain order:
+    //   1. Sending domain attached
+    //   2. Transport / mailbox connected
+    //   3. Connection authorized
+    //   4. Sending identity verified (DNS)
+    final domainAttached = sendingDomain.isNotEmpty &&
+        readText(sendingDomain, 'domain').trim().isNotEmpty &&
+        readText(sendingDomain, 'status').toLowerCase() != 'no_domain';
+    final hasMailbox = mailbox.isNotEmpty;
+    final connectedFlag = readText(mailbox, 'connected').toLowerCase() == 'true';
+    final verifiedFlag = readText(mailbox, 'verified').toLowerCase() == 'true';
+    final dnsVerified = sendingDomain['ready'] == true;
+
     final identitySteps = <_IdentityStep>[
       _IdentityStep(
-        label: 'Mailbox connected',
-        complete: mailbox.isNotEmpty,
-        description: mailbox.isNotEmpty
+        label: 'Sending domain attached',
+        complete: domainAttached,
+        badge: domainAttached ? 'Attached' : 'Needs you',
+        description: domainAttached
+            ? 'Sending domain: ${readText(sendingDomain, 'domain')}.'
+            : 'Confirm or attach the domain Orchestrate will dispatch from. Use the panel above.',
+      ),
+      _IdentityStep(
+        label: 'Sending transport connected',
+        complete: hasMailbox,
+        badge: hasMailbox
+            ? 'Connected'
+            : domainAttached
+                ? 'Needs you'
+                : 'Waiting for domain',
+        description: hasMailbox
             ? 'Connected: ${readText(mailbox, 'address', fallback: readText(mailbox, 'fromEmail'))}.'
-            : 'No mailbox is connected yet. Orchestrate cannot send without one.',
+            : domainAttached
+                ? 'Choose a sending transport — Google mailbox, Microsoft 365 mailbox, or a custom SMTP provider.'
+                : 'Attach a sending domain first; the transport layer plugs into it.',
       ),
       _IdentityStep(
         label: 'Connection authorized',
-        complete: readText(mailbox, 'connected').toLowerCase() == 'true',
-        description: readText(mailbox, 'connected').toLowerCase() == 'true'
-            ? 'The mailbox is connected and authorized for sending.'
-            : 'The mailbox lost authorization. Reconnect to resume sending.',
+        complete: connectedFlag,
+        // Critical truthfulness fix: only report "lost authorization"
+        // if a mailbox actually exists. Without one, this step is
+        // waiting on the transport, not on a re-grant.
+        badge: connectedFlag
+            ? 'Authorized'
+            : hasMailbox
+                ? 'Reconnect required'
+                : 'Waiting for transport',
+        description: connectedFlag
+            ? 'The transport is connected and authorized for sending.'
+            : hasMailbox
+                ? 'The connected transport is no longer authorized. Reconnect to resume.'
+                : 'No transport is connected yet, so there is no OAuth grant to maintain.',
       ),
       _IdentityStep(
-        label: 'Sending identity verified',
-        complete: readText(mailbox, 'verified').toLowerCase() == 'true',
-        description: readText(mailbox, 'verified').toLowerCase() == 'true'
-            ? 'Your sending identity has been verified for outbound delivery.'
-            : 'Verify the sending identity so Orchestrate can deliver on your behalf.',
+        label: 'Sending identity verified (SPF / DKIM / DMARC)',
+        complete: dnsVerified || verifiedFlag,
+        badge: (dnsVerified || verifiedFlag)
+            ? 'Verified'
+            : domainAttached
+                ? 'DNS pending'
+                : 'Waiting for domain',
+        description: (dnsVerified || verifiedFlag)
+            ? 'SPF, DKIM, and DMARC all matched at the last DNS check.'
+            : domainAttached
+                ? 'Publish the SPF / DKIM / DMARC records shown in the Sending domain panel above, then check verification.'
+                : 'Attach a sending domain to see the SPF / DKIM / DMARC records to publish.',
       ),
     ];
 
@@ -659,19 +781,19 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     }
     if (!hasMailbox) {
       return const _MailboxHero(
-        headline: 'Connect your sending mailbox',
+        headline: 'Attach sending infrastructure',
         subtitle:
-            'Orchestrate dispatches from the mailbox you connect. The OAuth handshake runs backend-side and no credentials are stored in the browser.',
-        bannerTitle: 'A mailbox is required for dispatch eligibility',
+            'Orchestrate dispatches against your domain identity. Start with the sending domain — SPF and DMARC become publishable immediately. The transport layer (Google, Microsoft 365, SMTP) plugs in beneath.',
+        bannerTitle: 'Sending infrastructure is incomplete',
         bannerMessage:
-            'Use the buttons above to grant Orchestrate access to a sending mailbox. You will be redirected to your provider to approve.',
+            'Attach a sending domain in the panel below, then choose a transport. Dispatch eligibility is granted once both layers and DNS verification clear.',
         bannerTone: ClientBannerTone.warning,
       );
     }
     return const _MailboxHero(
       headline: 'Finish verifying your sending identity',
       subtitle:
-          'A mailbox is connected but one identity layer is still pending. Resolve it to unlock dispatch eligibility.',
+          'A transport is connected but one identity layer is still pending. Resolve it to unlock dispatch eligibility.',
       bannerTitle: 'One identity layer remaining',
       bannerMessage:
           'Resolve the pending identity layer. Dispatch eligibility is granted as soon as it clears.',
@@ -860,20 +982,25 @@ class _IdentityStep {
     required this.label,
     required this.complete,
     required this.description,
+    required this.badge,
   });
 
   final String label;
   final bool complete;
   final String description;
+  final String badge;
 }
 
-class _SendingIdentityPanel extends StatelessWidget {
-  const _SendingIdentityPanel({
+class _SendingDomainPanel extends StatelessWidget {
+  const _SendingDomainPanel({
     required this.identity,
     required this.inferredDomain,
     required this.inferredDomainSource,
+    required this.attaching,
     required this.verifying,
+    required this.onAttach,
     required this.onVerify,
+    required this.domainController,
   });
 
   final _SendingIdentity identity;
@@ -882,24 +1009,76 @@ class _SendingIdentityPanel extends StatelessWidget {
   /// names a concrete domain rather than reading as blank.
   final String inferredDomain;
   final String inferredDomainSource;
+  final bool attaching;
   final bool verifying;
+  final Future<void> Function(String domain) onAttach;
   final VoidCallback onVerify;
+  final TextEditingController domainController;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (!identity.present) {
-      final hasInferred = inferredDomain.trim().isNotEmpty;
-      final emptyMessage = hasInferred
-          ? 'No sending domain attached yet. Your operational domain identity '
-              '(${inferredDomain}) is inferred from ${inferredDomainSource == "inferred_from_mailbox" ? "your connected mailbox" : inferredDomainSource == "inferred_from_representation" ? "your Representation profile" : "your identity"}; connect a mailbox so Orchestrate can attach it as the verified sending domain.'
-          : 'No sending domain configured. Connect a mailbox to start sending-identity verification.';
+      // Domain identity is primary. The user must be able to attach a
+      // domain BEFORE selecting a transport. Prefill the text field
+      // with the inferred domain (from Representation or mailbox)
+      // when available so the action is one tap.
+      final inferred = inferredDomain.trim();
+      if (inferred.isNotEmpty && domainController.text.isEmpty) {
+        domainController.text = inferred;
+      }
+      final sourceLabel = inferredDomainSource == 'inferred_from_mailbox'
+          ? 'your connected mailbox'
+          : inferredDomainSource == 'inferred_from_representation'
+              ? 'your Representation profile'
+              : null;
       return ClientPanel(
-        title: 'Sending domain (SPF / DKIM / DMARC)',
+        title: 'Sending domain',
         subtitle:
-            'A sending domain is the public identity Orchestrate dispatches from. It is attached to your mailbox once a connection is established.',
+            'The domain Orchestrate dispatches from. Attach it first — SPF and DMARC become publishable immediately. DKIM keys are generated per transport when you connect one.',
         children: [
-          ClientEmptyState(message: emptyMessage),
+          if (inferred.isNotEmpty && sourceLabel != null) ...[
+            Text(
+              'Detected $inferred from $sourceLabel.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: domainController,
+                  decoration: const InputDecoration(
+                    labelText: 'Sending domain',
+                    hintText: 'e.g. outreach.company.com',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  enabled: !attaching,
+                ),
+              ),
+              const SizedBox(width: 10),
+              FilledButton.icon(
+                onPressed: attaching
+                    ? null
+                    : () => onAttach(domainController.text),
+                icon: attaching
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.link, size: 18),
+                label: Text(attaching ? 'Attaching' : 'Attach domain'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Examples: auraplatform.org, outreach.company.com, mail.company.com. Any apex or subdomain you control.',
+            style: theme.textTheme.bodySmall,
+          ),
         ],
       );
     }
@@ -1207,6 +1386,78 @@ class _CopyRecordButtonState extends State<_CopyRecordButton> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         minimumSize: const Size(0, 32),
       ),
+    );
+  }
+}
+
+/// Sending transport choices. Providers sit beneath the domain layer:
+/// the domain is identity, the transport is interchangeable infrastructure.
+/// Connect buttons for Google / Microsoft live in the page actions; this
+/// panel exists so the client sees the full transport landscape (including
+/// SMTP / custom adapters) and understands provider parity is not implied.
+class _TransportChoicesPanel extends StatelessWidget {
+  const _TransportChoicesPanel({
+    required this.providerAvailability,
+    required this.hasMailbox,
+  });
+
+  final Map<String, _ProviderAvailabilityEntry> providerAvailability;
+  final bool hasMailbox;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final google = providerAvailability['google'];
+    final microsoft = providerAvailability['microsoft'];
+    Widget tile({
+      required String title,
+      required String body,
+      required String badge,
+    }) {
+      return ClientInfoRow(
+        title: title,
+        primary: body,
+        trailing: ClientBadge(label: badge),
+      );
+    }
+
+    return ClientPanel(
+      title: 'Sending transport',
+      subtitle:
+          'Transport is how Orchestrate physically dispatches messages — interchangeable infrastructure beneath your domain identity. Pick one when ready.',
+      children: [
+        tile(
+          title: 'Google Workspace mailbox',
+          body: google == null
+              ? 'OAuth-based connection. Tap "Connect a Google mailbox" in the page header.'
+              : google.available
+                  ? 'OAuth-based connection. Use the Connect action in the page header.'
+                  : 'Provider setup pending on this deployment — not yet operational.',
+          badge: google?.available == true ? 'Available' : 'Setup pending',
+        ),
+        tile(
+          title: 'Microsoft 365 mailbox',
+          body: microsoft == null
+              ? 'OAuth-based connection. Tap "Connect a Microsoft 365 mailbox" in the page header.'
+              : microsoft.available
+                  ? 'OAuth-based connection. Use the Connect action in the page header.'
+                  : 'Provider setup pending on this deployment — not yet operational.',
+          badge: microsoft?.available == true ? 'Available' : 'Setup pending',
+        ),
+        tile(
+          title: 'SMTP / custom sending infrastructure',
+          body:
+              'For dedicated infrastructure, custom mail servers, or third-party SMTP. Adapter is on the roadmap — contact support to scope a deployment-specific configuration.',
+          badge: 'Coming soon',
+        ),
+        if (!hasMailbox) ...[
+          const SizedBox(height: 8),
+          Text(
+            'No transport is connected yet. Domain attachment + DNS verification are independent of transport selection — both can progress in parallel.',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ],
     );
   }
 }

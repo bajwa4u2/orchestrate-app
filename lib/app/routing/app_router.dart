@@ -838,7 +838,9 @@ final router = GoRouter(
         // consolidated under one surface (was /client/mailbox).
         GoRoute(
             path: '/client/infrastructure',
-            builder: (context, state) => const ClientMailboxScreen()),
+            builder: (context, state) => ClientMailboxScreen(
+                  focus: state.uri.queryParameters['focus'],
+                )),
         GoRoute(
             path: '/client/mailbox',
             redirect: (context, state) => '/client/infrastructure'),

@@ -160,8 +160,13 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
       case 'connect_mailbox':
       case 'reconnect_mailbox':
       case 'verify_mailbox':
-      case 'verify_sending_identity':
         context.go('/client/infrastructure');
+        return;
+      case 'verify_sending_identity':
+        // Domain-first continuity: verification lives on the Sending
+        // domain panel, not in the mailbox/transport flow. focus=domain
+        // makes Infrastructure scroll the user straight to DNS.
+        context.go('/client/infrastructure?focus=domain');
         return;
       default:
         context.go('/client/settings');
@@ -203,9 +208,9 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
         ready: readiness['outboundEmailReady'] == true,
         readyMessage: 'Sending identity is ready.',
         notReadyMessage:
-            'Sending identity is not yet verified. Open Infrastructure to complete it.',
+            'Sending identity is not yet verified. Open Infrastructure to publish SPF / DKIM / DMARC and check verification.',
         notReadyCtaLabel: 'Verify sending identity',
-        notReadyRoute: '/client/infrastructure',
+        notReadyRoute: '/client/infrastructure?focus=domain',
       ),
     ];
 

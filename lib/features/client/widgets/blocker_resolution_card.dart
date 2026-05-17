@@ -187,7 +187,9 @@ BlockerAction resolveBlockerAction(String code) {
       return const BlockerAction(
         owner: 'You',
         ctaLabel: 'Verify sending identity',
-        route: '/client/infrastructure',
+        // Domain-first continuity: focus=domain anchors the user on
+        // the Sending domain panel instead of the transport area.
+        route: '/client/infrastructure?focus=domain',
         fallbackTitle: 'Sending identity unverified',
         fallbackDetail:
             'SPF, DKIM, and DMARC must match before managed execution dispatches from this domain.',
