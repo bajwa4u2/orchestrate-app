@@ -6,6 +6,7 @@ import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
@@ -21,6 +22,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
       ClientWorkspaceRepository();
   final ClientAccountRepository _accountRepository = ClientAccountRepository();
   final ClientBillingRepository _billingRepository = ClientBillingRepository();
+  final ClientPortalRepository _portalRepository = ClientPortalRepository();
 
   late Future<_AccountViewData> _future;
 
@@ -34,10 +36,23 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
     final overview = await _workspaceRepository.fetchOverview();
     final profile = await _accountRepository.fetchClientProfile();
     final subscription = await _billingRepository.fetchSubscription();
+    // Readiness is the truthful operational state; without it the
+    // Account state metric over-promises ("Active" even when blockers
+    // exist). Failures here must not break the rest of the screen.
+    Map<String, dynamic> outreach = const <String, dynamic>{};
+    Map<String, dynamic> auth = const <String, dynamic>{};
+    try {
+      outreach = await _portalRepository.fetchOutreach();
+    } catch (_) {}
+    try {
+      auth = await _portalRepository.fetchRepresentationAuth();
+    } catch (_) {}
     return _AccountViewData(
       overview: overview,
       profile: profile,
       subscription: subscription,
+      outreach: outreach,
+      auth: auth,
     );
   }
 
@@ -108,10 +123,23 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
 
         final data = snapshot.data!;
         final session = AuthSessionController.instance;
-        final profile = data.profile;
+        // Backend response shape is `{profile: {...fields}, mailbox, imports}`.
+        // Unwrap before reading; the raw map's top-level keys are the
+        // envelope, not the profile fields. Without this, every field
+        // read returns empty and the screen reports "No public links
+        // added yet" even after a successful save.
+        final rawProfile = data.profile;
+        final profile = _asMap(rawProfile['profile']).isNotEmpty
+            ? _asMap(rawProfile['profile'])
+            : rawProfile;
         final subscription = data.subscription ?? const <String, dynamic>{};
         final client = _asMap(data.overview['client']);
         final billing = _asMap(data.overview['billing']);
+        final readiness = _asMap(data.outreach['readiness']);
+        final blockers = (readiness['blockers'] is List)
+            ? readiness['blockers'] as List<dynamic>
+            : const <dynamic>[];
+        final authorized = data.auth['authorized'] == true;
 
         final workspaceName =
             _displayIdentity(profile, fallback: _displayIdentity(client));
@@ -152,7 +180,12 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
               _MetricStrip(
                 metrics: [
                   _MetricData(
-                      label: 'Account state', value: _accountState(session)),
+                      label: 'Account state',
+                      value: _accountState(
+                        session,
+                        blockers: blockers,
+                        authorized: authorized,
+                      )),
                   _MetricData(label: 'Plan', value: planLabel),
                   _MetricData(label: 'Billing', value: billingStatus),
                   _MetricData(
@@ -296,16 +329,26 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
   @override
   void initState() {
     super.initState();
-    final p = widget.initialProfile;
+    // The dialog receives the raw GET envelope `{profile: {...}, ...}`
+    // or the unwrapped profile. Resolve both so editing pre-populates
+    // with the actual stored values, not with empty fields.
+    final raw = widget.initialProfile;
+    final p = _asMap(raw['profile']).isNotEmpty ? _asMap(raw['profile']) : raw;
+    // brandName and welcomeHeadline live under branding.* in the
+    // backend response — read from there with profile.* as a fallback.
+    final branding = _asMap(p['branding']);
     _displayName = TextEditingController(text: _read(p, 'displayName'));
     _legalName = TextEditingController(text: _read(p, 'legalName'));
-    _brandName = TextEditingController(text: _read(p, 'brandName'));
+    _brandName = TextEditingController(
+        text: _read(branding, 'brandName', fallback: _read(p, 'brandName')));
     _websiteUrl = TextEditingController(text: _read(p, 'websiteUrl'));
     _bookingUrl = TextEditingController(text: _read(p, 'bookingUrl'));
     _timezone = TextEditingController(text: _read(p, 'primaryTimezone'));
     _currency =
         TextEditingController(text: _read(p, 'currencyCode', fallback: 'USD'));
-    _headline = TextEditingController(text: _read(p, 'welcomeHeadline'));
+    _headline = TextEditingController(
+        text: _read(branding, 'welcomeHeadline',
+            fallback: _read(p, 'welcomeHeadline')));
   }
 
   @override
@@ -846,11 +889,15 @@ class _AccountViewData {
     required this.overview,
     required this.profile,
     required this.subscription,
+    this.outreach = const <String, dynamic>{},
+    this.auth = const <String, dynamic>{},
   });
 
   final Map<String, dynamic> overview;
   final Map<String, dynamic> profile;
   final Map<String, dynamic>? subscription;
+  final Map<String, dynamic> outreach;
+  final Map<String, dynamic> auth;
 }
 
 class _MetricData {
@@ -952,11 +999,23 @@ String _displayIdentity(Map<String, dynamic> map,
   return fallback;
 }
 
-String _accountState(AuthSessionController session) {
+String _accountState(
+  AuthSessionController session, {
+  required List<dynamic> blockers,
+  required bool authorized,
+}) {
   if (!session.emailVerified) return 'Verification pending';
-  if (!session.hasSetupCompleted) return 'Draft';
-  if (session.normalizedSubscriptionStatus == 'active') return 'Active';
-  return 'Review';
+  if (!session.hasSetupCompleted) return 'Setup incomplete';
+  // Subscription is the first operational gate; without it execution
+  // is blocked regardless of readiness state.
+  if (session.normalizedSubscriptionStatus != 'active') return 'Billing review';
+  // Setup recorded + billing active is necessary but not sufficient —
+  // representation authorization and the rest of the readiness chain
+  // must also clear before the account is operationally active.
+  if (!authorized || blockers.isNotEmpty) {
+    return 'Readiness pending';
+  }
+  return 'Active';
 }
 
 int _intValue(dynamic value) {

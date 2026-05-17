@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
@@ -177,6 +178,8 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
             const SizedBox(height: 18),
             _SendingIdentityPanel(
               identity: data.sendingIdentity,
+              inferredDomain: data.operationalIdentity.domain,
+              inferredDomainSource: data.operationalIdentity.domainSource,
               verifying: _verifyingDomain,
               onVerify: _checkSendingIdentity,
             ),
@@ -455,7 +458,13 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   }
 
   _SendingIdentity _readSendingDomain(Map<String, dynamic> map) {
-    if (map.isEmpty) {
+    // Treat both an empty payload and the backend's explicit no_domain
+    // sentinel (returned when no SendingDomain row exists) as "not
+    // attached" so downstream UI surfaces the empty-state path instead
+    // of rendering "Domain: not yet attached" with a blank value.
+    final status = readText(map, 'status').toLowerCase();
+    final domainValue = readText(map, 'domain').trim();
+    if (map.isEmpty || status == 'no_domain' || domainValue.isEmpty) {
       return const _SendingIdentity(
         present: false,
         domain: '',
@@ -564,7 +573,9 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       if (isAvailable('google')) {
         actions.add(_MailboxPrimaryAction(
           code: 'connect_google',
-          label: mailboxId == null ? 'Connect Gmail' : 'Reconnect Gmail',
+          label: mailboxId == null
+              ? 'Connect a Google mailbox'
+              : 'Reconnect Google mailbox',
           icon: Icons.alternate_email,
           oauthProvider: 'google',
           mailboxId: mailboxId,
@@ -574,8 +585,8 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         actions.add(_MailboxPrimaryAction(
           code: 'connect_microsoft',
           label: mailboxId == null
-              ? 'Connect Microsoft 365'
-              : 'Reconnect Microsoft 365',
+              ? 'Connect a Microsoft 365 mailbox'
+              : 'Reconnect Microsoft 365 mailbox',
           icon: Icons.business_center_outlined,
           oauthProvider: 'microsoft',
           mailboxId: mailboxId,
@@ -859,11 +870,18 @@ class _IdentityStep {
 class _SendingIdentityPanel extends StatelessWidget {
   const _SendingIdentityPanel({
     required this.identity,
+    required this.inferredDomain,
+    required this.inferredDomainSource,
     required this.verifying,
     required this.onVerify,
   });
 
   final _SendingIdentity identity;
+  /// Domain inferred from representation or mailbox identity. Used
+  /// when no SendingDomain row exists yet so the empty state still
+  /// names a concrete domain rather than reading as blank.
+  final String inferredDomain;
+  final String inferredDomainSource;
   final bool verifying;
   final VoidCallback onVerify;
 
@@ -871,14 +889,17 @@ class _SendingIdentityPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (!identity.present) {
+      final hasInferred = inferredDomain.trim().isNotEmpty;
+      final emptyMessage = hasInferred
+          ? 'No sending domain attached yet. Your operational domain identity '
+              '(${inferredDomain}) is inferred from ${inferredDomainSource == "inferred_from_mailbox" ? "your connected mailbox" : inferredDomainSource == "inferred_from_representation" ? "your Representation profile" : "your identity"}; connect a mailbox so Orchestrate can attach it as the verified sending domain.'
+          : 'No sending domain configured. Connect a mailbox to start sending-identity verification.';
       return ClientPanel(
         title: 'Sending domain (SPF / DKIM / DMARC)',
         subtitle:
-            'A sending domain is the public identity Orchestrate uses to dispatch on your behalf. Orchestrate attaches one to your mailbox once a connection is established.',
-        children: const [
-          ClientEmptyState(
-              message:
-                  'No sending domain configured. Connect a mailbox to start sending-identity verification.'),
+            'A sending domain is the public identity Orchestrate dispatches from. It is attached to your mailbox once a connection is established.',
+        children: [
+          ClientEmptyState(message: emptyMessage),
         ],
       );
     }
@@ -903,7 +924,14 @@ class _SendingIdentityPanel extends StatelessWidget {
             primary: 'Host: ${record.host}',
             secondary:
                 'Expected: ${record.expectedValue}${record.errorMessage.isNotEmpty ? ' · ${record.errorMessage}' : ''}',
-            trailing: ClientBadge(label: record.matched ? 'Found' : 'Missing'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClientBadge(label: record.matched ? 'Found' : 'Missing'),
+                const SizedBox(width: 6),
+                _CopyRecordButton(host: record.host, value: record.expectedValue),
+              ],
+            ),
           ),
           Padding(
             padding: const EdgeInsets.only(left: 0, bottom: 4),
@@ -1139,5 +1167,46 @@ class _OperationalIdentityPanel extends StatelessWidget {
     return providerAvailability.values
         .where((entry) => !entry.available)
         .toList();
+  }
+}
+
+/// Copy-to-clipboard affordance on each DNS record row. Without this
+/// "Check verification" is diagnostic only — clients still have to
+/// hand-type SPF / DKIM / DMARC values into their registrar. Copying
+/// the host + expected value puts the verification workflow within
+/// reach without leaving Infrastructure.
+class _CopyRecordButton extends StatefulWidget {
+  const _CopyRecordButton({required this.host, required this.value});
+
+  final String host;
+  final String value;
+
+  @override
+  State<_CopyRecordButton> createState() => _CopyRecordButtonState();
+}
+
+class _CopyRecordButtonState extends State<_CopyRecordButton> {
+  bool _copied = false;
+
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.value));
+    if (!mounted) return;
+    setState(() => _copied = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: _copy,
+      icon: Icon(_copied ? Icons.check : Icons.copy, size: 16),
+      label: Text(_copied ? 'Copied' : 'Copy value'),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        minimumSize: const Size(0, 32),
+      ),
+    );
   }
 }
