@@ -354,11 +354,35 @@ class _PublicFooter extends StatelessWidget {
                     title: 'Trust',
                     links: [
                       _FooterLink(
-                          label: 'Acceptable Use',
-                          onTap: () => context.go('/legal/acceptable-use')),
+                          label: 'Mailbox access',
+                          onTap: () => context.go('/legal/mailbox-access')),
+                      _FooterLink(
+                          label: 'Reply monitoring',
+                          onTap: () => context.go('/legal/reply-monitoring')),
+                      _FooterLink(
+                          label: 'AI usage',
+                          onTap: () => context.go('/legal/ai-usage')),
+                      _FooterLink(
+                          label: 'Credential handling',
+                          onTap: () => context.go('/legal/credentials')),
+                      _FooterLink(
+                          label: 'Provider boundaries',
+                          onTap: () => context.go('/legal/providers')),
+                      _FooterLink(
+                          label: 'Suppression / opt-out',
+                          onTap: () => context.go('/legal/suppression')),
+                      _FooterLink(
+                          label: 'Abuse policy',
+                          onTap: () => context.go('/legal/abuse')),
+                      _FooterLink(
+                          label: 'Retention / deletion',
+                          onTap: () => context.go('/legal/retention')),
                       _FooterLink(
                           label: 'Deliverability',
                           onTap: () => context.go('/legal/deliverability')),
+                      _FooterLink(
+                          label: 'Acceptable Use',
+                          onTap: () => context.go('/legal/acceptable-use')),
                     ],
                   ),
                 ];

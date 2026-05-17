@@ -509,37 +509,74 @@ final router = GoRouter(
           child: const PublicContentScreen(
             eyebrow: 'Trust and compliance',
             title:
-                'Verified sending identity, governed dispatch, audited execution.',
+                'Operation-scoped mailbox access, vaulted credentials, governed dispatch, audited execution.',
             subtitle:
-                'Trust is infrastructure, not marketing. Real DNS-based SPF / DKIM / DMARC verification, backend-owned OAuth, vault-backed credentials, governed dispatch, and an auditable readiness trail are all first-class.',
+                'Trust is infrastructure, not marketing. Operation-scoped mailbox ingestion (header-first, body-on-match-only), encrypted credential vault, real DNS-based SPF / DKIM / DMARC verification, governed dispatch, AI processing bounded to operation-attributed data, and an auditable readiness trail are all first-class. The dedicated policy pages below describe each layer.',
             sideActions: [
               ContentAction(
-                  label: 'Deliverability policy',
-                  path: '/legal/deliverability',
+                  label: 'Mailbox access policy',
+                  path: '/legal/mailbox-access',
                   filled: true),
+              ContentAction(
+                  label: 'Reply monitoring', path: '/legal/reply-monitoring'),
+              ContentAction(label: 'AI usage', path: '/legal/ai-usage'),
+              ContentAction(
+                  label: 'Credential handling', path: '/legal/credentials'),
+              ContentAction(
+                  label: 'Provider boundaries', path: '/legal/providers'),
+              ContentAction(
+                  label: 'Suppression / opt-out', path: '/legal/suppression'),
+              ContentAction(
+                  label: 'Abuse policy', path: '/legal/abuse'),
+              ContentAction(
+                  label: 'Retention / deletion', path: '/legal/retention'),
+              ContentAction(
+                  label: 'Deliverability policy', path: '/legal/deliverability'),
               ContentAction(
                   label: 'Acceptable use', path: '/legal/acceptable-use'),
             ],
             sections: [
               ContentSection(
-                title: 'Verified sending identity',
+                title: 'Operation-scoped mailbox access',
                 body:
-                    'Orchestrate verifies SPF, DKIM, and DMARC with live DNS before any non-sandbox dispatch. A background poller keeps re-verifying pending domains so propagation is visible — you do not chase records manually.',
+                    'Orchestrate does not behave as a general inbox reader. Inbound mail is inspected at the header level only; bodies are fetched and stored exclusively for messages that resolve to an Orchestrate-managed operation. Unrelated mailbox content is not stored, classified, surfaced, or fed to AI. The IMAP cursor is initialized to the current highest UID on connect, so no historical mailbox content is ever inspected.',
                 points: [
-                  'Live DNS verification (no third-party deliverability vendor)',
-                  'Per-record propagation history visible to the client',
-                  'Sending is blocked until the domain is ACTIVE',
+                  'Headers fetched first, body only after operation match',
+                  'No historical-mailbox scan on first connect',
+                  'Sent folder is not mirrored',
+                  'Unmatched mail stays in the upstream mailbox untouched',
                 ],
               ),
               ContentSection(
-                title: 'Backend-owned OAuth + vault-backed credentials',
+                title: 'Verified sending identity',
                 body:
-                    'Mailbox OAuth runs entirely backend-side. Refresh tokens are sealed with AES-256-GCM (transitional, behind the same abstraction as future HashiCorp Vault / AWS / GCP / Azure adapters). Tokens never touch the browser and never live in the database in plaintext.',
+                    'SPF, DKIM, and DMARC are verified with live DNS before any non-sandbox dispatch. A background poller keeps re-verifying pending domains so propagation is visible. For custom SMTP transports, Orchestrate generates a per-transport DKIM keypair and surfaces the public-key TXT record the client must publish.',
+                points: [
+                  'Live DNS verification (no third-party deliverability vendor)',
+                  'Per-record propagation history visible to the client',
+                  'Per-transport DKIM keypair on custom SMTP',
+                  'Dispatch eligibility is gated on the verification state',
+                ],
+              ),
+              ContentSection(
+                title: 'Encrypted credential vault',
+                body:
+                    'Mailbox OAuth refresh tokens, SMTP and IMAP passwords, and DKIM private keys are sealed by a vault adapter (encrypted-DB AES-256-GCM today, or HashiCorp Vault). Production refuses to boot with the in-memory adapter. Credentials never appear in API responses, browser state, logs, or unencrypted database storage.',
               ),
               ContentSection(
                 title: 'Governed dispatch + auditable readiness',
                 body:
-                    'Every send passes a readiness check and a governance check. Readiness transitions, credential reads, OAuth callbacks, and DNS verification outcomes are all recorded in an append-only audit trail tied to the account.',
+                    'Every dispatch passes a readiness check, a suppression check, and a governance check. Readiness transitions, credential reads, OAuth callbacks, DNS verification outcomes, SMTP and IMAP connect events, reply ingestion, and follow-up suppressions are recorded in append-only audit trails tied to the account. Audit records carry metadata only — never credentials, never message bodies.',
+              ),
+              ContentSection(
+                title: 'AI processing scope',
+                body:
+                    'AI-assisted systems operate against operation-scoped data only — Orchestrate-generated outbound content and operation-attributed replies. Unrelated mailbox content never enters an AI pipeline. AI-assisted output carries a stored traceability record.',
+              ),
+              ContentSection(
+                title: 'Suppression and opt-out enforcement',
+                body:
+                    'Opt-out signals, hard bounces, complaints, and operator blocks create suppression entries that block every subsequent FIRST_SEND and FOLLOWUP_SEND against the affected recipient. There is no UI affordance or API path that bypasses the suppression check.',
               ),
               ContentSection(
                 title: 'Authorization and records',
@@ -765,6 +802,67 @@ final router = GoRouter(
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
             currentPath: state.uri.path, child: buildDeliverabilityScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/mailbox-access',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: buildMailboxAccessPolicyScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/ai-usage',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path, child: buildAiUsagePolicyScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/credentials',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: buildCredentialHandlingScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/reply-monitoring',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: buildReplyMonitoringDisclosureScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/suppression',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: buildSuppressionPolicyScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/providers',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: buildProviderResponsibilityScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/abuse',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path, child: buildAbusePolicyScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal/retention',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path, child: buildRetentionPolicyScreen()),
       ),
     ),
     GoRoute(
