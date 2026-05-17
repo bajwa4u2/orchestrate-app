@@ -12,6 +12,38 @@ class PublicRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  /// Public support catalog — returns the curated knowledge entries
+  /// (key + topic + canonical question + confidence) so the answers
+  /// screen can render topic pills + canonical-question chips before
+  /// the visitor types anything.
+  Future<Map<String, dynamic>> fetchSupportCatalog() async {
+    final json = await _apiClient.getJson('/public/support/catalog');
+    if (json is Map<String, dynamic>) return json;
+    if (json is Map) return json.map((k, v) => MapEntry('$k', v));
+    return const <String, dynamic>{};
+  }
+
+  /// Ask a public operational question. The backend deterministically
+  /// scores the question against the curated knowledge catalog and
+  /// returns up to 4 matched entries or `unanswered: true` plus a
+  /// list of suggested topics. NO AI generation — every answer is
+  /// sourced verbatim from a catalog entry.
+  Future<Map<String, dynamic>> askSupport({
+    required String question,
+    String? topic,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/public/support/ask',
+      body: {
+        'question': question.trim(),
+        if (topic != null && topic.isNotEmpty) 'topic': topic,
+      },
+    );
+    if (json is Map<String, dynamic>) return json;
+    if (json is Map) return json.map((k, v) => MapEntry('$k', v));
+    return const <String, dynamic>{};
+  }
+
   /// Public DNS diagnostic — runs SPF / DKIM / DMARC verification
   /// against the caller-supplied domain WITHOUT signup. Returns the
   /// same DnsRecordCheck[] shape the authenticated verifier uses.

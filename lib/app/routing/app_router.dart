@@ -39,6 +39,7 @@ import 'package:orchestrate_app/features/public/screens/activation_preview_scree
 import 'package:orchestrate_app/features/public/screens/for_evaluators_screen.dart';
 import 'package:orchestrate_app/features/public/screens/orchestrate_operations_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_diagnostics_screen.dart';
+import 'package:orchestrate_app/features/public/screens/public_answers_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_home_screen.dart';
 import 'package:orchestrate_app/app/shell/operator_shell.dart';
@@ -954,6 +955,24 @@ final router = GoRouter(
     GoRoute(
       path: '/dns-diagnostic',
       redirect: (context, state) => '/diagnostics',
+    ),
+    // Public operational answers surface — curated knowledge catalog,
+    // deterministic matcher, no AI generation. Honest "no match" path.
+    GoRoute(
+      path: '/answers',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path,
+            child: const PublicAnswersScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/help',
+      redirect: (context, state) => '/answers',
+    ),
+    GoRoute(
+      path: '/faq',
+      redirect: (context, state) => '/answers',
     ),
     GoRoute(
       path: '/trust-review',
