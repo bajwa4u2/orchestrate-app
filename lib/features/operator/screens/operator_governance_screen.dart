@@ -43,6 +43,28 @@ class _OperatorGovernanceScreenState extends State<OperatorGovernanceScreen> {
   List<Map<String, dynamic>> _reviewQueue = const [];
   bool _loadingReview = true;
   String? _reviewError;
+  String? _retryingId;
+  String? _retryNotice;
+
+  Future<void> _retryMessage(String messageId) async {
+    setState(() {
+      _retryingId = messageId;
+      _retryNotice = null;
+    });
+    try {
+      final result = await _repository.retryGovernanceMessage(messageId);
+      final attempt = result['attempt']?.toString() ?? '?';
+      _retryNotice =
+          'Message requeued. Attempt $attempt scheduled; provenance preserved.';
+    } catch (error) {
+      _retryNotice = 'Retry failed: $error';
+    } finally {
+      if (mounted) {
+        setState(() => _retryingId = null);
+      }
+      await _loadReviewQueue();
+    }
+  }
 
   @override
   void initState() {
@@ -122,6 +144,9 @@ class _OperatorGovernanceScreenState extends State<OperatorGovernanceScreen> {
             rows: _reviewQueue,
             onRetry: _loadReviewQueue,
             onSelect: (id) => _selectMessage(id),
+            onRetryMessage: _retryMessage,
+            retryingId: _retryingId,
+            retryNotice: _retryNotice,
           ),
           const SizedBox(height: 18),
           if (_loadingList)
@@ -703,6 +728,9 @@ class _ReviewQueueCard extends StatelessWidget {
     required this.rows,
     required this.onRetry,
     required this.onSelect,
+    required this.onRetryMessage,
+    required this.retryingId,
+    required this.retryNotice,
   });
 
   final bool loading;
@@ -710,6 +738,9 @@ class _ReviewQueueCard extends StatelessWidget {
   final List<Map<String, dynamic>> rows;
   final VoidCallback onRetry;
   final void Function(String id) onSelect;
+  final Future<void> Function(String id) onRetryMessage;
+  final String? retryingId;
+  final String? retryNotice;
 
   @override
   Widget build(BuildContext context) {
@@ -789,11 +820,31 @@ class _ReviewQueueCard extends StatelessWidget {
                   _ReviewRow(
                     row: rows[i],
                     onTap: () => onSelect(rows[i]['id']?.toString() ?? ''),
+                    onRetry: () =>
+                        onRetryMessage(rows[i]['id']?.toString() ?? ''),
+                    retrying: retryingId == rows[i]['id']?.toString(),
                   ),
                   if (i != rows.length - 1) const Divider(height: 14),
                 ],
               ],
             ),
+          if (retryNotice != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.publicSurfaceSoft,
+                borderRadius: BorderRadius.circular(AppTheme.radius),
+                border: Border.all(color: AppTheme.publicLine),
+              ),
+              child: Text(
+                retryNotice!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.publicMuted,
+                    ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -801,10 +852,17 @@ class _ReviewQueueCard extends StatelessWidget {
 }
 
 class _ReviewRow extends StatelessWidget {
-  const _ReviewRow({required this.row, required this.onTap});
+  const _ReviewRow({
+    required this.row,
+    required this.onTap,
+    required this.onRetry,
+    required this.retrying,
+  });
 
   final Map<String, dynamic> row;
   final VoidCallback onTap;
+  final VoidCallback onRetry;
+  final bool retrying;
 
   @override
   Widget build(BuildContext context) {
@@ -875,6 +933,33 @@ class _ReviewRow extends StatelessWidget {
                     ),
               ),
             ],
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  onPressed: retrying ? null : onRetry,
+                  icon: const Icon(Icons.refresh, size: 14),
+                  label: Text(retrying ? 'Retrying…' : 'Retry'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: AppTheme.publicText,
+                    side: BorderSide(color: AppTheme.publicLine),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Provenance preserved on retry',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.publicMuted,
+                        fontStyle: FontStyle.italic,
+                      ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

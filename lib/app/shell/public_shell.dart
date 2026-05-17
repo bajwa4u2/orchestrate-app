@@ -318,6 +318,9 @@ class _PublicFooter extends StatelessWidget {
                           label: 'For evaluators',
                           onTap: () => context.go('/for-evaluators')),
                       _FooterLink(
+                          label: 'Operational journey',
+                          onTap: () => context.go('/journey/evaluate_and_activate')),
+                      _FooterLink(
                           label: 'Operational answers',
                           onTap: () => context.go('/answers')),
                       _FooterLink(

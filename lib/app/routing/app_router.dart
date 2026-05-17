@@ -40,6 +40,7 @@ import 'package:orchestrate_app/features/public/screens/for_evaluators_screen.da
 import 'package:orchestrate_app/features/public/screens/orchestrate_operations_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_diagnostics_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_answers_screen.dart';
+import 'package:orchestrate_app/features/public/screens/public_journey_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_home_screen.dart';
 import 'package:orchestrate_app/app/shell/operator_shell.dart';
@@ -973,6 +974,24 @@ final router = GoRouter(
     GoRoute(
       path: '/faq',
       redirect: (context, state) => '/answers',
+    ),
+    // Guided operational journey surface. /journey defaults to the
+    // evaluate-and-activate map for visitors landing without a key.
+    GoRoute(
+      path: '/journey',
+      redirect: (context, state) => '/journey/evaluate_and_activate',
+    ),
+    GoRoute(
+      path: '/journey/:journeyKey',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+          currentPath: state.uri.path,
+          child: PublicJourneyScreen(
+            journeyKey: state.pathParameters['journeyKey'] ??
+                'evaluate_and_activate',
+          ),
+        ),
+      ),
     ),
     GoRoute(
       path: '/trust-review',

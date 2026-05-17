@@ -12,6 +12,24 @@ class PublicRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  /// Public journey catalog list — { key, title, audience, intent,
+  /// stageCount } per journey.
+  Future<Map<String, dynamic>> fetchJourneys() async {
+    final json = await _apiClient.getJson('/public/journeys');
+    if (json is Map<String, dynamic>) return json;
+    if (json is Map) return json.map((k, v) => MapEntry('$k', v));
+    return const <String, dynamic>{};
+  }
+
+  /// One journey's full definition — stages + linked surfaces +
+  /// knowledge cross-references.
+  Future<Map<String, dynamic>> fetchJourney(String key) async {
+    final json = await _apiClient.getJson('/public/journeys/$key');
+    if (json is Map<String, dynamic>) return json;
+    if (json is Map) return json.map((k, v) => MapEntry('$k', v));
+    return const <String, dynamic>{};
+  }
+
   /// Public support catalog — returns the curated knowledge entries
   /// (key + topic + canonical question + confidence) so the answers
   /// screen can render topic pills + canonical-question chips before

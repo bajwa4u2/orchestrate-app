@@ -612,6 +612,25 @@ class OperatorRepository {
     return (json as List? ?? const []).cast<dynamic>();
   }
 
+  /// Operator-triggered retry. Preserves the original message's
+  /// governance provenance (operationId, threadId, templateKey/
+  /// version, lane, lifecycleStage); only the attempt counter
+  /// increments. Emits an audit row keyed by the operator user id.
+  Future<Map<String, dynamic>> retryGovernanceMessage(
+    String messageId, {
+    String? reason,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/operator/governance/messages/$messageId/retry',
+      surface: ApiSurface.operator,
+      body: {
+        if (reason != null && reason.trim().isNotEmpty)
+          'reason': reason.trim(),
+      },
+    );
+    return _asMap(json);
+  }
+
   /// Operator review queue: recent dispatches in FAILED /
   /// RETRYABLE_FAILED state across the org with persisted error +
   /// governance metadata.
