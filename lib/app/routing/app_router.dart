@@ -32,6 +32,8 @@ import 'package:orchestrate_app/features/operator/screens/operator_system_doctor
 import 'package:orchestrate_app/features/operator/screens/operator_workspace_screen.dart';
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
 import 'package:orchestrate_app/features/public/screens/pricing_screen.dart';
+import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart';
+import 'package:orchestrate_app/features/public/screens/orchestrate_operations_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_home_screen.dart';
 import 'package:orchestrate_app/app/shell/operator_shell.dart';
@@ -91,6 +93,7 @@ const _clientCanonicalRoutes = <String>{
   '/client/account',
   '/client/help',
   '/client/trust',
+  '/client/oauth/return',
 };
 
 final router = GoRouter(
@@ -879,7 +882,7 @@ final router = GoRouter(
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
             currentPath: state.uri.path,
-            child: buildHowOrchestrateOperatesScreen()),
+            child: const OrchestrateOperationsScreen()),
       ),
     ),
     GoRoute(
@@ -919,6 +922,19 @@ final router = GoRouter(
         GoRoute(
             path: '/client/representation',
             builder: (context, state) => const ClientBusinessIdentityScreen()),
+        // OAuth return surface — backend's ORCH_APP_OAUTH_RETURN_URL
+        // should be configured to land here so the result is rendered
+        // with operation-scoped mailbox disclosure + next-action CTAs
+        // rather than dumping the user on a bare query-string URL.
+        GoRoute(
+            path: '/client/oauth/return',
+            builder: (context, state) => OAuthReturnScreen(
+                  status: state.uri.queryParameters['status'] ?? '',
+                  provider: state.uri.queryParameters['provider'],
+                  reason: state.uri.queryParameters['reason'],
+                  email: state.uri.queryParameters['email'],
+                  mailboxId: state.uri.queryParameters['mailboxId'],
+                )),
         GoRoute(
             path: '/client/business-identity',
             redirect: (context, state) => '/client/representation'),
