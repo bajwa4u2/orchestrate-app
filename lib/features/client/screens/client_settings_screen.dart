@@ -8,6 +8,7 @@ import 'package:orchestrate_app/data/repositories/client/client_billing_reposito
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/blocker_resolution_card.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/signature_identity_card.dart';
 
 class ClientSettingsScreen extends StatefulWidget {
   const ClientSettingsScreen({super.key});
@@ -192,6 +193,8 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 18),
+            const SignatureIdentityCard(),
             const SizedBox(height: 18),
             ClientPanel(
               title: 'Setup',
