@@ -933,6 +933,139 @@ class AttributionChainView extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------
+// SupportDiagnosticStrip — calm one-line diagnosis of operational
+// state for the support surface. Designed to sit at the top of the
+// support page so the client never has to explain what failed.
+// ---------------------------------------------------------------------
+
+class SupportDiagnosticEntry {
+  const SupportDiagnosticEntry({
+    required this.code,
+    required this.message,
+    required this.owner,
+  });
+
+  final String code;
+  final String message;
+
+  /// 'client' or 'orchestrate' — names who owns the next action.
+  final String owner;
+}
+
+class SupportDiagnosticStrip extends StatelessWidget {
+  const SupportDiagnosticStrip({super.key, required this.entries});
+
+  /// Entries from the backend support context. When empty the strip
+  /// renders a calm "no operational blockers" state instead of going
+  /// missing — the client should always know whether the system has
+  /// observed nothing wrong, not just that nothing was returned.
+  final List<SupportDiagnosticEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    if (entries.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(AppTheme.radius),
+          border: Border.all(color: AppTheme.publicLine),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle_outline,
+                size: 16, color: const Color(0xFF1D4ED8)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'No operational blockers observed for this workspace.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF1D4ED8),
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < entries.length; i++) ...[
+          _entryRow(context, entries[i]),
+          if (i != entries.length - 1) const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
+  Widget _entryRow(BuildContext context, SupportDiagnosticEntry entry) {
+    final ownerTone = entry.owner == 'orchestrate'
+        ? GovernanceTone.neutral
+        : GovernanceTone.cautious;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(
+              Icons.report_gmailerrorred_outlined,
+              size: 16,
+              color: ownerTone == GovernanceTone.cautious
+                  ? const Color(0xFFB45309)
+                  : AppTheme.publicMuted,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.message,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.publicText,
+                        height: 1.45,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    GovernanceBadge(
+                      label: 'owner',
+                      value: entry.owner,
+                      tone: ownerTone,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      entry.code,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        color: AppTheme.publicMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------
 // DispatchRecoveryTrack — retries / failures / recovery.
 // ---------------------------------------------------------------------
 

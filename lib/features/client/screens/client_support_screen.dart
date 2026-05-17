@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/support_context_card.dart';
 import 'package:orchestrate_app/features/support/services/support_service.dart';
 
 class ClientSupportScreen extends StatefulWidget {
@@ -152,6 +153,8 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
               ClientMetric('Escalated',
                   '${inquiries.where((item) => item['isEscalated'] == true).length}'),
             ]),
+            const SizedBox(height: 18),
+            const SupportContextCard(),
             const SizedBox(height: 18),
             LayoutBuilder(builder: (context, constraints) {
               final stacked = constraints.maxWidth < 1040;

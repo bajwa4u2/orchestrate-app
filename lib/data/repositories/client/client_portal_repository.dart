@@ -42,6 +42,19 @@ class ClientPortalRepository {
     return _asMap(json);
   }
 
+  /// Read the runtime-aware support context: subscription state,
+  /// mailbox state, sending-domain state, recent governed dispatches,
+  /// blockers derived from persisted state. No new business rules —
+  /// the backend composes existing reads into one payload so the
+  /// support surface never has to ask the client what failed.
+  Future<Map<String, dynamic>> fetchSupportContext() async {
+    final json = await _apiClient.getJson(
+      '/client/support/context',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// List sequences for the requesting client, optionally scoped to
   /// a campaign via `campaignId`.
   Future<List<dynamic>> fetchSequences({String? campaignId}) async {
