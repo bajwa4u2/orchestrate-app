@@ -397,7 +397,7 @@ class _Skeleton extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2)),
           const SizedBox(width: 10),
           Text(
-            'Loading operational continuity…',
+            'Loading…',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
