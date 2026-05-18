@@ -14,6 +14,18 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Canonical Infrastructure-page snapshot. ONE backend call, one
+  /// authoritative shape. Every panel on the Infrastructure page
+  /// must source its state from this snapshot — no independent
+  /// derivations.
+  Future<Map<String, dynamic>> fetchInfrastructureSnapshot() async {
+    final json = await _apiClient.getJson(
+      '/client/mailbox/infrastructure-snapshot',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   Future<Map<String, dynamic>> activateMailbox() async {
     final json = await _apiClient.postJson(
       '/client/mailbox/activate',

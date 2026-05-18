@@ -411,6 +411,19 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     final readiness = await _mailboxRepository.fetchMailbox();
     final sendingDomain = await _mailboxRepository.fetchSendingDomain();
     final providers = await _mailboxRepository.fetchProviderAvailability();
+    // Canonical Infrastructure-page snapshot. Every panel state
+    // below MUST source from this when it is non-empty. The snapshot
+    // is the single backend authority on transport / DNS / dispatch /
+    // banner / header — there are no independent panel derivations.
+    Map<String, dynamic> snapshot = const <String, dynamic>{};
+    try {
+      snapshot = await _mailboxRepository.fetchInfrastructureSnapshot();
+    } catch (_) {
+      // Snapshot endpoint failure must not blank the page. The
+      // panels fall back to the legacy derivations below; the next
+      // pull-to-refresh recovers.
+      snapshot = const <String, dynamic>{};
+    }
     Map<String, dynamic> profile = const <String, dynamic>{};
     try {
       profile = await _accountRepository.fetchClientProfile();
@@ -420,18 +433,43 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       profile = const <String, dynamic>{};
     }
 
-    final mailbox = asMap(readiness['mailbox']);
+    // The canonical snapshot is the authority. Legacy `readiness`
+    // fields stay as fallback ONLY when the snapshot endpoint
+    // could not be reached.
+    final snapTransport = asMap(snapshot['transport']);
+    final snapMailbox = asMap(snapTransport['mailbox']);
+    final snapDomain = asMap(snapshot['domain']);
+    final snapDispatch = asMap(snapshot['dispatch']);
+    final snapBanner = asMap(snapshot['banner']);
+    final snapAvailable = snapshot.isNotEmpty;
+
+    final mailbox = snapAvailable && snapMailbox.isNotEmpty
+        ? <String, dynamic>{
+            'address': snapMailbox['address'],
+            'fromEmail': snapMailbox['address'],
+            'provider': snapMailbox['provider'],
+            'connected': snapMailbox['connected'] == true ? 'true' : 'false',
+            'verified': snapMailbox['verified'] == true ? 'true' : 'false',
+            'isClientOwned': snapMailbox['isClientOwned'] == true,
+            'isPlatformBootstrap': snapMailbox['isPlatformBootstrap'] == true,
+          }
+        : asMap(readiness['mailbox']);
     final blockers = asList(readiness['blockers']).map(asMap).toList();
-    final ready = readiness['ready'] == true;
+    final ready = snapAvailable
+        ? snapDispatch['eligible'] == true
+        : readiness['ready'] == true;
 
     // Transport authority distinction — Phase 3 of runtime truthfulness.
     // `clientTransportAuthorized` is the only correct answer to "does
     // the tenant have an authorized sending mailbox?" — a platform/
     // bootstrap mailbox can NEVER satisfy it.
-    final clientTransportAuthorized =
-        readiness['clientTransportAuthorized'] == true;
+    final clientTransportAuthorized = snapAvailable
+        ? snapTransport['clientAuthorized'] == true
+        : readiness['clientTransportAuthorized'] == true;
     final platformTransport = asMap(readiness['platformTransport']);
-    final platformTransportAvailable = platformTransport['available'] == true;
+    final platformTransportAvailable = snapAvailable
+        ? snapTransport['platformAvailable'] == true
+        : platformTransport['available'] == true;
     final mailboxIsClientOwned = mailbox['isClientOwned'] == true;
     final mailboxIsPlatformBootstrap =
         mailbox['isPlatformBootstrap'] == true;
@@ -556,17 +594,36 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       ready: ready,
     );
 
+    // Snapshot-driven banner overrides. When the snapshot is
+    // present, it dictates header label / banner title / banner
+    // message — the legacy hero composer is only a fallback.
+    final effectiveBannerTitle = snapAvailable
+        ? (snapBanner['title']?.toString() ?? hero.bannerTitle)
+        : hero.bannerTitle;
+    final effectiveBannerMessage = snapAvailable
+        ? (snapBanner['message']?.toString() ?? hero.bannerMessage)
+        : hero.bannerMessage;
+    final effectiveBannerTone = snapAvailable
+        ? _bannerToneFrom(snapBanner['tone']?.toString())
+        : hero.bannerTone;
+    final effectiveHeadline = snapAvailable
+        ? (snapshot['headerStateLabel']?.toString() ?? hero.headline)
+        : hero.headline;
+    final effectiveSubtitle = snapAvailable
+        ? (snapDispatch['blockerMessage']?.toString() ?? hero.subtitle)
+        : hero.subtitle;
+
     final mailboxId = readText(mailbox, 'id');
     final mailboxProvider = readText(mailbox, 'provider').toUpperCase();
     return _MailboxViewData(
       dispatchCount: dispatches.length,
       replyCount: replies.length,
       noticeCount: notices.length,
-      headline: hero.headline,
-      subtitle: hero.subtitle,
-      bannerTitle: hero.bannerTitle,
-      bannerMessage: hero.bannerMessage,
-      bannerTone: hero.bannerTone,
+      headline: effectiveHeadline,
+      subtitle: effectiveSubtitle,
+      bannerTitle: effectiveBannerTitle,
+      bannerMessage: effectiveBannerMessage,
+      bannerTone: effectiveBannerTone,
       dispatchRows: dispatchRows,
       identitySteps: identitySteps,
       primaryActions: primaryActions,
@@ -578,6 +635,19 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       clientTransportAuthorized: clientTransportAuthorized,
       platformTransportAvailable: platformTransportAvailable,
     );
+  }
+
+  /// Map the snapshot's `banner.tone` string to the ClientBannerTone
+  /// enum. Defaults to warning when the value is unrecognised.
+  ClientBannerTone _bannerToneFrom(String? tone) {
+    switch (tone) {
+      case 'success':
+        return ClientBannerTone.success;
+      case 'error':
+        return ClientBannerTone.warning; // error tone maps to warning in this design
+      default:
+        return ClientBannerTone.warning;
+    }
   }
 
   /// Maps the backend availability list into a `{providerKey: state}`

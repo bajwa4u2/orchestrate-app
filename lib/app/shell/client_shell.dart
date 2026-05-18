@@ -547,10 +547,20 @@ class _ContentArea extends StatelessWidget {
                         runSpacing: 10,
                         children: [
                           _Pill(
-                            label: 'State',
+                            // Rename: the header pill refers to
+                            // ACCOUNT onboarding (representation
+                            // auth + plan + business identity),
+                            // NOT to infrastructure readiness.
+                            // Calling it "Setup complete" while
+                            // the Infrastructure page banner says
+                            // "Sending infrastructure incomplete"
+                            // produced the contradiction the user
+                            // reported. Disambiguating the label
+                            // is the fix.
+                            label: 'Account',
                             value: session.hasSetupCompleted
-                                ? 'Setup complete'
-                                : 'Setup incomplete',
+                                ? 'Onboarded'
+                                : 'Onboarding in progress',
                           ),
                           _Pill(label: 'Plan', value: plan),
                           _Pill(label: 'Billing', value: billing),
