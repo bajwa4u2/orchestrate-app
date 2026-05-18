@@ -76,6 +76,11 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
   String? _errorMessage;
   String? _testOkMessage;
   Map<String, dynamic>? _result;
+  /// Structured diagnostic returned by the backend SMTP probe when
+  /// the test connection fails. Populated from the response's
+  /// `diagnostic` block; null when no test has been run or the most
+  /// recent test passed.
+  Map<String, dynamic>? _smtpDiagnostic;
 
   @override
   void initState() {
@@ -150,10 +155,11 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       _testing = true;
       _errorMessage = null;
       _testOkMessage = null;
+      _smtpDiagnostic = null;
     });
     try {
       // Test SMTP first; abort before touching IMAP if it fails.
-      await _repository.testSmtpConnection(
+      final smtpResult = await _repository.testSmtpConnection(
         host: _smtpHost.text.trim(),
         port: _smtpPortValue,
         secure: _smtpSecure,
@@ -163,6 +169,26 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
         fromName: _fromName.text,
         replyTo: _replyTo.text,
       );
+      // The backend SMTP probe returns a 200 with either
+      // `{ ok: true, ... }` on success or
+      // `{ ok: false, diagnostic: {...} }` on failure. We render
+      // the diagnostic inline so the user sees the exact failure
+      // stage rather than a generic "Connection timeout."
+      if (smtpResult['ok'] != true) {
+        final diagnostic = smtpResult['diagnostic'];
+        if (!mounted) return;
+        setState(() {
+          _smtpDiagnostic = diagnostic is Map<String, dynamic>
+              ? diagnostic
+              : (diagnostic is Map
+                  ? diagnostic.map(
+                      (key, value) => MapEntry('$key', value),
+                    )
+                  : <String, dynamic>{});
+          _errorMessage = 'SMTP test failed — see diagnostic below.';
+        });
+        return;
+      }
       String message =
           'Outbound SMTP server accepted the credentials.';
       if (_attachInbound) {
@@ -191,6 +217,21 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
     } finally {
       if (mounted) setState(() => _testing = false);
     }
+  }
+
+  void _applyFallback({
+    required String host,
+    required int port,
+    required String secure,
+  }) {
+    setState(() {
+      _smtpHost.text = host;
+      _smtpPort.text = port.toString();
+      _smtpSecure = secure;
+      _smtpDiagnostic = null;
+      _errorMessage = null;
+      _testOkMessage = null;
+    });
   }
 
   Future<void> _save() async {
@@ -445,6 +486,13 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
           ),
           const SizedBox(height: 8),
         ],
+        if (_smtpDiagnostic != null) ...[
+          _SmtpDiagnosticPanel(
+            diagnostic: _smtpDiagnostic!,
+            onApplyFallback: _applyFallback,
+          ),
+          const SizedBox(height: 12),
+        ],
         if (_testOkMessage != null) ...[
           Text(
             _testOkMessage!,
@@ -664,6 +712,219 @@ class _DkimRowState extends State<_DkimRow> {
                 minimumSize: const Size(0, 32),
               ),
             ),
+    );
+  }
+}
+
+/// Renders the structured SMTP diagnostic the backend probe returns
+/// when the test connection fails. Shows the exact failure stage,
+/// fallback host suggestions (one-click apply), and a retry hint.
+/// No credentials are ever part of the diagnostic payload.
+class _SmtpDiagnosticPanel extends StatelessWidget {
+  const _SmtpDiagnosticPanel({
+    required this.diagnostic,
+    required this.onApplyFallback,
+  });
+
+  final Map<String, dynamic> diagnostic;
+  final void Function({
+    required String host,
+    required int port,
+    required String secure,
+  }) onApplyFallback;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final stage = (diagnostic['failureStage'] ?? 'unknown').toString();
+    final code = (diagnostic['failureCode'] ?? '').toString();
+    final message = (diagnostic['failureMessage'] ?? '').toString();
+    final host = (diagnostic['host'] ?? '').toString();
+    final port = diagnostic['port'];
+    final encryption = (diagnostic['encryption'] ?? '').toString();
+    final providerHint = (diagnostic['providerHint'] ?? '').toString();
+    final retry = (diagnostic['retrySuggestion'] ?? '').toString();
+    final correlationId = (diagnostic['correlationId'] ?? '').toString();
+    final hintsRaw = diagnostic['fallbackHints'];
+    final hints = (hintsRaw is List)
+        ? hintsRaw.map((e) => e.toString()).toList()
+        : <String>[];
+
+    final stageLabel = _stageLabel(stage);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF6E6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE7C97A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  size: 18, color: Colors.orange.shade800),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Connection failed at: $stageLabel',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                        color: Colors.brown.shade800,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$host:$port ($encryption)'
+            '${providerHint.isNotEmpty && providerHint != 'custom' ? '  ·  Provider: $providerHint' : ''}',
+            style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.brown.shade900,
+                  fontFamily: 'monospace',
+                ),
+          ),
+          if (message.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: Colors.brown.shade900),
+            ),
+          ],
+          if (code.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Code: $code',
+              style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.brown.shade700,
+                    fontFamily: 'monospace',
+                  ),
+            ),
+          ],
+          if (retry.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              retry,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: Colors.brown.shade800),
+            ),
+          ],
+          if (hints.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Try a fallback:',
+              style: theme.textTheme.labelMedium?.copyWith(
+                    color: Colors.brown.shade900,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            ...hints.map((hint) => _FallbackHintRow(
+                  hint: hint,
+                  onApply: () => _maybeApply(hint),
+                )),
+          ],
+          if (correlationId.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SelectableText(
+              'correlationId: $correlationId',
+              style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.brown.shade700,
+                    fontFamily: 'monospace',
+                  ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _stageLabel(String stage) {
+    switch (stage) {
+      case 'dns':
+        return 'DNS resolution';
+      case 'tcp':
+        return 'TCP connect';
+      case 'tls':
+        return 'TLS handshake (implicit)';
+      case 'starttls':
+        return 'STARTTLS upgrade';
+      case 'greeting':
+        return 'SMTP greeting timeout';
+      case 'auth':
+        return 'authentication';
+      default:
+        return 'unknown stage';
+    }
+  }
+
+  void _maybeApply(String hint) {
+    // Parse "Try <label>: <host>:<port> (<enc>)" hints into apply
+    // calls. Hints that don't match this shape (generic advisories
+    // like the egress note) become read-only — there is nothing to
+    // apply.
+    final match = RegExp(
+      r'([a-z0-9\.\-]+):(\d+)\s*\((tls|starttls|none)\)',
+      caseSensitive: false,
+    ).firstMatch(hint);
+    if (match == null) return;
+    final host = match.group(1)!;
+    final port = int.tryParse(match.group(2)!) ?? 0;
+    final secure = match.group(3)!.toLowerCase();
+    if (port == 0) return;
+    onApplyFallback(host: host, port: port, secure: secure);
+  }
+}
+
+class _FallbackHintRow extends StatelessWidget {
+  const _FallbackHintRow({required this.hint, required this.onApply});
+
+  final String hint;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Show an apply button only when we can confidently parse a
+    // host:port (enc) tuple from the hint.
+    final hasApplyTarget = RegExp(
+      r'[a-z0-9\.\-]+:\d+\s*\((tls|starttls|none)\)',
+      caseSensitive: false,
+    ).hasMatch(hint);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.east, size: 14, color: Colors.brown.shade700),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              hint,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: Colors.brown.shade900),
+            ),
+          ),
+          if (hasApplyTarget) ...[
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: onApply,
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                minimumSize: const Size(0, 28),
+                foregroundColor: Colors.brown.shade900,
+              ),
+              child: const Text('Apply'),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
