@@ -81,6 +81,16 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
   /// `diagnostic` block; null when no test has been run or the most
   /// recent test passed.
   Map<String, dynamic>? _smtpDiagnostic;
+  /// Per-candidate attempt summary the backend returns from the
+  /// verify-with-candidates path. Each entry names the endpoint
+  /// tried, whether it succeeded, and the failure stage on failure.
+  List<Map<String, dynamic>>? _smtpAttempts;
+  /// Provider key the backend detected from the host
+  /// (zoho / google / microsoft / custom).
+  String? _smtpProvider;
+  /// Winning endpoint when the candidate retry loop converged on a
+  /// host different from the user's input.
+  Map<String, dynamic>? _smtpWinning;
 
   @override
   void initState() {
@@ -156,6 +166,9 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       _errorMessage = null;
       _testOkMessage = null;
       _smtpDiagnostic = null;
+      _smtpAttempts = null;
+      _smtpProvider = null;
+      _smtpWinning = null;
     });
     try {
       // Test SMTP first; abort before touching IMAP if it fails.
@@ -174,6 +187,16 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       // `{ ok: false, diagnostic: {...} }` on failure. We render
       // the diagnostic inline so the user sees the exact failure
       // stage rather than a generic "Connection timeout."
+      // Always pull attempts + provider out so the user sees what
+      // we tried, even on success.
+      final attemptsRaw = smtpResult['attempts'];
+      final attempts = attemptsRaw is List
+          ? attemptsRaw
+              .whereType<Map>()
+              .map((m) => m.map((k, v) => MapEntry('$k', v)))
+              .toList()
+          : <Map<String, dynamic>>[];
+      final provider = (smtpResult['provider'] ?? '').toString();
       if (smtpResult['ok'] != true) {
         final diagnostic = smtpResult['diagnostic'];
         if (!mounted) return;
@@ -185,12 +208,37 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
                       (key, value) => MapEntry('$key', value),
                     )
                   : <String, dynamic>{});
+          _smtpAttempts = attempts;
+          _smtpProvider = provider.isEmpty ? null : provider;
           _errorMessage = 'SMTP test failed — see diagnostic below.';
         });
         return;
       }
+      // Candidate retry succeeded — capture the winning endpoint so
+      // the user knows which host/port the backend converged on.
+      final winningHost = (smtpResult['host'] ?? '').toString();
+      final winningPort = smtpResult['port'];
+      final winningEnc = (smtpResult['encryption'] ?? '').toString();
       String message =
-          'Outbound SMTP server accepted the credentials.';
+          'Outbound SMTP accepted via $winningHost:$winningPort ($winningEnc).';
+      setState(() {
+        _smtpAttempts = attempts;
+        _smtpProvider = provider.isEmpty ? null : provider;
+        _smtpWinning = <String, dynamic>{
+          'host': winningHost,
+          'port': winningPort,
+          'encryption': winningEnc,
+        };
+        // Sync the form to the winning endpoint so Save reuses it.
+        if (winningHost.isNotEmpty &&
+            (winningHost != _smtpHost.text.trim() ||
+                winningPort.toString() != _smtpPort.text.trim() ||
+                winningEnc != _smtpSecure)) {
+          _smtpHost.text = winningHost;
+          if (winningPort is num) _smtpPort.text = winningPort.toInt().toString();
+          if (winningEnc.isNotEmpty) _smtpSecure = winningEnc;
+        }
+      });
       if (_attachInbound) {
         final imap = await _repository.testImapConnection(
           host: _imapHost.text.trim(),
@@ -485,6 +533,14 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
                 ?.copyWith(color: theme.colorScheme.error),
           ),
           const SizedBox(height: 8),
+        ],
+        if (_smtpAttempts != null && _smtpAttempts!.isNotEmpty) ...[
+          _SmtpAttemptsPanel(
+            attempts: _smtpAttempts!,
+            provider: _smtpProvider,
+            winning: _smtpWinning,
+          ),
+          const SizedBox(height: 12),
         ],
         if (_smtpDiagnostic != null) ...[
           _SmtpDiagnosticPanel(
@@ -923,6 +979,166 @@ class _FallbackHintRow extends StatelessWidget {
               child: const Text('Apply'),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Renders the per-candidate attempt list the backend's
+/// verify-with-candidates path returns. Shows the user every
+/// endpoint that was tried, the failure stage on each failure, and
+/// the winning endpoint when one succeeds.
+class _SmtpAttemptsPanel extends StatelessWidget {
+  const _SmtpAttemptsPanel({
+    required this.attempts,
+    required this.provider,
+    required this.winning,
+  });
+
+  final List<Map<String, dynamic>> attempts;
+  final String? provider;
+  final Map<String, dynamic>? winning;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final providerLabel = _providerNameLabel(provider);
+    final winningHost = (winning?['host'] ?? '').toString();
+    final winningPort = winning?['port']?.toString() ?? '';
+    final winningEnc = (winning?['encryption'] ?? '').toString();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F4F8),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFBCC9D6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.travel_explore,
+                  size: 16, color: Colors.blueGrey.shade700),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  providerLabel.isNotEmpty
+                      ? 'Endpoint attempts ($providerLabel)'
+                      : 'Endpoint attempts',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                        color: Colors.blueGrey.shade900,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          for (final attempt in attempts) _AttemptRow(attempt: attempt),
+          if (winning != null && winningHost.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFA5D6A7)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, size: 16, color: Colors.green.shade800),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Verified via $winningHost:$winningPort ($winningEnc). Save will persist this exact endpoint.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.green.shade900,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _providerNameLabel(String? provider) {
+    switch (provider) {
+      case 'zoho':
+        return 'Zoho Mail';
+      case 'google':
+        return 'Gmail / Google Workspace';
+      case 'microsoft':
+        return 'Microsoft 365';
+      default:
+        return '';
+    }
+  }
+}
+
+class _AttemptRow extends StatelessWidget {
+  const _AttemptRow({required this.attempt});
+
+  final Map<String, dynamic> attempt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ok = attempt['ok'] == true;
+    final label = (attempt['label'] ?? '').toString();
+    final host = (attempt['host'] ?? '').toString();
+    final port = attempt['port']?.toString() ?? '';
+    final encryption = (attempt['encryption'] ?? '').toString();
+    final stage = (attempt['failureStage'] ?? '').toString();
+    final duration = attempt['durationMs'];
+    final fallback = '$host:$port ($encryption)';
+    final displayLabel = label.isEmpty ? fallback : label;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            ok ? Icons.check_circle_outline : Icons.cancel_outlined,
+            size: 14,
+            color: ok ? Colors.green.shade700 : Colors.red.shade700,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayLabel,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.blueGrey.shade900,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                if (!ok && stage.isNotEmpty)
+                  Text(
+                    'Failed at: $stage',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.red.shade700,
+                        ),
+                  ),
+              ],
+            ),
+          ),
+          if (duration is num)
+            Text(
+              '${duration}ms',
+              style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.blueGrey.shade700,
+                    fontFamily: 'monospace',
+                  ),
+            ),
         ],
       ),
     );
