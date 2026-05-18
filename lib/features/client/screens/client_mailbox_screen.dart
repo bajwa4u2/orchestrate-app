@@ -224,6 +224,11 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
               providerAvailability: data.providerAvailability,
             ),
             const SizedBox(height: 18),
+            _TransportAuthorityPanel(
+              clientTransportAuthorized: data.clientTransportAuthorized,
+              platformTransportAvailable: data.platformTransportAvailable,
+            ),
+            const SizedBox(height: 18),
             if (data.mailboxProvider == 'SMTP') ...[
               _ReplyMonitoringPanel(
                 onAttach: () => _openImapDialog(data, data.mailboxId),
@@ -419,6 +424,18 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     final blockers = asList(readiness['blockers']).map(asMap).toList();
     final ready = readiness['ready'] == true;
 
+    // Transport authority distinction — Phase 3 of runtime truthfulness.
+    // `clientTransportAuthorized` is the only correct answer to "does
+    // the tenant have an authorized sending mailbox?" — a platform/
+    // bootstrap mailbox can NEVER satisfy it.
+    final clientTransportAuthorized =
+        readiness['clientTransportAuthorized'] == true;
+    final platformTransport = asMap(readiness['platformTransport']);
+    final platformTransportAvailable = platformTransport['available'] == true;
+    final mailboxIsClientOwned = mailbox['isClientOwned'] == true;
+    final mailboxIsPlatformBootstrap =
+        mailbox['isPlatformBootstrap'] == true;
+
     final dispatchRows = dispatches.take(8).map((raw) {
       final m = asMap(raw);
       return _MailboxRow(
@@ -447,7 +464,12 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     final domainAttached = sendingDomain.isNotEmpty &&
         readText(sendingDomain, 'domain').trim().isNotEmpty &&
         readText(sendingDomain, 'status').toLowerCase() != 'no_domain';
-    final hasMailbox = mailbox.isNotEmpty;
+    // CRITICAL: `hasMailbox` here means "has a CLIENT-authorized sending
+    // mailbox." A platform/bootstrap mailbox that happens to be present
+    // does NOT count — even if the backend echoes a mailbox object,
+    // we treat it as missing for client transport readiness purposes.
+    final hasMailbox = clientTransportAuthorized ||
+        (mailbox.isNotEmpty && mailboxIsClientOwned && !mailboxIsPlatformBootstrap);
     final connectedFlag = readText(mailbox, 'connected').toLowerCase() == 'true';
     final verifiedFlag = readText(mailbox, 'verified').toLowerCase() == 'true';
     final dnsVerified = sendingDomain['ready'] == true;
@@ -515,11 +537,13 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       mailbox: mailbox,
       ready: ready,
       availability: providerAvailability,
+      clientTransportAuthorized: clientTransportAuthorized,
     );
 
     final hero = _heroFor(
       ready: ready,
-      hasMailbox: mailbox.isNotEmpty,
+      hasMailbox: hasMailbox,
+      platformTransportAvailable: platformTransportAvailable,
       blockers: blockers,
     );
 
@@ -551,6 +575,8 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       operationalIdentity: operationalIdentity,
       mailboxId: mailboxId,
       mailboxProvider: mailboxProvider,
+      clientTransportAuthorized: clientTransportAuthorized,
+      platformTransportAvailable: platformTransportAvailable,
     );
   }
 
@@ -725,13 +751,26 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     required Map<String, dynamic> mailbox,
     required bool ready,
     required Map<String, _ProviderAvailabilityEntry> availability,
+    required bool clientTransportAuthorized,
   }) {
     if (ready) return const <_MailboxPrimaryAction>[];
 
     final byCode = <String, Map<String, dynamic>>{
       for (final blocker in blockers) readText(blocker, 'code'): blocker,
     };
-    final hasMailbox = mailbox.isNotEmpty;
+    // Critical: "hasMailbox" for action visibility purposes means
+    // "has a CLIENT-authorized transport." Bootstrap rows are not
+    // counted — even if the readiness response echoes a mailbox
+    // object, that object may be a platform/bootstrap row. Connect
+    // actions must remain visible until the tenant authorizes its
+    // own transport.
+    final mailboxIsClientOwned = mailbox['isClientOwned'] == true;
+    final mailboxIsPlatformBootstrap =
+        mailbox['isPlatformBootstrap'] == true;
+    final hasMailbox = clientTransportAuthorized ||
+        (mailbox.isNotEmpty &&
+            mailboxIsClientOwned &&
+            !mailboxIsPlatformBootstrap);
     final providerRaw = readText(mailbox, 'provider').toUpperCase();
     final mailboxId =
         readText(mailbox, 'id').isEmpty ? null : readText(mailbox, 'id');
@@ -809,13 +848,14 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   _MailboxHero _heroFor({
     required bool ready,
     required bool hasMailbox,
+    required bool platformTransportAvailable,
     required List<Map<String, dynamic>> blockers,
   }) {
     if (ready) {
       return const _MailboxHero(
-        headline: 'Sending infrastructure is ready',
+        headline: 'Client-authorized transport active',
         subtitle:
-            'Domain identity, sending transport, and trust posture are all in place. Managed execution dispatches against this infrastructure.',
+            'A client-owned sending mailbox is authorized and reply continuity is enabled. Managed execution dispatches against this infrastructure.',
         bannerTitle: 'Dispatch eligibility granted',
         bannerMessage:
             'No action required here unless your provider asks you to re-authorize the OAuth grant.',
@@ -836,6 +876,17 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       );
     }
     if (!hasMailbox) {
+      if (platformTransportAvailable) {
+        return const _MailboxHero(
+          headline: 'Authorize your sending mailbox',
+          subtitle:
+              'Platform transport is available for Orchestrate-owned correspondence, but it cannot send on behalf of your tenant. Managed dispatch requires a client-authorized mailbox — connect Google, Microsoft 365, or SMTP+IMAP to enable outreach.',
+          bannerTitle: 'Client transport authorization required',
+          bannerMessage:
+              'Platform bootstrap transport ≠ tenant dispatch authority. Connect your own mailbox below — until then dispatch is held.',
+          bannerTone: ClientBannerTone.warning,
+        );
+      }
       return const _MailboxHero(
         headline: 'Attach sending infrastructure',
         subtitle:
@@ -849,7 +900,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     return const _MailboxHero(
       headline: 'Finish verifying your sending identity',
       subtitle:
-          'A transport is connected but one identity layer is still pending. Resolve it to unlock dispatch eligibility.',
+          'A client transport is connected but one identity layer is still pending. Resolve it to unlock dispatch eligibility.',
       bannerTitle: 'One identity layer remaining',
       bannerMessage:
           'Resolve the pending identity layer. Dispatch eligibility is granted as soon as it clears.',
@@ -876,6 +927,8 @@ class _MailboxViewData {
     required this.operationalIdentity,
     required this.mailboxId,
     required this.mailboxProvider,
+    required this.clientTransportAuthorized,
+    required this.platformTransportAvailable,
   });
 
   final int dispatchCount;
@@ -894,6 +947,13 @@ class _MailboxViewData {
   final _OperationalIdentity operationalIdentity;
   final String mailboxId;
   final String mailboxProvider;
+  /// True only when a CLIENT-owned, AUTHORIZED transport row exists.
+  /// Platform/bootstrap availability does NOT flip this.
+  final bool clientTransportAuthorized;
+  /// True when a platform/bootstrap transport is reachable. Surfaced
+  /// for UI disclosure only — never as a substitute for client
+  /// transport authorization.
+  final bool platformTransportAvailable;
 }
 
 class _ProviderAvailabilityEntry {
@@ -1049,6 +1109,63 @@ class _IdentityStep {
   final bool complete;
   final String description;
   final String badge;
+}
+
+/// Explicit panel that names the platform-bootstrap transport vs the
+/// client-authorized transport. The bootstrap transport exists for
+/// Orchestrate-owned correspondence and platform operations only —
+/// it cannot send on behalf of any client tenant. This panel makes
+/// the distinction visible so users do not mistake "platform
+/// reachable" for "client dispatch authorized."
+class _TransportAuthorityPanel extends StatelessWidget {
+  const _TransportAuthorityPanel({
+    required this.clientTransportAuthorized,
+    required this.platformTransportAvailable,
+  });
+
+  final bool clientTransportAuthorized;
+  final bool platformTransportAvailable;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClientPanel(
+      title: 'Transport authority',
+      subtitle:
+          'Platform transport exists for Orchestrate-owned correspondence. Client dispatch requires a client-authorized mailbox — they are separate authorities.',
+      children: [
+        ClientInfoRow(
+          title: 'Platform transport (Orchestrate-owned)',
+          primary: platformTransportAvailable
+              ? 'Available. Handles platform/system correspondence only.'
+              : 'Not detected.',
+          trailing: ClientBadge(
+            label: platformTransportAvailable ? 'Available' : 'Not detected',
+          ),
+        ),
+        ClientInfoRow(
+          title: 'Client-authorized transport (tenant-owned)',
+          primary: clientTransportAuthorized
+              ? 'Authorized. Managed dispatch and reply continuity are eligible.'
+              : 'Not authorized. Managed dispatch is held until a client-owned mailbox is connected (Google, Microsoft 365, or SMTP+IMAP).',
+          trailing: ClientBadge(
+            label:
+                clientTransportAuthorized ? 'Authorized' : 'Authorization required',
+          ),
+        ),
+        ClientInfoRow(
+          title: 'Dispatch eligibility',
+          primary: clientTransportAuthorized
+              ? 'Eligible. The runtime line on Home reports whether dispatch is in flight right now.'
+              : (platformTransportAvailable
+                  ? 'Blocked. Platform transport cannot send on behalf of this tenant — managed dispatch requires client transport authorization.'
+                  : 'Blocked. Neither client transport nor platform transport is currently authoritative.'),
+          trailing: ClientBadge(
+            label: clientTransportAuthorized ? 'Eligible' : 'Blocked',
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _SendingDomainPanel extends StatelessWidget {
