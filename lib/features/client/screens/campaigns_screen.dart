@@ -134,19 +134,21 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
   String get _campaignStatusLabel {
     switch (_campaignState) {
       case 'ACTIVATING':
-        return 'Activation in progress';
+        return 'Preparing operations';
+      case 'RETRY_SCHEDULED':
+        return 'Retry scheduled';
       case 'ACTIVE':
-        return 'Campaign active';
+        return 'Operational execution active';
       case 'PAUSED':
         return 'Paused';
       case 'BLOCKED':
-        return 'Blocked';
+        return 'Operational issue detected';
       case 'ERROR':
-        return 'Needs attention';
+        return 'Action required';
       case 'NEEDS_REBUILD':
-        return 'Needs rebuild';
+        return 'Action required';
       default:
-        return 'Ready for activation';
+        return 'Ready to start';
     }
   }
 
@@ -234,15 +236,15 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
     final reason = _string(_campaignActionEligibility['blockedReason']);
     switch (reason) {
       case 'active_dispatch_in_progress':
-        return 'Governed dispatch is in flight. Open Execution to watch managed-execution state.';
+        return 'Outreach is already running. Open Operations to watch live execution.';
       case 'activation_in_progress':
-        return 'Activation is already queued. Status will refresh as readiness orchestration completes.';
+        return 'Orchestrate is already preparing operations. The page will update as soon as live execution begins.';
       case 'mailbox_not_ready':
-        return 'Mailbox readiness is not satisfied yet. Reconnect or verify the mailbox so execution can resume.';
+        return 'The sending mailbox needs attention before Orchestrate can resume.';
       case 'recent_restart_already_processed':
-        return 'Recent execution change was just processed. Orchestrate is settling state before the next pass.';
+        return 'Orchestrate is settling the most recent change before the next pass.';
       default:
-        return 'A readiness-orchestration check is currently holding execution. Orchestrate will lift the hold automatically.';
+        return 'Orchestrate is holding execution briefly while a readiness check completes. The hold will lift automatically.';
     }
   }
 
@@ -1450,9 +1452,15 @@ String _resolveCampaignState(
   final effectiveGenerationState =
       generationState.isNotEmpty ? generationState : profileGenerationState;
 
+  if (bootstrapStatus == 'activation_retry_scheduled') {
+    // Distinct from 'preparing operations' — retries are a
+    // truthful signal that the previous run failed and Orchestrate
+    // is going to try again, not that it's still progressing
+    // through the first activation pass.
+    return 'RETRY_SCHEDULED';
+  }
   if (bootstrapStatus == 'activation_requested' ||
-      bootstrapStatus == 'activation_in_progress' ||
-      bootstrapStatus == 'activation_retry_scheduled') {
+      bootstrapStatus == 'activation_in_progress') {
     return 'ACTIVATING';
   }
   if (bootstrapStatus == 'activation_completed') {
@@ -1479,17 +1487,17 @@ String? _resolveActivationMessage(
 
   switch (bootstrapStatus) {
     case 'activation_requested':
-      return 'Activation request accepted. Orchestrate is preparing the execution scope now.';
+      return 'Orchestrate is preparing operations for you.';
     case 'activation_in_progress':
-      return 'Activation in progress. Signal discovery and qualification are coming online.';
+      return 'Preparing operations. Orchestrate is identifying qualified opportunities and lining up outreach.';
     case 'activation_retry_scheduled':
-      return 'Activation hit a temporary issue. Orchestrate will retry automatically.';
+      return 'Orchestrate hit a transient issue and will retry automatically. No action required unless this persists.';
     case 'activation_completed':
-      return 'Execution scope is active. Discovery, qualification, and governed dispatch are running.';
+      return 'Operational execution is active. Orchestrate is working for you.';
     case 'activation_failed':
       return lastError.isEmpty
-          ? 'Activation did not finish cleanly. Operator review is queued.'
-          : lastError;
+          ? 'Operational issue detected. Orchestrate has flagged this for review — no client action yet.'
+          : 'Operational issue detected: $lastError';
     default:
       return null;
   }
