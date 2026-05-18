@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
@@ -329,11 +333,92 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       setState(() => _testOkMessage = message);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _errorMessage =
-          'Test failed: ${error.toString().replaceAll(RegExp(r'^Exception:\s*'), '')}');
+      // CRITICAL: never leak raw exception text. Map known failure
+      // shapes into operational copy keyed by failure class so the
+      // user sees an actionable next step, not a Dart stack trace.
+      final mapped = _mapTransportError(error);
+      setState(() {
+        _smtpDiagnostic = mapped.diagnosticPayload;
+        _errorMessage = mapped.userMessage;
+      });
     } finally {
       if (mounted) setState(() => _testing = false);
     }
+  }
+
+  /// Convert any exception thrown by the SMTP / IMAP / save calls
+  /// into a structured `{userMessage, diagnosticPayload}` shape so
+  /// the dialog can render safe operational copy. The mapping
+  /// covers:
+  ///   - TimeoutException   → orchestration_timeout
+  ///   - ApiException 4xx   → structured backend body if present,
+  ///                          else server-side classified failure
+  ///   - ApiException 5xx   → save/orchestration failure
+  ///   - generic Exception  → unknown class, render-safe text
+  _MappedTransportError _mapTransportError(Object error) {
+    if (error is TimeoutException) {
+      return _MappedTransportError(
+        userMessage:
+            'The test did not complete in time. The deployment runtime may be slow to reach the provider. Retry — if this persists, it is likely a runtime network reachability issue, not a credential problem.',
+        diagnosticPayload: <String, dynamic>{
+          'failureStage': 'orchestration_timeout',
+          'failureCode': 'EORCH_TIMEOUT_FE',
+          'failureMessage':
+              'HTTP request to the transport-test endpoint did not complete before the client cap.',
+          'host': _smtpHost.text.trim(),
+          'port': _smtpPortValue,
+          'encryption': _smtpSecure,
+          'providerHint': _providerKey ?? 'custom',
+          'fallbackHints': const <String>[],
+          'retrySuggestion':
+              'Retry the test. If it consistently times out, the runtime likely cannot reach this provider — try a different transport or contact support.',
+          'correlationId': '',
+        },
+      );
+    }
+    if (error is ApiException) {
+      // Body may already be a structured diagnostic from the backend.
+      // Surface it verbatim so failureClass guidance renders.
+      final structured = _parseStructuredError(error.body);
+      if (structured != null) {
+        return _MappedTransportError(
+          userMessage: structured.userMessage,
+          diagnosticPayload: structured.diagnostic,
+        );
+      }
+      return _MappedTransportError(
+        userMessage:
+            'The transport test could not complete (${error.statusCode}). Retry; if persistent, capture the request reference and contact support.',
+        diagnosticPayload: <String, dynamic>{
+          'failureStage': 'unknown',
+          'failureCode': 'EHTTP_${error.statusCode}',
+          'failureMessage': error.displayMessage,
+          'host': _smtpHost.text.trim(),
+          'port': _smtpPortValue,
+          'encryption': _smtpSecure,
+          'providerHint': _providerKey ?? 'custom',
+          'fallbackHints': const <String>[],
+          'retrySuggestion': 'Retry, then contact support if persistent.',
+          'correlationId': error.correlationId ?? '',
+        },
+      );
+    }
+    return _MappedTransportError(
+      userMessage:
+          'The transport test ran into an unexpected error. Retry; if persistent, capture the request reference and contact support.',
+      diagnosticPayload: <String, dynamic>{
+        'failureStage': 'unknown',
+        'failureCode': 'EUNKNOWN_FE',
+        'failureMessage': '',
+        'host': _smtpHost.text.trim(),
+        'port': _smtpPortValue,
+        'encryption': _smtpSecure,
+        'providerHint': _providerKey ?? 'custom',
+        'fallbackHints': const <String>[],
+        'retrySuggestion': 'Retry, then contact support if persistent.',
+        'correlationId': '',
+      },
+    );
   }
 
   void _applyFallback({
@@ -369,8 +454,11 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
       setState(() => _result = result);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _errorMessage =
-          'Connect failed: ${error.toString().replaceAll(RegExp(r'^Exception:\s*'), '')}');
+      final mapped = _mapTransportError(error);
+      setState(() {
+        _smtpDiagnostic = mapped.diagnosticPayload;
+        _errorMessage = mapped.userMessage;
+      });
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -1399,5 +1487,117 @@ class _ProviderGuidance extends StatelessWidget {
         ],
       ],
     );
+  }
+}
+
+/// Mapping result emitted by `_mapTransportError`. The user message
+/// is rendered in the dialog's error banner; the diagnostic payload
+/// is rendered in `_SmtpDiagnosticPanel` (failureStage / nextAction
+/// / fallback hints).
+class _MappedTransportError {
+  const _MappedTransportError({
+    required this.userMessage,
+    required this.diagnosticPayload,
+  });
+
+  final String userMessage;
+  final Map<String, dynamic> diagnosticPayload;
+}
+
+/// Parse a structured backend error body (the JSON-encoded
+/// BadRequestException body the controller throws on save failure).
+/// Returns null when the body is not a structured shape — the
+/// caller falls back to a generic ApiException mapping.
+_StructuredError? _parseStructuredError(String body) {
+  if (body.trim().isEmpty) return null;
+  try {
+    final decoded = jsonDecode(body);
+    if (decoded is! Map) return null;
+    final map = decoded.map((k, v) => MapEntry('$k', v));
+    final diagnostic = map['diagnostic'];
+    final failureStage = (map['stage'] ?? map['failureStage'] ?? '').toString();
+    final message = (map['message'] ?? map['failureMessage'] ?? '').toString();
+    if (diagnostic is Map) {
+      return _StructuredError(
+        userMessage: _userMessageForStage(failureStage, message),
+        diagnostic: diagnostic.map((k, v) => MapEntry('$k', v)),
+      );
+    }
+    if (failureStage.isNotEmpty || message.isNotEmpty) {
+      return _StructuredError(
+        userMessage: _userMessageForStage(failureStage, message),
+        diagnostic: <String, dynamic>{
+          'failureStage': failureStage.isEmpty ? 'unknown' : failureStage,
+          'failureCode': (map['failureCode'] ?? '').toString(),
+          'failureMessage': message,
+          'host': (map['host'] ?? '').toString(),
+          'port': map['port'],
+          'encryption': (map['encryption'] ?? '').toString(),
+          'providerHint': (map['providerHint'] ?? 'custom').toString(),
+          'fallbackHints': map['fallbackHints'] ?? const <String>[],
+          'retrySuggestion': (map['retrySuggestion'] ?? '').toString(),
+          'correlationId': (map['correlationId'] ?? '').toString(),
+        },
+      );
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+class _StructuredError {
+  const _StructuredError({
+    required this.userMessage,
+    required this.diagnostic,
+  });
+
+  final String userMessage;
+  final Map<String, dynamic> diagnostic;
+}
+
+String _userMessageForStage(String stage, String fallbackMessage) {
+  switch (stage) {
+    case 'dns_failed':
+    case 'dns':
+      return 'The provider host could not be resolved. Check the host spelling.';
+    case 'tcp_timeout':
+    case 'tcp':
+      return 'The transport test could not reach the provider in time. The deployment runtime may be filtering outbound traffic to this port — Orchestrate will try the alternate endpoint on retry.';
+    case 'tls_timeout':
+    case 'tls':
+      return 'The TLS handshake with the provider did not complete. Try the implicit-TLS endpoint (port 465) — STARTTLS is more brittle on managed runtimes.';
+    case 'starttls':
+    case 'starttls_failed':
+      return 'STARTTLS upgrade did not complete. The implicit-TLS endpoint (port 465) avoids this negotiation entirely.';
+    case 'greeting':
+    case 'greeting_timeout':
+      return 'The provider opened a connection but did not return an SMTP greeting in time. Check that the host actually serves SMTP on this port.';
+    case 'auth':
+    case 'auth_failed':
+    case 'auth_post_dkim':
+      return 'The provider rejected the credentials. Most providers require an APP-SPECIFIC PASSWORD if 2FA is enabled — the account password will not work.';
+    case 'provider_policy_block':
+      return 'The provider rejected the connection on policy grounds. Check the provider account settings (region, SMTP-AUTH enabled, admin policy).';
+    case 'runtime_egress_block':
+      return 'Every candidate endpoint failed at the network layer. This looks like a deployment runtime network reachability issue, not a credential problem.';
+    case 'orchestration_timeout':
+      return 'The transport test orchestration ran out of time before completing. The runtime is likely slow to reach this provider — retry.';
+    case 'vault_store':
+    case 'vault_stage_failed':
+      return 'SMTP verified, but the credential vault could not store the credentials. Retry; if this persists, capture the reference and contact support.';
+    case 'mailbox_resolve':
+    case 'mailbox_update':
+    case 'db_stage_failed':
+      return 'SMTP verified, but the mailbox database write failed. Retry; if this persists, capture the reference and contact support.';
+    case 'save_stage_failed':
+      return 'SMTP verified, but the save flow failed after verification. Retry; if persistent, contact support.';
+    case 'transport_post_dkim':
+      return 'SMTP transport regressed between verification and final save. Retry once; if it persists, the deployment runtime may be unstable.';
+    default:
+      if (fallbackMessage.isNotEmpty) {
+        return 'The transport test reported: $fallbackMessage';
+      }
+      return 'The transport test could not complete. Retry, then contact support if persistent.';
   }
 }

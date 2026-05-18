@@ -101,6 +101,12 @@ class ClientMailboxRepository {
   /// Validate SMTP credentials without persisting anything. Used by
   /// the pre-save "Test connection" affordance on the SMTP onboarding
   /// form. Throws ApiException on failure with the upstream SMTP error.
+  ///
+  /// Uses an extended 60s HTTP timeout because the backend's
+  /// candidate-retry orchestration runs up to ~30s; the client must
+  /// outlast it so the orchestrator's structured response makes it
+  /// back to the UI instead of being cut short by an HTTP-level
+  /// timeout (which would leak as raw TimeoutException).
   Future<Map<String, dynamic>> testSmtpConnection({
     required String host,
     required int port,
@@ -127,6 +133,7 @@ class ClientMailboxRepository {
           'providerOverride': providerOverride,
       },
       surface: ApiSurface.client,
+      timeout: const Duration(seconds: 60),
     );
     return _asMap(json);
   }
@@ -151,6 +158,7 @@ class ClientMailboxRepository {
         if (folder != null && folder.trim().isNotEmpty) 'folder': folder,
       },
       surface: ApiSurface.client,
+      timeout: const Duration(seconds: 60),
     );
     return _asMap(json);
   }
@@ -199,6 +207,7 @@ class ClientMailboxRepository {
       '/client/mailbox/custom-transport/connect',
       body: body,
       surface: ApiSurface.client,
+      timeout: const Duration(seconds: 90),
     );
     return _asMap(json);
   }

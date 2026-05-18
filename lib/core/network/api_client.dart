@@ -37,12 +37,13 @@ class ApiClient {
     String path, {
     required Map<String, dynamic> body,
     ApiSurface surface = ApiSurface.public,
+    Duration? timeout,
   }) async {
     final response = await _httpClient.post(
       _uri(path),
       headers: await _headers(surface),
       body: jsonEncode(body),
-    ).timeout(AppConfig.apiTimeout);
+    ).timeout(timeout ?? AppConfig.apiTimeout);
     return _decode(response);
   }
 
