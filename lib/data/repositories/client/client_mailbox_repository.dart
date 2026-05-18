@@ -84,6 +84,20 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Provider catalog the chooser renders. Returned as data so the
+  /// frontend never hard-codes provider labels.
+  Future<List<Map<String, dynamic>>> fetchProviderCatalog() async {
+    final json = await _apiClient.getJson(
+      '/client/mailbox/smtp/providers/catalog',
+      surface: ApiSurface.client,
+    );
+    final providers = _asMap(json)['providers'];
+    if (providers is List) {
+      return providers.whereType<Map>().map(_asMap).toList();
+    }
+    return const <Map<String, dynamic>>[];
+  }
+
   /// Validate SMTP credentials without persisting anything. Used by
   /// the pre-save "Test connection" affordance on the SMTP onboarding
   /// form. Throws ApiException on failure with the upstream SMTP error.
@@ -96,6 +110,7 @@ class ClientMailboxRepository {
     required String fromAddress,
     String? fromName,
     String? replyTo,
+    String? providerOverride,
   }) async {
     final json = await _apiClient.postJson(
       '/client/mailbox/smtp/test-connection',
@@ -108,6 +123,8 @@ class ClientMailboxRepository {
         'fromAddress': fromAddress,
         if (fromName != null && fromName.trim().isNotEmpty) 'fromName': fromName,
         if (replyTo != null && replyTo.trim().isNotEmpty) 'replyTo': replyTo,
+        if (providerOverride != null && providerOverride.isNotEmpty)
+          'providerOverride': providerOverride,
       },
       surface: ApiSurface.client,
     );

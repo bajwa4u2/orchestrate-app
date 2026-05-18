@@ -76,6 +76,14 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
   String? _errorMessage;
   String? _testOkMessage;
   Map<String, dynamic>? _result;
+  /// Provider catalog from /v1/client/mailbox/smtp/providers/catalog.
+  /// Drives the chooser at the top of the dialog. Null until loaded;
+  /// empty list when the endpoint returns no providers.
+  List<Map<String, dynamic>>? _catalog;
+  /// Currently-selected provider key from the chooser ('zoho',
+  /// 'generic', 'google', 'microsoft', or null when no choice made
+  /// yet).
+  String? _providerKey;
   /// Structured diagnostic returned by the backend SMTP probe when
   /// the test connection fails. Populated from the response's
   /// `diagnostic` block; null when no test has been run or the most
@@ -107,6 +115,65 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
     _imapUsername = TextEditingController();
     _imapPassword = TextEditingController();
     _imapFolder = TextEditingController(text: 'INBOX');
+    _loadCatalog();
+  }
+
+  Future<void> _loadCatalog() async {
+    try {
+      final catalog = await _repository.fetchProviderCatalog();
+      // Filter to credentialType=smtp_imap — the chooser entries the
+      // SMTP dialog can act on. OAuth providers (Google / Microsoft)
+      // are connected via separate flows; we list them in the chooser
+      // as informational entries that route the user out of this
+      // dialog.
+      if (!mounted) return;
+      setState(() => _catalog = catalog);
+    } catch (_) {
+      // Catalog is non-essential — the dialog still works without
+      // it (legacy free-form mode).
+      if (!mounted) return;
+      setState(() => _catalog = const <Map<String, dynamic>>[]);
+    }
+  }
+
+  void _applyCatalogChoice(Map<String, dynamic> entry) {
+    final key = (entry['key'] ?? '').toString();
+    final credentialType = (entry['credentialType'] ?? '').toString();
+    if (credentialType != 'smtp_imap') {
+      // Selected an OAuth provider — close the dialog with a hint;
+      // the caller routes to the OAuth screen.
+      setState(() {
+        _errorMessage =
+            'For ${entry['displayName']}, use the OAuth connect action on the main Infrastructure screen (Connect Google / Microsoft).';
+      });
+      return;
+    }
+    final defaultHost = (entry['defaultHost'] ?? '').toString();
+    final defaultPort = entry['defaultPort'];
+    final defaultEncryption = (entry['defaultEncryption'] ?? '').toString();
+    setState(() {
+      _providerKey = key;
+      _errorMessage = null;
+      _testOkMessage = null;
+      _smtpDiagnostic = null;
+      _smtpAttempts = null;
+      _smtpWinning = null;
+      if (defaultHost.isNotEmpty) {
+        _smtpHost.text = defaultHost;
+      }
+      if (defaultPort is num) {
+        _smtpPort.text = defaultPort.toInt().toString();
+      }
+      if (defaultEncryption.isNotEmpty) {
+        _smtpSecure = defaultEncryption;
+      }
+      // For Zoho IMAP, pre-fill the standard implicit-TLS endpoint.
+      if (key == 'zoho') {
+        _imapHost.text = 'imappro.zoho.com';
+        _imapPort.text = '993';
+        _imapSecure = 'tls';
+      }
+    });
   }
 
   @override
@@ -145,6 +212,7 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
         'fromAddress': _fromAddress.text.trim(),
         if (_fromName.text.trim().isNotEmpty) 'fromName': _fromName.text.trim(),
         if (_replyTo.text.trim().isNotEmpty) 'replyTo': _replyTo.text.trim(),
+        if (_providerKey != null) 'providerOverride': _providerKey,
       };
 
   Map<String, dynamic>? _imapPayload() {
@@ -181,6 +249,7 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
         fromAddress: _fromAddress.text.trim(),
         fromName: _fromName.text,
         replyTo: _replyTo.text,
+        providerOverride: _providerKey,
       );
       // The backend SMTP probe returns a 200 with either
       // `{ ok: true, ... }` on success or
@@ -356,6 +425,12 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
           'first; bodies are fetched only for matched operations.',
           style: theme.textTheme.bodySmall
               ?.copyWith(fontStyle: FontStyle.italic),
+        ),
+        const SizedBox(height: 16),
+        _ProviderChooser(
+          catalog: _catalog,
+          selectedKey: _providerKey,
+          onChoose: _applyCatalogChoice,
         ),
         const SizedBox(height: 20),
         _sectionHeader(theme, 'Outbound sending (SMTP)'),
@@ -1141,6 +1216,188 @@ class _AttemptRow extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Provider chooser rendered at the top of the SMTP dialog. Reads
+/// the catalog from /v1/client/mailbox/smtp/providers/catalog and
+/// renders one button per provider. Selecting an SMTP/IMAP provider
+/// prefills sensible defaults + tags subsequent requests with
+/// `providerOverride` so the backend's candidate retry knows which
+/// preset to use. OAuth entries surface as informational tags.
+class _ProviderChooser extends StatelessWidget {
+  const _ProviderChooser({
+    required this.catalog,
+    required this.selectedKey,
+    required this.onChoose,
+  });
+
+  final List<Map<String, dynamic>>? catalog;
+  final String? selectedKey;
+  final void Function(Map<String, dynamic> entry) onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final loading = catalog == null;
+    final entries = catalog ?? const <Map<String, dynamic>>[];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFD0DAE3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Pick a provider',
+            style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Orchestrate uses provider presets so you do not have to guess between ports, encryption modes, or regional endpoints.',
+            style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.blueGrey.shade800,
+                ),
+          ),
+          const SizedBox(height: 12),
+          if (loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text('Loading provider catalog…'),
+            )
+          else if (entries.isEmpty)
+            Text(
+              'Provider catalog unavailable. You can still enter SMTP credentials manually below.',
+              style: theme.textTheme.bodySmall,
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: entries.map((entry) {
+                final key = (entry['key'] ?? '').toString();
+                final label = (entry['setupActionLabel'] ?? entry['displayName'] ?? '')
+                    .toString();
+                final credentialType =
+                    (entry['credentialType'] ?? '').toString();
+                final isOauth = credentialType == 'oauth';
+                final isSelected = selectedKey == key;
+                final color = isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.blueGrey.shade400;
+                return OutlinedButton.icon(
+                  onPressed: () => onChoose(entry),
+                  icon: Icon(
+                    isOauth ? Icons.shield_outlined : Icons.dns_outlined,
+                    size: 16,
+                    color: color,
+                  ),
+                  label: Text(
+                    label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: color),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          if (selectedKey != null) ...[
+            const SizedBox(height: 10),
+            _ProviderGuidance(
+              entry: entries.firstWhere(
+                (e) => (e['key'] ?? '').toString() == selectedKey,
+                orElse: () => const <String, dynamic>{},
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Renders the provider's userGuidance + knownQuirks below the
+/// chooser once a provider is picked.
+class _ProviderGuidance extends StatelessWidget {
+  const _ProviderGuidance({required this.entry});
+
+  final Map<String, dynamic> entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (entry.isEmpty) return const SizedBox.shrink();
+    final guidanceRaw = entry['userGuidance'];
+    final quirksRaw = entry['knownQuirks'];
+    final guidance = guidanceRaw is List
+        ? guidanceRaw.map((e) => e.toString()).toList()
+        : <String>[];
+    final quirks = quirksRaw is List
+        ? quirksRaw.map((e) => e.toString()).toList()
+        : <String>[];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final line in guidance) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline,
+                    size: 14, color: Colors.blueGrey.shade700),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    line,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.blueGrey.shade900,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        for (final line in quirks) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.warning_amber_rounded,
+                    size: 14, color: Colors.orange.shade800),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    line,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.brown.shade900,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
