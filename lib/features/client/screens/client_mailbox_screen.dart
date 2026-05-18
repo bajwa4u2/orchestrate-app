@@ -207,7 +207,23 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
           ),
           actions: _buildActions(data),
           children: [
-            if (_resultMessage != null) ...[
+            // ─────────────────────────────────────────────────────
+            //  Primary status card — the ONE truth above the fold.
+            //  Derived from snapshot.primaryAction. Everything else
+            //  on this page is demoted to "Details" below.
+            // ─────────────────────────────────────────────────────
+            _PrimaryStatusCard(snapshot: data.snapshot),
+            const SizedBox(height: 18),
+            // "Latest result" is demoted to a thin transient line
+            // and ONLY appears for ~3 seconds of "Last action: …"
+            // copy. It does not compete with the primary card.
+            if (_resultMessage != null && data.snapshot.isNotEmpty) ...[
+              _LastActionLine(message: _resultMessage!),
+              const SizedBox(height: 12),
+            ] else if (_resultMessage != null) ...[
+              // No canonical snapshot loaded — fall back to the
+              // legacy result panel so the user still sees what
+              // happened.
               ClientPanel(
                 title: 'Latest result',
                 children: [
@@ -382,8 +398,13 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     );
     if (saved && mounted) {
       setState(() {
-        _resultMessage =
-            'Custom mail transport connected. Publish the DKIM TXT record at your DNS provider so trust verification can complete. Reply continuity is wired through the IMAP block you provided in the same setup.';
+        // CRITICAL: neutral "Last action" text. Do NOT prescribe
+        // a next step here — the canonical snapshot's
+        // primaryAction decides what (if anything) the user must
+        // do next. Hard-coding "Publish the DKIM TXT record" was
+        // the source of the live setup loop: when DNS was
+        // already verified, this message contradicted reality.
+        _resultMessage = 'SMTP credentials saved';
         _future = _load();
       });
     }
@@ -634,6 +655,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       mailboxProvider: mailboxProvider,
       clientTransportAuthorized: clientTransportAuthorized,
       platformTransportAvailable: platformTransportAvailable,
+      snapshot: snapshot,
     );
   }
 
@@ -999,7 +1021,12 @@ class _MailboxViewData {
     required this.mailboxProvider,
     required this.clientTransportAuthorized,
     required this.platformTransportAvailable,
+    required this.snapshot,
   });
+
+  /// Raw canonical snapshot map — the SINGLE source of truth for
+  /// every panel. Empty when the snapshot endpoint was unreachable.
+  final Map<String, dynamic> snapshot;
 
   final int dispatchCount;
   final int replyCount;
@@ -1234,6 +1261,163 @@ class _TransportAuthorityPanel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Single primary-status card. Above-the-fold authority on the
+/// Infrastructure page. Derives from `snapshot.primaryAction` and
+/// `snapshot.dispatch.blockerMessage`. No competing copy.
+class _PrimaryStatusCard extends StatelessWidget {
+  const _PrimaryStatusCard({required this.snapshot});
+
+  final Map<String, dynamic> snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (snapshot.isEmpty) return const SizedBox.shrink();
+    final primaryAction = (snapshot['primaryAction'] ?? 'none').toString();
+    final primaryActionLabel =
+        (snapshot['primaryActionLabel'] ?? '').toString();
+    final dispatch = _asMap(snapshot['dispatch']);
+    final transport = _asMap(snapshot['transport']);
+    final domain = _asMap(snapshot['domain']);
+    final blockerMessage = (dispatch['blockerMessage'] ?? '').toString();
+    final ready = dispatch['eligible'] == true;
+    final headlineLabel =
+        (snapshot['headerStateLabel'] ?? '').toString();
+    final mailboxAddress = (_asMap(transport['mailbox'])['address'] ?? '')
+        .toString();
+    final dnsVerified = domain['dnsVerified'] == true;
+
+    Color borderColor;
+    Color iconColor;
+    IconData icon;
+    if (ready) {
+      borderColor = Colors.green.shade400;
+      iconColor = Colors.green.shade700;
+      icon = Icons.check_circle;
+    } else if (primaryAction == 'resolve_runtime_egress') {
+      borderColor = Colors.red.shade400;
+      iconColor = Colors.red.shade700;
+      icon = Icons.cloud_off_outlined;
+    } else if (primaryAction == 'reauthorize_provider' ||
+        primaryAction == 'connect_mailbox') {
+      borderColor = Colors.orange.shade400;
+      iconColor = Colors.orange.shade800;
+      icon = Icons.email_outlined;
+    } else if (primaryAction == 'publish_dns' || primaryAction == 'verify_dns') {
+      borderColor = Colors.orange.shade400;
+      iconColor = Colors.orange.shade800;
+      icon = Icons.dns_outlined;
+    } else {
+      borderColor = Colors.orange.shade400;
+      iconColor = Colors.orange.shade800;
+      icon = Icons.info_outline;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 22, color: iconColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      headlineLabel.isEmpty
+                          ? (ready ? 'Dispatch ready' : 'Action required')
+                          : headlineLabel,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    if (primaryAction != 'none' &&
+                        primaryActionLabel.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Next: $primaryActionLabel',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                              color: iconColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (blockerMessage.isNotEmpty && !ready) ...[
+            const SizedBox(height: 12),
+            Text(
+              blockerMessage,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+          if (ready && mailboxAddress.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Operational mailbox: $mailboxAddress'
+              '${dnsVerified ? '  ·  SPF / DKIM / DMARC verified' : ''}',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static Map<String, dynamic> _asMap(dynamic v) {
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return v.map((k, x) => MapEntry('$k', x));
+    return const <String, dynamic>{};
+  }
+}
+
+/// Thin one-line "Last action" indicator. Replaces the previous
+/// "Latest result" panel that visually competed with canonical
+/// state for primacy.
+class _LastActionLine extends StatelessWidget {
+  const _LastActionLine({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          Icon(Icons.history, size: 14, color: Colors.blueGrey.shade500),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Last action: $message',
+              style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.blueGrey.shade700,
+                    fontStyle: FontStyle.italic,
+                  ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
