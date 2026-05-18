@@ -271,19 +271,54 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
           : <Map<String, dynamic>>[];
       final provider = (smtpResult['provider'] ?? '').toString();
       if (smtpResult['ok'] != true) {
-        final diagnostic = smtpResult['diagnostic'];
+        // Build the diagnostic from TOP-LEVEL AGGREGATE fields
+        // (aggregateStage / aggregateFailureClass / aggregateMessage).
+        // The per-candidate `diagnostic` legacy field is still
+        // accepted as a fallback for older backend responses.
+        final aggregateStage =
+            (smtpResult['aggregateStage'] ?? '').toString();
+        final aggregateFailureClass =
+            (smtpResult['aggregateFailureClass'] ?? '').toString();
+        final aggregateMessage =
+            (smtpResult['aggregateMessage'] ?? '').toString();
+        final nextAction = (smtpResult['nextAction'] ?? '').toString();
+        final correlationId =
+            (smtpResult['correlationId'] ?? '').toString();
+        final legacyDiagnostic = smtpResult['diagnostic'];
+        final legacyDiagMap = legacyDiagnostic is Map
+            ? legacyDiagnostic.map((k, v) => MapEntry('$k', v))
+            : <String, dynamic>{};
+        final fallbackHints = legacyDiagMap['fallbackHints'] ?? const <String>[];
         if (!mounted) return;
         setState(() {
-          _smtpDiagnostic = diagnostic is Map<String, dynamic>
-              ? diagnostic
-              : (diagnostic is Map
-                  ? diagnostic.map(
-                      (key, value) => MapEntry('$key', value),
-                    )
-                  : <String, dynamic>{});
+          _smtpDiagnostic = <String, dynamic>{
+            // Prefer aggregate stage; fall back to legacy
+            // failureStage only if backend did not supply
+            // aggregate. Either way, this is NEVER an empty
+            // string — that was the "unknown stage" bug.
+            'stage': aggregateStage.isNotEmpty
+                ? aggregateStage
+                : (legacyDiagMap['failureStage'] ?? '').toString(),
+            'failureClass': aggregateFailureClass.isNotEmpty
+                ? aggregateFailureClass
+                : (legacyDiagMap['failureCode'] ?? '').toString(),
+            'message': aggregateMessage.isNotEmpty
+                ? aggregateMessage
+                : (legacyDiagMap['failureMessage'] ?? '').toString(),
+            'nextAction': nextAction,
+            'host': (legacyDiagMap['host'] ?? '').toString(),
+            'port': legacyDiagMap['port'],
+            'encryption': (legacyDiagMap['encryption'] ?? '').toString(),
+            'providerHint':
+                (legacyDiagMap['providerHint'] ?? '').toString(),
+            'fallbackHints': fallbackHints,
+            'correlationId': correlationId,
+          };
           _smtpAttempts = attempts;
           _smtpProvider = provider.isEmpty ? null : provider;
-          _errorMessage = 'SMTP test failed — see diagnostic below.';
+          _errorMessage = aggregateMessage.isNotEmpty
+              ? aggregateMessage
+              : 'The transport test could not complete.';
         });
         return;
       }
@@ -955,21 +990,35 @@ class _SmtpDiagnosticPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final stage = (diagnostic['failureStage'] ?? 'unknown').toString();
-    final code = (diagnostic['failureCode'] ?? '').toString();
-    final message = (diagnostic['failureMessage'] ?? '').toString();
+    // New contract: read `stage` (aggregate) first, fall back to
+    // legacy `failureStage` only for backwards compatibility. The
+    // panel NEVER renders "unknown stage" — when stage is missing
+    // we render a different headline entirely.
+    final stage = (diagnostic['stage'] ??
+            diagnostic['failureStage'] ??
+            '')
+        .toString();
+    final failureClass = (diagnostic['failureClass'] ?? '').toString();
+    final code = (diagnostic['failureCode'] ?? failureClass).toString();
+    final message = (diagnostic['message'] ??
+            diagnostic['failureMessage'] ??
+            '')
+        .toString();
     final host = (diagnostic['host'] ?? '').toString();
     final port = diagnostic['port'];
     final encryption = (diagnostic['encryption'] ?? '').toString();
     final providerHint = (diagnostic['providerHint'] ?? '').toString();
-    final retry = (diagnostic['retrySuggestion'] ?? '').toString();
+    final retry = (diagnostic['nextAction'] ??
+            diagnostic['retrySuggestion'] ??
+            '')
+        .toString();
     final correlationId = (diagnostic['correlationId'] ?? '').toString();
     final hintsRaw = diagnostic['fallbackHints'];
     final hints = (hintsRaw is List)
         ? hintsRaw.map((e) => e.toString()).toList()
         : <String>[];
 
-    final stageLabel = _stageLabel(stage);
+    final headline = _headlineForStage(stage);
 
     return Container(
       width: double.infinity,
@@ -989,7 +1038,7 @@ class _SmtpDiagnosticPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Connection failed at: $stageLabel',
+                  headline,
                   style: theme.textTheme.titleSmall?.copyWith(
                         color: Colors.brown.shade800,
                         fontWeight: FontWeight.w700,
@@ -1063,22 +1112,44 @@ class _SmtpDiagnosticPanel extends StatelessWidget {
     );
   }
 
-  static String _stageLabel(String stage) {
+  /// Compose the panel headline from the aggregate stage. NEVER
+  /// returns "unknown stage" — that was the contract-violation bug.
+  /// When the stage is unrecognised, we render a generic but truthful
+  /// headline instead.
+  static String _headlineForStage(String stage) {
     switch (stage) {
       case 'dns':
-        return 'DNS resolution';
+      case 'dns_failed':
+        return 'Connection failed at DNS resolution';
       case 'tcp':
-        return 'TCP connect';
+      case 'tcp_timeout':
+        return 'Connection failed at TCP connect';
       case 'tls':
-        return 'TLS handshake (implicit)';
+      case 'tls_timeout':
+        return 'Connection failed at TLS handshake';
       case 'starttls':
-        return 'STARTTLS upgrade';
+      case 'starttls_failed':
+        return 'Connection failed at STARTTLS upgrade';
       case 'greeting':
-        return 'SMTP greeting timeout';
+      case 'greeting_timeout':
+        return 'Connection failed at SMTP greeting';
       case 'auth':
-        return 'authentication';
+      case 'auth_failed':
+        return 'Connection failed at authentication';
+      case 'provider_policy':
+      case 'provider_policy_block':
+        return 'Connection blocked by provider policy';
+      case 'runtime_egress':
+      case 'runtime_egress_block':
+        return 'Deployment runtime could not reach the provider';
+      case 'orchestration':
+      case 'orchestration_timeout':
+        return 'Transport test did not complete in time';
+      case '':
+      case 'unknown':
+        return 'Transport test did not complete';
       default:
-        return 'unknown stage';
+        return 'Transport test did not complete';
     }
   }
 
@@ -1253,25 +1324,67 @@ class _AttemptRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final ok = attempt['ok'] == true;
+    // The new backend contract carries `status` (closed enum) on
+    // every attempt. The legacy `ok` boolean is still accepted as
+    // a fallback for backwards compatibility with old responses,
+    // but `status` is the truth source.
+    final status = (attempt['status'] ?? '').toString();
+    final legacyOk = attempt['ok'] == true;
+    final ok = status == 'attempted_success' || (status.isEmpty && legacyOk);
+    final isFailed = status == 'attempted_failed' ||
+        (status.isEmpty && !legacyOk && attempt['failureStage'] != null);
+    final isNotAttempted =
+        status == 'not_attempted' || status == 'skipped' || status == 'cancelled';
     final label = (attempt['label'] ?? '').toString();
     final host = (attempt['host'] ?? '').toString();
     final port = attempt['port']?.toString() ?? '';
     final encryption = (attempt['encryption'] ?? '').toString();
-    final stage = (attempt['failureStage'] ?? '').toString();
-    final duration = attempt['durationMs'];
+    // ONLY render a stage when this candidate actually attempted
+    // and failed. Skipped / not_attempted candidates carry no
+    // stage and we must not invent one.
+    final stage = isFailed
+        ? (attempt['stage'] ?? attempt['failureStage'] ?? '').toString()
+        : '';
+    final duration = attempt['elapsedMs'] ?? attempt['durationMs'];
     final fallback = '$host:$port ($encryption)';
     final displayLabel = label.isEmpty ? fallback : label;
+
+    IconData iconData;
+    Color iconColor;
+    String? subline;
+    Color sublineColor;
+    if (ok) {
+      iconData = Icons.check_circle_outline;
+      iconColor = Colors.green.shade700;
+      subline = null;
+      sublineColor = Colors.transparent;
+    } else if (isFailed) {
+      iconData = Icons.cancel_outlined;
+      iconColor = Colors.red.shade700;
+      subline = stage.isEmpty
+          ? 'Failed'
+          : 'Failed at: ${_attemptStageLabel(stage)}';
+      sublineColor = Colors.red.shade700;
+    } else if (isNotAttempted) {
+      iconData = Icons.remove_circle_outline;
+      iconColor = Colors.blueGrey.shade400;
+      subline = status == 'cancelled' ? 'Cancelled' : 'Not attempted';
+      sublineColor = Colors.blueGrey.shade600;
+    } else {
+      // Defensive: unrecognised status. Render as not_attempted
+      // rather than implying failure.
+      iconData = Icons.remove_circle_outline;
+      iconColor = Colors.blueGrey.shade400;
+      subline = 'Not attempted';
+      sublineColor = Colors.blueGrey.shade600;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            ok ? Icons.check_circle_outline : Icons.cancel_outlined,
-            size: 14,
-            color: ok ? Colors.green.shade700 : Colors.red.shade700,
-          ),
+          Icon(iconData, size: 14, color: iconColor),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -1284,17 +1397,20 @@ class _AttemptRow extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                 ),
-                if (!ok && stage.isNotEmpty)
+                if (subline != null)
                   Text(
-                    'Failed at: $stage',
+                    subline,
                     style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.red.shade700,
+                          color: sublineColor,
                         ),
                   ),
               ],
             ),
           ),
-          if (duration is num)
+          // Only render elapsed time when the candidate actually
+          // attempted. A "0ms" badge on a not_attempted candidate
+          // is the contract violation we just fixed.
+          if ((isFailed || ok) && duration is num)
             Text(
               '${duration}ms',
               style: theme.textTheme.bodySmall?.copyWith(
@@ -1599,5 +1715,36 @@ String _userMessageForStage(String stage, String fallbackMessage) {
         return 'The transport test reported: $fallbackMessage';
       }
       return 'The transport test could not complete. Retry, then contact support if persistent.';
+  }
+}
+
+/// Short, render-safe label for an attempted candidate's failure
+/// stage. Used in the per-attempt row. Never returns "unknown
+/// stage".
+String _attemptStageLabel(String stage) {
+  switch (stage) {
+    case 'dns':
+    case 'dns_failed':
+      return 'DNS resolution';
+    case 'tcp':
+    case 'tcp_timeout':
+      return 'TCP connect';
+    case 'tls':
+    case 'tls_timeout':
+      return 'TLS handshake';
+    case 'starttls':
+    case 'starttls_failed':
+      return 'STARTTLS upgrade';
+    case 'greeting':
+    case 'greeting_timeout':
+      return 'SMTP greeting';
+    case 'auth':
+    case 'auth_failed':
+      return 'authentication';
+    case 'orchestration':
+    case 'orchestration_timeout':
+      return 'orchestration';
+    default:
+      return stage;
   }
 }
