@@ -31,6 +31,21 @@ import 'package:orchestrate_app/features/operator/screens/operator_governance_sc
 import 'package:orchestrate_app/features/operator/screens/operator_providers_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_system_doctor_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_workspace_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/adaptation_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/guardrails_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/healing_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/learning_feed_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/operational_memory_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/patterns_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/playbooks_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/suggestions_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/cognition/cognition_home_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/continuity/continuity_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/governance/ai_approvals_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/governance/audit_timeline_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/platform_supervision/platform_supervision_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/runtime_truth/runtime_truth_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/trust_readiness/trust_readiness_screen.dart';
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
 import 'package:orchestrate_app/features/public/screens/pricing_screen.dart';
 import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart';
@@ -1207,10 +1222,12 @@ final router = GoRouter(
       builder: (context, state, child) =>
           OperatorShell(currentPath: state.uri.path, child: child),
       routes: [
+        // Legacy /operator/overview lands on Cognition Home so deep
+        // links resolve into the new IA. Original metric-wall view is
+        // available at /ops/overview-legacy during transition.
         GoRoute(
             path: '/operator/overview',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.command)),
+            builder: (context, state) => const CognitionHomeScreen()),
         GoRoute(
             path: '/operator/system',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
@@ -1305,10 +1322,84 @@ final router = GoRouter(
             path: '/operator/activity',
             builder: (context, state) => const OperatorWorkspaceScreen(
                 section: OperatorSection.activity)),
+        // Cognition Home replaces the legacy command center at the
+        // canonical landing URL. The legacy command surface remains
+        // reachable as a drill-down inside Continuity for operators
+        // who want the metric-wall view.
         GoRoute(
             path: '/ops/overview',
+            builder: (context, state) => const CognitionHomeScreen()),
+        GoRoute(
+            path: '/ops/overview-legacy',
             builder: (context, state) => const OperatorWorkspaceScreen(
                 section: OperatorSection.command)),
+        // Faculty: Trust & Readiness
+        GoRoute(
+            path: '/ops/trust-readiness',
+            builder: (context, state) => const TrustReadinessScreen()),
+        // Faculty: Continuity
+        GoRoute(
+            path: '/ops/continuity',
+            builder: (context, state) => ContinuityScreen(
+                  initialCategory: state.uri.queryParameters['category'],
+                  initialDrill: state.uri.queryParameters['drill'],
+                )),
+        // Faculty: Runtime Truth
+        GoRoute(
+            path: '/ops/runtime-truth',
+            builder: (context, state) => const RuntimeTruthScreen()),
+        // Faculty: Adaptation hub + seven subsurfaces
+        GoRoute(
+            path: '/ops/adaptation',
+            builder: (context, state) => const AdaptationHubScreen()),
+        GoRoute(
+            path: '/ops/adaptation/suggestions',
+            builder: (context, state) => const SuggestionsScreen()),
+        GoRoute(
+            path: '/ops/adaptation/playbooks',
+            builder: (context, state) => const PlaybooksScreen()),
+        GoRoute(
+            path: '/ops/adaptation/healing',
+            builder: (context, state) => const HealingScreen()),
+        GoRoute(
+            path: '/ops/adaptation/guardrails',
+            builder: (context, state) => const GuardrailsScreen()),
+        GoRoute(
+            path: '/ops/adaptation/patterns',
+            builder: (context, state) => const PatternsScreen()),
+        GoRoute(
+            path: '/ops/adaptation/learning-feed',
+            builder: (context, state) => const LearningFeedScreen()),
+        GoRoute(
+            path: '/ops/adaptation/memory',
+            builder: (context, state) => const OperationalMemoryScreen()),
+        // Faculty: Governance (extends existing /ops/governance)
+        GoRoute(
+            path: '/ops/governance/ai-approvals',
+            builder: (context, state) => const AiApprovalsScreen()),
+        GoRoute(
+            path: '/ops/governance/audit',
+            builder: (context, state) => const AuditTimelineScreen()),
+        // Faculty: Platform Supervision (honest empty state today)
+        GoRoute(
+            path: '/ops/platform-supervision',
+            builder: (context, state) =>
+                const PlatformSupervisionScreen()),
+        // Legacy queue/worker/job paths — redirect to Continuity drill
+        // (OPERATOR_WORKSPACE_SPECIFICATION.md §4.3). The drill view
+        // is engineering-altitude detail under supervision, not nav.
+        GoRoute(
+            path: '/operator/jobs-legacy',
+            redirect: (context, state) =>
+                '/ops/continuity?drill=jobs'),
+        GoRoute(
+            path: '/operator/queues-legacy',
+            redirect: (context, state) =>
+                '/ops/continuity?drill=queues'),
+        GoRoute(
+            path: '/operator/workers-legacy',
+            redirect: (context, state) =>
+                '/ops/continuity?drill=workers'),
         GoRoute(
             path: '/ops/clients',
             builder: (context, state) => const OperatorWorkspaceScreen(
