@@ -32,12 +32,16 @@ import 'package:orchestrate_app/features/operator/screens/operator_providers_scr
 import 'package:orchestrate_app/features/operator/screens/operator_system_doctor_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_workspace_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/adaptation_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/ai_economy_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/convergence_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/escalations_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/guardrails_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/healing_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/learning_feed_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/operational_memory_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/patterns_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/playbooks_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/reasoning_cache_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/suggestions_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/cognition/cognition_home_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/continuity/continuity_screen.dart';
@@ -1373,6 +1377,19 @@ final router = GoRouter(
         GoRoute(
             path: '/ops/adaptation/memory',
             builder: (context, state) => const OperationalMemoryScreen()),
+        // Convergence layer routes
+        GoRoute(
+            path: '/ops/adaptation/convergence',
+            builder: (context, state) => const ConvergenceScreen()),
+        GoRoute(
+            path: '/ops/adaptation/ai-economy',
+            builder: (context, state) => const AiEconomyScreen()),
+        GoRoute(
+            path: '/ops/adaptation/escalations',
+            builder: (context, state) => const EscalationsScreen()),
+        GoRoute(
+            path: '/ops/adaptation/reasoning-cache',
+            builder: (context, state) => const ReasoningCacheScreen()),
         // Faculty: Governance (extends existing /ops/governance)
         GoRoute(
             path: '/ops/governance/ai-approvals',

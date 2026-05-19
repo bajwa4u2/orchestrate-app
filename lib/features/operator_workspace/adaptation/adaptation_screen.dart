@@ -16,6 +16,46 @@ class AdaptationHubScreen extends StatelessWidget {
         _Header(),
         const SizedBox(height: 18),
         OperatorPanel(
+          title: 'Convergence layer',
+          subtitle:
+              'Measures whether the substrate is actually saving AI work. Cache, escalations, AI economy.',
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _HubTile(
+                title: 'Convergence metrics',
+                description:
+                    'Reuse vs escalation, patterns confirmed, recovery success, playbook outcomes. Deterministic counts; no estimates.',
+                route: '/ops/adaptation/convergence',
+                tone: OperatorTone.positive,
+              ),
+              _HubTile(
+                title: 'AI economy',
+                description:
+                    'Cache rows by source and model. Token + cost attribution. Active guardrails and breaches.',
+                route: '/ops/adaptation/ai-economy',
+                tone: OperatorTone.neutral,
+              ),
+              _HubTile(
+                title: 'Escalations',
+                description:
+                    'Append-only record of why containment had to invoke AI. Filter by reason / severity / open.',
+                route: '/ops/adaptation/escalations',
+                tone: OperatorTone.caution,
+              ),
+              _HubTile(
+                title: 'Reasoning cache',
+                description:
+                    'Durable cache of stored AI answers. Inspect hits, expiry, fingerprints. Invalidate stale entries.',
+                route: '/ops/adaptation/reasoning-cache',
+                tone: OperatorTone.neutral,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        OperatorPanel(
           title: 'Self-AI substrate',
           subtitle:
               'Deterministic > memory > AI. Append-only. Nothing auto-applies — every learned change is operator-gated.',

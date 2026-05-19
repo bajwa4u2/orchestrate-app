@@ -1,4 +1,5 @@
 import 'package:orchestrate_app/core/network/api_client.dart';
+import '../models/convergence_models.dart';
 import '../models/learning_models.dart';
 
 /// Operator-only touchpoint for the Self-AI learning substrate
@@ -271,6 +272,78 @@ class OperatorLearningRepository {
       surface: ApiSurface.operator,
     );
     return PlaybookExecutionEntry.fromJson(_asMap(json));
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  //  Convergence layer
+  // ──────────────────────────────────────────────────────────────
+
+  Future<ConvergenceSnapshot> fetchConvergenceMetrics({
+    int? windowSeconds,
+  }) async {
+    final json = await _api.getJson(
+      '/operator/learning/convergence-metrics',
+      query: _query({'windowSeconds': windowSeconds?.toString()}),
+      surface: ApiSurface.operator,
+    );
+    return ConvergenceSnapshot.fromJson(_asMap(json));
+  }
+
+  Future<AiEconomy> fetchAiEconomy({int? windowSeconds}) async {
+    final json = await _api.getJson(
+      '/operator/learning/ai-economy',
+      query: _query({'windowSeconds': windowSeconds?.toString()}),
+      surface: ApiSurface.operator,
+    );
+    return AiEconomy.fromJson(_asMap(json));
+  }
+
+  Future<List<ReasoningCacheEntry>> listReasoningCache({
+    String? source,
+    int? limit,
+  }) async {
+    final json = await _api.getJson(
+      '/operator/learning/reasoning-cache',
+      query: _query({
+        'source': source,
+        'limit': limit?.toString(),
+      }),
+      surface: ApiSurface.operator,
+    );
+    return _asList(json)
+        .whereType<Map>()
+        .map((m) => ReasoningCacheEntry.fromJson(Map<String, dynamic>.from(m)))
+        .toList(growable: false);
+  }
+
+  Future<void> invalidateReasoningCacheEntry({required String id}) async {
+    await _api.postJson(
+      '/operator/learning/reasoning-cache/$id/invalidate',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.operator,
+    );
+  }
+
+  Future<List<EscalationEntry>> listEscalations({
+    String? reason,
+    String? severity,
+    bool? onlyOpen,
+    int? limit,
+  }) async {
+    final json = await _api.getJson(
+      '/operator/learning/escalations',
+      query: _query({
+        'reason': reason,
+        'severity': severity,
+        'onlyOpen': onlyOpen == true ? 'true' : null,
+        'limit': limit?.toString(),
+      }),
+      surface: ApiSurface.operator,
+    );
+    return _asList(json)
+        .whereType<Map>()
+        .map((m) => EscalationEntry.fromJson(Map<String, dynamic>.from(m)))
+        .toList(growable: false);
   }
 
   Map<String, String>? _query(Map<String, String?> input) {
