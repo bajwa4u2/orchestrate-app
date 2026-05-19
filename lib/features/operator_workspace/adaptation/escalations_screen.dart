@@ -235,6 +235,14 @@ class _EscalationCard extends StatelessWidget {
               _Chip(label: item.reason, color: _reasonColor(item.reason)),
               const SizedBox(width: 6),
               _Chip(label: item.severity, color: _sevColor(item.severity)),
+              if (_isFallbackContext(item.contextJson)) ...[
+                const SizedBox(width: 6),
+                _Chip(
+                  label: _fallbackLabel(item.contextJson) ??
+                      'DETERMINISTIC FALLBACK',
+                  color: AppTheme.accent,
+                ),
+              ],
               const Spacer(),
               Text(_ago(item.triggeredAt),
                   style: Theme.of(context)
@@ -315,6 +323,26 @@ class _EscalationCard extends StatelessWidget {
     final buf = StringBuffer();
     data.forEach((k, v) => buf.writeln('  $k: $v'));
     return buf.toString().trimRight();
+  }
+
+  static bool _isFallbackContext(Map<String, dynamic>? context) {
+    if (context == null) return false;
+    final kind = context['kind']?.toString();
+    return kind == 'ai_call_failure' ||
+        kind == 'governance_execution_mismatch' ||
+        context['executionMode']?.toString() == 'deterministic_fallback' ||
+        context['executionMode']?.toString() == 'cooldown_fallback';
+  }
+
+  static String? _fallbackLabel(Map<String, dynamic>? context) {
+    if (context == null) return null;
+    final kind = context['kind']?.toString();
+    final mode = context['executionMode']?.toString();
+    if (mode == 'cooldown_fallback') return 'COOLDOWN FALLBACK';
+    if (kind == 'governance_execution_mismatch') return 'GOVERNANCE/EXEC MISMATCH';
+    if (kind == 'ai_call_failure') return 'AI FAILURE FALLBACK';
+    if (mode == 'deterministic_fallback') return 'DETERMINISTIC FALLBACK';
+    return null;
   }
 
   static String _ago(DateTime t) {
