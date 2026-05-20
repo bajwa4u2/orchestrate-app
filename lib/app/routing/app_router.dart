@@ -28,7 +28,6 @@ import 'package:orchestrate_app/features/client/screens/client_support_screen.da
 import 'package:orchestrate_app/features/operator/screens/operator_backend_surface_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_debug_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_governance_screen.dart';
-import 'package:orchestrate_app/features/operator/screens/operator_providers_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_system_doctor_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_workspace_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/adaptation_screen.dart';
@@ -49,6 +48,7 @@ import 'package:orchestrate_app/features/operator_workspace/continuity/continuit
 import 'package:orchestrate_app/features/operator_workspace/governance/ai_approvals_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/governance/audit_timeline_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/platform_supervision/platform_supervision_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/runtime_truth/campaign_lifecycle_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/runtime_truth/discovery_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/runtime_truth/runtime_truth_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/trust_readiness/trust_readiness_screen.dart';
@@ -1241,18 +1241,22 @@ final router = GoRouter(
         GoRoute(
             path: '/operator/system-doctor',
             builder: (context, state) => const OperatorSystemDoctorScreen()),
+        // Legacy operator Clients panel removed — it was disconnected
+        // from runtime truth. Redirect to the runtime-backed
+        // campaign-lifecycle surface.
         GoRoute(
             path: '/operator/clients',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.clients)),
+            redirect: (context, state) => '/ops/continuity/campaigns'),
         GoRoute(
             path: '/operator/organizations',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
                 surface: OperatorBackendSurface.organizations)),
+        // Legacy operator Campaigns panel removed — it reported
+        // "Campaigns = 0" while real campaigns existed. Redirect to
+        // the runtime-backed campaign-lifecycle surface.
         GoRoute(
             path: '/operator/campaigns',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.campaigns)),
+            redirect: (context, state) => '/ops/continuity/campaigns'),
         GoRoute(
             path: '/operator/leads',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
@@ -1273,9 +1277,11 @@ final router = GoRouter(
             path: '/operator/ai-governance',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
                 surface: OperatorBackendSurface.aiGovernance)),
+        // Legacy operator Providers panel removed — superseded by the
+        // runtime-backed Runtime Truth surface.
         GoRoute(
             path: '/operator/providers',
-            builder: (context, state) => const OperatorProvidersScreen()),
+            redirect: (context, state) => '/ops/runtime-truth'),
         GoRoute(
             path: '/operator/sources',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
@@ -1350,6 +1356,11 @@ final router = GoRouter(
                   initialCategory: state.uri.queryParameters['category'],
                   initialDrill: state.uri.queryParameters['drill'],
                 )),
+        // Runtime-backed campaign-lifecycle surface — replaces the
+        // legacy operator Campaigns / Clients panels.
+        GoRoute(
+            path: '/ops/continuity/campaigns',
+            builder: (context, state) => const CampaignLifecycleScreen()),
         // Faculty: Runtime Truth
         GoRoute(
             path: '/ops/runtime-truth',
@@ -1427,23 +1438,21 @@ final router = GoRouter(
                 '/ops/continuity?drill=workers'),
         GoRoute(
             path: '/ops/clients',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.clients)),
+            redirect: (context, state) => '/ops/continuity/campaigns'),
         GoRoute(
             path: '/ops/contacts',
             builder: (context, state) => const OperatorWorkspaceScreen(
                 section: OperatorSection.pipeline)),
         GoRoute(
             path: '/ops/campaigns',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.campaigns)),
+            redirect: (context, state) => '/ops/continuity/campaigns'),
         GoRoute(
             path: '/ops/mailboxes',
             builder: (context, state) => const OperatorWorkspaceScreen(
                 section: OperatorSection.deliverability)),
         GoRoute(
             path: '/ops/providers',
-            builder: (context, state) => const OperatorProvidersScreen()),
+            redirect: (context, state) => '/ops/runtime-truth'),
         GoRoute(
             path: '/ops/activity',
             builder: (context, state) => const OperatorWorkspaceScreen(

@@ -106,6 +106,8 @@ class _OperatorShellState extends State<OperatorShell> {
           items: const [
             _NavItem('Execution continuity', '/ops/continuity',
                 Icons.timeline_outlined),
+            _NavItem('Campaign lifecycle', '/ops/continuity/campaigns',
+                Icons.campaign_outlined),
             _NavItem('Governance review',
                 '/ops/governance', Icons.shield_outlined),
           ],
@@ -118,8 +120,6 @@ class _OperatorShellState extends State<OperatorShell> {
                 Icons.signal_cellular_alt_outlined),
             _NavItem('Signal sources', '/ops/runtime-truth/discovery',
                 Icons.travel_explore_outlined),
-            _NavItem('Providers (legacy)', '/operator/providers',
-                Icons.hub_outlined),
           ],
         ),
         _NavGroup(
@@ -184,10 +184,6 @@ class _OperatorShellState extends State<OperatorShell> {
             _NavItem('Backend surfaces', '/operator/system',
                 Icons.code_outlined),
             _NavItem('Debug / system checks', '/ops/debug', Icons.tune_outlined),
-            _NavItem('Clients (legacy)', '/operator/clients',
-                Icons.business_outlined),
-            _NavItem('Campaigns (legacy)', '/operator/campaigns',
-                Icons.campaign_outlined),
           ],
         ),
       ];

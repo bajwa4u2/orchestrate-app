@@ -1,4 +1,5 @@
 import 'package:orchestrate_app/core/network/api_client.dart';
+import '../models/campaign_lifecycle_models.dart';
 import '../models/convergence_models.dart';
 import '../models/discovery_models.dart';
 import '../models/learning_models.dart';
@@ -416,6 +417,18 @@ class OperatorLearningRepository {
       surface: ApiSurface.operator,
     );
     return DiscoveryInventoryView.fromJson(_asMap(json));
+  }
+
+  /// Canonical campaign-lifecycle truth — every real campaign with
+  /// its lifecycle / discovery / continuity state. Same Campaign
+  /// source the client workspace reads, so the operator never sees a
+  /// split-brain "0 campaigns" while the client has a live operation.
+  Future<OperatorCampaignLifecycleView> fetchCampaignLifecycle() async {
+    final json = await _api.getJson(
+      '/campaigns/lifecycle',
+      surface: ApiSurface.operator,
+    );
+    return OperatorCampaignLifecycleView.fromJson(_asMap(json));
   }
 
   /// Autonomous discovery-refill runtime truth for a campaign — the
