@@ -155,21 +155,27 @@ class DiscoveryInventoryView {
 class DiscoveryRefillView {
   const DiscoveryRefillView({
     required this.campaignId,
+    required this.campaignStatus,
     required this.decision,
     required this.trace,
     required this.recordedAt,
+    required this.profile,
   });
 
   final String campaignId;
+  final String? campaignStatus;
   final DiscoveryRefillDecisionView? decision;
   final DiscoveryRefillTraceView? trace;
   final String? recordedAt;
+  final DiscoveryProfileStateView? profile;
 
   factory DiscoveryRefillView.fromJson(Map<String, dynamic> json) {
     final decisionRaw = json['decision'];
     final traceRaw = json['lastTrace'];
+    final profileRaw = json['profile'];
     return DiscoveryRefillView(
       campaignId: (json['campaignId'] ?? '').toString(),
+      campaignStatus: json['campaignStatus']?.toString(),
       decision: decisionRaw is Map
           ? DiscoveryRefillDecisionView.fromJson(
               Map<String, dynamic>.from(decisionRaw))
@@ -179,6 +185,35 @@ class DiscoveryRefillView {
               Map<String, dynamic>.from(traceRaw))
           : null,
       recordedAt: json['recordedAt']?.toString(),
+      profile: profileRaw is Map
+          ? DiscoveryProfileStateView.fromJson(
+              Map<String, dynamic>.from(profileRaw))
+          : null,
+    );
+  }
+}
+
+/// Discovery profile lifecycle — the explicit truth that discovery
+/// is no longer paused by default.
+class DiscoveryProfileStateView {
+  const DiscoveryProfileStateView({
+    required this.status,
+    required this.enabled,
+    required this.lastRunAt,
+    required this.nextRunAt,
+  });
+
+  final String status;
+  final bool enabled;
+  final String? lastRunAt;
+  final String? nextRunAt;
+
+  factory DiscoveryProfileStateView.fromJson(Map<String, dynamic> json) {
+    return DiscoveryProfileStateView(
+      status: (json['status'] ?? '').toString(),
+      enabled: json['enabled'] == true,
+      lastRunAt: json['lastRunAt']?.toString(),
+      nextRunAt: json['nextRunAt']?.toString(),
     );
   }
 }

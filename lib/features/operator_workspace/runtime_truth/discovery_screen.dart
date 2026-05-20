@@ -419,6 +419,10 @@ class _RefillInspectorPanelState extends State<_RefillInspectorPanel> {
           if (result != null) ...[
             const SizedBox(height: 14),
             _decision(context, result),
+            if (result.profile != null) ...[
+              const SizedBox(height: 10),
+              _profile(context, result.profile!),
+            ],
             if (result.trace != null) ...[
               const SizedBox(height: 14),
               _trace(context, result.trace!),
@@ -480,6 +484,29 @@ class _RefillInspectorPanelState extends State<_RefillInspectorPanel> {
               .textTheme
               .bodySmall
               ?.copyWith(color: AppTheme.subdued),
+        ),
+      ],
+    );
+  }
+
+  Widget _profile(BuildContext context, DiscoveryProfileStateView p) {
+    final theme = Theme.of(context);
+    final active = p.enabled && p.status.toUpperCase() == 'ACTIVE';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _Tag(
+          label: 'PROFILE ${p.status.toUpperCase()}',
+          tone: active ? OperatorTone.positive : OperatorTone.caution,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            active
+                ? 'Discovery profile is active — sourcing runs automatically.'
+                : 'Discovery profile is paused; sourcing will not run until it is active.',
+            style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.subdued),
+          ),
         ),
       ],
     );
