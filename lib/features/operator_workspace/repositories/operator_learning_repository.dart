@@ -1,5 +1,6 @@
 import 'package:orchestrate_app/core/network/api_client.dart';
 import '../models/convergence_models.dart';
+import '../models/discovery_models.dart';
 import '../models/learning_models.dart';
 import '../models/runtime_truth_models.dart';
 
@@ -391,6 +392,30 @@ class OperatorLearningRepository {
       surface: ApiSurface.operator,
     );
     return CanonicalTruthView.fromJson(_asMap(json));
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  //  Market intelligence / signal acquisition
+  // ──────────────────────────────────────────────────────────────
+
+  /// Discovery source coverage + per-source health / acquisition
+  /// telemetry.
+  Future<DiscoverySourcesView> fetchDiscoverySources() async {
+    final json = await _api.getJson(
+      '/operator/discovery/sources',
+      surface: ApiSurface.operator,
+    );
+    return DiscoverySourcesView.fromJson(_asMap(json));
+  }
+
+  /// Executable-inventory quality — counts by lifecycle state +
+  /// freshness distribution.
+  Future<DiscoveryInventoryView> fetchDiscoveryInventory() async {
+    final json = await _api.getJson(
+      '/operator/discovery/inventory',
+      surface: ApiSurface.operator,
+    );
+    return DiscoveryInventoryView.fromJson(_asMap(json));
   }
 
   Map<String, String>? _query(Map<String, String?> input) {

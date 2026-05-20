@@ -49,6 +49,7 @@ import 'package:orchestrate_app/features/operator_workspace/continuity/continuit
 import 'package:orchestrate_app/features/operator_workspace/governance/ai_approvals_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/governance/audit_timeline_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/platform_supervision/platform_supervision_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/runtime_truth/discovery_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/runtime_truth/runtime_truth_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/trust_readiness/trust_readiness_screen.dart';
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
@@ -1353,6 +1354,9 @@ final router = GoRouter(
         GoRoute(
             path: '/ops/runtime-truth',
             builder: (context, state) => const RuntimeTruthScreen()),
+        GoRoute(
+            path: '/ops/runtime-truth/discovery',
+            builder: (context, state) => const DiscoveryScreen()),
         // Faculty: Adaptation hub + seven subsurfaces
         GoRoute(
             path: '/ops/adaptation',

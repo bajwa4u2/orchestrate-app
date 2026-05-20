@@ -116,6 +116,8 @@ class _OperatorShellState extends State<OperatorShell> {
           items: const [
             _NavItem('Providers · mailboxes · DNS', '/ops/runtime-truth',
                 Icons.signal_cellular_alt_outlined),
+            _NavItem('Signal sources', '/ops/runtime-truth/discovery',
+                Icons.travel_explore_outlined),
             _NavItem('Providers (legacy)', '/operator/providers',
                 Icons.hub_outlined),
           ],
