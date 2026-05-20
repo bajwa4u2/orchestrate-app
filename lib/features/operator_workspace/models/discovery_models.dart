@@ -188,6 +188,9 @@ class DiscoveryRefillDecisionView {
     required this.activate,
     required this.reason,
     required this.detail,
+    required this.decisionMode,
+    required this.minimumRefillGuarantee,
+    required this.overrodeAdvisoryHold,
     required this.executableInventory,
     required this.threshold,
   });
@@ -195,6 +198,9 @@ class DiscoveryRefillDecisionView {
   final bool activate;
   final String reason;
   final String detail;
+  final String decisionMode;
+  final bool minimumRefillGuarantee;
+  final bool overrodeAdvisoryHold;
   final int executableInventory;
   final int threshold;
 
@@ -203,6 +209,9 @@ class DiscoveryRefillDecisionView {
       activate: json['activate'] == true,
       reason: (json['reason'] ?? '').toString(),
       detail: (json['detail'] ?? '').toString(),
+      decisionMode: (json['decisionMode'] ?? 'deterministic').toString(),
+      minimumRefillGuarantee: json['minimumRefillGuarantee'] == true,
+      overrodeAdvisoryHold: json['overrodeAdvisoryHold'] == true,
       executableInventory: _int(json['executableInventory']),
       threshold: _int(json['threshold']),
     );

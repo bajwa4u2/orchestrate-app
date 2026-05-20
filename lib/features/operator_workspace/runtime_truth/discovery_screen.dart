@@ -440,14 +440,31 @@ class _RefillInspectorPanelState extends State<_RefillInspectorPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             _Tag(
               label: d.activate ? 'ACTIVATED' : 'SUPPRESSED',
               tone: d.activate ? OperatorTone.positive : OperatorTone.caution,
             ),
-            const SizedBox(width: 8),
             _Tag(label: d.reason.toUpperCase(), tone: OperatorTone.neutral),
+            // Discovery refill is never AI-WAIT governed — the
+            // decision is always deterministic.
+            _Tag(
+              label: d.decisionMode.toUpperCase(),
+              tone: OperatorTone.neutral,
+            ),
+            if (d.minimumRefillGuarantee)
+              const _Tag(
+                label: 'MINIMUM REFILL GUARANTEE',
+                tone: OperatorTone.positive,
+              ),
+            if (d.overrodeAdvisoryHold)
+              const _Tag(
+                label: 'OVERRODE ADVISORY HOLD',
+                tone: OperatorTone.positive,
+              ),
           ],
         ),
         const SizedBox(height: 8),
