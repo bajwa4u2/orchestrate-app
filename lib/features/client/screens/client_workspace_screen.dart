@@ -6,14 +6,19 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
-import 'package:orchestrate_app/features/client/widgets/blocker_resolution_card.dart';
+import 'package:orchestrate_app/features/client/models/client_experience.dart';
+import 'package:orchestrate_app/features/client/widgets/client_experience_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
-import 'package:orchestrate_app/features/client/widgets/operational_continuity_strip.dart';
-import 'package:orchestrate_app/features/client/widgets/runtime_state_card.dart';
-import 'package:orchestrate_app/features/client/widgets/subscription_continuity_card.dart';
 
 enum ClientSection { home, billing }
 
+/// Client Home — a managed business-growth experience.
+///
+/// Home leads with outcome confidence: where the client's growth is
+/// right now, what Orchestrate has operating for them, and the one
+/// step (if any) they genuinely own. It renders the client-safe
+/// experience surface — never runtime, readiness, governance, or
+/// diagnostic semantics. That truth lives in the operator workspace.
 class ClientHomeScreen extends StatelessWidget {
   const ClientHomeScreen({super.key, required this.section});
   final ClientSection section;
@@ -36,33 +41,32 @@ class ClientHomeScreen extends StatelessWidget {
           );
         }
         final data = snapshot.data!;
+        final experience = data.experience;
         return SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Hero(title: data.title, subtitle: data.subtitle),
-              const SizedBox(height: 18),
-              if (section == ClientSection.home) ...[
-                const OperationalContinuityStrip(
-                    surface: 'client_overview_home'),
-                const SizedBox(height: 12),
-                const RuntimeStateCard(),
+              if (section == ClientSection.home && experience != null) ...[
+                ClientMomentumCard(
+                  experience: experience,
+                  eyebrow: data.title,
+                  onAction: experience.clientAction == null
+                      ? null
+                      : () => context.go(experience.clientAction!.route),
+                ),
                 const SizedBox(height: 18),
-                SubscriptionContinuityCard(
-                    subscription: data.subscription),
+                _MetricRow(metrics: data.metrics),
                 const SizedBox(height: 18),
-                if (data.blockers.isNotEmpty || !data.authorized) ...[
-                  _BlockerCard(
-                    blockers: data.blockers,
-                    authorized: data.authorized,
-                    authAcceptedAt: data.authAcceptedAt,
-                  ),
-                  const SizedBox(height: 18),
-                ],
+                ClientConfidencePanel(
+                    signals: experience.confidenceSignals),
+                const SizedBox(height: 18),
+              ] else ...[
+                _Hero(title: data.title, subtitle: data.subtitle),
+                const SizedBox(height: 18),
+                _MetricRow(metrics: data.metrics),
+                const SizedBox(height: 18),
               ],
-              _MetricRow(metrics: data.metrics),
-              const SizedBox(height: 18),
               LayoutBuilder(builder: (context, constraints) {
                 final stacked =
                     constraints.maxWidth < WorkspaceBreakpoints.stacked;
@@ -102,18 +106,9 @@ class ClientHomeScreen extends StatelessWidget {
     final notifications = await workspaceRepo.fetchNotifications();
     final subscription = await workspaceRepo.fetchSubscription();
     final invoices = await billingRepo.fetchInvoices();
-    final outreach = section == ClientSection.home
-        ? await _safeFetch(() => portalRepo.fetchOutreach())
-        : const <String, dynamic>{};
-    final auth = section == ClientSection.home
-        ? await _safeFetch(() => portalRepo.fetchRepresentationAuth())
-        : const <String, dynamic>{};
-    final readiness = _asMap(outreach['readiness']);
-    final blockers = (readiness['blockers'] is List)
-        ? readiness['blockers'] as List<dynamic>
-        : const <dynamic>[];
-    final authorized = auth['authorized'] == true;
-    final authAcceptedAt = _asMap(auth['latest'])['acceptedAt'];
+    final experience = section == ClientSection.home
+        ? await _safeFetchExperience(portalRepo)
+        : null;
 
     final client = _asMap(overview['client']);
     final activity = _asMap(overview['activity']);
@@ -130,11 +125,8 @@ class ClientHomeScreen extends StatelessWidget {
       return _ViewData(
         title: 'Billing and service standing',
         subtitle:
-            'Billing stays separate from targeting, leads, and meetings so account standing remains clear.',
+            'Billing stays separate from your growth operation so account standing remains clear.',
         subscription: subscription ?? const {},
-        blockers: blockers,
-        authorized: authorized,
-        authAcceptedAt: authAcceptedAt,
         metrics: [
           _Metric(
               'Status',
@@ -164,17 +156,17 @@ class ClientHomeScreen extends StatelessWidget {
           _Row(
               title: 'Representation scope',
               primary:
-                  'How Orchestrate represents your business operationally — identity, ICP, boundaries, authorization. Signal discovery and governed dispatch run against this scope.',
+                  'How Orchestrate represents your business in the market — identity, ICP, voice, constraints, and authorization.',
               secondary:
-                  'Identity, voice, ICP, and compliance constraints live under Representation.',
+                  'This scope is how Orchestrate represents you across every outreach.',
               actionLabel: 'Open representation',
               route: '/client/representation'),
           _Row(
               title: 'Contacts and intelligence',
               primary:
-                  'Sourced contacts and sendability are tracked separately from billing.',
+                  'Sourced contacts and reach are tracked separately from billing.',
               secondary:
-                  'Use contacts to review sourced records, sendability, and execution movement.',
+                  'Use contacts to review sourced records and engagement.',
               actionLabel: 'Open contacts',
               route: '/app/contacts'),
         ],
@@ -184,59 +176,60 @@ class ClientHomeScreen extends StatelessWidget {
 
     return _ViewData(
       title: title,
-      subtitle: session.normalizedSubscriptionStatus == 'active' ||
-              session.normalizedSubscriptionStatus == 'trialing'
-          ? 'Home keeps the client system visible without duplicating targeting or operator views.'
-          : 'Home keeps setup, billing standing, and readiness progression visible until every gate has cleared.',
+      subtitle:
+          'Your managed growth operation — representation, market reach, and engagement in one place.',
       subscription: subscription ?? const {},
-      blockers: blockers,
-      authorized: authorized,
-      authAcceptedAt: authAcceptedAt,
-      metrics: [
-        _Metric(
-            'Account state',
-            !session.hasSetupCompleted
-                ? 'Setup incomplete'
-                : (blockers.isEmpty && authorized)
-                    ? 'Setup recorded'
-                    : 'Operational readiness pending'),
-        _Metric('Replies', _countLabel(activity['replies'])),
-        _Metric('Meetings',
-            _countLabel(activity['meetings'] ?? activity['meetingCount'])),
-        _Metric('Dispatches', _countLabel(communications['emailDispatches'])),
-      ],
-      primaryTitle: 'Current flow',
+      experience: experience,
+      metrics: experience != null
+          ? [
+              _Metric('Opportunities identified',
+                  '${experience.growth.opportunitiesIdentified}'),
+              _Metric('In market',
+                  '${experience.growth.opportunitiesInMarket}'),
+              _Metric('Conversations',
+                  '${experience.growth.conversationsActive}'),
+              _Metric('Meetings',
+                  '${experience.growth.meetingsCoordinated}'),
+            ]
+          : [
+              _Metric('Replies', _countLabel(activity['replies'])),
+              _Metric(
+                  'Meetings',
+                  _countLabel(
+                      activity['meetings'] ?? activity['meetingCount'])),
+            ],
+      primaryTitle: 'Your growth operation',
       primaryRows: [
         _Row(
             title: 'Representation scope',
             primary:
-                'How Orchestrate represents your business operationally — identity, ICP, voice, constraints, authorization. Signal discovery and governed dispatch run against this scope.',
+                'How Orchestrate represents your business in the market — identity, ICP, voice, constraints, and authorization.',
             secondary:
-                'Representation is the canonical input for signal-driven discovery and managed execution.',
+                'This scope is how Orchestrate represents you across every outreach.',
             actionLabel: 'Open representation',
             route: '/client/representation'),
         _Row(
             title: 'Contacts and intelligence',
             primary: _join([
-              '${_countValue(activity['leadCount'] ?? activity['leads'])} leads',
-              '${_countValue(activity['sendableLeadCount'] ?? activity['sendableLeads'])} sendable',
+              '${_countValue(activity['leadCount'] ?? activity['leads'])} contacts',
+              '${_countValue(activity['sendableLeadCount'] ?? activity['sendableLeads'])} reachable',
             ]),
             secondary:
-                'Use contacts to review sourced records, sendability, execution movement, and reply state.',
+                'Review the businesses Orchestrate has sourced and is engaging for you.',
             actionLabel: 'Open contacts',
             route: '/app/contacts'),
         _Row(
             title: 'Meetings',
             primary: _join([
               '${_countValue(activity['meetingCount'] ?? activity['meetings'])} meetings',
-              '${_countValue(activity['handoffPending'] ?? activity['proposedMeetings'])} handoff pending',
+              '${_countValue(activity['handoffPending'] ?? activity['proposedMeetings'])} being coordinated',
             ]),
             secondary:
-                'Activity keeps replies, dispatches, and meeting handoff visible in one place.',
+                'Conversations and meeting coordination, surfaced in one place.',
             actionLabel: 'Open activity',
             route: '/app/activity'),
       ],
-      primaryEmpty: 'No workspace movement is visible yet.',
+      primaryEmpty: 'Your growth operation is coming online.',
       secondaryTitle: 'Account and support',
       secondaryRows: [
         _Row(
@@ -252,7 +245,7 @@ class ClientHomeScreen extends StatelessWidget {
             primary: _join(
                 [_read(client, 'websiteUrl'), _read(client, 'bookingUrl')]),
             secondary:
-                'Profile, password, and account settings stay separate from execution.',
+                'Profile, password, and account settings stay separate from your growth operation.',
             actionLabel: 'Open account',
             route: '/app/account'),
         _Row(
@@ -261,12 +254,21 @@ class ClientHomeScreen extends StatelessWidget {
                 ? 'Support is available whenever you need guidance.'
                 : '${notifications.length} notices currently visible.',
             secondary:
-                'Help stays available without mixing with leads or campaigns.',
+                'Help stays available without mixing with contacts or meetings.',
             actionLabel: 'Open help',
             route: '/app/account'),
       ],
       secondaryEmpty: 'No account actions are visible yet.',
     );
+  }
+}
+
+Future<ClientExperience?> _safeFetchExperience(
+    ClientPortalRepository repo) async {
+  try {
+    return await repo.fetchClientExperience();
+  } catch (_) {
+    return null;
   }
 }
 
@@ -282,9 +284,7 @@ class _ViewData {
       required this.secondaryRows,
       required this.secondaryEmpty,
       this.subscription = const <String, dynamic>{},
-      this.blockers = const <dynamic>[],
-      this.authorized = true,
-      this.authAcceptedAt});
+      this.experience});
   final String title;
   final String subtitle;
   final List<_Metric> metrics;
@@ -295,60 +295,7 @@ class _ViewData {
   final List<_Row> secondaryRows;
   final String secondaryEmpty;
   final Map<String, dynamic> subscription;
-  final List<dynamic> blockers;
-  final bool authorized;
-  final dynamic authAcceptedAt;
-}
-
-Future<Map<String, dynamic>> _safeFetch(
-    Future<Map<String, dynamic>> Function() fetch) async {
-  try {
-    return await fetch();
-  } catch (_) {
-    return const <String, dynamic>{};
-  }
-}
-
-class _BlockerCard extends StatelessWidget {
-  const _BlockerCard({
-    required this.blockers,
-    required this.authorized,
-    required this.authAcceptedAt,
-  });
-
-  final List<dynamic> blockers;
-  final bool authorized;
-  final dynamic authAcceptedAt;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Readiness blockers — paths to resolve',
-            style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 14),
-          BlockerResolutionList(
-            blockers: blockers,
-            authorized: authorized,
-            authAcceptedAt: authAcceptedAt,
-          ),
-        ],
-      ),
-    );
-  }
+  final ClientExperience? experience;
 }
 
 class _Metric {

@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import '../../../features/client/models/client_experience.dart';
 
 class ClientPortalRepository {
   ClientPortalRepository({ApiClient? apiClient})
@@ -67,6 +68,19 @@ class ClientPortalRepository {
       surface: ApiSurface.client,
     );
     return _asMap(json);
+  }
+
+  /// The client experience surface — the single client-safe
+  /// projection of operational truth. Outcome-oriented business
+  /// momentum, truthful confidence signals, growth numbers, and a
+  /// client action only when the client genuinely owns the next
+  /// step. Runtime / diagnostic semantics never appear here.
+  Future<ClientExperience> fetchClientExperience() async {
+    final json = await _apiClient.getJson(
+      '/client/experience',
+      surface: ApiSurface.client,
+    );
+    return ClientExperience.fromJson(_asMap(json));
   }
 
   /// Read the operational support timeline: chronological union of

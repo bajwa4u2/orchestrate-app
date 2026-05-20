@@ -209,12 +209,12 @@ class _ClientShellState extends State<ClientShell> {
       return 'Finish setup so your target market and service preferences are ready.';
     }
     if (session.normalizedSubscriptionStatus != 'active') {
-      return 'Complete billing so readiness orchestration can activate managed execution.';
+      return 'Complete billing to activate your managed growth operation.';
     }
 
     switch (widget.currentPath) {
       case '/client/overview':
-        return 'Operational continuity at a glance — what Orchestrate is doing right now, what is preparing, what is blocked, and what needs you.';
+        return 'Your managed growth operation at a glance — momentum, confidence, and anything that needs you.';
       case '/client/setup':
         return 'Setup captures your business profile, target customers, market, offer, and authorization.';
       case '/client/representation':
@@ -224,17 +224,17 @@ class _ClientShellState extends State<ClientShell> {
         return 'How Orchestrate represents your business operationally — identity, ICP, voice, constraints, authorization.';
       case '/client/opportunities':
       case '/client/leads':
-        return 'Signal-driven opportunities Orchestrate is qualifying against your ICP and representation scope.';
+        return 'Opportunities Orchestrate is identifying and qualifying for your business.';
       case '/client/operations':
       case '/client/outreach':
-        return 'Managed execution runtime — readiness chain, dispatch governance, pacing, recovery state.';
+        return 'What Orchestrate is doing for your business — outreach momentum and engagement progress.';
       case '/client/replies':
-        return 'Conversation continuity and escalation handling from managed execution.';
+        return 'Conversations from businesses Orchestrate has reached for you.';
       case '/client/meetings':
-        return 'Outcome continuity — meeting handoff state tied to replies.';
+        return 'Meetings Orchestrate is coordinating from your conversations.';
       case '/client/infrastructure':
       case '/client/mailbox':
-        return 'Mailbox, sending identity, DNS readiness, provider trust, and reconnect/recovery state.';
+        return 'Your sending mailbox and domain — connection and verification.';
       case '/client/billing':
       case '/client/invoices':
       case '/client/receipts':
@@ -245,7 +245,7 @@ class _ClientShellState extends State<ClientShell> {
       case '/client/notifications':
         return 'Notifications show account notices available for your workspace.';
       case '/client/support':
-        return 'Human escalation for setup, billing, or anything the runtime cannot resolve inline.';
+        return 'Human help for setup, billing, or anything you need guidance on.';
       case '/client/settings':
         return 'Settings shows account details, setup status, and authorization.';
       case '/app/contacts':
@@ -253,9 +253,9 @@ class _ClientShellState extends State<ClientShell> {
       case '/app/campaigns':
         return 'Representation scope — the market, geography, and ICP Orchestrate operates against.';
       case '/app/activity':
-        return 'Activity shows replies, meetings, and execution movement.';
+        return 'Activity shows replies, meetings, and engagement progress.';
       case '/app/mailbox':
-        return 'Infrastructure: sending-identity readiness, mailbox health, and recent dispatch.';
+        return 'Infrastructure: your sending mailbox and domain verification.';
       case '/app/newsletter':
         return 'Update controls will appear here when available for your account.';
       case '/app/branding':

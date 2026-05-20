@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
+import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
+import 'package:orchestrate_app/features/client/models/client_experience.dart';
+import 'package:orchestrate_app/features/client/widgets/client_experience_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
-import 'package:orchestrate_app/features/client/widgets/operational_continuity_strip.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
 
-/// Outreach is a managed-execution status surface — never a manual
-/// infrastructure console. The client should only ever see:
-///   * what Orchestrate is doing for them, and
-///   * the one client action (if any) that is genuinely blocking progress.
+/// Operations — a managed business-growth surface.
 ///
-/// Start/Retry/Activate buttons have been removed: the backend auto-activates
-/// the campaign when readiness is satisfied, and recovery is Orchestrate's
-/// responsibility. If something is on the client's side (mailbox / auth /
-/// subscription / setup), a single clientAction button routes them to the
-/// right surface.
+/// Operations shows the client what Orchestrate is doing for their
+/// business: outreach momentum, operational confidence, growth
+/// numbers, and the single step (if any) the client genuinely owns.
+/// It renders the client-safe experience surface only — never
+/// readiness chains, dispatch governance, pacing, recovery, or any
+/// runtime/diagnostic semantics. That truth lives in the operator
+/// workspace.
 class ClientOutreachScreen extends StatefulWidget {
   const ClientOutreachScreen({super.key});
 
@@ -27,485 +27,172 @@ class ClientOutreachScreen extends StatefulWidget {
 
 class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
   final ClientPortalRepository _repository = ClientPortalRepository();
-  final ClientOutreachRepository _outreachRepository =
-      ClientOutreachRepository();
-  late Future<_OperationsData> _future;
+  late Future<ClientExperience> _future;
 
   @override
   void initState() {
     super.initState();
-    _future = _load();
-  }
-
-  Future<_OperationsData> _load() async {
-    final outreach = await _repository.fetchOutreach();
-    // Eligibility is the single backend authority. Failing fetches
-    // fall back to the per-screen-derived readiness so the page still
-    // renders during a transient outage rather than blank.
-    Map<String, dynamic> eligibility = const <String, dynamic>{};
-    try {
-      eligibility = await _outreachRepository.fetchExecutionEligibility();
-    } catch (_) {
-      eligibility = const <String, dynamic>{};
-    }
-    return _OperationsData(outreach: outreach, eligibility: eligibility);
+    _future = _repository.fetchClientExperience();
   }
 
   void _refresh() {
-    setState(() => _future = _load());
+    setState(() => _future = _repository.fetchClientExperience());
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<_OperationsData>(
+    return FutureBuilder<ClientExperience>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const ClientLoadingView(
-            eyebrow: 'Outreach',
-            label: 'Loading managed execution status',
+            eyebrow: 'Operations',
+            label: 'Loading your growth operation',
           );
         }
-        if (snapshot.hasError) {
+        if (snapshot.hasError || snapshot.data == null) {
           return ClientErrorView.fromError(
             snapshot.error,
-            title: 'Outreach is temporarily unavailable',
+            title: 'Operations is temporarily unavailable',
             onRetry: _refresh,
           );
         }
-        final bundle = snapshot.data!;
-        final data = bundle.outreach;
-        final eligibility = bundle.eligibility;
-        final readiness = asMap(data['readiness']);
-        final summary = asMap(data['summary']);
-        final mailbox = asMap(data['mailbox']);
-        final campaigns = asList(data['campaigns']);
-        final managed = _readManagedExecution(asMap(data['managedExecution']));
-        final replies = _intValue(summary['replies']);
-        final meetings = _intValue(summary['meetings']);
-
+        final experience = snapshot.data!;
+        final growth = experience.growth;
+        final action = experience.clientAction;
         return ClientPage(
           eyebrow: 'Operations',
-          title: managed.headline,
-          subtitle: managed.description,
-          banner: _ManagedExecutionBanner(state: managed),
-          actions: _buildActions(context, managed: managed, replies: replies),
+          title: experience.headline,
+          subtitle: experience.narrative,
+          banner: action == null
+              ? null
+              : ClientStatusBanner(
+                  tone: _bannerTone(experience.tone),
+                  title: action.title,
+                  message: action.message,
+                  actionLabel: action.ctaLabel,
+                  onAction: () => context.go(action.route),
+                ),
+          actions: _buildActions(context, experience),
           children: [
-            const OperationalContinuityStrip(
-                surface: 'client_operations_runtime'),
+            _OwnershipNote(line: experience.ownershipLine),
             const SizedBox(height: 18),
             ClientMetricStrip(metrics: [
-              ClientMetric('Scopes', '${summary['campaigns'] ?? 0}'),
-              ClientMetric('Queued', '${summary['queued'] ?? 0}'),
-              ClientMetric('Sent', '${summary['sent'] ?? 0}'),
-              ClientMetric('Replies', '$replies'),
-              ClientMetric('Meetings', '$meetings'),
+              ClientMetric(
+                  'Opportunities', '${growth.opportunitiesIdentified}'),
+              ClientMetric('In market', '${growth.opportunitiesInMarket}'),
+              ClientMetric('Conversations', '${growth.conversationsActive}'),
+              ClientMetric('Meetings', '${growth.meetingsCoordinated}'),
             ]),
             const SizedBox(height: 18),
-            _OrchestrateActivityPanel(
-              managed: managed,
-              campaigns: campaigns,
-              mailbox: mailbox,
-              readiness: readiness,
-            ),
+            ClientConfidencePanel(signals: experience.confidenceSignals),
             const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Readiness chain',
-              subtitle:
-                  'Single authoritative dependency chain from the backend. Each layer reports its real state; "waiting" rows are not your action yet.',
-              children: _buildEligibilityChainRows(eligibility) ??
-                  _buildReadinessRows(readiness),
-            ),
+            _EngagementPanel(growth: growth),
           ],
         );
       },
     );
   }
 
-  List<Widget>? _buildEligibilityChainRows(Map<String, dynamic> eligibility) {
-    final chain = eligibility['chain'];
-    if (chain is! List || chain.isEmpty) return null;
-    return [
-      for (final raw in chain)
-        _buildChainRow(asMap(raw)),
-    ];
-  }
-
-  Widget _buildChainRow(Map<String, dynamic> layer) {
-    final label = readText(layer, 'label');
-    final description = readText(layer, 'description');
-    final state = readText(layer, 'state');
-    final owner = readText(layer, 'owner');
-    final action = asMap(layer['action']);
-    final hasAction =
-        action.isNotEmpty && readText(action, 'route').isNotEmpty;
-    final badge = _stateBadge(state);
-    final isClientPending =
-        state == 'pending' && owner == 'client' && hasAction;
-    return ClientInfoRow(
-      title: label,
-      primary: description,
-      trailing: isClientPending
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClientBadge(label: badge),
-                const SizedBox(width: 8),
-                FilledButton.tonal(
-                  onPressed: () => context.push(readText(action, 'route')),
-                  child: Text(readText(action, 'label')),
-                ),
-              ],
-            )
-          : ClientBadge(label: badge),
-    );
-  }
-
-  String _stateBadge(String state) {
-    switch (state) {
-      case 'ready':
-        return 'Ready';
-      case 'pending':
-        return 'Needs you';
-      case 'waiting_for_prerequisite':
-        return 'Waiting';
-      case 'blocked':
-        return 'Blocked';
-      case 'not_applicable':
-        return 'N/A';
-      default:
-        return state.isEmpty ? 'Unknown' : state;
-    }
-  }
-
   List<Widget> _buildActions(
-    BuildContext context, {
-    required _ManagedExecution managed,
-    required int replies,
-  }) {
+    BuildContext context,
+    ClientExperience experience,
+  ) {
     final widgets = <Widget>[];
-    final action = managed.clientAction;
-    if (action != null) {
-      widgets.add(
-        FilledButton.icon(
-          onPressed: () => _routeForAction(context, action.code),
-          icon: const Icon(Icons.arrow_forward, size: 18),
-          label: Text(action.label),
-        ),
-      );
-    }
-    if (replies > 0) {
+    if (experience.growth.conversationsActive > 0) {
       widgets.add(
         OutlinedButton.icon(
           onPressed: () => context.go('/client/replies'),
           icon: const Icon(Icons.forum_outlined, size: 18),
-          label: const Text('Review replies'),
+          label: const Text('Review conversations'),
         ),
       );
     }
     widgets.add(
       WhyAffordance(
         target: GuidanceTarget.readiness,
-        surface: 'client_outreach_managed_execution_banner',
-        label: 'Explain this state',
+        surface: 'client_operations_experience',
+        label: 'Explain this',
       ),
     );
     return widgets;
   }
 
-  void _routeForAction(BuildContext context, String code) {
-    switch (code) {
-      case 'complete_setup':
-        context.go('/client/setup');
-        return;
-      case 'resolve_subscription':
-        context.go('/client/billing');
-        return;
-      case 'complete_representation_authorization':
-        // Inline action continuity — Representation owns the
-        // authorize-in-place gate. No scavenger hunt back to Campaign.
-        context.go('/client/representation');
-        return;
-      case 'complete_business_identity':
-      case 'open_business_identity':
-        context.go('/client/representation');
-        return;
-      case 'provision_mailbox':
-      case 'connect_mailbox':
-      case 'reconnect_mailbox':
-      case 'verify_mailbox':
-        context.go('/client/infrastructure');
-        return;
-      case 'verify_sending_identity':
-        // Domain-first continuity: verification lives on the Sending
-        // domain panel, not in the mailbox/transport flow. focus=domain
-        // makes Infrastructure scroll the user straight to DNS.
-        context.go('/client/infrastructure?focus=domain');
-        return;
-      default:
-        context.go('/client/settings');
-    }
-  }
-
-  List<Widget> _buildReadinessRows(Map<String, dynamic> readiness) {
-    final entries = <_ReadinessEntry>[
-      _ReadinessEntry(
-        label: 'Business setup',
-        ready: readiness['setupComplete'] == true,
-        readyMessage: 'Complete — Orchestrate has your offer and market.',
-        notReadyMessage:
-            'Open Setup to give Orchestrate your offer and target market.',
-        notReadyCtaLabel: 'Complete setup',
-        notReadyRoute: '/client/setup',
-      ),
-      _ReadinessEntry(
-        label: 'Representation authorization',
-        ready: readiness['representationAuthorized'] == true,
-        readyMessage:
-            'You have authorized Orchestrate to send outreach on your behalf.',
-        notReadyMessage:
-            'Authorize Orchestrate from Representation so we can send for you.',
-        notReadyCtaLabel: 'Authorize representation',
-        notReadyRoute: '/client/representation',
-      ),
-      _ReadinessEntry(
-        label: 'Sending mailbox',
-        ready: readiness['mailboxReady'] == true,
-        readyMessage: 'Connected and verified.',
-        notReadyMessage:
-            'Connect or verify the mailbox we should send from. Google sign-in does not connect your sending mailbox.',
-        notReadyCtaLabel: 'Connect mailbox',
-        notReadyRoute: '/client/infrastructure',
-      ),
-      _ReadinessEntry(
-        label: 'Outbound sending identity',
-        ready: readiness['outboundEmailReady'] == true,
-        readyMessage: 'Sending identity is ready.',
-        notReadyMessage:
-            'Sending identity is not yet verified. Open Infrastructure to publish SPF / DKIM / DMARC and check verification.',
-        notReadyCtaLabel: 'Verify sending identity',
-        notReadyRoute: '/client/infrastructure?focus=domain',
-      ),
-    ];
-
-    return [
-      for (final entry in entries)
-        ClientInfoRow(
-          title: entry.label,
-          primary: entry.ready ? entry.readyMessage : entry.notReadyMessage,
-          trailing: entry.ready
-              ? const ClientBadge(label: 'Ready')
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const ClientBadge(label: 'Needs you'),
-                    const SizedBox(width: 8),
-                    FilledButton.tonal(
-                      onPressed: () => context.push(entry.notReadyRoute),
-                      child: Text(entry.notReadyCtaLabel),
-                    ),
-                  ],
-                ),
-        ),
-    ];
-  }
-}
-
-class _ReadinessEntry {
-  const _ReadinessEntry({
-    required this.label,
-    required this.ready,
-    required this.readyMessage,
-    required this.notReadyMessage,
-    required this.notReadyCtaLabel,
-    required this.notReadyRoute,
-  });
-
-  final String label;
-  final bool ready;
-  final String readyMessage;
-  final String notReadyMessage;
-  final String notReadyCtaLabel;
-  final String notReadyRoute;
-}
-
-class _OperationsData {
-  const _OperationsData({required this.outreach, required this.eligibility});
-  final Map<String, dynamic> outreach;
-  final Map<String, dynamic> eligibility;
-}
-
-class _ManagedExecutionBanner extends StatelessWidget {
-  const _ManagedExecutionBanner({required this.state});
-
-  final _ManagedExecution state;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClientStatusBanner(
-      tone: _toneFor(state.state),
-      title: state.headline,
-      message: state.description,
-    );
-  }
-
-  ClientBannerTone _toneFor(String stateCode) {
-    switch (stateCode) {
-      case 'awaiting_setup':
-      case 'awaiting_subscription':
-      case 'awaiting_authorization':
-      case 'awaiting_mailbox':
+  ClientBannerTone _bannerTone(String tone) {
+    switch (tone) {
+      case 'attention':
         return ClientBannerTone.warning;
-      case 'orchestrate_blocked_internal':
-        return ClientBannerTone.blocked;
-      case 'waiting_for_replies':
-      case 'orchestrate_working':
-      case 'ready_to_execute':
-        return ClientBannerTone.info;
-      case 'orchestrate_recovering':
-        return ClientBannerTone.warning;
-      case 'executing':
-      default:
+      case 'positive':
         return ClientBannerTone.success;
+      default:
+        return ClientBannerTone.info;
     }
   }
 }
 
-class _OrchestrateActivityPanel extends StatelessWidget {
-  const _OrchestrateActivityPanel({
-    required this.managed,
-    required this.campaigns,
-    required this.mailbox,
-    required this.readiness,
-  });
-
-  final _ManagedExecution managed;
-  final List<dynamic> campaigns;
-  final Map<String, dynamic> mailbox;
-  final Map<String, dynamic> readiness;
+/// A calm, reassuring one-liner naming who owns the next step.
+class _OwnershipNote extends StatelessWidget {
+  const _OwnershipNote({required this.line});
+  final String line;
 
   @override
   Widget build(BuildContext context) {
-    final children = <Widget>[];
-    final campaignSummary = _summarizeCampaigns(campaigns);
-    if (campaignSummary != null) {
-      children.add(ClientInfoRow(
-        title: 'Active execution scope',
-        primary: campaignSummary.primary,
-        secondary: campaignSummary.secondary,
-      ));
-    }
+    if (line.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.verified_outlined,
+              size: 18, color: AppTheme.publicMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(line,
+                style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-    children.add(ClientInfoRow(
-      title: 'Sending mailbox',
-      primary: _mailboxPrimary(mailbox),
-      secondary: _mailboxSecondary(mailbox),
-    ));
+class _EngagementPanel extends StatelessWidget {
+  const _EngagementPanel({required this.growth});
+  final ClientGrowth growth;
 
-    if (children.isEmpty) {
-      children.add(const ClientEmptyState(
-        message:
-            'Orchestrate has not started outreach yet. The readiness checklist below shows what we are still waiting on.',
-      ));
-    }
-
+  @override
+  Widget build(BuildContext context) {
     return ClientPanel(
-      title: 'What Orchestrate is doing',
-      subtitle: managed.description,
-      children: children,
+      title: 'Engagement',
+      subtitle: 'Conversations and meetings Orchestrate is coordinating.',
+      children: [
+        ClientInfoRow(
+          title: 'Conversations',
+          primary: growth.conversationsActive > 0
+              ? '${growth.conversationsActive} active conversations underway.'
+              : 'Conversations appear here as businesses reply.',
+          trailing: FilledButton.tonal(
+            onPressed: () => context.go('/client/replies'),
+            child: const Text('Open'),
+          ),
+        ),
+        const Divider(height: 18),
+        ClientInfoRow(
+          title: 'Meetings',
+          primary: growth.meetingsCoordinated > 0
+              ? '${growth.meetingsCoordinated} meetings being coordinated.'
+              : 'Meetings appear here as conversations progress.',
+          trailing: FilledButton.tonal(
+            onPressed: () => context.go('/client/meetings'),
+            child: const Text('Open'),
+          ),
+        ),
+      ],
     );
   }
-
-  ({String primary, String secondary})? _summarizeCampaigns(
-      List<dynamic> campaigns) {
-    if (campaigns.isEmpty) return null;
-    final first = asMap(campaigns.first);
-    final name = readText(first, 'name', fallback: 'Primary execution');
-    final status = titleCase(readText(first, 'status'));
-    final counts = asMap(first['counts']);
-    final primary = status.isEmpty ? name : '$name · $status';
-    final secondary =
-        'Leads ${counts['leads'] ?? 0} · Sent ${counts['messages'] ?? 0} · Replies ${counts['replies'] ?? 0} · Meetings ${counts['meetings'] ?? 0}';
-    return (primary: primary, secondary: secondary);
-  }
-
-  String _mailboxPrimary(Map<String, dynamic> mailbox) {
-    final primary = asMap(mailbox['primary']);
-    if (primary.isEmpty) {
-      return 'Orchestrate is still waiting on a sending mailbox from you.';
-    }
-    return readText(primary, 'emailAddress',
-        fallback: 'A mailbox is connected.');
-  }
-
-  String _mailboxSecondary(Map<String, dynamic> mailbox) {
-    final primary = asMap(mailbox['primary']);
-    if (primary.isEmpty) return '';
-    final parts = [
-      titleCase(readText(primary, 'status')),
-      titleCase(readText(primary, 'connectionState')),
-      titleCase(readText(primary, 'healthStatus')),
-    ].where((item) => item.isNotEmpty).toList();
-    return parts.isEmpty ? '' : parts.join(' · ');
-  }
-}
-
-class _ManagedExecution {
-  const _ManagedExecution({
-    required this.state,
-    required this.headline,
-    required this.description,
-    this.clientAction,
-  });
-
-  final String state;
-  final String headline;
-  final String description;
-  final _ManagedClientAction? clientAction;
-}
-
-class _ManagedClientAction {
-  const _ManagedClientAction({
-    required this.code,
-    required this.label,
-    required this.message,
-    required this.severity,
-  });
-
-  final String code;
-  final String label;
-  final String message;
-  final String severity;
-}
-
-_ManagedExecution _readManagedExecution(Map<String, dynamic> map) {
-  if (map.isEmpty) {
-    return const _ManagedExecution(
-      state: 'orchestrate_working',
-      headline: 'Orchestrate is working',
-      description:
-          'Discovery, qualification, and outreach are running on your behalf.',
-    );
-  }
-  final actionMap = asMap(map['clientAction']);
-  final action = actionMap.isEmpty
-      ? null
-      : _ManagedClientAction(
-          code: readText(actionMap, 'code'),
-          label: readText(actionMap, 'label', fallback: 'Resolve'),
-          message: readText(actionMap, 'message'),
-          severity: readText(actionMap, 'severity', fallback: 'warning'),
-        );
-  return _ManagedExecution(
-    state: readText(map, 'state', fallback: 'orchestrate_working'),
-    headline: readText(map, 'headline', fallback: 'Orchestrate is working'),
-    description: readText(map, 'description'),
-    clientAction: action,
-  );
-}
-
-int _intValue(dynamic value) {
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  return int.tryParse('$value') ?? 0;
 }
