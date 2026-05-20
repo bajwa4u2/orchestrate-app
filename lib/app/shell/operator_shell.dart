@@ -125,6 +125,8 @@ class _OperatorShellState extends State<OperatorShell> {
           facultyKey: 'adaptation',
           items: const [
             _NavItem('Hub', '/ops/adaptation', Icons.psychology_outlined),
+            _NavItem('Green path & budgets', '/ops/adaptation/green-path',
+                Icons.bolt_outlined),
             _NavItem('Convergence metrics', '/ops/adaptation/convergence',
                 Icons.trending_down_outlined),
             _NavItem('AI economy', '/ops/adaptation/ai-economy',

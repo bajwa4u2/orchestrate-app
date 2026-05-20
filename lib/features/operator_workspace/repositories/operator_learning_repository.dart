@@ -1,6 +1,7 @@
 import 'package:orchestrate_app/core/network/api_client.dart';
 import '../models/convergence_models.dart';
 import '../models/learning_models.dart';
+import '../models/runtime_truth_models.dart';
 
 /// Operator-only touchpoint for the Self-AI learning substrate
 /// (LearningEvent / OperationalMemory / RuntimePattern /
@@ -344,6 +345,52 @@ class OperatorLearningRepository {
         .whereType<Map>()
         .map((m) => EscalationEntry.fromJson(Map<String, dynamic>.from(m)))
         .toList(growable: false);
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  //  Canonical runtime-truth faculty
+  // ──────────────────────────────────────────────────────────────
+
+  /// Per-action AI invocation budgets + the deterministic-vs-AI
+  /// economy from the stabilization layer.
+  Future<RuntimeBudgetSnapshot> fetchRuntimeBudgets() async {
+    final json = await _api.getJson(
+      '/operator/runtime-truth/budgets',
+      surface: ApiSurface.operator,
+    );
+    return RuntimeBudgetSnapshot.fromJson(_asMap(json));
+  }
+
+  /// Deterministic green-path verdict + canonical truth for an
+  /// action, client, and campaign.
+  Future<GreenPathView> fetchGreenPath({
+    String? clientId,
+    String? campaignId,
+    String? action,
+  }) async {
+    final json = await _api.getJson(
+      '/operator/runtime-truth/green-path',
+      query: _query({
+        'clientId': clientId,
+        'campaignId': campaignId,
+        'action': action,
+      }),
+      surface: ApiSurface.operator,
+    );
+    return GreenPathView.fromJson(_asMap(json));
+  }
+
+  /// The single canonical runtime-truth object for a client / campaign.
+  Future<CanonicalTruthView> fetchCanonicalTruth({
+    String? clientId,
+    String? campaignId,
+  }) async {
+    final json = await _api.getJson(
+      '/operator/runtime-truth/canonical',
+      query: _query({'clientId': clientId, 'campaignId': campaignId}),
+      surface: ApiSurface.operator,
+    );
+    return CanonicalTruthView.fromJson(_asMap(json));
   }
 
   Map<String, String>? _query(Map<String, String?> input) {

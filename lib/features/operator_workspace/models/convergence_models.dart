@@ -14,6 +14,7 @@ class ConvergenceSnapshot {
     required this.healing,
     required this.playbookOutcomes,
     required this.escalationsByReason,
+    required this.greenPath,
   });
 
   final DateTime asOf;
@@ -25,6 +26,7 @@ class ConvergenceSnapshot {
   final ConvergenceHealing healing;
   final Map<String, int> playbookOutcomes;
   final Map<String, int> escalationsByReason;
+  final GreenPathEconomy greenPath;
 
   factory ConvergenceSnapshot.fromJson(Map<String, dynamic> json) {
     final playbookOutcomesRaw = json['playbooks'] is Map
@@ -47,6 +49,51 @@ class ConvergenceSnapshot {
       healing: ConvergenceHealing.fromJson(_asMap(json['healing'])),
       playbookOutcomes: outcomes,
       escalationsByReason: byReason,
+      greenPath: GreenPathEconomy.fromJson(_asMap(json['greenPath'])),
+    );
+  }
+}
+
+/// Deterministic-vs-AI execution share — how much of execution is now
+/// deterministic infrastructure behaviour versus genuine AI authority
+/// invocation.
+class GreenPathEconomy {
+  const GreenPathEconomy({
+    required this.authorityAiCalls,
+    required this.authorityShortCircuits,
+    required this.authorityDurableCacheHits,
+    required this.continuityGreenPathReuse,
+    required this.continuityGreenPathMint,
+    required this.continuityAiAuthority,
+    required this.convergencePromotions,
+    required this.deterministicExecutions,
+    required this.aiExecutions,
+    required this.deterministicBypassRate,
+  });
+
+  final int authorityAiCalls;
+  final int authorityShortCircuits;
+  final int authorityDurableCacheHits;
+  final int continuityGreenPathReuse;
+  final int continuityGreenPathMint;
+  final int continuityAiAuthority;
+  final int convergencePromotions;
+  final int deterministicExecutions;
+  final int aiExecutions;
+  final double deterministicBypassRate;
+
+  factory GreenPathEconomy.fromJson(Map<String, dynamic> json) {
+    return GreenPathEconomy(
+      authorityAiCalls: _asInt(json['authorityAiCalls']),
+      authorityShortCircuits: _asInt(json['authorityShortCircuits']),
+      authorityDurableCacheHits: _asInt(json['authorityDurableCacheHits']),
+      continuityGreenPathReuse: _asInt(json['continuityGreenPathReuse']),
+      continuityGreenPathMint: _asInt(json['continuityGreenPathMint']),
+      continuityAiAuthority: _asInt(json['continuityAiAuthority']),
+      convergencePromotions: _asInt(json['convergencePromotions']),
+      deterministicExecutions: _asInt(json['deterministicExecutions']),
+      aiExecutions: _asInt(json['aiExecutions']),
+      deterministicBypassRate: _asDouble(json['deterministicBypassRate']),
     );
   }
 }

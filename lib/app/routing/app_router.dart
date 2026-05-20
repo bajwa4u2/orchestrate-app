@@ -35,6 +35,7 @@ import 'package:orchestrate_app/features/operator_workspace/adaptation/adaptatio
 import 'package:orchestrate_app/features/operator_workspace/adaptation/ai_economy_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/convergence_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/escalations_screen.dart';
+import 'package:orchestrate_app/features/operator_workspace/adaptation/green_path_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/guardrails_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/healing_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/adaptation/learning_feed_screen.dart';
@@ -1381,6 +1382,9 @@ final router = GoRouter(
         GoRoute(
             path: '/ops/adaptation/convergence',
             builder: (context, state) => const ConvergenceScreen()),
+        GoRoute(
+            path: '/ops/adaptation/green-path',
+            builder: (context, state) => const GreenPathScreen()),
         GoRoute(
             path: '/ops/adaptation/ai-economy',
             builder: (context, state) => const AiEconomyScreen()),
