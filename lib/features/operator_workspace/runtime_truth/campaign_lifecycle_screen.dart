@@ -209,6 +209,12 @@ class _CampaignRowTile extends StatelessWidget {
           '${row.continuityStatus != null ? '   ·   Continuity · ${row.continuityStatus}' : ''}',
           style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.subdued),
         ),
+        const SizedBox(height: 4),
+        Text(
+          'Opportunities · ${row.leads} found · ${row.opportunities} ready'
+          '   ·   Outreach · ${row.outreachSent} sent, ${row.outreachQueued} queued',
+          style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.subdued),
+        ),
         if (row.shouldActivate) ...[
           const SizedBox(height: 6),
           Text(

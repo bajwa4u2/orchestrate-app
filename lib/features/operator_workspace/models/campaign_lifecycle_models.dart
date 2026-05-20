@@ -54,6 +54,10 @@ class OperatorCampaignRow {
     required this.discoveryPaused,
     required this.continuityStatus,
     required this.blockerReason,
+    required this.leads,
+    required this.opportunities,
+    required this.outreachSent,
+    required this.outreachQueued,
   });
 
   final String campaignId;
@@ -68,6 +72,10 @@ class OperatorCampaignRow {
   final bool discoveryPaused;
   final String? continuityStatus;
   final String? blockerReason;
+  final int leads;
+  final int opportunities;
+  final int outreachSent;
+  final int outreachQueued;
 
   bool get isActive => lifecycleState == 'active';
   bool get isPaused => lifecycleState == 'paused';
@@ -82,6 +90,9 @@ class OperatorCampaignRow {
     final continuity = json['continuity'] is Map
         ? Map<String, dynamic>.from(json['continuity'] as Map)
         : <String, dynamic>{};
+    final pipeline = json['pipeline'] is Map
+        ? Map<String, dynamic>.from(json['pipeline'] as Map)
+        : <String, dynamic>{};
     return OperatorCampaignRow(
       campaignId: (json['campaignId'] ?? '').toString(),
       campaignName: (json['campaignName'] ?? 'Untitled campaign').toString(),
@@ -95,6 +106,10 @@ class OperatorCampaignRow {
       discoveryPaused: discovery['paused'] == true,
       continuityStatus: continuity['status']?.toString(),
       blockerReason: json['blockerReason']?.toString(),
+      leads: _int(pipeline['leads']),
+      opportunities: _int(pipeline['opportunities']),
+      outreachSent: _int(pipeline['outreachSent']),
+      outreachQueued: _int(pipeline['outreachQueued']),
     );
   }
 }
