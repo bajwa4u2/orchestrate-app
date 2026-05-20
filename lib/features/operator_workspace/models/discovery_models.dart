@@ -151,6 +151,135 @@ class DiscoveryInventoryView {
   }
 }
 
+/// Autonomous discovery-refill runtime truth for one campaign.
+class DiscoveryRefillView {
+  const DiscoveryRefillView({
+    required this.campaignId,
+    required this.decision,
+    required this.trace,
+    required this.recordedAt,
+  });
+
+  final String campaignId;
+  final DiscoveryRefillDecisionView? decision;
+  final DiscoveryRefillTraceView? trace;
+  final String? recordedAt;
+
+  factory DiscoveryRefillView.fromJson(Map<String, dynamic> json) {
+    final decisionRaw = json['decision'];
+    final traceRaw = json['lastTrace'];
+    return DiscoveryRefillView(
+      campaignId: (json['campaignId'] ?? '').toString(),
+      decision: decisionRaw is Map
+          ? DiscoveryRefillDecisionView.fromJson(
+              Map<String, dynamic>.from(decisionRaw))
+          : null,
+      trace: traceRaw is Map
+          ? DiscoveryRefillTraceView.fromJson(
+              Map<String, dynamic>.from(traceRaw))
+          : null,
+      recordedAt: json['recordedAt']?.toString(),
+    );
+  }
+}
+
+class DiscoveryRefillDecisionView {
+  const DiscoveryRefillDecisionView({
+    required this.activate,
+    required this.reason,
+    required this.detail,
+    required this.executableInventory,
+    required this.threshold,
+  });
+
+  final bool activate;
+  final String reason;
+  final String detail;
+  final int executableInventory;
+  final int threshold;
+
+  factory DiscoveryRefillDecisionView.fromJson(Map<String, dynamic> json) {
+    return DiscoveryRefillDecisionView(
+      activate: json['activate'] == true,
+      reason: (json['reason'] ?? '').toString(),
+      detail: (json['detail'] ?? '').toString(),
+      executableInventory: _int(json['executableInventory']),
+      threshold: _int(json['threshold']),
+    );
+  }
+}
+
+class DiscoveryRefillTraceView {
+  const DiscoveryRefillTraceView({
+    required this.acquired,
+    required this.beforeDedupe,
+    required this.afterDedupe,
+    required this.suppressed,
+    required this.eligible,
+    required this.ineligible,
+    required this.promotedToInventory,
+    required this.connectors,
+  });
+
+  final int acquired;
+  final int beforeDedupe;
+  final int afterDedupe;
+  final int suppressed;
+  final int eligible;
+  final int ineligible;
+  final int promotedToInventory;
+  final List<DiscoveryTraceConnector> connectors;
+
+  factory DiscoveryRefillTraceView.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> stage(String key) => json[key] is Map
+        ? Map<String, dynamic>.from(json[key] as Map)
+        : <String, dynamic>{};
+    final dedupe = stage('dedupeSuppression');
+    final eligibility = stage('qualificationEligibility');
+    return DiscoveryRefillTraceView(
+      acquired: _int(stage('candidateNormalization')['acquired']),
+      beforeDedupe: _int(dedupe['beforeDedupe']),
+      afterDedupe: _int(dedupe['afterDedupe']),
+      suppressed: _int(dedupe['suppressed']),
+      eligible: _int(eligibility['eligible']),
+      ineligible: _int(eligibility['ineligible']),
+      promotedToInventory:
+          _int(stage('executablePromotion')['promotedToInventory']),
+      connectors: _list(json['connectorExecution'])
+          .whereType<Map>()
+          .map((m) =>
+              DiscoveryTraceConnector.fromJson(Map<String, dynamic>.from(m)))
+          .toList(growable: false),
+    );
+  }
+}
+
+class DiscoveryTraceConnector {
+  const DiscoveryTraceConnector({
+    required this.kind,
+    required this.configured,
+    required this.candidates,
+    required this.throttled,
+    required this.error,
+  });
+
+  final String kind;
+  final bool configured;
+  final int candidates;
+  final bool throttled;
+  final String? error;
+
+  factory DiscoveryTraceConnector.fromJson(Map<String, dynamic> json) {
+    return DiscoveryTraceConnector(
+      kind: (json['kind'] ?? '').toString(),
+      configured: json['configured'] == true,
+      candidates: _int(json['candidates']),
+      throttled: json['throttled'] == true,
+      error: json['error']?.toString(),
+    );
+  }
+}
+
 // helpers
 List<dynamic> _list(dynamic v) => v is List ? v : const <dynamic>[];
 

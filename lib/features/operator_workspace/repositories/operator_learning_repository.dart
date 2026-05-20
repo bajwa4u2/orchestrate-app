@@ -418,6 +418,19 @@ class OperatorLearningRepository {
     return DiscoveryInventoryView.fromJson(_asMap(json));
   }
 
+  /// Autonomous discovery-refill runtime truth for a campaign — the
+  /// governor decision and the stage-by-stage trace of the last run.
+  Future<DiscoveryRefillView> fetchDiscoveryRefill({
+    required String campaignId,
+  }) async {
+    final json = await _api.getJson(
+      '/operator/discovery/refill',
+      query: {'campaignId': campaignId},
+      surface: ApiSurface.operator,
+    );
+    return DiscoveryRefillView.fromJson(_asMap(json));
+  }
+
   Map<String, String>? _query(Map<String, String?> input) {
     final filtered = <String, String>{};
     input.forEach((k, v) {

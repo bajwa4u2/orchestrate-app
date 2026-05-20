@@ -114,6 +114,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                 _InventoryPanel(inventory: data.inventory),
                 const SizedBox(height: 18),
                 _SourcesPanel(sources: data.sources),
+                const SizedBox(height: 18),
+                const _RefillInspectorPanel(),
                 const SizedBox(height: 28),
               ],
             );
@@ -315,6 +317,191 @@ class _SourceRow extends StatelessWidget {
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: AppTheme.rose)),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Per-campaign autonomous refill runtime truth — the governor
+/// decision (why discovery did / did not activate) and the
+/// stage-by-stage trace of the last real run.
+class _RefillInspectorPanel extends StatefulWidget {
+  const _RefillInspectorPanel();
+
+  @override
+  State<_RefillInspectorPanel> createState() => _RefillInspectorPanelState();
+}
+
+class _RefillInspectorPanelState extends State<_RefillInspectorPanel> {
+  final OperatorLearningRepository _repo = OperatorLearningRepository();
+  final TextEditingController _campaignCtrl = TextEditingController();
+  DiscoveryRefillView? _result;
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _campaignCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _inspect() async {
+    final id = _campaignCtrl.text.trim();
+    if (id.isEmpty) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final view = await _repo.fetchDiscoveryRefill(campaignId: id);
+      if (!mounted) return;
+      setState(() {
+        _result = view;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = '$error';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final result = _result;
+    return OperatorPanel(
+      title: 'Refill activation truth',
+      subtitle:
+          'Why discovery did or did not activate for a campaign — '
+          'governor decision + the last run trace.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _campaignCtrl,
+                  style: const TextStyle(color: AppTheme.text),
+                  decoration: InputDecoration(
+                    labelText: 'Campaign ID',
+                    labelStyle: const TextStyle(color: AppTheme.muted),
+                    filled: true,
+                    fillColor: AppTheme.panelSoft,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radius),
+                      borderSide: const BorderSide(color: AppTheme.line),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radius),
+                      borderSide: const BorderSide(color: AppTheme.line),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: _loading ? null : _inspect,
+                child: Text(_loading ? 'Inspecting…' : 'Inspect'),
+              ),
+            ],
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text('Inspection failed: $_error',
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: AppTheme.rose)),
+          ],
+          if (result != null) ...[
+            const SizedBox(height: 14),
+            _decision(context, result),
+            if (result.trace != null) ...[
+              const SizedBox(height: 14),
+              _trace(context, result.trace!),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _decision(BuildContext context, DiscoveryRefillView view) {
+    final d = view.decision;
+    if (d == null) {
+      return const OperatorEmptyState(
+        title: 'No refill decision recorded yet',
+        body: 'This campaign has not been evaluated for refill.',
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _Tag(
+              label: d.activate ? 'ACTIVATED' : 'SUPPRESSED',
+              tone: d.activate ? OperatorTone.positive : OperatorTone.caution,
+            ),
+            const SizedBox(width: 8),
+            _Tag(label: d.reason.toUpperCase(), tone: OperatorTone.neutral),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(d.detail,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: AppTheme.muted, height: 1.35)),
+        const SizedBox(height: 6),
+        Text(
+          'Executable inventory ${d.executableInventory} · threshold ${d.threshold}',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppTheme.subdued),
+        ),
+      ],
+    );
+  }
+
+  Widget _trace(BuildContext context, DiscoveryRefillTraceView t) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: AppTheme.panelSoft,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Last run trace', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            'Acquired ${t.acquired} → after dedupe ${t.afterDedupe} '
+            '(suppressed ${t.suppressed}) → eligible ${t.eligible} → '
+            'promoted ${t.promotedToInventory}',
+            style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.muted),
+          ),
+          const SizedBox(height: 8),
+          for (final c in t.connectors)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                '${c.kind} · ${c.configured ? "configured" : "not configured"} · '
+                '${c.candidates} candidate(s)'
+                '${c.throttled ? " · throttled" : ""}'
+                '${c.error != null ? " · error: ${c.error}" : ""}',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: AppTheme.subdued),
+              ),
+            ),
         ],
       ),
     );
