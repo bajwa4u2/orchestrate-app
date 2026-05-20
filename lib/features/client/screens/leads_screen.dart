@@ -206,9 +206,10 @@ class _OpportunityRuntime {
 class _IntelligenceCampaign {
   const _IntelligenceCampaign({
     required this.name,
-    required this.discoveryEnabled,
-    required this.discoveryStatus,
-    required this.discoveryMode,
+    required this.lifecycleLabel,
+    required this.lifecycleDetail,
+    required this.lifecyclePaused,
+    required this.lifecycleListening,
     required this.lastRunAt,
     required this.nextRunAt,
     required this.signalsRecent,
@@ -217,9 +218,15 @@ class _IntelligenceCampaign {
   });
 
   final String name;
-  final bool discoveryEnabled;
-  final String discoveryStatus;
-  final String discoveryMode;
+
+  /// Client-safe lifecycle truth, derived by the backend. The
+  /// Opportunities page renders these — never the raw enabled/status
+  /// flags — so a freshly-activated profile is never shown "paused".
+  final String lifecycleLabel;
+  final String lifecycleDetail;
+  final bool lifecyclePaused;
+  final bool lifecycleListening;
+
   final String? lastRunAt;
   final String? nextRunAt;
   final int signalsRecent;
@@ -746,17 +753,17 @@ class _IntelligenceCampaignTile extends StatelessWidget {
     }
     final qualifyLabel =
         qualifyParts.isEmpty ? 'No qualification activity yet' : qualifyParts.join(' · ');
-    final discoveryLabel = campaign.discoveryEnabled
-        ? 'Discovery on · ${_title(campaign.discoveryMode)} · ${_title(campaign.discoveryStatus)}'
-        : 'Discovery paused (${_title(campaign.discoveryStatus)})';
     final lastRun = campaign.lastRunAt;
     final nextRun = campaign.nextRunAt;
     final scheduleLine = <String>[
       if (lastRun != null && lastRun.isNotEmpty)
         'Last run ${_formatDate(lastRun)}',
-      if (nextRun != null && nextRun.isNotEmpty && campaign.discoveryEnabled)
+      if (nextRun != null && nextRun.isNotEmpty && campaign.lifecycleListening)
         'Next scheduled ${_formatDate(nextRun)}',
     ].join(' · ');
+    final signalsLine = campaign.signalsRecent == 0
+        ? '0 signals detected yet · $qualifyLabel'
+        : '${campaign.signalsRecent} signals detected · $qualifyLabel';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -764,14 +771,23 @@ class _IntelligenceCampaignTile extends StatelessWidget {
         Text(campaign.name.isEmpty ? 'Untitled campaign' : campaign.name,
             style: theme.textTheme.titleLarge),
         const SizedBox(height: 6),
+        // Backend-derived lifecycle truth. "Paused" styling appears
+        // ONLY for an explicit operator / governance pause.
         Text(
-          discoveryLabel,
+          campaign.lifecycleLabel,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: campaign.discoveryEnabled
-                ? AppTheme.publicText
-                : Colors.orange.shade700,
+            fontWeight: FontWeight.w600,
+            color: campaign.lifecyclePaused
+                ? Colors.orange.shade700
+                : AppTheme.publicText,
           ),
         ),
+        if (campaign.lifecycleDetail.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(campaign.lifecycleDetail,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppTheme.publicMuted)),
+        ],
         if (scheduleLine.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(scheduleLine,
@@ -780,7 +796,7 @@ class _IntelligenceCampaignTile extends StatelessWidget {
         ],
         const SizedBox(height: 6),
         Text(
-          '${campaign.signalsRecent} signals detected · $qualifyLabel',
+          signalsLine,
           style: theme.textTheme.bodyMedium
               ?.copyWith(color: AppTheme.publicText),
         ),
@@ -964,17 +980,19 @@ List<_IntelligenceCampaign> _readIntelligenceCampaigns(
       if (count > 0) breakdownInts[key] = count;
     });
 
+    final lifecycle = _asMap(discovery['lifecycle']);
     list.add(
       _IntelligenceCampaign(
         name: _read(map, 'name'),
-        discoveryEnabled:
-            discovery.isNotEmpty && (discovery['enabled'] == true),
-        discoveryStatus: _read(discovery, 'status').isEmpty
-            ? (discovery.isEmpty ? 'NOT_CONFIGURED' : 'UNKNOWN')
-            : _read(discovery, 'status'),
-        discoveryMode: _read(discovery, 'sourceMode').isEmpty
-            ? 'AUTO'
-            : _read(discovery, 'sourceMode'),
+        // Render the backend-derived lifecycle truth. Fall back to a
+        // neutral active-preparing label — NEVER "paused" — when the
+        // lifecycle block is absent (older payload).
+        lifecycleLabel: _read(lifecycle, 'clientLabel').isEmpty
+            ? 'Preparing market coverage'
+            : _read(lifecycle, 'clientLabel'),
+        lifecycleDetail: _read(lifecycle, 'detail'),
+        lifecyclePaused: lifecycle['paused'] == true,
+        lifecycleListening: lifecycle['listening'] == true,
         lastRunAt:
             _read(discovery, 'lastRunAt').isEmpty ? null : _read(discovery, 'lastRunAt'),
         nextRunAt:
