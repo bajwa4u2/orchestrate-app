@@ -216,7 +216,14 @@ class _OperatorShellState extends State<OperatorShell> {
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(
                                 maxWidth: OperatorShell.maxContentWidth),
-                            child: SizedBox.expand(child: widget.child),
+                            // Operator surface content is selectable by
+                            // default — diagnostics, IDs, rationale,
+                            // logs, and runtime truth must be copyable.
+                            // Buttons and nav remain in the chrome
+                            // outside this SelectionArea.
+                            child: SizedBox.expand(
+                              child: SelectionArea(child: widget.child),
+                            ),
                           ),
                         ),
                       ),

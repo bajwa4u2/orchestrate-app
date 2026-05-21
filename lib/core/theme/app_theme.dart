@@ -89,6 +89,14 @@ class AppTheme {
       splashFactory: NoSplash.splashFactory,
       hoverColor: Colors.transparent,
       highlightColor: Colors.transparent,
+      // Text selection must be clearly visible on the dark shell —
+      // Orchestrate is an operational workspace; operators select and
+      // copy diagnostics, IDs, rationale, and logs constantly.
+      textSelectionTheme: TextSelectionThemeData(
+        selectionColor: accent.withValues(alpha: 0.30),
+        cursorColor: accent,
+        selectionHandleColor: accent,
+      ),
       cardTheme: CardThemeData(
         color: panel,
         elevation: 0,
@@ -170,6 +178,11 @@ class AppTheme {
       splashFactory: NoSplash.splashFactory,
       hoverColor: Colors.transparent,
       highlightColor: Colors.transparent,
+      textSelectionTheme: TextSelectionThemeData(
+        selectionColor: publicAccent.withValues(alpha: 0.22),
+        cursorColor: publicAccent,
+        selectionHandleColor: publicAccent,
+      ),
       cardTheme: CardThemeData(
         color: publicSurface,
         elevation: 0,

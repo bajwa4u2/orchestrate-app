@@ -331,6 +331,11 @@ class _ClientShellState extends State<ClientShell> {
         : 'Client workspace';
     final email = session.email.trim();
 
+    // Client workspace content is selectable by default — outcome
+    // detail, readiness explanations, message previews, and IDs must
+    // be copyable. The sidebar / top chrome stays outside this area.
+    final content = SelectionArea(child: widget.child);
+
     return Theme(
       data: AppTheme.lightTheme,
       child: LayoutBuilder(builder: (context, constraints) {
@@ -362,7 +367,7 @@ class _ClientShellState extends State<ClientShell> {
                   plan: _subscriptionLabel(session),
                   billing: _billingLabel(session),
                   horizontalPadding: 16,
-                  child: widget.child,
+                  child: content,
                 )
               : Row(
                   children: [
@@ -384,7 +389,7 @@ class _ClientShellState extends State<ClientShell> {
                         plan: _subscriptionLabel(session),
                         billing: _billingLabel(session),
                         horizontalPadding: 28,
-                        child: widget.child,
+                        child: content,
                       ),
                     ),
                   ],
