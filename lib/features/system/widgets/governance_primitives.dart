@@ -42,6 +42,25 @@ import 'package:orchestrate_app/features/system/widgets/trust_primitives.dart';
 /// operator workspaces.
 
 // ---------------------------------------------------------------------
+// Theme-aware token resolution.
+//
+// These primitives render on BOTH the light client/public surfaces and
+// the dark operator supervision shell. They resolve neutral tokens from
+// the active theme brightness so a primitive is coherent on either —
+// light surfaces keep the exact public* values (no visual change);
+// the dark operator shell gets the dark panel tokens.
+// ---------------------------------------------------------------------
+
+bool _gDark(BuildContext c) => Theme.of(c).brightness == Brightness.dark;
+
+Color _gLine(BuildContext c) => _gDark(c) ? AppTheme.line : AppTheme.publicLine;
+Color _gMuted(BuildContext c) =>
+    _gDark(c) ? AppTheme.muted : AppTheme.publicMuted;
+Color _gText(BuildContext c) => _gDark(c) ? AppTheme.text : AppTheme.publicText;
+Color _gSurfaceSoft(BuildContext c) =>
+    _gDark(c) ? AppTheme.panelSoft : AppTheme.publicSurfaceSoft;
+
+// ---------------------------------------------------------------------
 // Tones
 // ---------------------------------------------------------------------
 
@@ -70,31 +89,32 @@ class _ToneSpec {
   final Color border;
 }
 
-_ToneSpec _toneSpec(GovernanceTone tone) {
+_ToneSpec _toneSpec(BuildContext context, GovernanceTone tone) {
+  final dark = _gDark(context);
   switch (tone) {
     case GovernanceTone.positive:
-      return const _ToneSpec(
-        background: Color(0xFFEFF6FF),
-        foreground: Color(0xFF1D4ED8),
-        border: AppTheme.publicLine,
+      return _ToneSpec(
+        background: dark ? const Color(0xFF14233B) : const Color(0xFFEFF6FF),
+        foreground: dark ? const Color(0xFF8FB7F5) : const Color(0xFF1D4ED8),
+        border: _gLine(context),
       );
     case GovernanceTone.neutral:
-      return const _ToneSpec(
-        background: AppTheme.publicSurfaceSoft,
-        foreground: AppTheme.publicMuted,
-        border: AppTheme.publicLine,
+      return _ToneSpec(
+        background: _gSurfaceSoft(context),
+        foreground: _gMuted(context),
+        border: _gLine(context),
       );
     case GovernanceTone.cautious:
-      return const _ToneSpec(
-        background: Color(0xFFFEF6E0),
-        foreground: Color(0xFF92400E),
-        border: AppTheme.publicLine,
+      return _ToneSpec(
+        background: dark ? const Color(0xFF332611) : const Color(0xFFFEF6E0),
+        foreground: dark ? const Color(0xFFE5B454) : const Color(0xFF92400E),
+        border: _gLine(context),
       );
     case GovernanceTone.critical:
-      return const _ToneSpec(
-        background: Color(0xFFFEECEC),
-        foreground: Color(0xFFB1361B),
-        border: AppTheme.publicLine,
+      return _ToneSpec(
+        background: dark ? const Color(0xFF3A1E1C) : const Color(0xFFFEECEC),
+        foreground: dark ? const Color(0xFFE0837A) : const Color(0xFFB1361B),
+        border: _gLine(context),
       );
   }
 }
@@ -126,7 +146,7 @@ class GovernanceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spec = _toneSpec(tone);
+    final spec = _toneSpec(context, tone);
     final hasValue = value != null && value!.isNotEmpty;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -187,6 +207,7 @@ class BodySourcePill extends StatelessWidget {
   Widget build(BuildContext context) {
     final usingGoverned = (templateKey ?? '').isNotEmpty;
     final spec = _toneSpec(
+      context,
       usingGoverned ? GovernanceTone.positive : GovernanceTone.neutral,
     );
     final label = _label();
@@ -276,13 +297,14 @@ class ProvenanceChainStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final parts = <Widget>[];
     if ((operationId ?? '').isNotEmpty) {
-      parts.add(_field('op', operationId!));
+      parts.add(_field(context, 'op', operationId!));
     }
     if ((threadId ?? '').isNotEmpty) {
-      parts.add(_field('thread', threadId!));
+      parts.add(_field(context, 'thread', threadId!));
     }
     if ((templateKey ?? '').isNotEmpty) {
       parts.add(_field(
+        context,
         'template',
         templateVersion != null ? '$templateKey · v$templateVersion' : templateKey!,
       ));
@@ -291,7 +313,7 @@ class ProvenanceChainStrip extends StatelessWidget {
       return Text(
         'No provenance recorded.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.publicMuted,
+              color: _gMuted(context),
             ),
       );
     }
@@ -302,24 +324,24 @@ class ProvenanceChainStrip extends StatelessWidget {
     );
   }
 
-  Widget _field(String label, String value) {
+  Widget _field(BuildContext context, String label, String value) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           '$label ',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11.5,
             fontWeight: FontWeight.w700,
-            color: AppTheme.publicMuted,
+            color: _gMuted(context),
           ),
         ),
         SelectableText(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'monospace',
             fontSize: 12,
-            color: AppTheme.publicText,
+            color: _gText(context),
           ),
         ),
       ],
@@ -429,7 +451,7 @@ class GovernanceCoverageMeter extends StatelessWidget {
       return Text(
         'No dispatches in sample.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.publicMuted,
+              color: _gMuted(context),
             ),
       );
     }
@@ -491,7 +513,7 @@ class GovernanceCoverageMeter extends StatelessWidget {
         Text(
           '$label · $count / $total',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.publicMuted,
+                color: _gMuted(context),
               ),
         ),
       ],
@@ -530,7 +552,7 @@ class LifecycleTimeline extends StatelessWidget {
       return Text(
         'No lifecycle events recorded.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.publicMuted,
+              color: _gMuted(context),
             ),
       );
     }
@@ -572,7 +594,7 @@ class _LifecycleStepRow extends StatelessWidget {
               Container(
                 width: 2,
                 height: 8,
-                color: isFirst ? Colors.transparent : AppTheme.publicLine,
+                color: isFirst ? Colors.transparent : _gLine(context),
               ),
               Container(
                 width: 10,
@@ -580,13 +602,13 @@ class _LifecycleStepRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: color,
-                  border: Border.all(color: AppTheme.publicLine),
+                  border: Border.all(color: _gLine(context)),
                 ),
               ),
               Expanded(
                 child: Container(
                   width: 2,
-                  color: isLast ? Colors.transparent : AppTheme.publicLine,
+                  color: isLast ? Colors.transparent : _gLine(context),
                 ),
               ),
             ],
@@ -601,7 +623,7 @@ class _LifecycleStepRow extends StatelessWidget {
                   Text(
                     step.label,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: dim ? AppTheme.publicMuted : AppTheme.publicText,
+                          color: dim ? _gMuted(context) : _gText(context),
                           fontWeight: FontWeight.w700,
                         ),
                   ),
@@ -609,7 +631,7 @@ class _LifecycleStepRow extends StatelessWidget {
                     Text(
                       step.timestamp!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.publicMuted,
+                            color: _gMuted(context),
                             fontFamily: 'monospace',
                             fontSize: 11.5,
                           ),
@@ -621,7 +643,7 @@ class _LifecycleStepRow extends StatelessWidget {
                         step.detail!,
                         style:
                             Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppTheme.publicMuted,
+                                  color: _gMuted(context),
                                   height: 1.4,
                                 ),
                       ),
@@ -680,7 +702,7 @@ class OperationContinuityRail extends StatelessWidget {
                 child: Container(
                   height: 2,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
-                  color: AppTheme.publicLine,
+                  color: _gLine(context),
                 ),
               ),
           ],
@@ -723,16 +745,16 @@ class _RailMarker extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: color,
-            border: Border.all(color: AppTheme.publicLine),
+            border: Border.all(color: _gLine(context)),
           ),
         ),
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: AppTheme.publicMuted,
+            color: _gMuted(context),
           ),
         ),
       ],
@@ -775,14 +797,14 @@ class TemplateLineageMap extends StatelessWidget {
                   size: 14,
                   color: e.isDone
                       ? const Color(0xFF1D4ED8)
-                      : AppTheme.publicMuted,
+                      : _gMuted(context),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     e.text,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.publicText,
+                          color: _gText(context),
                           height: 1.45,
                         ),
                   ),
@@ -970,7 +992,7 @@ class SupportDiagnosticStrip extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFFEFF6FF),
           borderRadius: BorderRadius.circular(AppTheme.radius),
-          border: Border.all(color: AppTheme.publicLine),
+          border: Border.all(color: _gLine(context)),
         ),
         child: Row(
           children: [
@@ -1008,9 +1030,9 @@ class SupportDiagnosticStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
+        color: _gSurfaceSoft(context),
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        border: Border.all(color: _gLine(context)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1022,7 +1044,7 @@ class SupportDiagnosticStrip extends StatelessWidget {
               size: 16,
               color: ownerTone == GovernanceTone.cautious
                   ? const Color(0xFFB45309)
-                  : AppTheme.publicMuted,
+                  : _gMuted(context),
             ),
           ),
           const SizedBox(width: 10),
@@ -1033,7 +1055,7 @@ class SupportDiagnosticStrip extends StatelessWidget {
                 Text(
                   entry.message,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.publicText,
+                        color: _gText(context),
                         height: 1.45,
                       ),
                 ),
@@ -1048,10 +1070,10 @@ class SupportDiagnosticStrip extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       entry.code,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
-                        color: AppTheme.publicMuted,
+                        color: _gMuted(context),
                       ),
                     ),
                   ],

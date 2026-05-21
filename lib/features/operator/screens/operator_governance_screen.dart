@@ -244,9 +244,9 @@ class _Hero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.panel,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        border: Border.all(color: AppTheme.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,7 +261,7 @@ class _Hero extends StatelessWidget {
           Text(
             'Recent governed dispatches across the organization. Every row reads from the same persisted provenance the wire carried.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
+                  color: AppTheme.muted,
                 ),
           ),
           const SizedBox(height: 18),
@@ -296,23 +296,23 @@ class _RecentList extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.panel,
           borderRadius: BorderRadius.circular(AppTheme.radius),
-          border: Border.all(color: AppTheme.publicLine),
+          border: Border.all(color: AppTheme.line),
         ),
         child: Text(
           'No governed dispatches recorded yet.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.publicMuted,
+                color: AppTheme.muted,
               ),
         ),
       );
     }
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.panel,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        border: Border.all(color: AppTheme.line),
       ),
       child: Column(
         children: [
@@ -321,12 +321,12 @@ class _RecentList extends StatelessWidget {
             child: Row(
               children: [
                 Icon(Icons.list_alt_outlined,
-                    size: 16, color: AppTheme.publicMuted),
+                    size: 16, color: AppTheme.muted),
                 const SizedBox(width: 8),
                 Text(
                   'Recent dispatches',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppTheme.publicMuted,
+                        color: AppTheme.muted,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
@@ -334,7 +334,7 @@ class _RecentList extends StatelessWidget {
                 Text(
                   '${messages.length}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.publicMuted,
+                        color: AppTheme.muted,
                       ),
                 ),
               ],
@@ -379,7 +379,7 @@ class _ListRow extends StatelessWidget {
         governance is Map ? governance['templateKey']?.toString() : null;
 
     return Material(
-      color: selected ? AppTheme.publicSurfaceSoft : Colors.transparent,
+      color: selected ? AppTheme.panelSoft : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -393,7 +393,7 @@ class _ListRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.publicText,
+                  color: AppTheme.text,
                 ),
               ),
               const SizedBox(height: 4),
@@ -426,7 +426,7 @@ class _ListRow extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 11,
-                      color: AppTheme.publicMuted,
+                      color: AppTheme.muted,
                     ),
                   ),
                 ),
@@ -454,9 +454,9 @@ class _DetailPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.panel,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        border: Border.all(color: AppTheme.line),
       ),
       child: loading
           ? const Center(
@@ -476,7 +476,7 @@ class _DetailPanel extends StatelessWidget {
                   ? Text(
                       'Select a dispatch to inspect.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.publicMuted,
+                            color: AppTheme.muted,
                           ),
                     )
                   : _renderTrace(context, trace!),
@@ -587,9 +587,9 @@ class _DetailPanel extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.publicSurfaceSoft,
+              color: AppTheme.panelSoft,
               borderRadius: BorderRadius.circular(AppTheme.radius),
-              border: Border.all(color: AppTheme.publicLine),
+              border: Border.all(color: AppTheme.line),
             ),
             child: SelectableText(
               body,
@@ -597,7 +597,7 @@ class _DetailPanel extends StatelessWidget {
                 fontFamily: 'monospace',
                 fontSize: 12.5,
                 height: 1.45,
-                color: AppTheme.publicText,
+                color: AppTheme.text,
               ),
             ),
           ),
@@ -612,7 +612,7 @@ class _DetailPanel extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppTheme.publicMuted,
+              color: AppTheme.muted,
               fontWeight: FontWeight.w700,
             ),
       ),
@@ -696,9 +696,9 @@ class _Error extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.panel,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        border: Border.all(color: AppTheme.line),
       ),
       child: Row(
         children: [
@@ -748,9 +748,9 @@ class _ReviewQueueCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.panel,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        border: Border.all(color: AppTheme.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -758,12 +758,12 @@ class _ReviewQueueCard extends StatelessWidget {
           Row(
             children: [
               Icon(Icons.priority_high_outlined,
-                  size: 16, color: AppTheme.publicMuted),
+                  size: 16, color: AppTheme.muted),
               const SizedBox(width: 8),
               Text(
                 'Operator review queue',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppTheme.publicMuted,
+                      color: AppTheme.muted,
                       fontWeight: FontWeight.w700,
                     ),
               ),
@@ -782,7 +782,7 @@ class _ReviewQueueCard extends StatelessWidget {
           Text(
             'Dispatches the runtime could not complete. Each row carries the persisted error + governance metadata so retry, convert, or escalate decisions are made against truth — not guesswork.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.publicMuted,
+                  color: AppTheme.muted,
                   height: 1.45,
                 ),
           ),
@@ -810,7 +810,7 @@ class _ReviewQueueCard extends StatelessWidget {
             Text(
               'No dispatches require review. Every recent outbound completed or is in flight.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.publicMuted,
+                    color: AppTheme.muted,
                   ),
             )
           else
@@ -833,14 +833,14 @@ class _ReviewQueueCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.publicSurfaceSoft,
+                color: AppTheme.panelSoft,
                 borderRadius: BorderRadius.circular(AppTheme.radius),
-                border: Border.all(color: AppTheme.publicLine),
+                border: Border.all(color: AppTheme.line),
               ),
               child: Text(
                 retryNotice!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.publicMuted,
+                      color: AppTheme.muted,
                     ),
               ),
             ),
@@ -889,7 +889,7 @@ class _ReviewRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
-                color: AppTheme.publicText,
+                color: AppTheme.text,
               ),
             ),
             const SizedBox(height: 4),
@@ -942,8 +942,8 @@ class _ReviewRow extends StatelessWidget {
                   label: Text(retrying ? 'Retrying…' : 'Retry'),
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
-                    foregroundColor: AppTheme.publicText,
-                    side: BorderSide(color: AppTheme.publicLine),
+                    foregroundColor: AppTheme.text,
+                    side: BorderSide(color: AppTheme.line),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
@@ -954,7 +954,7 @@ class _ReviewRow extends StatelessWidget {
                 Text(
                   'Provenance preserved on retry',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.publicMuted,
+                        color: AppTheme.muted,
                         fontStyle: FontStyle.italic,
                       ),
                 ),
