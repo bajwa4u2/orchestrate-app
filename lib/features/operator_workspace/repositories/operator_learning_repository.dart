@@ -400,10 +400,14 @@ class OperatorLearningRepository {
   // ──────────────────────────────────────────────────────────────
 
   /// Discovery source coverage + per-source health / acquisition
-  /// telemetry.
-  Future<DiscoverySourcesView> fetchDiscoverySources() async {
+  /// telemetry. A `campaignId` additionally returns that campaign's
+  /// reply-learning source down-rank per source.
+  Future<DiscoverySourcesView> fetchDiscoverySources({
+    String? campaignId,
+  }) async {
     final json = await _api.getJson(
       '/operator/discovery/sources',
+      query: _query({'campaignId': campaignId}),
       surface: ApiSurface.operator,
     );
     return DiscoverySourcesView.fromJson(_asMap(json));

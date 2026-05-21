@@ -8,6 +8,7 @@ class DiscoverySourcesView {
     required this.asOf,
     required this.configuredCount,
     required this.totalCount,
+    required this.campaignScoped,
     required this.sources,
     required this.stats,
   });
@@ -15,6 +16,9 @@ class DiscoverySourcesView {
   final DateTime asOf;
   final int configuredCount;
   final int totalCount;
+  /// True when the payload was fetched for a specific campaign and
+  /// therefore carries reply-learning source down-rank.
+  final bool campaignScoped;
   final List<DiscoverySourceRow> sources;
   final List<DiscoverySourceStat> stats;
 
@@ -30,6 +34,7 @@ class DiscoverySourcesView {
       asOf: _date(json['asOf']),
       configuredCount: _int(json['configuredCount']),
       totalCount: _int(json['totalCount']),
+      campaignScoped: json['campaignScoped'] == true,
       sources: _list(json['sources'])
           .whereType<Map>()
           .map((m) => DiscoverySourceRow.fromJson(Map<String, dynamic>.from(m)))
@@ -51,6 +56,7 @@ class DiscoverySourceRow {
     required this.configured,
     required this.requiresConfig,
     required this.description,
+    required this.sourceLearning,
   });
 
   final String kind;
@@ -60,6 +66,9 @@ class DiscoverySourceRow {
   final bool configured;
   final List<String> requiresConfig;
   final String description;
+  /// Reply-learning acquisition down-rank for the scoped campaign, or
+  /// null when the payload is not campaign-scoped.
+  final SourceDownRankView? sourceLearning;
 
   factory DiscoverySourceRow.fromJson(Map<String, dynamic> json) {
     return DiscoverySourceRow(
@@ -72,6 +81,36 @@ class DiscoverySourceRow {
           .map((e) => e.toString())
           .toList(growable: false),
       description: (json['description'] ?? '').toString(),
+      sourceLearning: json['sourceLearning'] is Map
+          ? SourceDownRankView.fromJson(
+              Map<String, dynamic>.from(json['sourceLearning'] as Map))
+          : null,
+    );
+  }
+}
+
+/// Reply-learning acquisition down-rank for one discovery source —
+/// campaign-scoped. The multiplier (0.4..1) is applied to the source's
+/// acquisition ranking; it recovers as positive replies arrive.
+class SourceDownRankView {
+  const SourceDownRankView({
+    required this.multiplier,
+    required this.negativeRate,
+    required this.observations,
+    required this.downRanked,
+  });
+
+  final double multiplier;
+  final double negativeRate;
+  final int observations;
+  final bool downRanked;
+
+  factory SourceDownRankView.fromJson(Map<String, dynamic> json) {
+    return SourceDownRankView(
+      multiplier: _double(json['multiplier']),
+      negativeRate: _double(json['negativeRate']),
+      observations: _int(json['observations']),
+      downRanked: json['downRanked'] == true,
     );
   }
 }
@@ -331,6 +370,12 @@ int _int(dynamic v) {
   if (v is int) return v;
   if (v is num) return v.toInt();
   if (v is String) return int.tryParse(v) ?? 0;
+  return 0;
+}
+
+double _double(dynamic v) {
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? 0;
   return 0;
 }
 

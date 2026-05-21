@@ -26,7 +26,11 @@ class _DiscoveryData {
 
 class _DiscoveryScreenState extends State<DiscoveryScreen> {
   final OperatorLearningRepository _repo = OperatorLearningRepository();
+  final TextEditingController _campaignCtl = TextEditingController();
   Future<_DiscoveryData>? _future;
+  // When set, source coverage is fetched for this campaign and carries
+  // its reply-learning source down-rank.
+  String _scopedCampaignId = '';
 
   @override
   void initState() {
@@ -34,13 +38,27 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     _refresh();
   }
 
+  @override
+  void dispose() {
+    _campaignCtl.dispose();
+    super.dispose();
+  }
+
   void _refresh() {
     setState(() => _future = _load());
   }
 
+  void _applyCampaignScope() {
+    setState(() {
+      _scopedCampaignId = _campaignCtl.text.trim();
+      _future = _load();
+    });
+  }
+
   Future<_DiscoveryData> _load() async {
+    final cid = _scopedCampaignId;
     final results = await Future.wait([
-      _repo.fetchDiscoverySources(),
+      _repo.fetchDiscoverySources(campaignId: cid.isEmpty ? null : cid),
       _repo.fetchDiscoveryInventory(),
     ]);
     return _DiscoveryData(
@@ -86,7 +104,41 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            SizedBox(
+              width: 340,
+              child: TextField(
+                controller: _campaignCtl,
+                style: Theme.of(context).textTheme.bodyMedium,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  labelText: 'Campaign scope (optional)',
+                  hintText: 'Campaign ID — reveals reply-learning down-rank',
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: (_) => _applyCampaignScope(),
+              ),
+            ),
+            const SizedBox(width: 10),
+            OutlinedButton(
+              onPressed: _applyCampaignScope,
+              child: Text(_scopedCampaignId.isEmpty ? 'Apply scope' : 'Update'),
+            ),
+            if (_scopedCampaignId.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () {
+                  _campaignCtl.clear();
+                  _applyCampaignScope();
+                },
+                child: const Text('Clear'),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 16),
         FutureBuilder<_DiscoveryData>(
           future: _future,
           builder: (context, snapshot) {
@@ -237,7 +289,8 @@ class _SourcesPanel extends StatelessWidget {
       title: 'Source coverage',
       subtitle:
           '${sources.configuredCount} of ${sources.totalCount} connectors configured. '
-          'Public / open sources need no key; the engine runs without the paid source.',
+          'Public / open sources need no key; the engine runs without the paid source.'
+          '${sources.campaignScoped ? ' Campaign-scoped — reply-learning source down-rank shown below.' : ' Enter a campaign scope above to see reply-learning source down-rank.'}',
       child: sources.sources.isEmpty
           ? const OperatorEmptyState(
               title: 'No connectors registered',
@@ -298,6 +351,14 @@ class _SourceRow extends StatelessWidget {
                     ? OperatorTone.positive
                     : OperatorTone.neutral,
               ),
+              if (source.sourceLearning?.downRanked == true) ...[
+                const SizedBox(width: 6),
+                _Tag(
+                  label:
+                      'DOWN-RANKED ×${source.sourceLearning!.multiplier.toStringAsFixed(2)}',
+                  tone: OperatorTone.caution,
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 4),
@@ -305,6 +366,26 @@ class _SourceRow extends StatelessWidget {
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppTheme.muted,
               )),
+          if (source.sourceLearning != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              source.sourceLearning!.downRanked
+                  ? 'Reply learning: '
+                      '${(source.sourceLearning!.negativeRate * 100).round()}% negative '
+                      'across ${source.sourceLearning!.observations} '
+                      'repl${source.sourceLearning!.observations == 1 ? 'y' : 'ies'} — '
+                      'acquisition share reduced to '
+                      '×${source.sourceLearning!.multiplier.toStringAsFixed(2)}.'
+                  : 'Reply learning: no down-rank — '
+                      '${source.sourceLearning!.observations} '
+                      'repl${source.sourceLearning!.observations == 1 ? 'y' : 'ies'} observed.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: source.sourceLearning!.downRanked
+                    ? AppTheme.amber
+                    : AppTheme.muted,
+              ),
+            ),
+          ],
           if (!source.configured && source.requiresConfig.isNotEmpty) ...[
             const SizedBox(height: 3),
             Text('Needs: ${source.requiresConfig.join(', ')}',
