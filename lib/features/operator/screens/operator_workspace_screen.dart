@@ -4,14 +4,16 @@ import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/operator_repository.dart';
 
+// `campaigns` and `clients` are intentionally absent — the legacy
+// operator Campaigns / Clients panels were superseded by the
+// runtime-backed campaign-lifecycle surface (/ops/continuity/campaigns)
+// and their routes already redirect there.
 enum OperatorSection {
   command,
   pipeline,
   inquiries,
-  campaigns,
   replies,
   meetings,
-  clients,
   revenue,
   deliverability,
   communications,
@@ -322,50 +324,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           secondaryEmpty: 'No recent contact is available.',
         );
 
-      case OperatorSection.campaigns:
-        final campaigns = await repo.fetchCampaigns();
-        final dispatches = await repo.fetchEmailDispatches();
-        return _OperatorData(
-          eyebrow: 'Flow',
-          title: 'Campaign movement and outbound pressure',
-          subtitle:
-              'Campaign work should show both state and evidence of movement, not just a static list.',
-          metrics: [
-            _Metric('Campaigns', '${campaigns.length}'),
-            _Metric('Dispatches', '${dispatches.length}'),
-          ],
-          primaryTitle: 'Campaign list',
-          primaryRows: campaigns
-              .take(10)
-              .map(
-                (item) => _mapRow(
-                  item,
-                  titleKeys: const ['name'],
-                  primaryKeys: const ['status'],
-                  secondaryKeys: const ['channel', 'createdAt'],
-                ),
-              )
-              .toList(),
-          primaryEmpty: 'No campaigns are available.',
-          secondaryTitle: 'Recent dispatch movement',
-          secondaryRows: dispatches
-              .take(8)
-              .map(
-                (item) => _mapRow(
-                  item,
-                  titleKeys: const ['subject'],
-                  primaryKeys: const ['status'],
-                  secondaryKeys: const [
-                    'recipientEmail',
-                    'createdAt',
-                    'sentAt'
-                  ],
-                ),
-              )
-              .toList(),
-          secondaryEmpty: 'No dispatch movement is available.',
-        );
-
       case OperatorSection.replies:
         final replies = await repo.fetchReplies();
         final meetings = await repo.fetchMeetings();
@@ -444,46 +402,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
               )
               .toList(),
           secondaryEmpty: 'No client standing is available.',
-        );
-
-      case OperatorSection.clients:
-        final clients = await repo.fetchClients();
-        final campaigns = await repo.fetchCampaigns();
-        return _OperatorData(
-          eyebrow: 'Flow',
-          title: 'Clients and live standing',
-          subtitle:
-              'Client work should show both commercial state and whether the client is actually moving through the live system.',
-          metrics: [
-            _Metric('Clients', '${clients.length}'),
-            _Metric('Campaigns', '${campaigns.length}'),
-          ],
-          primaryTitle: 'Accounts',
-          primaryRows: clients
-              .take(10)
-              .map(
-                (item) => _mapRow(
-                  item,
-                  titleKeys: const ['displayName', 'legalName'],
-                  primaryKeys: const ['status', 'selectedPlan'],
-                  secondaryKeys: const ['websiteUrl'],
-                ),
-              )
-              .toList(),
-          primaryEmpty: 'No clients are available.',
-          secondaryTitle: 'Live readiness',
-          secondaryRows: clients
-              .take(6)
-              .map(
-                (item) => _mapRow(
-                  item,
-                  titleKeys: const ['displayName', 'legalName'],
-                  primaryKeys: const ['subscriptionStatus', 'status'],
-                  secondaryKeys: const ['primaryTimezone'],
-                ),
-              )
-              .toList(),
-          secondaryEmpty: 'No readiness cues are available.',
         );
 
       case OperatorSection.revenue:
