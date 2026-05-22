@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
@@ -251,21 +252,29 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
               ),
               const SizedBox(height: 18),
             ],
-            // Sending domain panel comes BEFORE transport / mailbox
-            // readiness. Domain identity is primary; provider transport
-            // is interchangeable infrastructure beneath it.
+            // Sending-identity panel. A PERSONAL_PROVIDER mailbox
+            // (gmail.com, …) cannot own DNS, so the DNS-records panel is
+            // replaced by the personal-mailbox panel — the page never
+            // renders an impossible "publish SPF / DKIM / DMARC" task.
             KeyedSubtree(
               key: _sendingDomainAnchor,
-              child: _SendingDomainPanel(
-                identity: data.sendingIdentity,
-                inferredDomain: data.operationalIdentity.domain,
-                inferredDomainSource: data.operationalIdentity.domainSource,
-                attaching: _attachingDomain,
-                verifying: _verifyingDomain,
-                onAttach: _attachDomain,
-                onVerify: _checkSendingIdentity,
-                domainController: _domainAttachController,
-              ),
+              child: data.isPersonalProvider
+                  ? _PersonalMailboxPanel(
+                      mailboxAddress:
+                          data.operationalIdentity.mailboxAddress,
+                      upgradePath: data.upgradePath,
+                    )
+                  : _SendingDomainPanel(
+                      identity: data.sendingIdentity,
+                      inferredDomain: data.operationalIdentity.domain,
+                      inferredDomainSource:
+                          data.operationalIdentity.domainSource,
+                      attaching: _attachingDomain,
+                      verifying: _verifyingDomain,
+                      onAttach: _attachDomain,
+                      onVerify: _checkSendingIdentity,
+                      domainController: _domainAttachController,
+                    ),
             ),
             const SizedBox(height: 18),
             _TransportChoicesPanel(
@@ -1051,6 +1060,127 @@ class _MailboxViewData {
   /// for UI disclosure only — never as a substitute for client
   /// transport authorization.
   final bool platformTransportAvailable;
+
+  /// True when the mailbox is on a provider-owned consumer domain
+  /// (gmail.com, …). DNS sending-identity verification does not apply —
+  /// the Infrastructure page renders the personal-mailbox panel instead
+  /// of impossible SPF / DKIM / DMARC tasks.
+  bool get isPersonalProvider =>
+      (snapshot['identityClass']?.toString() ?? '') == 'PERSONAL_PROVIDER';
+
+  /// Optional upgrade-path descriptor — present only for personal
+  /// mailboxes. Empty map otherwise.
+  Map<String, dynamic> get upgradePath {
+    final raw = snapshot['upgradePath'];
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return raw.map((k, v) => MapEntry('$k', v));
+    return const <String, dynamic>{};
+  }
+}
+
+/// Sending-identity panel for PERSONAL_PROVIDER mailboxes (gmail.com,
+/// outlook.com, …). The client does not control DNS for a provider-owned
+/// consumer domain, so SPF / DKIM / DMARC verification is impossible —
+/// this panel fully replaces the DNS-records panel and never shows a DNS
+/// task. It states the truthful readiness: transport authorized, limited
+/// dispatch eligible, business sending identity not configured — plus an
+/// optional upgrade path to a verified domain identity.
+class _PersonalMailboxPanel extends StatelessWidget {
+  const _PersonalMailboxPanel({
+    required this.mailboxAddress,
+    required this.upgradePath,
+  });
+
+  final String mailboxAddress;
+  final Map<String, dynamic> upgradePath;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final steps = (upgradePath['steps'] as List?)
+            ?.map((e) => e.toString())
+            .where((e) => e.isNotEmpty)
+            .toList() ??
+        const <String>[];
+    final upgradeHeadline = (upgradePath['headline'] ?? '').toString();
+    final upgradeDetail = (upgradePath['detail'] ?? '').toString();
+    return ClientPanel(
+      title: 'Sending identity — personal mailbox',
+      subtitle:
+          'This mailbox is on a provider-owned consumer domain. You do not '
+          'control its DNS, so SPF / DKIM / DMARC verification does not '
+          'apply — and is never required here.',
+      children: [
+        ClientInfoRow(
+          title: 'Personal mailbox connected',
+          primary: 'OAuth transport authorization completed successfully.',
+          secondary:
+              'Provider reputation is inherited from the mailbox provider.',
+          trailing: const ClientBadge(label: 'Connected'),
+        ),
+        ClientInfoRow(
+          title: 'Transport authorized',
+          primary: mailboxAddress.trim().isEmpty
+              ? 'Mailbox transport is authorized for sending.'
+              : 'Authorized for $mailboxAddress.',
+        ),
+        ClientInfoRow(
+          title: 'Limited dispatch eligible',
+          primary:
+              'Managed execution can dispatch at the limited personal-mailbox '
+              'tier — conservative throughput and pacing.',
+          secondary:
+              'Suitable for onboarding, small operators, and early-stage use.',
+          trailing: const ClientBadge(label: 'Limited tier'),
+        ),
+        const ClientInfoRow(
+          title: 'Business sending identity not configured',
+          primary:
+              'No verified business domain is attached. A verified sending '
+              'identity is optional for a personal mailbox.',
+        ),
+        if (upgradeHeadline.isNotEmpty || steps.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.publicSurfaceSoft,
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+              border: Border.all(color: AppTheme.publicLine),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  upgradeHeadline.isEmpty
+                      ? 'Upgrade to a verified domain identity'
+                      : upgradeHeadline,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (upgradeDetail.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(upgradeDetail, style: theme.textTheme.bodyMedium),
+                ],
+                if (steps.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  for (final step in steps)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        '•  $step',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 class _ProviderAvailabilityEntry {
