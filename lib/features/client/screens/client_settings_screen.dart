@@ -282,6 +282,32 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 18),
+            ClientPanel(
+              title: 'Legal',
+              subtitle:
+                  'The policies that govern how Orchestrate handles your data and service.',
+              children: [
+                ClientInfoRow(
+                  title: 'Privacy policy',
+                  primary:
+                      'How Orchestrate collects, uses, and protects workspace data.',
+                  trailing: TextButton(
+                    onPressed: () => context.push('/legal/privacy'),
+                    child: const Text('Open'),
+                  ),
+                ),
+                ClientInfoRow(
+                  title: 'Terms of service',
+                  primary:
+                      'The agreement that governs use of the Orchestrate service.',
+                  trailing: TextButton(
+                    onPressed: () => context.push('/legal/terms'),
+                    child: const Text('Open'),
+                  ),
+                ),
+              ],
+            ),
           ],
         );
       },

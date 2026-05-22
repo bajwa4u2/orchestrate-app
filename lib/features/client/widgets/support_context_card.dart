@@ -220,7 +220,7 @@ class _SupportContextCardState extends State<SupportContextCard> {
               label: const Text('Open billing'),
             ),
             OutlinedButton.icon(
-              onPressed: () => context.go('/client/activity'),
+              onPressed: () => context.go('/app/activity'),
               icon: const Icon(Icons.history_outlined, size: 16),
               label: const Text('Open governance trace'),
             ),

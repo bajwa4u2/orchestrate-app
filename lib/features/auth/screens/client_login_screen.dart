@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'package:orchestrate_app/app/shell/auth_shell.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
@@ -163,43 +164,33 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (_isReset) return _ResetView(state: this);
     if (_pendingChallenge != null) return _EmailCodeView(state: this);
 
-    return Scaffold(
-      backgroundColor: AppTheme.publicBackground,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1120),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final stacked = constraints.maxWidth < 940;
-                  final intro = _AuthIntro(
-                    isJoin: _isJoin,
-                    plan: _selectedPlan,
-                    tier: _selectedTier,
-                    trial: _selectedTrial,
-                  );
-                  final form = _AuthCard(state: this);
+    return AuthShell(
+      maxContentWidth: 1120,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stacked = constraints.maxWidth < 940;
+          final intro = _AuthIntro(
+            isJoin: _isJoin,
+            plan: _selectedPlan,
+            tier: _selectedTier,
+            trial: _selectedTrial,
+          );
+          final form = _AuthCard(state: this);
 
-                  if (stacked) {
-                    return Column(
-                      children: [intro, const SizedBox(height: 18), form],
-                    );
-                  }
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 5, child: intro),
-                      const SizedBox(width: 18),
-                      Expanded(flex: 4, child: form),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
+          if (stacked) {
+            return Column(
+              children: [intro, const SizedBox(height: 18), form],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 5, child: intro),
+              const SizedBox(width: 18),
+              Expanded(flex: 4, child: form),
+            ],
+          );
+        },
       ),
     );
   }
@@ -942,15 +933,9 @@ class _EmailCodeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final challenge = state._pendingChallenge ?? const {};
     final email = challenge['email']?.toString() ?? 'your email';
-    return Scaffold(
-      backgroundColor: AppTheme.publicBackground,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Card(
+    return AuthShell(
+      maxContentWidth: 560,
+      child: Card(
                 elevation: 0,
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
@@ -1034,10 +1019,6 @@ class _EmailCodeView extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1048,15 +1029,9 @@ class _VerificationView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.publicBackground,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 620),
-              child: Card(
+    return AuthShell(
+      maxContentWidth: 620,
+      child: Card(
                 elevation: 0,
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
@@ -1125,10 +1100,6 @@ class _VerificationView extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1139,15 +1110,9 @@ class _ResetView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.publicBackground,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 620),
-              child: Card(
+    return AuthShell(
+      maxContentWidth: 620,
+      child: Card(
                 elevation: 0,
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
@@ -1222,10 +1187,6 @@ class _ResetView extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -87,7 +87,7 @@ class _Hero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(30, 30, 30, 32),
+      padding: const EdgeInsets.fromLTRB(34, 34, 34, 36),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppTheme.radius),
@@ -95,108 +95,147 @@ class _Hero extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 980;
-          final left = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          final width = constraints.maxWidth;
+          // Below this the hero stacks (narrow window / tablet / mobile).
+          final stacked = width < 980;
+          // Responsive headline cap. The headline is a long sentence, so
+          // an uncapped large size turned it into a vertically excessive
+          // tower of single words at maximized desktop width. Desktop is
+          // held at 42 (down from 52) AND the headline spans the hero
+          // instead of being trapped in a narrow flex column; stacked
+          // widths keep the prior 38 so mobile/tablet are unchanged.
+          final double headlineSize = stacked ? 38 : 42;
+
+          final badge = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.publicAccentSoft,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              'Commercial intelligence + execution infrastructure',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(color: AppTheme.publicAccent),
+            ),
+          );
+
+          final headline = Text(
+            'Managed revenue automation infrastructure that detects opportunity, verifies readiness, and runs execution for you.',
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontSize: headlineSize,
+                  height: 1.12,
+                ),
+          );
+
+          final subtitle = ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: stacked ? 640 : 560),
+            child: Text(
+              'You connect your business identity and sending identity. Orchestrate detects commercial opportunity from market signals, qualifies it, verifies readiness, and runs governed execution end to end — with operational continuity built in.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppTheme.publicMuted,
+                  ),
+            ),
+          );
+
+          final actions = Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppTheme.publicAccentSoft,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  'Commercial intelligence + execution infrastructure',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(color: AppTheme.publicAccent),
-                ),
-              ),
-              const SizedBox(height: 18),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
-                child: Text(
-                  'Managed revenue automation infrastructure that detects opportunity, verifies readiness, and runs execution for you.',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: stacked ? 38 : 52,
-                        height: 1.04,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
-                child: Text(
-                  'You connect your business identity and sending identity. Orchestrate detects commercial opportunity from market signals, qualifies it, verifies readiness, and runs governed execution end to end — with operational continuity built in.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.publicMuted,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  FilledButton(
-                    onPressed: () => context.go('/pricing?trial=15d'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.publicText,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radius),
-                      ),
-                    ),
-                    child: const Text('Activate infrastructure'),
+              FilledButton(
+                onPressed: () => context.go('/pricing?trial=15d'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.publicText,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
                   ),
-                  OutlinedButton(
-                    onPressed: () => context.go('/how-it-works'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.publicText,
-                      side: const BorderSide(color: AppTheme.publicLine),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radius),
-                      ),
-                    ),
-                    child: const Text('See how it operates'),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
                   ),
-                  TextButton(
-                    onPressed: onSupportTap,
-                    child: const Text('Talk through fit'),
+                ),
+                child: const Text('Activate infrastructure'),
+              ),
+              OutlinedButton(
+                onPressed: () => context.go('/how-it-works'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.publicText,
+                  side: const BorderSide(color: AppTheme.publicLine),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
                   ),
-                ],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
+                  ),
+                ),
+                child: const Text('See how it operates'),
+              ),
+              TextButton(
+                onPressed: onSupportTap,
+                child: const Text('Talk through fit'),
               ),
             ],
           );
 
-          final right = const _HeroPanel();
+          const right = _HeroPanel();
 
           if (stacked) {
+            // Mobile / tablet: unchanged stacked composition.
             return Column(
               children: [
-                left,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    badge,
+                    const SizedBox(height: 18),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 640),
+                      child: headline,
+                    ),
+                    const SizedBox(height: 16),
+                    subtitle,
+                    const SizedBox(height: 24),
+                    actions,
+                  ],
+                ),
                 const SizedBox(height: 18),
                 right,
               ],
             );
           }
 
-          return Row(
+          // Desktop: the headline spans the full hero width so it stays a
+          // few balanced lines instead of a narrow tower of single words.
+          // Supporting copy + actions sit in a stable two-column grid
+          // beside the signal panel underneath.
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 6, child: left),
-              const SizedBox(width: 20),
-              Expanded(flex: 5, child: right),
+              badge,
+              const SizedBox(height: 22),
+              headline,
+              const SizedBox(height: 26),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 7,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        subtitle,
+                        const SizedBox(height: 26),
+                        actions,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                  const Expanded(flex: 5, child: right),
+                ],
+              ),
             ],
           );
         },

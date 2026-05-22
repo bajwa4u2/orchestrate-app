@@ -70,8 +70,10 @@ class PublicContentScreen extends StatelessWidget {
                                 .textTheme
                                 .headlineLarge
                                 ?.copyWith(
-                                  fontSize: stacked ? 52 : 44,
-                                  height: 1.04,
+                                  // Responsive cap: desktop is held at 44,
+                                  // narrow widths scale down (not up).
+                                  fontSize: stacked ? 34 : 44,
+                                  height: 1.1,
                                   letterSpacing: 0,
                                 ),
                           ),

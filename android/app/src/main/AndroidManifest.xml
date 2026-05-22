@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for all backend API traffic (api.orchestrateops.com), Google
+         sign-in, and url_launcher. The Flutter template only declares INTERNET
+         in the debug/profile manifests, which do NOT merge into release builds;
+         without this line the release AAB has no network access. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Orchestrate"
         android:name="${applicationName}"

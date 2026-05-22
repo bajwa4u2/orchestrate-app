@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/app/shell/auth_shell.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
@@ -448,15 +449,9 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.publicBackground,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1180),
-              child: _loading
+    return AuthShell(
+      maxContentWidth: 1180,
+      child: _loading
                   ? const Padding(
                       padding: EdgeInsets.all(40),
                       child: CircularProgressIndicator(),
@@ -567,10 +562,6 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
                         );
                       },
                     ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -857,7 +848,7 @@ class _ReviewCard extends StatelessWidget {
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             Text(
-              'Checkout should match the target market and servicePath you defined here.',
+              'Checkout should match the target market and service scope you defined here.',
               style: Theme.of(context)
                   .textTheme
                   .bodyLarge

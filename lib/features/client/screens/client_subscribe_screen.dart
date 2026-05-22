@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:orchestrate_app/app/shell/auth_shell.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/config/pricing_config.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
@@ -148,15 +149,9 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
         catalog == null ? null : catalog.find(_planCode, _tierCode);
     final setupDraft = AuthSessionController.instance.setupDraft;
 
-    return Scaffold(
-      backgroundColor: AppTheme.publicBackground,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1120),
-              child: _loading
+    return AuthShell(
+      maxContentWidth: 1120,
+      child: _loading
                   ? const Padding(
                       padding: EdgeInsets.all(40),
                       child: CircularProgressIndicator(),
@@ -234,10 +229,6 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                           ),
                       ],
                     ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -656,7 +647,7 @@ List<String> _selectionPoints(String lane, String tier) {
         'One country with multiple regions',
         'A disciplined operating start for one contained market',
         revenue
-            ? 'Billing continuity begins from the same servicePath'
+            ? 'Billing continuity begins from the same service scope'
             : 'Lead generation, writing, and meetings stay aligned',
       ];
   }

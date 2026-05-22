@@ -407,17 +407,17 @@ class _PublicFooter extends StatelessWidget {
                     ],
                   ),
                 ];
-                final compact = constraints.maxWidth < 720;
-
+                // Stable wrap grid: fixed-width columns flow onto new
+                // rows as width shrinks. Generous spacing + runSpacing so
+                // columns never crowd or overlap, and a wrapped heading
+                // pushes its own links down without colliding.
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Wrap(
-                      alignment: compact
-                          ? WrapAlignment.start
-                          : WrapAlignment.spaceBetween,
-                      spacing: compact ? 22 : 32,
-                      runSpacing: 14,
+                      alignment: WrapAlignment.start,
+                      spacing: 32,
+                      runSpacing: 32,
                       children: groups,
                     ),
                   ],
@@ -439,8 +439,14 @@ class _FooterGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Fixed-width footer column, wide enough to fit the longest link
+    // label on one line so columns never overflow into their neighbours.
+    // Links are a plain Column: the previous vertical Wrap left each
+    // link's width unconstrained, so long labels bled across columns at
+    // desktop width. A wrapped heading now pushes links down naturally
+    // because the heading + links are a single Column.
     return SizedBox(
-      width: 156,
+      width: 208,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -449,15 +455,11 @@ class _FooterGroup extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.publicText,
                   fontWeight: FontWeight.w700,
-                  height: 1.2,
+                  height: 1.3,
                 ),
           ),
-          const SizedBox(height: 6),
-          Wrap(
-            direction: Axis.vertical,
-            spacing: 2,
-            children: links,
-          ),
+          const SizedBox(height: 8),
+          ...links,
         ],
       ),
     );

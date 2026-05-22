@@ -113,26 +113,38 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth >= 1120) {
+            // Equal-height card rows. CrossAxisAlignment.stretch needs a
+            // bounded vertical extent, but the public shell renders this
+            // inside an unbounded-height SingleChildScrollView. Each
+            // stretch Row must therefore be wrapped in IntrinsicHeight,
+            // otherwise the subtree fails layout and blanks the whole
+            // page body at desktop width (>= 1120) — only reproducible
+            // when the window is wide/maximized. Mirrors the treatment
+            // in PublicHomeScreen._BurdenTransformSection.
             return Column(
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (int i = 0; i < 4; i++) ...[
-                      Expanded(child: cards[i]),
-                      if (i != 3) const SizedBox(width: 12),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (int i = 0; i < 4; i++) ...[
+                        Expanded(child: cards[i]),
+                        if (i != 3) const SizedBox(width: 12),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: cards[4]),
-                    const SizedBox(width: 12),
-                    Expanded(child: cards[5]),
-                    const Spacer(flex: 2),
-                  ],
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: cards[4]),
+                      const SizedBox(width: 12),
+                      Expanded(child: cards[5]),
+                      const Spacer(flex: 2),
+                    ],
+                  ),
                 ),
               ],
             );

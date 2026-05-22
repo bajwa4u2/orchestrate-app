@@ -256,7 +256,7 @@ class ClientHomeScreen extends StatelessWidget {
             secondary:
                 'Help stays available without mixing with contacts or meetings.',
             actionLabel: 'Open help',
-            route: '/app/account'),
+            route: '/client/support'),
       ],
       secondaryEmpty: 'No account actions are visible yet.',
     );
