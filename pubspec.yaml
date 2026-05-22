@@ -1,7 +1,7 @@
 name: orchestrate_app
 description: Orchestrate revenue operations application.
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -22,9 +22,27 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  msix: ^3.16.13
 
 flutter:
   uses-material-design: true
   assets:
     - assets/branding/logo/
     - assets/branding/icons/
+
+# Microsoft Store / MSIX packaging.
+# identity_name, publisher and publisher_display_name below are the exact
+# Microsoft Partner Center reservation for the "Orchestrate Operations"
+# product (Product > Product identity) and must match it byte-for-byte.
+# The Package Family Name is derived automatically by Windows from
+# identity_name + the publisher hash — it is not set here.
+msix_config:
+  display_name: Orchestrate Operations
+  publisher_display_name: Aura Platform LLC
+  identity_name: AuraPlatformLLC.Orchestrateoperations
+  publisher: CN=3E4027A7-4D4D-4492-B8DE-BBE425E307E5
+  msix_version: 0.1.0.0
+  logo_path: store_assets/source/orchestrate-app-icon-master-1024.png
+  capabilities: internetClient
+  architecture: x64
+  languages: en-us
