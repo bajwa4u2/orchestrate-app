@@ -43,20 +43,13 @@ workflows:
         script: find . -name "Podfile" -execdir pod install \;
       - name: Apply signing profiles
         script: xcode-project use-profiles
-      - name: Determine TestFlight build number
-        script: |
-          set -e
-          LATEST=""
-          if [ -n "$APP_STORE_APPLE_ID" ]; then
-            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "")
-          fi
-          if [ -n "$LATEST" ]; then NEXT=$((LATEST + 1)); else NEXT=2; fi
-          echo "Using build number: $NEXT"
-          echo "BUILD_NUMBER=$NEXT" >> "$CM_ENV"
       - name: Build signed IPA
         script: |
+          # Version + build number come from pubspec.yaml (currently
+          # 0.1.2+3 -> CFBundleShortVersionString 0.1.2, CFBundleVersion
+          # 3). Bump pubspec for each release so TestFlight build numbers
+          # never collide.
           flutter build ipa --release \
-            --build-number="$BUILD_NUMBER" \
             --export-options-plist=/Users/builder/export_options.plist
           # API base URL defaults to https://api.orchestrateops.com/v1 at
           # compile time; override only if needed:
