@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -27,6 +28,16 @@ class ClientLoginScreen extends StatefulWidget {
 class _ClientLoginScreenState extends State<ClientLoginScreen> {
   static const String _googleClientId =
       '383877062897-5f4f2vlrts0bdv0pv2p7m057v744bh7s.apps.googleusercontent.com';
+
+  // Google sign-in shows on Android, Web and desktop, but is hidden on
+  // iOS for the v1 App Store submission: the iOS OAuth client is not
+  // configured, and offering a third-party login on iOS would also
+  // require Sign in with Apple (App Store Guideline 4.8). iOS keeps the
+  // email/password path. kIsWeb + defaultTargetPlatform are used (not
+  // dart:io) so the Web build still compiles.
+  static bool get _googleSignInAvailable =>
+      _googleClientId.isNotEmpty &&
+      (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS);
 
   late final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: _googleClientId,
@@ -629,25 +640,26 @@ class _AuthIntro extends StatelessWidget {
               borderRadius: BorderRadius.circular(22),
               border: Border.all(color: AppTheme.publicLine),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _IntroPoint(
+                const _IntroPoint(
                   title: 'Verification',
                   body:
                       'Email confirmation stays in the main flow so setup does not get lost.',
                 ),
-                SizedBox(height: 12),
-                _IntroPoint(
+                const SizedBox(height: 12),
+                const _IntroPoint(
                   title: 'Setup continuity',
                   body:
                       'Plan and tier choices can carry directly into setup and subscription flow.',
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 _IntroPoint(
                   title: 'Access choices',
-                  body:
-                      'Email and Google can sit side by side without disrupting your existing sign-in path.',
+                  body: _ClientLoginScreenState._googleSignInAvailable
+                      ? 'Email and Google sign-in can sit side by side without disrupting your existing sign-in path.'
+                      : 'Email sign-in keeps your setup path simple and uninterrupted.',
                 ),
               ],
             ),
@@ -682,7 +694,7 @@ class _AuthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canUseGoogle = _ClientLoginScreenState._googleClientId.isNotEmpty;
+    final canUseGoogle = _ClientLoginScreenState._googleSignInAvailable;
     return Card(
       elevation: 0,
       color: Colors.white,

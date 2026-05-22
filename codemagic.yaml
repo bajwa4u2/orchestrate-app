@@ -1,0 +1,81 @@
+# Codemagic CI — iOS build + TestFlight upload for Orchestrate.
+# Flutter iOS releases cannot be built on Windows; this runs the build on a
+# Codemagic cloud macOS runner.  Docs: https://docs.codemagic.io/yaml/yaml/
+#
+# ── One-time Codemagic UI setup (before the first run) ───────────────────
+#  1. Codemagic > Teams > Integrations > App Store Connect: add your
+#     App Store Connect API key (.p8 file + Issuer ID + Key ID).
+#     Name the integration EXACTLY:  Orchestrate ASC API Key
+#  2. Add this repository as a Codemagic application.
+#  3. (After the app record exists in App Store Connect) add an environment
+#     variable APP_STORE_APPLE_ID = the numeric Apple ID of the app, in a
+#     group named "appstore". Without it the build still works and uses
+#     build number 2; with it the build number auto-increments.
+#
+# Codemagic uses the ASC API key to AUTOMATICALLY create the iOS
+# distribution certificate and the App Store provisioning profile for
+# com.orchestrateops.app — you do NOT create or upload them by hand.
+
+workflows:
+  ios-testflight:
+    name: Orchestrate iOS — TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    integrations:
+      app_store_connect: Orchestrate ASC API Key
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.orchestrateops.app
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - appstore            # provides APP_STORE_APPLE_ID (optional)
+    scripts:
+      - name: Flutter pub get
+        script: flutter pub get
+      - name: Static analysis
+        script: flutter analyze
+      - name: Unit tests
+        script: flutter test
+      - name: Install CocoaPods dependencies
+        script: find . -name "Podfile" -execdir pod install \;
+      - name: Apply signing profiles
+        script: xcode-project use-profiles
+      - name: Determine TestFlight build number
+        script: |
+          set -e
+          LATEST=""
+          if [ -n "$APP_STORE_APPLE_ID" ]; then
+            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "")
+          fi
+          if [ -n "$LATEST" ]; then NEXT=$((LATEST + 1)); else NEXT=2; fi
+          echo "Using build number: $NEXT"
+          echo "BUILD_NUMBER=$NEXT" >> "$CM_ENV"
+      - name: Build signed IPA
+        script: |
+          flutter build ipa --release \
+            --build-number="$BUILD_NUMBER" \
+            --export-options-plist=/Users/builder/export_options.plist
+          # API base URL defaults to https://api.orchestrateops.com/v1 at
+          # compile time; override only if needed:
+          # --dart-define=API_BASE_URL="https://api.orchestrateops.com/v1"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # First submission: leave beta_groups empty and assign testers in
+        # App Store Connect, or list internal/external group names here.
+        # beta_groups:
+        #   - Internal Testers
+      email:
+        recipients:
+          - muhammadsakhawat@gmail.com
+        notify:
+          success: true
+          failure: true

@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- App uses only standard HTTPS/TLS; exempt from export-compliance
+	     encryption reporting. Avoids the per-build question in App Store
+	     Connect / TestFlight. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
