@@ -281,7 +281,7 @@ class _GuardrailsPanel extends StatelessWidget {
                           BorderRadius.circular(AppTheme.radius),
                       border: Border.all(
                           color: g.breachCount > 0
-                              ? AppTheme.rose.withValues(alpha: 0.55)
+                              ? AppTheme.coRose.withValues(alpha: 0.55)
                               : AppTheme.line),
                     ),
                     child: Row(
@@ -291,8 +291,8 @@ class _GuardrailsPanel extends StatelessWidget {
                           height: 8,
                           decoration: BoxDecoration(
                               color: g.breachCount > 0
-                                  ? AppTheme.rose
-                                  : AppTheme.emerald,
+                                  ? AppTheme.coRose
+                                  : AppTheme.coVerdant,
                               shape: BoxShape.circle),
                         ),
                         const SizedBox(width: 10),
@@ -315,7 +315,7 @@ class _GuardrailsPanel extends StatelessWidget {
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall
-                                        ?.copyWith(color: AppTheme.rose)),
+                                        ?.copyWith(color: AppTheme.coRose)),
                             ],
                           ),
                         ),

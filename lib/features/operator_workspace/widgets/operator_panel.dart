@@ -92,11 +92,16 @@ class OperatorMetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Canonical substrate-color mapping per
+    // `company/visuals/system/topology/topology-grammar.md` §6
+    // (verdant / sun / rose / mist). Migrating here propagates the
+    // canonical palette to every OperatorMetricTile across the
+    // operator workspace surfaces without touching individual screens.
     final accent = switch (tone) {
-      OperatorTone.positive => AppTheme.emerald,
-      OperatorTone.caution => AppTheme.amber,
-      OperatorTone.critical => AppTheme.rose,
-      OperatorTone.neutral => AppTheme.subdued,
+      OperatorTone.positive => AppTheme.coVerdant,
+      OperatorTone.caution => AppTheme.coSun,
+      OperatorTone.critical => AppTheme.coRose,
+      OperatorTone.neutral => AppTheme.coMist,
     };
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -229,7 +234,7 @@ class OperatorErrorState extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.panelSoft,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.rose.withValues(alpha: 0.45)),
+        border: Border.all(color: AppTheme.coRose.withValues(alpha: 0.45)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,7 +243,7 @@ class OperatorErrorState extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .titleLarge
-                  ?.copyWith(color: AppTheme.rose)),
+                  ?.copyWith(color: AppTheme.coRose)),
           const SizedBox(height: 8),
           Text(detail,
               style: Theme.of(context)

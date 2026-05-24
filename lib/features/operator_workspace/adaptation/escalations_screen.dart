@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
 import '../models/convergence_models.dart';
 import '../repositories/operator_learning_repository.dart';
 import '../widgets/operator_panel.dart';
@@ -225,22 +226,28 @@ class _EscalationCard extends StatelessWidget {
         border: Border.all(
             color: resolved
                 ? AppTheme.line
-                : AppTheme.amber.withValues(alpha: 0.45)),
+                : AppTheme.coSun.withValues(alpha: 0.45)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              _Chip(label: item.reason, color: _reasonColor(item.reason)),
+              SubstrateChip(
+                label: item.reason,
+                state: _reasonState(item.reason),
+              ),
               const SizedBox(width: 6),
-              _Chip(label: item.severity, color: _sevColor(item.severity)),
+              SubstrateChip(
+                label: item.severity,
+                state: _sevState(item.severity),
+              ),
               if (_isFallbackContext(item.contextJson)) ...[
                 const SizedBox(width: 6),
-                _Chip(
+                SubstrateChip(
                   label: _fallbackLabel(item.contextJson) ??
                       'DETERMINISTIC FALLBACK',
-                  color: AppTheme.accent,
+                  state: SubstrateChipState.teal,
                 ),
               ],
               const Spacer(),
@@ -287,12 +294,12 @@ class _EscalationCard extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
-                      ?.copyWith(color: AppTheme.emerald),
+                      ?.copyWith(color: AppTheme.coVerdant),
                 )
               else
                 const Text('Open',
                     style: TextStyle(
-                        color: AppTheme.amber, fontWeight: FontWeight.w700)),
+                        color: AppTheme.coSun, fontWeight: FontWeight.w700)),
             ],
           ),
         ],
@@ -300,22 +307,23 @@ class _EscalationCard extends StatelessWidget {
     );
   }
 
-  Color _reasonColor(String r) {
+  // Canonical SubstrateChipState mapping for escalation reason +
+  // severity enums per `system/topology/topology-grammar.md` §6.
+  SubstrateChipState _reasonState(String r) {
     if (r == 'POLICY_ESCALATION' || r == 'OPERATOR_REQUEST') {
-      return AppTheme.accent;
+      return SubstrateChipState.teal;
     }
     if (r == 'NOVELTY' || r == 'AMBIGUITY_THRESHOLD') {
-      return AppTheme.amber;
+      return SubstrateChipState.sun;
     }
-    return AppTheme.subdued;
+    return SubstrateChipState.mist;
   }
 
-  Color _sevColor(String s) {
+  SubstrateChipState _sevState(String s) {
     return switch (s) {
-      'CRITICAL' => AppTheme.rose,
-      'HIGH' => AppTheme.rose,
-      'MEDIUM' => AppTheme.amber,
-      _ => AppTheme.subdued,
+      'CRITICAL' || 'HIGH' => SubstrateChipState.rose,
+      'MEDIUM' => SubstrateChipState.sun,
+      _ => SubstrateChipState.mist,
     };
   }
 
@@ -354,25 +362,8 @@ class _EscalationCard extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.color});
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(label,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w700)),
-    );
-  }
-}
+// _Chip removed — replaced by canonical SubstrateChip
+// (`core/widgets/substrate_chip.dart`). The previous Container+Text
+// implementation rendered the same shape but without mono uppercase
+// typography. Migrating preserves substrate-substantive visual
+// continuity with the public website's chip rendering.

@@ -163,9 +163,9 @@ class _HubTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = switch (tone) {
-      OperatorTone.positive => AppTheme.emerald,
-      OperatorTone.caution => AppTheme.amber,
-      OperatorTone.critical => AppTheme.rose,
+      OperatorTone.positive => AppTheme.coVerdant,
+      OperatorTone.caution => AppTheme.coSun,
+      OperatorTone.critical => AppTheme.coRose,
       OperatorTone.neutral => AppTheme.subdued,
     };
     return SizedBox(

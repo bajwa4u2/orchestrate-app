@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
 import '../models/learning_models.dart';
 import '../repositories/operator_learning_repository.dart';
 import '../widgets/operator_panel.dart';
@@ -160,7 +161,7 @@ class _HealingCard extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
-                        ?.copyWith(color: AppTheme.rose)),
+                        ?.copyWith(color: AppTheme.coRose)),
               if (item.suggestionId != null)
                 Text('From suggestion ${item.suggestionId!.substring(0, 8)}…',
                     style: Theme.of(context)
@@ -182,30 +183,20 @@ class _HealingCard extends StatelessWidget {
   }
 }
 
+/// Self-healing action status rendered as a canonical SubstrateChip.
+/// Status semantics: APPLIED → verdant (succeeded), REVERTED/FAILED →
+/// rose (refused/blocked), other → sun (in-flight / caution).
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.status});
   final String status;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
-      'APPLIED' => AppTheme.emerald,
-      'REVERTED' => AppTheme.rose,
-      'FAILED' => AppTheme.rose,
-      _ => AppTheme.amber,
+    final state = switch (status) {
+      'APPLIED' => SubstrateChipState.verdant,
+      'REVERTED' || 'FAILED' => SubstrateChipState.rose,
+      _ => SubstrateChipState.sun,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(status,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w700)),
-    );
+    return SubstrateChip(label: status, state: state);
   }
 }

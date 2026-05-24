@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
+import 'package:orchestrate_app/core/widgets/substrate_citation.dart';
 import 'package:orchestrate_app/data/repositories/public_repository.dart';
 
 /// Public, signup-free DNS diagnostic surface.
@@ -34,6 +36,20 @@ class PublicDiagnosticsScreen extends StatelessWidget {
               _Hero(),
               const SizedBox(height: 24),
               const PublicDnsDiagnosticCard(),
+              const SizedBox(height: 16),
+              const SubstrateDoctrine(
+                text:
+                    'Verification has three states, not two. When the substrate '
+                    'hasn\'t evaluated a record yet, the result is UNKNOWN — '
+                    'never coerced into PASS.',
+              ),
+              const SizedBox(height: 16),
+              const SubstrateCitation(
+                paths: [
+                  'orchestrate_backend/src/deliverability/sending-identity.service.ts',
+                  'orchestrate_backend/src/runtime-truth/runtime-truth.types.ts (CanonicalDnsCheck)',
+                ],
+              ),
               const SizedBox(height: 24),
               _CrossLinks(),
             ],
@@ -302,33 +318,34 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           decoration: BoxDecoration(
             color: ready
-                ? const Color(0xFFEFF6FF)
+                ? AppTheme.coVerdant.withValues(alpha: 0.08)
                 : AppTheme.publicSurfaceSoft,
             borderRadius: BorderRadius.circular(AppTheme.radius),
-            border: Border.all(color: AppTheme.publicLine),
+            border: Border.all(
+              color: ready
+                  ? AppTheme.coVerdant.withValues(alpha: 0.40)
+                  : AppTheme.publicLine,
+            ),
           ),
           child: Row(
             children: [
-              Icon(
-                ready ? Icons.check_circle_outline : Icons.schedule_outlined,
-                size: 18,
-                color: ready
-                    ? const Color(0xFF1D4ED8)
-                    : AppTheme.publicMuted,
+              SubstrateChip(
+                label: ready ? 'READY' : 'INCOMPLETE',
+                state: ready
+                    ? SubstrateChipState.verdant
+                    : SubstrateChipState.sun,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   ready
-                      ? 'All required records are present and match. $domain is ready for managed dispatch.'
-                      : 'One or more records are missing or do not match. See per-record detail below.',
+                      ? 'All required records present and match. $domain is dispatch-ready.'
+                      : 'One or more records are missing or have not yet been evaluated. See per-record detail below.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: ready
-                            ? const Color(0xFF1D4ED8)
-                            : AppTheme.publicText,
+                        color: AppTheme.publicText,
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -363,6 +380,36 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
     final explanation = check['explanation']?.toString() ?? '';
     final errorMessage = check['errorMessage']?.toString();
 
+    // Canonical three-state triad per `CanonicalDnsCheck` doctrine.
+    // PASS = matched. FAIL = explicit error from the resolver.
+    // UNKNOWN = no match yet, no error — honest unknown, not failure.
+    final state = matched
+        ? _CheckState.pass
+        : (errorMessage != null && errorMessage.isNotEmpty
+            ? _CheckState.fail
+            : _CheckState.unknown);
+
+    final SubstrateChipState chipState;
+    final IconData icon;
+    final String label;
+    switch (state) {
+      case _CheckState.pass:
+        chipState = SubstrateChipState.verdant;
+        icon = Icons.check_circle_outline;
+        label = 'PASS';
+        break;
+      case _CheckState.fail:
+        chipState = SubstrateChipState.rose;
+        icon = Icons.cancel_outlined;
+        label = 'FAIL';
+        break;
+      case _CheckState.unknown:
+        chipState = SubstrateChipState.mist;
+        icon = Icons.help_outline;
+        label = 'UNKNOWN';
+        break;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -376,15 +423,7 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
         children: [
           Row(
             children: [
-              Icon(
-                matched
-                    ? Icons.check_circle_outline
-                    : Icons.error_outline,
-                size: 16,
-                color: matched
-                    ? const Color(0xFF1D4ED8)
-                    : const Color(0xFFB45309),
-              ),
+              Icon(icon, size: 16, color: _foreground(state)),
               const SizedBox(width: 8),
               Text(
                 '$purpose · $type',
@@ -394,16 +433,7 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
                 ),
               ),
               const Spacer(),
-              Text(
-                matched ? 'matched' : 'not yet',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: matched
-                      ? const Color(0xFF1D4ED8)
-                      : const Color(0xFFB45309),
-                ),
-              ),
+              SubstrateChip(label: label, state: chipState),
             ],
           ),
           const SizedBox(height: 8),
@@ -470,5 +500,21 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
         ],
       ),
     );
+  }
+}
+
+/// Internal three-state verification result. Mirrors the backend's
+/// `CanonicalDnsCheck = 'pass' | 'fail' | 'unknown'` discipline —
+/// see `orchestrate_backend/src/runtime-truth/runtime-truth.types.ts`.
+enum _CheckState { pass, fail, unknown }
+
+Color _foreground(_CheckState state) {
+  switch (state) {
+    case _CheckState.pass:
+      return AppTheme.coVerdant;
+    case _CheckState.fail:
+      return AppTheme.coRose;
+    case _CheckState.unknown:
+      return AppTheme.coMist;
   }
 }

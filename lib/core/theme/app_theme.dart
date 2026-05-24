@@ -32,6 +32,34 @@ class AppTheme {
   static const publicAmberSoft = Color(0xFFFFF4D8);
   static const publicRoseSoft = Color(0xFFFFECEC);
 
+  // ─── Canonical substrate tokens ──────────────────────────────────
+  // Mirror `company/visuals/system/tokens/design-tokens.md`. These are
+  // the visual identifiers used on the public website and the flagship
+  // cognition artifacts (OR-01 / OR-02 / CG-03 / AU-01 / CG-01). New
+  // substrate-substantive surfaces should use these directly so the
+  // app and the website remain visually coherent. Existing legacy
+  // constants above are preserved — no in-place regression.
+  //
+  // Source: company/visuals/system/tokens/design-tokens.md §4-§5
+  // Source: company/visuals/system/diagnostics/diagnostics-grammar.md §3.3
+  //         (the verdant / sun / rose / mist triad)
+  static const coAbyss = Color(0xFF0E1326);
+  static const coMidnight = Color(0xFF151B33);
+  static const coMidnightSoft = Color(0xFF181E36);
+  static const coSlate = Color(0xFF1E2540);
+  static const coEdge = Color(0xFF2A3458);
+  static const coSnow = Color(0xFFF5F7FB);
+  static const coMist = Color(0xFFA6AECC);
+  static const coTeal = Color(0xFF0D9488);
+  static const coTealDeep = Color(0xFF176B5D);
+  static const coVerdant = Color(0xFF22C55E);
+  static const coSun = Color(0xFFEAB308);
+  static const coRose = Color(0xFFF43F5E);
+  // Functional darker variants for light-register surfaces
+  static const coVerdantDeep = Color(0xFF16A34A);
+  static const coSunDeep = Color(0xFFCA8A04);
+  static const coRoseDeep = Color(0xFFE11D48);
+
   static const radius = 8.0;
   static const radiusLarge = 12.0;
 

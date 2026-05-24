@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
 import '../models/learning_models.dart';
 import '../repositories/operator_learning_repository.dart';
 import '../widgets/operator_panel.dart';
@@ -174,56 +175,34 @@ class _PatternCard extends StatelessWidget {
   }
 }
 
+/// Pattern lifecycle status rendered as a canonical SubstrateChip.
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.status});
   final String status;
 
   @override
   Widget build(BuildContext context) {
-    final color = status == 'CONFIRMED'
-        ? AppTheme.emerald
-        : status == 'EXPIRED'
-            ? AppTheme.subdued
-            : AppTheme.amber;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(status,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w700)),
-    );
+    final state = switch (status) {
+      'CONFIRMED' => SubstrateChipState.verdant,
+      'EXPIRED' => SubstrateChipState.mist,
+      _ => SubstrateChipState.sun,
+    };
+    return SubstrateChip(label: status, state: state);
   }
 }
 
+/// Reply-sentiment typed enum rendered as a canonical SubstrateChip.
 class _SentimentChip extends StatelessWidget {
   const _SentimentChip({required this.sentiment});
   final String sentiment;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (sentiment) {
-      'POSITIVE' => AppTheme.emerald,
-      'NEGATIVE' => AppTheme.rose,
-      _ => AppTheme.subdued,
+    final state = switch (sentiment) {
+      'POSITIVE' => SubstrateChipState.verdant,
+      'NEGATIVE' => SubstrateChipState.rose,
+      _ => SubstrateChipState.mist,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(sentiment,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w700)),
-    );
+    return SubstrateChip(label: sentiment, state: state);
   }
 }

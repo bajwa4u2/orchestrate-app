@@ -216,7 +216,7 @@ class ClientStatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = switch (tone) {
       ClientBannerTone.success => AppTheme.publicAccent,
-      ClientBannerTone.warning => AppTheme.amber,
+      ClientBannerTone.warning => AppTheme.coSun,
       ClientBannerTone.blocked => Colors.red.shade700,
       ClientBannerTone.info => AppTheme.publicMuted,
     };

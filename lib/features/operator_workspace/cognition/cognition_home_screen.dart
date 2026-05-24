@@ -185,7 +185,7 @@ class _FeedRow extends StatelessWidget {
   final CognitionFeedItem item;
 
   Color get _severityColor =>
-      item.severity == 'attention' ? AppTheme.amber : AppTheme.subdued;
+      item.severity == 'attention' ? AppTheme.coSun : AppTheme.coMist;
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +350,7 @@ class _AttentionPanel extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .headlineMedium
-              ?.copyWith(color: AppTheme.amber)),
+              ?.copyWith(color: AppTheme.coSun)),
       child: byFaculty.isEmpty || totalCount == 0
           ? const OperatorEmptyState(
               title: 'Nothing deferred to operator',
@@ -369,7 +369,7 @@ class _AttentionPanel extends StatelessWidget {
                           width: 6,
                           height: 6,
                           decoration: const BoxDecoration(
-                            color: AppTheme.amber,
+                            color: AppTheme.coSun,
                             shape: BoxShape.circle,
                           ),
                         ),

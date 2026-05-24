@@ -173,8 +173,8 @@ class _LearningFeedScreenState extends State<LearningFeedScreen> {
   }
 
   Color _sentimentColor(String s) => switch (s) {
-        'POSITIVE' => AppTheme.emerald,
-        'NEGATIVE' => AppTheme.rose,
+        'POSITIVE' => AppTheme.coVerdant,
+        'NEGATIVE' => AppTheme.coRose,
         _ => AppTheme.subdued,
       };
 

@@ -154,9 +154,9 @@ class _GuardrailCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final breached = item.breachCount > 0;
     final color = breached
-        ? AppTheme.rose
+        ? AppTheme.coRose
         : item.isActive
-            ? AppTheme.emerald
+            ? AppTheme.coVerdant
             : AppTheme.subdued;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -209,7 +209,7 @@ class _GuardrailCard extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
-                    ?.copyWith(color: AppTheme.rose)),
+                    ?.copyWith(color: AppTheme.coRose)),
           ],
         ],
       ),

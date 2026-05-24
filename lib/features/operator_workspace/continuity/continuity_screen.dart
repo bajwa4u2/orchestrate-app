@@ -280,8 +280,8 @@ class _BlockedPanel extends StatelessWidget {
                           margin: const EdgeInsets.only(top: 6),
                           decoration: BoxDecoration(
                             color: r.status == 'FAILED'
-                                ? AppTheme.rose
-                                : AppTheme.amber,
+                                ? AppTheme.coRose
+                                : AppTheme.coSun,
                             shape: BoxShape.circle,
                           ),
                         ),

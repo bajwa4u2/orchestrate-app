@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
 import '../models/learning_models.dart';
 import '../repositories/operator_learning_repository.dart';
 import '../widgets/operator_panel.dart';
@@ -276,30 +277,19 @@ class _SuggestionCard extends StatelessWidget {
   }
 }
 
+/// Suggestion lifecycle status rendered as a canonical SubstrateChip.
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.status});
   final String status;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
-      'ACCEPTED' || 'APPLIED' => AppTheme.emerald,
-      'REJECTED' || 'EXPIRED' => AppTheme.subdued,
-      _ => AppTheme.amber,
+    final state = switch (status) {
+      'ACCEPTED' || 'APPLIED' => SubstrateChipState.verdant,
+      'REJECTED' || 'EXPIRED' => SubstrateChipState.mist,
+      _ => SubstrateChipState.sun,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.55)),
-      ),
-      child: Text(status,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w700)),
-    );
+    return SubstrateChip(label: status, state: state);
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
 import '../models/learning_models.dart';
 import '../repositories/operator_learning_repository.dart';
 import '../widgets/operator_panel.dart';
@@ -82,7 +83,7 @@ class _PlaybooksScreenState extends State<PlaybooksScreen> {
           ElevatedButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.rose,
+                backgroundColor: AppTheme.coRose,
                 foregroundColor: AppTheme.background,
               ),
               child: const Text('Archive')),
@@ -259,12 +260,20 @@ class _PlaybookCard extends StatelessWidget {
                 child: Text(item.name,
                     style: Theme.of(context).textTheme.titleLarge),
               ),
-              _Chip(
-                  label: item.status, color: _statusColor(item.status)),
+              SubstrateChip(
+                label: item.status,
+                state: _statusState(item.status),
+              ),
               const SizedBox(width: 6),
-              _Chip(label: item.automationLevel, color: AppTheme.subdued),
+              SubstrateChip(
+                label: item.automationLevel,
+                state: SubstrateChipState.mist,
+              ),
               const SizedBox(width: 6),
-              _Chip(label: item.scopeType, color: AppTheme.subdued),
+              SubstrateChip(
+                label: item.scopeType,
+                state: SubstrateChipState.mist,
+              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -316,7 +325,7 @@ class _PlaybookCard extends StatelessWidget {
                 TextButton(
                   onPressed: () => onArchive(item),
                   child: const Text('Archive',
-                      style: TextStyle(color: AppTheme.rose)),
+                      style: TextStyle(color: AppTheme.coRose)),
                 ),
               ],
             ],
@@ -326,18 +335,19 @@ class _PlaybookCard extends StatelessWidget {
     );
   }
 
-  Color _statusColor(String status) {
+  // Playbook lifecycle status mapped to canonical SubstrateChipState
+  // per `system/topology/topology-grammar.md` §6.
+  SubstrateChipState _statusState(String status) {
     switch (status) {
       case 'ACTIVE':
-        return AppTheme.emerald;
+        return SubstrateChipState.verdant;
       case 'CANDIDATE':
-        return AppTheme.amber;
-      case 'DISABLED':
-        return AppTheme.subdued;
+        return SubstrateChipState.sun;
       case 'ARCHIVED':
-        return AppTheme.rose;
+        return SubstrateChipState.rose;
+      case 'DISABLED':
       default:
-        return AppTheme.subdued;
+        return SubstrateChipState.mist;
     }
   }
 
@@ -349,28 +359,8 @@ class _PlaybookCard extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.color});
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(label,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w700)),
-    );
-  }
-}
+// _Chip removed — replaced by canonical SubstrateChip
+// (`core/widgets/substrate_chip.dart`).
 
 class _ActivationResult {
   _ActivationResult({required this.level, required this.notes});

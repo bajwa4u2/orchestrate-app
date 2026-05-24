@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
+import 'package:orchestrate_app/core/widgets/substrate_citation.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import '../models/cognition_models.dart';
 import '../repositories/operator_cognition_repository.dart';
@@ -58,6 +60,13 @@ class _TrustReadinessScreenState extends State<TrustReadinessScreen> {
             _BucketTotals(totals: snapshot.data!.totals),
             const SizedBox(height: 18),
             _BoardTable(rows: snapshot.data!.rows),
+            const SizedBox(height: 12),
+            const SubstrateCitation(
+              paths: [
+                'orchestrate_backend/src/operational-readiness/operational-readiness.types.ts',
+                'orchestrate_backend/src/runtime-truth/runtime-truth.types.ts',
+              ],
+            ),
             const SizedBox(height: 28),
           ],
         );
@@ -263,42 +272,38 @@ class _Row extends StatelessWidget {
   }
 }
 
+/// Renders a `CanonicalReadinessBucket` value as a canonical
+/// `SubstrateChip`. Color mapping per
+/// `company/visuals/system/diagnostics/diagnostics-grammar.md` §3.1.
 class _BucketChip extends StatelessWidget {
   const _BucketChip({required this.bucket});
   final String bucket;
 
   @override
   Widget build(BuildContext context) {
-    Color color;
+    final SubstrateChipState state;
     switch (bucket) {
+      case 'ready_to_execute':
+        state = SubstrateChipState.verdant;
+        break;
       case 'executing':
-        color = AppTheme.emerald;
+      case 'orchestrate_working':
+        state = SubstrateChipState.teal;
         break;
       case 'recovering':
       case 'degraded':
-      case 'client_action_required':
-        color = AppTheme.amber;
+        state = SubstrateChipState.sun;
         break;
+      case 'client_action_required':
       case 'orchestrate_blocked_internal':
-        color = AppTheme.rose;
+        state = SubstrateChipState.rose;
         break;
       default:
-        color = AppTheme.subdued;
+        state = SubstrateChipState.mist;
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        bucket,
-        style: Theme.of(context)
-            .textTheme
-            .bodySmall
-            ?.copyWith(color: color, fontWeight: FontWeight.w700),
-      ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SubstrateChip(label: bucket, state: state),
     );
   }
 }

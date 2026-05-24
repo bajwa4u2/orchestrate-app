@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_citation.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import '../models/cognition_models.dart';
 import '../repositories/operator_cognition_repository.dart';
@@ -62,6 +63,20 @@ class _RuntimeTruthScreenState extends State<RuntimeTruthScreen> {
             _SendingDomainsPanel(domains: truth.sendingDomains),
             const SizedBox(height: 18),
             _DeliverabilityPanel(truth: truth),
+            const SizedBox(height: 12),
+            const SubstrateDoctrine(
+              text:
+                  'There must be exactly one operational truth object. '
+                  'Deterministic fingerprint. Honest unknowns rendered '
+                  'as their own state.',
+            ),
+            const SizedBox(height: 8),
+            const SubstrateCitation(
+              paths: [
+                'orchestrate_backend/src/runtime-truth/runtime-truth.types.ts',
+                'orchestrate_backend/src/runtime-truth/runtime-truth.service.ts',
+              ],
+            ),
             const SizedBox(height: 28),
           ],
         );
@@ -257,9 +272,9 @@ class _StateChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (label) {
-      'AUTHORIZED' || 'HEALTHY' => AppTheme.emerald,
-      'PENDING_AUTH' || 'DEGRADED' => AppTheme.amber,
-      'REVOKED' || 'REQUIRES_REAUTH' || 'CRITICAL' => AppTheme.rose,
+      'AUTHORIZED' || 'HEALTHY' => AppTheme.coVerdant,
+      'PENDING_AUTH' || 'DEGRADED' => AppTheme.coSun,
+      'REVOKED' || 'REQUIRES_REAUTH' || 'CRITICAL' => AppTheme.coRose,
       _ => AppTheme.subdued,
     };
     return Container(

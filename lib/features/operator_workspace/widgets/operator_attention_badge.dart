@@ -16,14 +16,14 @@ class OperatorAttentionBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppTheme.amber.withValues(alpha: 0.18),
+        color: AppTheme.coSun.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.amber.withValues(alpha: 0.55)),
+        border: Border.all(color: AppTheme.coSun.withValues(alpha: 0.55)),
       ),
       child: Text(
         '$count',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.amber,
+              color: AppTheme.coSun,
               fontWeight: FontWeight.w700,
               height: 1.1,
             ),

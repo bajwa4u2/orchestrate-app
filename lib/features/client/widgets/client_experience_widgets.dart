@@ -15,7 +15,7 @@ import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets
 Color _toneColor(String tone) {
   switch (tone) {
     case 'attention':
-      return AppTheme.amber;
+      return AppTheme.coSun;
     case 'positive':
     case 'progressing':
     default:
@@ -209,7 +209,7 @@ class _ConfidencePill extends StatelessWidget {
         ),
       'attention' => (
           'Your input',
-          AppTheme.amber,
+          AppTheme.coSun,
           AppTheme.publicAmberSoft,
         ),
       _ => (

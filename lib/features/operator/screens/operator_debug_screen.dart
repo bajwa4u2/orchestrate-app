@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
 import 'package:orchestrate_app/data/repositories/operator_repository.dart';
 
 class OperatorDebugScreen extends StatefulWidget {
@@ -1022,6 +1023,9 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
+/// Severity classification rendered as a canonical SubstrateChip.
+/// String-based pattern match preserved (debug surface aggregates
+/// many heterogeneous status strings); mapped to canonical state.
 class _SeverityChip extends StatelessWidget {
   const _SeverityChip({required this.value});
 
@@ -1030,26 +1034,17 @@ class _SeverityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final normalized = value.toUpperCase();
-    final theme = Theme.of(context);
-    final color = normalized.contains('CRITICAL') ||
+    final state = normalized.contains('CRITICAL') ||
             normalized.contains('FAILED') ||
             normalized.contains('ERROR')
-        ? theme.colorScheme.error
+        ? SubstrateChipState.rose
         : normalized.contains('WARN') ||
                 normalized.contains('WATCH') ||
                 normalized.contains('DEGRADED') ||
                 normalized.contains('PAUSED')
-            ? Colors.amber.shade700
-            : theme.colorScheme.primary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.35)),
-      ),
-      child: Text(_statusLabel(value), style: theme.textTheme.bodySmall),
-    );
+            ? SubstrateChipState.sun
+            : SubstrateChipState.teal;
+    return SubstrateChip(label: _statusLabel(value), state: state);
   }
 }
 

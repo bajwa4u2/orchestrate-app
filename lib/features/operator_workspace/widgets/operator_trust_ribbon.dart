@@ -113,10 +113,10 @@ class _TrustPill extends StatelessWidget {
     Color color;
     switch (tone) {
       case _Tone.ok:
-        color = AppTheme.emerald;
+        color = AppTheme.coVerdant;
         break;
       case _Tone.warning:
-        color = AppTheme.amber;
+        color = AppTheme.coSun;
         break;
       case _Tone.neutral:
         color = AppTheme.subdued;

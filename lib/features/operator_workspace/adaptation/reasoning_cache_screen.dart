@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
 import '../models/convergence_models.dart';
 import '../repositories/operator_learning_repository.dart';
 import '../widgets/operator_panel.dart';
@@ -62,7 +63,7 @@ class _ReasoningCacheScreenState extends State<ReasoningCacheScreen> {
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.rose,
+              backgroundColor: AppTheme.coRose,
               foregroundColor: AppTheme.background,
             ),
             child: const Text('Invalidate'),
@@ -198,17 +199,23 @@ class _CacheCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _Chip(label: item.source, color: AppTheme.accent),
+              SubstrateChip(
+                label: item.source,
+                state: SubstrateChipState.teal,
+              ),
               if (item.modelKey != null) ...[
                 const SizedBox(width: 6),
-                _Chip(label: item.modelKey!, color: AppTheme.subdued),
+                SubstrateChip(
+                  label: item.modelKey!,
+                  state: SubstrateChipState.mist,
+                ),
               ],
               const Spacer(),
               Text('hits ${item.hits}',
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
-                      ?.copyWith(color: AppTheme.emerald)),
+                      ?.copyWith(color: AppTheme.coVerdant)),
             ],
           ),
           const SizedBox(height: 8),
@@ -249,7 +256,7 @@ class _CacheCard extends StatelessWidget {
               TextButton(
                 onPressed: () => onInvalidate(item),
                 child: const Text('Invalidate',
-                    style: TextStyle(color: AppTheme.rose)),
+                    style: TextStyle(color: AppTheme.coRose)),
               ),
             ],
           ),
@@ -259,25 +266,5 @@ class _CacheCard extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.color});
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(label,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w700)),
-    );
-  }
-}
+// _Chip removed — replaced by canonical SubstrateChip
+// (`core/widgets/substrate_chip.dart`).

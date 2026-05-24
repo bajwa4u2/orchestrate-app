@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/core/widgets/substrate_chip.dart';
 import '../guidance_models.dart';
 import 'guidance_ref_chip.dart';
 
@@ -90,6 +91,14 @@ class GuidanceReplyCard extends StatelessWidget {
   }
 }
 
+/// Renders the canonical `CanonicalBlockerOwner` enum (client /
+/// orchestrate / operator / informational) as a `SubstrateChip`.
+/// Color semantics per `system/topology/topology-grammar.md` §6 and
+/// `system/diagnostics/diagnostics-grammar.md` §3.1:
+///   client          → rose (client_action_required surfaces rose)
+///   orchestrate     → teal (company accent for orchestrate-owned)
+///   operator        → sun  (operator-mediated escalation surface)
+///   informational   → mist (neutral)
 class _OwnershipBadge extends StatelessWidget {
   const _OwnershipBadge({required this.ownership});
 
@@ -97,73 +106,14 @@ class _OwnershipBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final spec = _badgeSpec(ownership, theme);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: spec.background,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: spec.border),
-      ),
-      child: Text(
-        spec.label,
-        style: theme.textTheme.labelMedium?.copyWith(color: spec.foreground),
-      ),
-    );
+    final (String label, SubstrateChipState state) = switch (ownership) {
+      'client' => ('You', SubstrateChipState.rose),
+      'orchestrate' => ('Orchestrate', SubstrateChipState.teal),
+      'operator' => ('Operator', SubstrateChipState.sun),
+      _ => ('Info', SubstrateChipState.mist),
+    };
+    return SubstrateChip(label: label, state: state);
   }
-
-  _BadgeSpec _badgeSpec(String value, ThemeData theme) {
-    switch (value) {
-      case 'client':
-        return _BadgeSpec(
-          label: 'You',
-          background:
-              theme.colorScheme.errorContainer.withValues(alpha: 0.45),
-          foreground: theme.colorScheme.onErrorContainer,
-          border: theme.colorScheme.errorContainer,
-        );
-      case 'orchestrate':
-        return _BadgeSpec(
-          label: 'Orchestrate',
-          background:
-              theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
-          foreground: theme.colorScheme.onPrimaryContainer,
-          border: theme.colorScheme.primaryContainer,
-        );
-      case 'operator':
-        return _BadgeSpec(
-          label: 'Operator',
-          background:
-              theme.colorScheme.tertiaryContainer.withValues(alpha: 0.45),
-          foreground: theme.colorScheme.onTertiaryContainer,
-          border: theme.colorScheme.tertiaryContainer,
-        );
-      case 'informational':
-      default:
-        return _BadgeSpec(
-          label: 'Info',
-          background: theme.colorScheme.surfaceContainerHighest
-              .withValues(alpha: 0.6),
-          foreground: theme.colorScheme.onSurfaceVariant,
-          border: theme.colorScheme.outlineVariant,
-        );
-    }
-  }
-}
-
-class _BadgeSpec {
-  const _BadgeSpec({
-    required this.label,
-    required this.background,
-    required this.foreground,
-    required this.border,
-  });
-
-  final String label;
-  final Color background;
-  final Color foreground;
-  final Color border;
 }
 
 class _NextStepButton extends StatelessWidget {

@@ -220,7 +220,7 @@ class _CampaignRowTile extends StatelessWidget {
           Text(
             'Operationally ready — activating automatically on the next sweep.',
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppTheme.emerald),
+                ?.copyWith(color: AppTheme.coVerdant),
           ),
         ],
         if (row.blockerReason != null &&
@@ -231,7 +231,7 @@ class _CampaignRowTile extends StatelessWidget {
           Text(
             'Blocked · ${row.blockerReason}',
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: Colors.orange.shade700),
+                ?.copyWith(color: AppTheme.coSun),
           ),
         ],
       ],
@@ -245,16 +245,18 @@ class _Tag extends StatelessWidget {
   final String label;
   final OperatorTone tone;
 
+  // Canonical substrate-color mapping per
+  // `company/visuals/system/topology/topology-grammar.md` §6.
   Color get _color {
     switch (tone) {
       case OperatorTone.positive:
-        return AppTheme.emerald;
+        return AppTheme.coVerdant;
       case OperatorTone.caution:
-        return AppTheme.amber;
+        return AppTheme.coSun;
       case OperatorTone.critical:
-        return AppTheme.rose;
+        return AppTheme.coRose;
       case OperatorTone.neutral:
-        return AppTheme.subdued;
+        return AppTheme.coMist;
     }
   }
 

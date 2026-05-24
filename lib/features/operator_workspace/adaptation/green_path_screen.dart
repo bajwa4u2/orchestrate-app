@@ -189,11 +189,13 @@ class _SourceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Canonical substrate-color mapping per
+    // `company/visuals/system/topology/topology-grammar.md` §6.
     final color = switch (tone) {
-      OperatorTone.positive => AppTheme.emerald,
-      OperatorTone.caution => AppTheme.amber,
-      OperatorTone.critical => AppTheme.rose,
-      OperatorTone.neutral => AppTheme.subdued,
+      OperatorTone.positive => AppTheme.coVerdant,
+      OperatorTone.caution => AppTheme.coSun,
+      OperatorTone.critical => AppTheme.coRose,
+      OperatorTone.neutral => AppTheme.coMist,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -421,10 +423,10 @@ class _BudgetsPanel extends StatelessWidget {
                             backgroundColor: AppTheme.panelSoft,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               b.hourExceeded
-                                  ? AppTheme.rose
+                                  ? AppTheme.coRose
                                   : b.hourRatio >= 0.75
-                                      ? AppTheme.amber
-                                      : AppTheme.emerald,
+                                      ? AppTheme.coSun
+                                      : AppTheme.coVerdant,
                             ),
                           ),
                         ),
@@ -553,7 +555,7 @@ class _InspectorPanel extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
-                    ?.copyWith(color: AppTheme.rose)),
+                    ?.copyWith(color: AppTheme.coRose)),
           ],
           if (inspected != null) ...[
             const SizedBox(height: 14),
@@ -679,7 +681,7 @@ class _InspectorPanel extends StatelessWidget {
   }
 
   Widget _gate(BuildContext context, String label, bool ok) {
-    final color = ok ? AppTheme.emerald : AppTheme.rose;
+    final color = ok ? AppTheme.coVerdant : AppTheme.coRose;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(

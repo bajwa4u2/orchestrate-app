@@ -381,7 +381,7 @@ class _SourceRow extends StatelessWidget {
                       'repl${source.sourceLearning!.observations == 1 ? 'y' : 'ies'} observed.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: source.sourceLearning!.downRanked
-                    ? AppTheme.amber
+                    ? AppTheme.coSun
                     : AppTheme.muted,
               ),
             ),
@@ -396,7 +396,7 @@ class _SourceRow extends StatelessWidget {
             const SizedBox(height: 3),
             Text('Last error: ${s!.lastError}',
                 style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppTheme.rose)),
+                    ?.copyWith(color: AppTheme.coRose)),
           ],
         ],
       ),
@@ -495,7 +495,7 @@ class _RefillInspectorPanelState extends State<_RefillInspectorPanel> {
             const SizedBox(height: 12),
             Text('Inspection failed: $_error',
                 style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: AppTheme.rose)),
+                    ?.copyWith(color: AppTheme.coRose)),
           ],
           if (result != null) ...[
             const SizedBox(height: 14),
@@ -640,11 +640,13 @@ class _Tag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Canonical substrate-color mapping per
+    // `company/visuals/system/topology/topology-grammar.md` §6.
     final color = switch (tone) {
-      OperatorTone.positive => AppTheme.emerald,
-      OperatorTone.caution => AppTheme.amber,
-      OperatorTone.critical => AppTheme.rose,
-      OperatorTone.neutral => AppTheme.subdued,
+      OperatorTone.positive => AppTheme.coVerdant,
+      OperatorTone.caution => AppTheme.coSun,
+      OperatorTone.critical => AppTheme.coRose,
+      OperatorTone.neutral => AppTheme.coMist,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
