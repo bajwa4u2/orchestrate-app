@@ -48,7 +48,11 @@ class SubstrateChip extends StatelessWidget {
     return Opacity(
       opacity: opacity,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        // Vertical padding 2 (not 4) — 4 ran the chip ~6-8px taller
+        // than the bespoke chips it replaced and tripped overflow
+        // warnings in tight-constrained cards. Matched to the Aura
+        // SubstrateChip metric so the two apps stay visually coherent.
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(999),
