@@ -5,6 +5,7 @@ import 'package:orchestrate_app/core/widgets/substrate_citation.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import '../models/cognition_models.dart';
 import '../repositories/operator_cognition_repository.dart';
+import '../widgets/execution_topology_map.dart';
 import '../widgets/operator_panel.dart';
 import '../widgets/operator_why_affordance.dart';
 
@@ -55,6 +56,8 @@ class _RuntimeTruthScreenState extends State<RuntimeTruthScreen> {
         return ListView(
           children: [
             _Header(onRefresh: _refresh),
+            const SizedBox(height: 18),
+            ExecutionTopologyMap(truth: truth),
             const SizedBox(height: 18),
             _ProvidersPanel(rows: truth.providers),
             const SizedBox(height: 18),

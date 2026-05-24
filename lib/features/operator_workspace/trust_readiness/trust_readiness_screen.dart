@@ -8,6 +8,7 @@ import '../models/cognition_models.dart';
 import '../repositories/operator_cognition_repository.dart';
 import '../widgets/operator_panel.dart';
 import '../widgets/operator_why_affordance.dart';
+import '../widgets/readiness_path.dart';
 
 /// Trust & Readiness — the canonical seven-bucket readiness board.
 /// Reads /operator/readiness/board.
@@ -58,6 +59,8 @@ class _TrustReadinessScreenState extends State<TrustReadinessScreen> {
             _Header(asOf: snapshot.data!.asOf, onRefresh: _refresh),
             const SizedBox(height: 18),
             _BucketTotals(totals: snapshot.data!.totals),
+            const SizedBox(height: 18),
+            ReadinessPath(totals: snapshot.data!.totals),
             const SizedBox(height: 18),
             _BoardTable(rows: snapshot.data!.rows),
             const SizedBox(height: 12),

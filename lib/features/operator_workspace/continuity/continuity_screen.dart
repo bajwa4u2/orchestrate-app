@@ -4,6 +4,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import '../models/cognition_models.dart';
 import '../repositories/operator_cognition_repository.dart';
+import '../widgets/continuity_flow.dart';
 import '../widgets/operator_panel.dart';
 import '../widgets/operator_why_affordance.dart';
 
@@ -71,6 +72,8 @@ class _ContinuityScreenState extends State<ContinuityScreen> {
             _Header(onRefresh: _refresh, drill: widget.initialDrill),
             const SizedBox(height: 18),
             _SummaryPanel(summary: bundle.summary),
+            const SizedBox(height: 18),
+            ContinuityFlow(summary: bundle.summary),
             const SizedBox(height: 18),
             _BlockedPanel(
               rows: bundle.blocked,

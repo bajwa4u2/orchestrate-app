@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/widgets/substrate_citation.dart';
+import '../widgets/intervention_authority_ribbon.dart';
 import '../widgets/operator_panel.dart';
 
 /// AI approvals stub. The backend AI decision approval endpoints
@@ -35,6 +37,15 @@ class AiApprovalsScreen extends StatelessWidget {
                     .textTheme
                     .bodyMedium
                     ?.copyWith(color: AppTheme.muted, height: 1.35)),
+          ],
+        ),
+        const SizedBox(height: 18),
+        const InterventionAuthorityRibbon(),
+        const SizedBox(height: 12),
+        const SubstrateCitation(
+          paths: [
+            'orchestrate_backend/src/ai/governance/decisions.types.ts',
+            'company/visuals/system/enforcement/enforcement-grammar.md §4',
           ],
         ),
         const SizedBox(height: 18),
