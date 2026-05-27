@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/network/api_client.dart';
+import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
@@ -55,6 +56,11 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
   }
 
   Future<void> _openPortal() async {
+    // App Store §3.1.1 — never open the external Stripe billing
+    // portal from the iOS native app. The button is hidden on iOS;
+    // this guard is a no-op fallback.
+    if (!externalPurchaseAllowed) return;
+
     setState(() {
       _openingPortal = true;
       _portalError = null;
@@ -104,26 +110,31 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
           status: status,
           periodEnd: data.subscription['currentPeriodEnd'],
           portalError: _portalError,
+          purchaseAllowed: externalPurchaseAllowed,
         );
 
         return ClientPage(
           eyebrow: 'Billing',
           title: 'Billing and service standing',
-          subtitle:
-              'Confirm whether service is active, trialing, or at risk, then use the portal when billing needs attention.',
+          subtitle: externalPurchaseAllowed
+              ? 'Confirm whether service is active, trialing, or at risk, '
+                  'then use the portal when billing needs attention.'
+              : 'Confirm whether service is active, trialing, or at risk. '
+                  '$kIosPlanManagementNotice',
           banner: banner,
           actions: [
-            FilledButton.icon(
-              onPressed: _openingPortal ? null : _openPortal,
-              icon: _openingPortal
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.open_in_new, size: 18),
-              label: Text(_openingPortal ? 'Opening' : 'Open billing portal'),
-            ),
+            if (externalPurchaseAllowed)
+              FilledButton.icon(
+                onPressed: _openingPortal ? null : _openPortal,
+                icon: _openingPortal
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.open_in_new, size: 18),
+                label: Text(_openingPortal ? 'Opening' : 'Open billing portal'),
+              ),
           ],
           children: [
             if (_portalError != null) ...[
@@ -209,7 +220,18 @@ ClientStatusBanner _billingBanner({
   required String status,
   required dynamic periodEnd,
   required String? portalError,
+  required bool purchaseAllowed,
 }) {
+  // Apple §3.1.1 — strip portal/checkout call-outs on iOS. Banner
+  // copy must report state without instructing the user to act
+  // through an external payment surface.
+  final portalInstruction = purchaseAllowed
+      ? 'Open the billing portal to resolve.'
+      : kIosPlanManagementNotice;
+  final portalHint = purchaseAllowed
+      ? 'The portal is here when you need to manage payment or subscription details.'
+      : kIosPlanManagementNotice;
+
   if (portalError != null) {
     return ClientStatusBanner(
       tone: ClientBannerTone.warning,
@@ -226,27 +248,30 @@ ClientStatusBanner _billingBanner({
 
   switch (normalized) {
     case 'active':
-      return const ClientStatusBanner(
+      return ClientStatusBanner(
         tone: ClientBannerTone.success,
         title: 'Billing is active',
         message:
-            'Managed execution is running under your lane. No billing action is required. The portal is here when you need to manage payment or subscription details.',
+            'Managed execution is running under your lane. No billing action is required. $portalHint',
       );
     case 'trialing':
     case 'trial':
       return ClientStatusBanner(
         tone: expiring ? ClientBannerTone.warning : ClientBannerTone.info,
         title: expiring ? 'Trial ends soon' : 'Trial is active',
-        message:
-            'Full managed execution runs during the trial. Use the portal to update payment details before the trial ends, or leave it — billing follows the current subscription terms automatically.',
+        message: purchaseAllowed
+            ? 'Full managed execution runs during the trial. Use the portal to update payment details before the trial ends, or leave it — billing follows the current subscription terms automatically.'
+            : 'Full managed execution runs during the trial. Billing '
+                'follows the current subscription terms automatically. '
+                '$kIosPlanManagementNotice',
       );
     case 'past_due':
     case 'past due':
-      return const ClientStatusBanner(
+      return ClientStatusBanner(
         tone: ClientBannerTone.blocked,
         title: 'Billing past due — dispatch gated',
         message:
-            'New dispatch is paused until billing is current. Reply ingestion on engaged threads continues, and mailbox transport, sending domain, and audit trail remain attached. Open the billing portal to resolve payment and restore dispatch.',
+            'New dispatch is paused until billing is current. Reply ingestion on engaged threads continues, and mailbox transport, sending domain, and audit trail remain attached. $portalInstruction',
       );
     case 'paused':
       return const ClientStatusBanner(
@@ -273,11 +298,11 @@ ClientStatusBanner _billingBanner({
     case 'incomplete':
     case 'incomplete_expired':
     case 'unpaid':
-      return const ClientStatusBanner(
+      return ClientStatusBanner(
         tone: ClientBannerTone.blocked,
         title: 'Activation incomplete at billing provider',
         message:
-            'The initial payment has not posted at the billing provider yet. Dispatch is gated until activation completes. Open the billing portal to resolve.',
+            'The initial payment has not posted at the billing provider yet. Dispatch is gated until activation completes. $portalInstruction',
       );
     case 'none':
     case '':
@@ -292,7 +317,7 @@ ClientStatusBanner _billingBanner({
         tone: ClientBannerTone.warning,
         title: 'Subscription status: $normalized',
         message:
-            'Mailbox transport and reply ingestion remain attached. Open the billing portal to review subscription state with the billing provider.',
+            'Mailbox transport and reply ingestion remain attached. $portalHint',
       );
   }
 }

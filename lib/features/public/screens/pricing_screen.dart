@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/config/pricing_config.dart';
+import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/public_repository.dart';
 import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
@@ -650,25 +651,44 @@ class _TierCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => onSelect(context, lane, plan.tier),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.publicText,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
+          if (externalPurchaseAllowed)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => onSelect(context, lane, plan.tier),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.publicText,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radius),
+                  ),
+                ),
+                child: Text(
+                  trialRequested
+                      ? 'Continue with ${plan.label}'
+                      : 'Start with ${plan.label}',
                 ),
               ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppTheme.radius),
+                border: Border.all(color: AppTheme.publicLine),
+              ),
               child: Text(
-                trialRequested
-                    ? 'Continue with ${plan.label}'
-                    : 'Start with ${plan.label}',
+                kIosPlanManagementNotice,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.publicMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
-          ),
         ],
       ),
     );

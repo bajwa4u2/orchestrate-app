@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:orchestrate_app/app/shell/auth_shell.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/config/pricing_config.dart';
+import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 
@@ -119,6 +120,12 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
   }
 
   Future<void> _activate() async {
+    // App Store §3.1.1 — never open an external checkout from the
+    // iOS native app. The button is hidden on iOS; this guard is a
+    // belt-and-braces no-op so the callback is safe even if invoked
+    // (e.g. from automated test scaffolding).
+    if (!externalPurchaseAllowed) return;
+
     setState(() {
       _subscribing = true;
       _error = null;
@@ -198,17 +205,26 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                                   ],
                                 ],
                               );
-                              final right = _ReadinessCard(
-                                selection: selection,
-                                trialRequested: _trialRequested,
-                                trialDays: catalog?.trialDays ?? 15,
-                                activating: _subscribing,
-                                onActivate: _subscribing ? null : _activate,
-                                onReviewAccount: () =>
-                                    context.go('/app/account'),
-                                onReviewWorkspace: () =>
-                                    context.go('/app/home'),
-                              );
+                              final right = externalPurchaseAllowed
+                                  ? _ReadinessCard(
+                                      selection: selection,
+                                      trialRequested: _trialRequested,
+                                      trialDays: catalog?.trialDays ?? 15,
+                                      activating: _subscribing,
+                                      onActivate:
+                                          _subscribing ? null : _activate,
+                                      onReviewAccount: () =>
+                                          context.go('/app/account'),
+                                      onReviewWorkspace: () =>
+                                          context.go('/app/home'),
+                                    )
+                                  : _IosPlanNoticeCard(
+                                      selection: selection,
+                                      onReviewAccount: () =>
+                                          context.go('/app/account'),
+                                      onReviewWorkspace: () =>
+                                          context.go('/app/home'),
+                                    );
 
                               if (stacked) {
                                 return Column(children: [
@@ -262,7 +278,13 @@ class _SubscribeHero extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
         Text(
-            'Your business identity is in place. Confirm the scope of managed execution Orchestrate will operate, then activate. Readiness orchestration starts immediately after checkout.',
+            externalPurchaseAllowed
+                ? 'Your business identity is in place. Confirm the scope of '
+                    'managed execution Orchestrate will operate, then activate. '
+                    'Readiness orchestration starts immediately after checkout.'
+                : 'Your business identity is in place. Confirm the scope of '
+                    'managed execution Orchestrate will operate. Plan '
+                    'activation is handled on the web platform.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
@@ -343,8 +365,12 @@ class _SelectionCard extends StatelessWidget {
           value: trialRequested,
           onChanged: onTrialChanged,
           title: Text('Begin with a ${trialDays}-day start period'),
-          subtitle: const Text(
-              'Secure checkout opens after you confirm this selection.'),
+          subtitle: Text(
+            externalPurchaseAllowed
+                ? 'Secure checkout opens after you confirm this selection.'
+                : 'Selection is recorded for your workspace. '
+                    'Plan activation is handled on the web platform.',
+          ),
         ),
       ]),
     );
@@ -546,6 +572,56 @@ class _ReadinessCard extends StatelessWidget {
               ?.copyWith(color: AppTheme.publicMuted),
         ),
         const SizedBox(height: 12),
+        Wrap(spacing: 10, runSpacing: 10, children: [
+          OutlinedButton(
+              onPressed: onReviewWorkspace,
+              child: const Text('Review workspace')),
+          OutlinedButton(
+              onPressed: onReviewAccount, child: const Text('Review account')),
+        ]),
+      ]),
+    );
+  }
+}
+
+/// iOS-only stand-in for [_ReadinessCard]. Renders the same plan
+/// summary tile but replaces the "Begin secure checkout" CTA + Stripe
+/// attribution with [kIosPlanManagementNotice]. The workspace and
+/// account review actions remain so the user can leave the screen
+/// without a dead end.
+class _IosPlanNoticeCard extends StatelessWidget {
+  const _IosPlanNoticeCard({
+    required this.selection,
+    required this.onReviewAccount,
+    required this.onReviewWorkspace,
+  });
+
+  final PricingPlanOption selection;
+  final VoidCallback onReviewAccount;
+  final VoidCallback onReviewWorkspace;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppTheme.radius),
+          border: Border.all(color: AppTheme.publicLine)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('${_title(selection.lane)} • ${selection.label}',
+            style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Text(selection.monthlyLabel,
+            style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 16),
+        Text(kIosPlanManagementNotice,
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(color: AppTheme.publicMuted)),
+        const SizedBox(height: 18),
         Wrap(spacing: 10, runSpacing: 10, children: [
           OutlinedButton(
               onPressed: onReviewWorkspace,

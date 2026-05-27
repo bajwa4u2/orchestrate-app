@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
+import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/system/widgets/trust_primitives.dart';
 
@@ -190,13 +191,23 @@ class _CardActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (actions.isEmpty) return const SizedBox.shrink();
+    // App Store §3.1.1 — strip "Activate / Reactivate / Expand
+    // execution scope" actions on iOS. They route to /client/subscribe
+    // which is a purchase funnel under Apple's policy. /client/billing
+    // remains because that screen is informational on iOS (the portal
+    // CTA itself is hidden by the billing screen's own gate).
+    final visible = externalPurchaseAllowed
+        ? actions
+        : actions
+            .where((a) => a.route != '/client/subscribe')
+            .toList(growable: false);
+    if (visible.isEmpty) return const SizedBox.shrink();
     return Wrap(
       spacing: 10,
       runSpacing: 10,
       alignment: stacked ? WrapAlignment.start : WrapAlignment.end,
       children: [
-        for (final action in actions) _ActionButton(action: action),
+        for (final action in visible) _ActionButton(action: action),
       ],
     );
   }

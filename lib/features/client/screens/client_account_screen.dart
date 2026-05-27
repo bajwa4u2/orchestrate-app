@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
+import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
@@ -69,6 +70,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   }
 
   Future<void> _openBillingPortal() async {
+    // App Store §3.1.1 — billing portal is hidden on iOS; this guard
+    // is a no-op fallback if the callback is reached.
+    if (!externalPurchaseAllowed) return;
     final url = await _billingRepository.createBillingPortalSession();
     await _openUrl(url);
   }
@@ -249,9 +253,15 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                         secondary: _joinNonEmpty([
                           planLabel == 'Not set' ? '' : planLabel,
                           periodEnd,
+                          if (!externalPurchaseAllowed)
+                            kIosPlanManagementNotice,
                         ]),
-                        actionLabel: 'Open billing portal',
-                        onTap: _openBillingPortal,
+                        actionLabel: externalPurchaseAllowed
+                            ? 'Open billing portal'
+                            : null,
+                        onTap: externalPurchaseAllowed
+                            ? _openBillingPortal
+                            : null,
                       ),
                       _RowData(
                         title: 'Outstanding balance',
