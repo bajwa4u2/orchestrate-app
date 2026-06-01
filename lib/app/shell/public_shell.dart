@@ -412,6 +412,14 @@ class _PublicFooter extends StatelessWidget {
                 // rows as width shrinks. Generous spacing + runSpacing so
                 // columns never crowd or overlap, and a wrapped heading
                 // pushes its own links down without colliding.
+                // Reconciled 2026-06-01 — see
+                // docs/ecosystem/FOOTER_RECONCILIATION_2026-06-01.md
+                // in the personal repo. The earlier stacked
+                // institutional band beneath the column groups read
+                // as a second footer. The ecosystem is now a single
+                // bottom-row attribution: "Aura Platform LLC ·
+                // Part of Aura Platform LLC." on the left,
+                // canonical five-link continuity on the right.
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -421,20 +429,13 @@ class _PublicFooter extends StatelessWidget {
                       runSpacing: 32,
                       children: groups,
                     ),
-                    // Institutional continuity band — see
-                    // docs/ecosystem/ECOSYSTEM_CONTINUITY_ARCHITECTURE.md
-                    // in the personal repo. Orchestrate's attribution
-                    // copy is "Part of Aura Platform LLC." (operational
-                    // tone, never CRM, never startup). Five canonical
-                    // links in doctrine-locked order, with Orchestrate
-                    // marked as the "you are here" link.
                     const SizedBox(height: 24),
                     Container(
                       height: 1,
                       color: AppTheme.publicLine,
                     ),
                     const SizedBox(height: 16),
-                    const _EcosystemContinuityBand(),
+                    const _PublicFooterBottomRow(),
                   ],
                 );
               },
@@ -649,24 +650,30 @@ const List<_OrchEcosystemEntry> _kOrchEcosystemLinks = <_OrchEcosystemEntry>[
   _OrchEcosystemEntry(slug: 'founder',      label: 'Founder',      url: 'https://bajwa.auraplatform.org'),
 ];
 
-class _EcosystemContinuityBand extends StatelessWidget {
-  const _EcosystemContinuityBand();
+/// Bottom row of `_PublicFooter`. Sits beneath the column groups and
+/// the single hairline. Institution lockup on the left (linked to the
+/// company surface), canonical five-link continuity on the right.
+/// One footer container, two layers — same pattern as the founder
+/// surface, which is the reference implementation per
+/// `docs/ecosystem/FOOTER_RECONCILIATION_2026-06-01.md`.
+class _PublicFooterBottomRow extends StatelessWidget {
+  const _PublicFooterBottomRow();
 
   static const String _kCurrentSlug = 'orchestrate';
-  static const String _kAttributionCopy = 'Part of Aura Platform LLC.';
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 720;
-        final lockup = _institutionLockup();
+        final lockup = _lockup();
         const links = _OrchEcosystemLinkRow(currentSlug: _kCurrentSlug);
         if (wide) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(child: lockup),
+              lockup,
+              const Spacer(),
               links,
             ],
           );
@@ -683,32 +690,36 @@ class _EcosystemContinuityBand extends StatelessWidget {
     );
   }
 
-  Widget _institutionLockup() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: () => _orchOpenExternal(_kOrchCompanyUrl),
-          child: const Text(
-            'Aura Platform LLC',
-            style: TextStyle(
-              color: AppTheme.publicText,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              letterSpacing: 0.2,
+  Widget _lockup() {
+    return InkWell(
+      onTap: () => _orchOpenExternal(_kOrchCompanyUrl),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'Aura Platform LLC',
+              style: TextStyle(
+                color: AppTheme.publicText,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                letterSpacing: 0.2,
+              ),
             ),
-          ),
+            SizedBox(height: 2),
+            Text(
+              'Part of Aura Platform LLC.',
+              style: TextStyle(
+                color: AppTheme.publicMuted,
+                fontSize: 11,
+                height: 1.4,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 2),
-        const Text(
-          _kAttributionCopy,
-          style: TextStyle(
-            color: AppTheme.publicMuted,
-            fontSize: 12,
-            height: 1.4,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -727,7 +738,7 @@ class _OrchEcosystemLinkRow extends StatelessWidget {
         for (var i = 0; i < _kOrchEcosystemLinks.length; i++) ...[
           if (i > 0)
             const Text('·',
-                style: TextStyle(color: AppTheme.publicMuted, fontSize: 12)),
+                style: TextStyle(color: AppTheme.publicMuted, fontSize: 11)),
           _OrchEcosystemLink(
             link: _kOrchEcosystemLinks[i],
             currentSlug: currentSlug,
@@ -748,8 +759,8 @@ class _OrchEcosystemLink extends StatelessWidget {
     final isCurrent = link.slug == currentSlug;
     final style = TextStyle(
       color: isCurrent ? AppTheme.publicText : AppTheme.publicMuted,
-      fontWeight: isCurrent ? FontWeight.w500 : FontWeight.w400,
-      fontSize: 12,
+      fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+      fontSize: 11,
       decoration: isCurrent ? TextDecoration.underline : TextDecoration.none,
       decorationColor: AppTheme.publicLine,
       decorationThickness: 1.2,
