@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
@@ -420,6 +421,20 @@ class _PublicFooter extends StatelessWidget {
                       runSpacing: 32,
                       children: groups,
                     ),
+                    // Institutional continuity band — see
+                    // docs/ecosystem/ECOSYSTEM_CONTINUITY_ARCHITECTURE.md
+                    // in the personal repo. Orchestrate's attribution
+                    // copy is "Part of Aura Platform LLC." (operational
+                    // tone, never CRM, never startup). Five canonical
+                    // links in doctrine-locked order, with Orchestrate
+                    // marked as the "you are here" link.
+                    const SizedBox(height: 24),
+                    Container(
+                      height: 1,
+                      color: AppTheme.publicLine,
+                    ),
+                    const SizedBox(height: 16),
+                    const _EcosystemContinuityBand(),
                   ],
                 );
               },
@@ -599,4 +614,166 @@ class _PublicMenuButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ECOSYSTEM CONTINUITY BAND
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// See docs/ecosystem/ECOSYSTEM_CONTINUITY_ARCHITECTURE.md in the
+// personal repo for the doctrine this implements.
+//
+// Orchestrate's attribution copy is "Part of Aura Platform LLC." —
+// substrate framing, not parent-corp framing. The five canonical links
+// appear in doctrine-locked order; the current surface (Orchestrate)
+// is the "you are here" link.
+
+class _OrchEcosystemEntry {
+  const _OrchEcosystemEntry({
+    required this.slug,
+    required this.label,
+    required this.url,
+  });
+  final String slug;
+  final String label;
+  final String url;
+}
+
+const String _kOrchCompanyUrl = 'https://company.auraplatform.org';
+
+const List<_OrchEcosystemEntry> _kOrchEcosystemLinks = <_OrchEcosystemEntry>[
+  _OrchEcosystemEntry(slug: 'company',      label: 'Company',      url: _kOrchCompanyUrl),
+  _OrchEcosystemEntry(slug: 'aura',         label: 'Aura',         url: 'https://auraplatform.org'),
+  _OrchEcosystemEntry(slug: 'orchestrate',  label: 'Orchestrate',  url: 'https://orchestrateops.com'),
+  _OrchEcosystemEntry(slug: 'bajwa-writes', label: 'Bajwa Writes', url: 'https://bajwawrites.com'),
+  _OrchEcosystemEntry(slug: 'founder',      label: 'Founder',      url: 'https://bajwa.auraplatform.org'),
+];
+
+class _EcosystemContinuityBand extends StatelessWidget {
+  const _EcosystemContinuityBand();
+
+  static const String _kCurrentSlug = 'orchestrate';
+  static const String _kAttributionCopy = 'Part of Aura Platform LLC.';
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 720;
+        final lockup = _institutionLockup();
+        const links = _OrchEcosystemLinkRow(currentSlug: _kCurrentSlug);
+        if (wide) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: lockup),
+              links,
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            lockup,
+            const SizedBox(height: 10),
+            links,
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _institutionLockup() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => _orchOpenExternal(_kOrchCompanyUrl),
+          child: const Text(
+            'Aura Platform LLC',
+            style: TextStyle(
+              color: AppTheme.publicText,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        const Text(
+          _kAttributionCopy,
+          style: TextStyle(
+            color: AppTheme.publicMuted,
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OrchEcosystemLinkRow extends StatelessWidget {
+  const _OrchEcosystemLinkRow({required this.currentSlug});
+  final String currentSlug;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 14,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (var i = 0; i < _kOrchEcosystemLinks.length; i++) ...[
+          if (i > 0)
+            const Text('·',
+                style: TextStyle(color: AppTheme.publicMuted, fontSize: 12)),
+          _OrchEcosystemLink(
+            link: _kOrchEcosystemLinks[i],
+            currentSlug: currentSlug,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _OrchEcosystemLink extends StatelessWidget {
+  const _OrchEcosystemLink({required this.link, required this.currentSlug});
+  final _OrchEcosystemEntry link;
+  final String currentSlug;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCurrent = link.slug == currentSlug;
+    final style = TextStyle(
+      color: isCurrent ? AppTheme.publicText : AppTheme.publicMuted,
+      fontWeight: isCurrent ? FontWeight.w500 : FontWeight.w400,
+      fontSize: 12,
+      decoration: isCurrent ? TextDecoration.underline : TextDecoration.none,
+      decorationColor: AppTheme.publicLine,
+      decorationThickness: 1.2,
+    );
+    if (isCurrent) {
+      return Semantics(
+        selected: true,
+        label: '${link.label} (current surface)',
+        child: Text(link.label, style: style),
+      );
+    }
+    return Semantics(
+      link: true,
+      label: 'Open ${link.label} surface',
+      child: InkWell(
+        onTap: () => _orchOpenExternal(link.url),
+        child: Text(link.label, style: style),
+      ),
+    );
+  }
+}
+
+Future<void> _orchOpenExternal(String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return;
+  await launchUrl(uri, mode: LaunchMode.platformDefault);
 }
