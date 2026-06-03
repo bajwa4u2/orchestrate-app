@@ -376,24 +376,35 @@ class _PublicFooter extends StatelessWidget {
                     ],
                   ),
                 ];
-                // Desktop: distribute the five fixed-width columns evenly
-                // edge-to-edge so the footer reads as an intentional band
-                // rather than a left-clustered list with dead space on the
-                // right. Below the desktop threshold the same columns flow
-                // onto new rows (generous spacing + runSpacing so they never
-                // crowd or overlap), then stack cleanly on mobile.
-                final wide = constraints.maxWidth >= 1140;
+                // Desktop: all five columns share ONE row as flexible
+                // (Expanded) columns, distributed evenly edge-to-edge. They
+                // get narrower as the viewport shrinks instead of a fixed
+                // 208 px column wrapping onto a lonely second row (the bug
+                // that left the 5th column stranded below). The threshold is
+                // the width below which five columns can no longer hold their
+                // longest label on one line; under it they fall back to a
+                // fixed-width wrap (2–3 per row on tablet) and finally a clean
+                // single-column stack on mobile.
+                final wide = constraints.maxWidth >= 920;
                 final groupArea = wide
                     ? Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: groups,
+                        children: [
+                          for (var i = 0; i < groups.length; i++) ...[
+                            Expanded(child: groups[i]),
+                            if (i != groups.length - 1)
+                              const SizedBox(width: 24),
+                          ],
+                        ],
                       )
                     : Wrap(
                         alignment: WrapAlignment.start,
                         spacing: 32,
                         runSpacing: 32,
-                        children: groups,
+                        children: [
+                          for (final g in groups)
+                            SizedBox(width: 208, child: g),
+                        ],
                       );
                 // Reconciled 2026-06-01 — see
                 // docs/ecosystem/FOOTER_RECONCILIATION_2026-06-01.md
@@ -430,29 +441,24 @@ class _FooterGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Fixed-width footer column, wide enough to fit the longest link
-    // label on one line so columns never overflow into their neighbours.
-    // Links are a plain Column: the previous vertical Wrap left each
-    // link's width unconstrained, so long labels bled across columns at
-    // desktop width. A wrapped heading now pushes links down naturally
-    // because the heading + links are a single Column.
-    return SizedBox(
-      width: 208,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.publicText,
-                  fontWeight: FontWeight.w700,
-                  height: 1.3,
-                ),
-          ),
-          const SizedBox(height: 8),
-          ...links,
-        ],
-      ),
+    // Width-agnostic footer column. The caller sizes it: an Expanded slot
+    // on desktop (all columns share one row and flex) or a fixed-width box
+    // in the wrap fallback. Links are a plain Column so a wrapped heading
+    // pushes its own links down without bleeding across neighbours.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTheme.publicText,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
+        ),
+        const SizedBox(height: 8),
+        ...links,
+      ],
     );
   }
 }
