@@ -288,10 +288,23 @@ class _PublicFooter extends StatelessWidget {
                 const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
             child: LayoutBuilder(
               builder: (context, constraints) {
+                // Task #274 — balanced, intentional information architecture.
+                // The footer answers five questions (what Orchestrate is,
+                // how readiness works, the trust posture, legal obligations,
+                // account/billing), each as a comparable column. It is NOT a
+                // complete operational index: the ten detailed operational
+                // trust policies (mailbox access, reply monitoring, AI usage,
+                // credential handling, provider boundaries, suppression,
+                // abuse, retention, deliverability) are surfaced on the
+                // /trust-compliance hub — reachable from the header "Trust"
+                // — rather than as a towering footer column.
                 final groups = [
                   _FooterGroup(
                     title: 'Product',
                     links: [
+                      _FooterLink(
+                          label: 'Product',
+                          onTap: () => context.go('/product')),
                       _FooterLink(
                           label: 'Why Orchestrate exists',
                           onTap: () => context.go('/why-orchestrate')),
@@ -299,54 +312,39 @@ class _PublicFooter extends StatelessWidget {
                           label: 'How Orchestrate operates',
                           onTap: () => context.go('/how-orchestrate-operates')),
                       _FooterLink(
-                          label: 'Activation progression',
-                          onTap: () => context.go('/activation')),
-                      _FooterLink(
-                          label: 'Product',
-                          onTap: () => context.go('/product')),
-                      _FooterLink(
-                          label: 'Activation journey',
-                          onTap: () => context.go('/how-it-works')),
-                      _FooterLink(
                           label: 'Intelligence',
                           onTap: () => context.go('/lead-sourcing')),
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Trust architecture',
+                    title: 'Readiness',
                     links: [
                       _FooterLink(
-                          label: 'For evaluators',
-                          onTap: () => context.go('/for-evaluators')),
-                      _FooterLink(
-                          label: 'Operational journey',
-                          onTap: () => context.go('/journey/evaluate_and_activate')),
-                      _FooterLink(
-                          label: 'Operational answers',
-                          onTap: () => context.go('/answers')),
+                          label: 'Activation journey',
+                          onTap: () => context.go('/how-it-works')),
                       _FooterLink(
                           label: 'DNS readiness check',
                           onTap: () => context.go('/diagnostics')),
                       _FooterLink(
-                          label: 'Trust architecture',
-                          onTap: () => context.go('/trust-architecture')),
-                      _FooterLink(
-                          label: 'Trust + compliance',
-                          onTap: () => context.go('/trust-compliance')),
+                          label: 'Operational answers',
+                          onTap: () => context.go('/answers')),
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Start',
+                    title: 'Trust',
                     links: [
                       _FooterLink(
-                          label: 'Pricing',
-                          onTap: () => context.go('/pricing')),
+                          label: 'Trust + compliance',
+                          onTap: () => context.go('/trust-compliance')),
                       _FooterLink(
-                          label: 'Start setup',
-                          onTap: () => context.go('/auth/join')),
+                          label: 'Trust architecture',
+                          onTap: () => context.go('/trust-architecture')),
                       _FooterLink(
-                          label: 'Contact',
-                          onTap: () => context.go('/contact')),
+                          label: 'For evaluators',
+                          onTap: () => context.go('/for-evaluators')),
+                      _FooterLink(
+                          label: 'Acceptable use',
+                          onTap: () => context.go('/legal/acceptable-use')),
                     ],
                   ),
                   _FooterGroup(
@@ -359,8 +357,13 @@ class _PublicFooter extends StatelessWidget {
                           label: 'Privacy',
                           onTap: () => context.go('/legal/privacy')),
                       _FooterLink(
-                          label: 'Service Agreement',
+                          label: 'Service agreement',
                           onTap: () => context.go('/legal/service-agreement')),
+                    ],
+                  ),
+                  _FooterGroup(
+                    title: 'Account',
+                    links: [
                       _FooterLink(
                           label: 'Billing',
                           onTap: () => context.go('/legal/billing')),
@@ -372,46 +375,26 @@ class _PublicFooter extends StatelessWidget {
                           onTap: () => context.go('/account-deletion')),
                     ],
                   ),
-                  _FooterGroup(
-                    title: 'Trust',
-                    links: [
-                      _FooterLink(
-                          label: 'Mailbox access',
-                          onTap: () => context.go('/legal/mailbox-access')),
-                      _FooterLink(
-                          label: 'Reply monitoring',
-                          onTap: () => context.go('/legal/reply-monitoring')),
-                      _FooterLink(
-                          label: 'AI usage',
-                          onTap: () => context.go('/legal/ai-usage')),
-                      _FooterLink(
-                          label: 'Credential handling',
-                          onTap: () => context.go('/legal/credentials')),
-                      _FooterLink(
-                          label: 'Provider boundaries',
-                          onTap: () => context.go('/legal/providers')),
-                      _FooterLink(
-                          label: 'Suppression / opt-out',
-                          onTap: () => context.go('/legal/suppression')),
-                      _FooterLink(
-                          label: 'Abuse policy',
-                          onTap: () => context.go('/legal/abuse')),
-                      _FooterLink(
-                          label: 'Retention / deletion',
-                          onTap: () => context.go('/legal/retention')),
-                      _FooterLink(
-                          label: 'Deliverability',
-                          onTap: () => context.go('/legal/deliverability')),
-                      _FooterLink(
-                          label: 'Acceptable Use',
-                          onTap: () => context.go('/legal/acceptable-use')),
-                    ],
-                  ),
                 ];
-                // Stable wrap grid: fixed-width columns flow onto new
-                // rows as width shrinks. Generous spacing + runSpacing so
-                // columns never crowd or overlap, and a wrapped heading
-                // pushes its own links down without colliding.
+                // Desktop: distribute the five fixed-width columns evenly
+                // edge-to-edge so the footer reads as an intentional band
+                // rather than a left-clustered list with dead space on the
+                // right. Below the desktop threshold the same columns flow
+                // onto new rows (generous spacing + runSpacing so they never
+                // crowd or overlap), then stack cleanly on mobile.
+                final wide = constraints.maxWidth >= 1140;
+                final groupArea = wide
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: groups,
+                      )
+                    : Wrap(
+                        alignment: WrapAlignment.start,
+                        spacing: 32,
+                        runSpacing: 32,
+                        children: groups,
+                      );
                 // Reconciled 2026-06-01 — see
                 // docs/ecosystem/FOOTER_RECONCILIATION_2026-06-01.md
                 // in the personal repo. The earlier stacked
@@ -423,17 +406,9 @@ class _PublicFooter extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      alignment: WrapAlignment.start,
-                      spacing: 32,
-                      runSpacing: 32,
-                      children: groups,
-                    ),
+                    groupArea,
                     const SizedBox(height: 24),
-                    Container(
-                      height: 1,
-                      color: AppTheme.publicLine,
-                    ),
+                    Container(height: 1, color: AppTheme.publicLine),
                     const SizedBox(height: 16),
                     const _PublicFooterBottomRow(),
                   ],
@@ -643,11 +618,19 @@ class _OrchEcosystemEntry {
 const String _kOrchCompanyUrl = 'https://company.auraplatform.org';
 
 const List<_OrchEcosystemEntry> _kOrchEcosystemLinks = <_OrchEcosystemEntry>[
-  _OrchEcosystemEntry(slug: 'company',      label: 'Company',      url: _kOrchCompanyUrl),
-  _OrchEcosystemEntry(slug: 'aura',         label: 'Aura',         url: 'https://auraplatform.org'),
-  _OrchEcosystemEntry(slug: 'orchestrate',  label: 'Orchestrate',  url: 'https://orchestrateops.com'),
-  _OrchEcosystemEntry(slug: 'bajwa-writes', label: 'Bajwa Writes', url: 'https://bajwawrites.com'),
-  _OrchEcosystemEntry(slug: 'founder',      label: 'Founder',      url: 'https://bajwa.auraplatform.org'),
+  _OrchEcosystemEntry(slug: 'company', label: 'Company', url: _kOrchCompanyUrl),
+  _OrchEcosystemEntry(
+      slug: 'aura', label: 'Aura', url: 'https://auraplatform.org'),
+  _OrchEcosystemEntry(
+      slug: 'orchestrate',
+      label: 'Orchestrate',
+      url: 'https://orchestrateops.com'),
+  _OrchEcosystemEntry(
+      slug: 'bajwa-writes',
+      label: 'Bajwa Writes',
+      url: 'https://bajwawrites.com'),
+  _OrchEcosystemEntry(
+      slug: 'founder', label: 'Founder', url: 'https://bajwa.auraplatform.org'),
 ];
 
 /// Bottom row of `_PublicFooter`. Sits beneath the column groups and
