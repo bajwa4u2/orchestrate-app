@@ -100,8 +100,8 @@ class _CrossLinks extends StatelessWidget {
       runSpacing: 12,
       children: [
         FilledButton(
-          onPressed: () => context.go('/auth/join'),
-          child: const Text('Activate infrastructure'),
+          onPressed: () => context.go('/auth/join?trial=15d'),
+          child: const Text('Start 15-Day Trial'),
         ),
         OutlinedButton(
           onPressed: () => context.go('/how-orchestrate-operates'),

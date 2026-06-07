@@ -113,7 +113,7 @@ class _Hero extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              'Commercial intelligence + execution infrastructure',
+              'Governed Revenue Automation',
               style: Theme.of(context)
                   .textTheme
                   .titleMedium
@@ -122,7 +122,7 @@ class _Hero extends StatelessWidget {
           );
 
           final headline = Text(
-            'Managed revenue automation infrastructure that detects opportunity, verifies readiness, and runs execution for you.',
+            'Get qualified B2B opportunities and governed outreach — without hiring or running a revenue operations team.',
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   fontSize: headlineSize,
                   height: 1.12,
@@ -156,7 +156,7 @@ class _Hero extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppTheme.radius),
                   ),
                 ),
-                child: const Text('Activate infrastructure'),
+                child: const Text('Start 15-Day Trial'),
               ),
               OutlinedButton(
                 onPressed: () => context.go('/how-it-works'),
@@ -171,11 +171,11 @@ class _Hero extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppTheme.radius),
                   ),
                 ),
-                child: const Text('See how it operates'),
+                child: const Text('See How It Works'),
               ),
               TextButton(
                 onPressed: onSupportTap,
-                child: const Text('Talk through fit'),
+                child: const Text('Talk to Orchestrate'),
               ),
             ],
           );
@@ -732,7 +732,7 @@ class _PlansSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Both scopes can begin with a 15-day start period before monthly billing. The infrastructure is the same — the difference is how far Orchestrate carries revenue continuity for you.',
+            'Both scopes can begin with a 15-day trial before monthly billing. The infrastructure is the same — the difference is how far Orchestrate carries revenue continuity for you.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -800,7 +800,7 @@ class _PlanPeekCard extends StatelessWidget {
           const SizedBox(height: 16),
           TextButton(
             onPressed: () => context.go(plan.route),
-            child: const Text('Open pricing'),
+            child: const Text('View Plans'),
           ),
         ],
       ),
@@ -856,11 +856,11 @@ class _ClosingSection extends StatelessWidget {
             children: [
               FilledButton(
                 onPressed: () => context.go('/pricing?trial=15d'),
-                child: const Text('View pricing'),
+                child: const Text('Start 15-Day Trial'),
               ),
               OutlinedButton(
                 onPressed: () => context.go('/contact'),
-                child: const Text('Open contact'),
+                child: const Text('Talk to Orchestrate'),
               ),
               TextButton(
                 onPressed: onSupportTap,

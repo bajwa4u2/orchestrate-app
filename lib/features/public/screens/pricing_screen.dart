@@ -296,7 +296,7 @@ class _Hero extends StatelessWidget {
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
-                '$trialDays-day start period selected. This carries forward with whichever plan you pick.',
+                '$trialDays-day trial selected. This carries forward with whichever plan you pick.',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppTheme.publicAccent,
                     ),
@@ -336,12 +336,12 @@ class _TrialToggle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$trialDays-day start period',
+                  '$trialDays-day trial',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Use this if you want a $trialDays-day start period before monthly billing begins. The choice carries forward to whichever plan you pick below.',
+                  'Use this if you want a $trialDays-day trial before monthly billing begins. The choice carries forward to whichever plan you pick below.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -643,7 +643,7 @@ class _TierCard extends StatelessWidget {
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
-                '$trialDays-day start period carries forward.',
+                '$trialDays-day trial carries forward.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.publicMuted,
                     ),

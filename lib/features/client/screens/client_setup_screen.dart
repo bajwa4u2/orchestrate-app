@@ -608,7 +608,7 @@ class _SetupIntro extends StatelessWidget {
               _IntroPill(label: 'Scope: $laneLabel'),
               _IntroPill(label: 'Coverage: $tierLabel'),
               if (trial == '15d')
-                const _IntroPill(label: '15-day start period selected'),
+                const _IntroPill(label: '15-day trial selected'),
             ],
           ),
         ],

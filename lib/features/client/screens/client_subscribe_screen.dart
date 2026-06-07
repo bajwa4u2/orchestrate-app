@@ -293,7 +293,7 @@ class _SubscribeHero extends StatelessWidget {
         Wrap(spacing: 10, runSpacing: 10, children: [
           _Pill(label: 'Scope: ${_title(planCode)}'),
           if (trialRequested)
-            _Pill(label: '${trialDays}-day start period selected'),
+            _Pill(label: '${trialDays}-day trial selected'),
         ]),
       ]),
     );
@@ -364,7 +364,7 @@ class _SelectionCard extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
           value: trialRequested,
           onChanged: onTrialChanged,
-          title: Text('Begin with a ${trialDays}-day start period'),
+          title: Text('Start with a ${trialDays}-day trial'),
           subtitle: Text(
             externalPurchaseAllowed
                 ? 'Secure checkout opens after you confirm this selection.'
@@ -553,7 +553,7 @@ class _ReadinessCard extends StatelessWidget {
         if (trialRequested) ...[
           const SizedBox(height: 12),
           Text(
-              'The ${trialDays}-day start period will be included when you continue into billing.'),
+              'The ${trialDays}-day trial will be included when you continue into billing.'),
         ],
         const SizedBox(height: 18),
         SizedBox(

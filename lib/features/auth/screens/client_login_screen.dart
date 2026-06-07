@@ -593,7 +593,7 @@ class _AuthIntro extends StatelessWidget {
     final details = <String>[
       if (plan != null && plan!.isNotEmpty) 'Plan: ${_label(plan!)}',
       if (tier != null && tier!.isNotEmpty) 'Tier: ${_label(tier!)}',
-      if (trial == '15d') '15-day start period selected',
+      if (trial == '15d') '15-day trial selected',
     ];
 
     return Container(

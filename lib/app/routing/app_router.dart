@@ -359,10 +359,10 @@ final router = GoRouter(
                 'Pick the scope of managed execution at activation: execution alone, or execution plus revenue continuity (invoices, statements, reminders, agreements).',
             sideActions: [
               ContentAction(
-                  label: 'Activate infrastructure',
-                  path: '/auth/join',
+                  label: 'Start 15-Day Trial',
+                  path: '/auth/join?trial=15d',
                   filled: true),
-              ContentAction(label: 'View pricing', path: '/pricing'),
+              ContentAction(label: 'View Plans', path: '/pricing?trial=15d'),
             ],
             sections: [
               ContentSection(
@@ -412,10 +412,10 @@ final router = GoRouter(
                 'You see verified state and outcomes. Lifecycle controls, retries, and dispatch governance stay inside Orchestrate.',
             sideActions: [
               ContentAction(
-                  label: 'Activate infrastructure',
-                  path: '/auth/join',
+                  label: 'Start 15-Day Trial',
+                  path: '/auth/join?trial=15d',
                   filled: true),
-              ContentAction(label: 'Talk through fit', path: '/contact'),
+              ContentAction(label: 'Talk to Orchestrate', path: '/contact'),
             ],
             sections: [
               ContentSection(
@@ -487,7 +487,7 @@ final router = GoRouter(
                 'AI assists with strategy, message drafting, follow-up cadence, and revenue-document generation. Every action is reviewable, auditable, and gated by readiness checks before it affects live execution.',
             sideActions: [
               ContentAction(
-                  label: 'Talk through fit', path: '/contact', filled: true),
+                  label: 'Start 15-Day Trial', path: '/auth/join?trial=15d', filled: true),
               ContentAction(label: 'See activation journey', path: '/how-it-works'),
             ],
             sections: [
@@ -524,8 +524,8 @@ final router = GoRouter(
                 'Orchestrate continuously watches your defined market for commercial signals and turns them into qualified, contactable opportunities. The discovery layer is provider-agnostic and bound to your business identity — never a generic database.',
             sideActions: [
               ContentAction(
-                  label: 'Activate infrastructure',
-                  path: '/auth/join',
+                  label: 'Start 15-Day Trial',
+                  path: '/auth/join?trial=15d',
                   filled: true),
               ContentAction(label: 'See how it operates', path: '/how-it-works'),
             ],
