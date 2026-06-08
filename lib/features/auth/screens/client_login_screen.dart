@@ -618,7 +618,9 @@ class _AuthIntro extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             isJoin
-                ? 'Create your workspace, confirm your email, define your business setup, and continue to checkout.'
+                ? trial == '15d'
+                    ? 'Create your workspace, confirm your email, define your business setup, and continue into Stripe to set up the subscription and start the 15-day trial.'
+                    : 'Create your workspace, confirm your email, define your business setup, and continue into Stripe to set up the subscription.'
                 : 'Sign in to continue where you left off, review your account, and get back to work.',
             style: Theme.of(
               context,

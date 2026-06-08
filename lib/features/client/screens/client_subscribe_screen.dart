@@ -280,8 +280,10 @@ class _SubscribeHero extends StatelessWidget {
         Text(
             externalPurchaseAllowed
                 ? 'Your business identity is in place. Confirm the scope of '
-                    'managed execution Orchestrate will operate, then activate. '
-                    'Readiness orchestration starts immediately after checkout.'
+                    'managed execution Orchestrate will operate, then continue '
+                    'into Stripe to set up the subscription. If you selected '
+                    'the trial, the trial starts there before monthly billing. '
+                    'Readiness orchestration starts as soon as checkout completes.'
                 : 'Your business identity is in place. Confirm the scope of '
                     'managed execution Orchestrate will operate. Plan '
                     'activation is handled on the web platform.',
@@ -367,7 +369,7 @@ class _SelectionCard extends StatelessWidget {
           title: Text('Start with a ${trialDays}-day trial'),
           subtitle: Text(
             externalPurchaseAllowed
-                ? 'Secure checkout opens after you confirm this selection.'
+                ? 'Stripe checkout opens after you confirm this selection and sets up the subscription. The trial runs first, then monthly billing begins after it ends.'
                 : 'Selection is recorded for your workspace. '
                     'Plan activation is handled on the web platform.',
           ),
@@ -423,7 +425,7 @@ class _SummaryCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppTheme.radius),
                 border: Border.all(color: AppTheme.publicLine)),
             child: const Text(
-                'Start period selected. Your plan context will continue into billing.'),
+                'Trial selected. Your plan context continues into Stripe checkout, where the subscription is set up and the trial starts before monthly billing.'),
           ),
       ]),
     );
@@ -532,7 +534,9 @@ class _ReadinessCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radius),
           border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Ready to activate infrastructure',
+        Text(trialRequested
+                ? 'Ready to start your trial setup'
+                : 'Ready to activate infrastructure',
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall
@@ -545,7 +549,9 @@ class _ReadinessCard extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
         Text(
-            'Secure checkout opens next. Once payment is confirmed, readiness orchestration begins — Orchestrate then waits on mailbox connection and sending-identity verification before activating execution.',
+            trialRequested
+                ? 'Secure checkout opens next in Stripe to set up the subscription and start your ${trialDays}-day trial. No monthly billing starts today. After the trial ends, Stripe moves the subscription into monthly billing unless you change it there first. Once checkout completes, readiness orchestration begins — Orchestrate then waits on mailbox connection and sending-identity verification before activating execution.'
+                : 'Secure checkout opens next in Stripe to set up monthly billing. Once checkout completes, readiness orchestration begins — Orchestrate then waits on mailbox connection and sending-identity verification before activating execution.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
@@ -553,7 +559,7 @@ class _ReadinessCard extends StatelessWidget {
         if (trialRequested) ...[
           const SizedBox(height: 12),
           Text(
-              'The ${trialDays}-day trial will be included when you continue into billing.'),
+              'The ${trialDays}-day trial is attached to this selection and will appear when Stripe opens.'),
         ],
         const SizedBox(height: 18),
         SizedBox(
@@ -562,7 +568,7 @@ class _ReadinessCard extends StatelessWidget {
                 onPressed: onActivate,
                 child: Text(activating
                     ? 'Opening secure checkout...'
-                    : 'Begin secure checkout'))),
+                    : 'Open secure checkout'))),
         const SizedBox(height: 12),
         Text(
           'Secure billing powered by Stripe',
@@ -704,27 +710,27 @@ List<String> _selectionPoints(String lane, String tier) {
   switch (tier) {
     case 'precision':
       return [
-        'City and metro targeting with include or exclude logic',
-        'Priority market ordering for sharper execution control',
+        'High-resolution targeting for the cities and metros that matter most',
+        'Priority market ordering with include or exclude control',
         revenue
-            ? 'Billing continuity and document movement included'
-            : 'Lead-to-meeting execution included',
+            ? 'Governed execution plus revenue continuity in the same audited flow'
+            : 'Governed lead-to-meeting execution with reply attribution and suppression',
       ];
     case 'multi':
       return [
-        'Multiple countries and multiple regions',
-        'Broader execution coverage without leaving one system',
+        'Broader market coverage without splitting systems or readiness logic',
+        'Multiple countries and regions under one governed operating surface',
         revenue
-            ? 'Revenue-side continuity stays attached across markets'
-            : 'Cross-market outreach and follow-up coverage included',
+            ? 'Revenue-side continuity stays attached as markets expand'
+            : 'Cross-market outreach, follow-up continuity, and reputation protection included',
       ];
     default:
       return [
-        'One country with multiple regions',
-        'A disciplined operating start for one contained market',
+        'A disciplined starting scope for one market you want governed end to end',
+        'One country with regional coverage, readiness verification, and controlled follow-up',
         revenue
-            ? 'Billing continuity begins from the same service scope'
-            : 'Lead generation, writing, and meetings stay aligned',
+            ? 'Revenue continuity begins from the same governed service scope'
+            : 'Lead generation, writing, dispatch, and meetings stay aligned',
       ];
   }
 }

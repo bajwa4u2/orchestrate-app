@@ -732,7 +732,7 @@ class _PlansSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Both scopes can begin with a 15-day trial before monthly billing. The infrastructure is the same — the difference is how far Orchestrate carries revenue continuity for you.',
+            'Both scopes can begin with a 15-day trial. Stripe sets up the subscription first, the trial runs immediately, and monthly billing begins after the trial. The infrastructure is the same — the difference is how far Orchestrate carries revenue continuity for you.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),

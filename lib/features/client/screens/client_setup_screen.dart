@@ -594,7 +594,9 @@ class _SetupIntro extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            'Define your business identity — market, targets, offer context, and representation authorization. Once this is in place, Orchestrate handles signal discovery, qualification, and execution on top of it.',
+            trial == '15d'
+                ? 'Define your business identity — market, targets, offer context, and representation authorization. Once this is in place, you continue into Stripe to set up the subscription and start the 15-day trial before monthly billing. Orchestrate then handles signal discovery, qualification, and governed execution on top of it.'
+                : 'Define your business identity — market, targets, offer context, and representation authorization. Once this is in place, you continue into Stripe to set up the subscription. Orchestrate then handles signal discovery, qualification, and governed execution on top of it.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
@@ -719,19 +721,19 @@ class _BuilderCard extends StatelessWidget {
               children: [
                 _ChoiceCard(
                   title: 'Focused',
-                  subtitle: 'One country with selected regions.',
+                  subtitle: 'Start governed execution in one market with selected regional coverage.',
                   selected: tierCode == 'focused',
                   onTap: () => onTierChanged('focused'),
                 ),
                 _ChoiceCard(
                   title: 'Multi',
-                  subtitle: 'Multiple countries and regions.',
+                  subtitle: 'Expand governed execution across multiple countries and regions.',
                   selected: tierCode == 'multi',
                   onTap: () => onTierChanged('multi'),
                 ),
                 _ChoiceCard(
                   title: 'Precision',
-                  subtitle: 'Detailed targeting with city or metro coverage.',
+                  subtitle: 'Tighten governed execution around priority cities and metros.',
                   selected: tierCode == 'precision',
                   onTap: () => onTierChanged('precision'),
                 ),

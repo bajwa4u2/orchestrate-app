@@ -273,12 +273,12 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Pick the operational lane. Pick the execution tier.',
+            'Choose the governed execution outcome you need.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Text(
-            'Two operational lanes. Three execution tiers per lane. You are not buying seats, sequences, or AI credits — you are buying the operational runtime beneath your identity. The boundary between client identity and Orchestrate operation stays constant. Only the scope of the runtime changes with the plan.',
+            'Choose how much of your outbound Orchestrate governs for you, then choose how much market coverage it runs. Every plan includes governed execution, readiness verification, reputation protection, and an auditable operating trail.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -296,7 +296,7 @@ class _Hero extends StatelessWidget {
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
-                '$trialDays-day trial selected. This carries forward with whichever plan you pick.',
+                '$trialDays-day trial selected. Stripe will set up the subscription when you continue, the trial runs first, and monthly billing starts after the trial.',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppTheme.publicAccent,
                     ),
@@ -341,7 +341,7 @@ class _TrialToggle extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Use this if you want a $trialDays-day trial before monthly billing begins. The choice carries forward to whichever plan you pick below.',
+                  'Use this if you want Stripe checkout to set up the subscription now and start a $trialDays-day trial before monthly billing begins. The choice carries forward to whichever plan you pick below.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -379,7 +379,7 @@ class _LaneMatrixSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'The lane chooses how far the operational runtime extends. The tier chooses the execution scope inside that runtime.',
+          'Pick the outcome first. Opportunity governs prospecting and follow-up. Revenue adds billing continuity on top of the same governed execution foundation.',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppTheme.publicMuted,
               ),
@@ -389,7 +389,7 @@ class _LaneMatrixSection extends StatelessWidget {
           laneCode: 'opportunity',
           laneTitle: 'Opportunity lane',
           laneCaption:
-              'Managed commercial execution. Signal-driven discovery, qualification, governed dispatch, follow-up continuity, reply attribution, suppression, recovery, and audit — all running as infrastructure beneath your sending identity.',
+              'Start governed prospecting without burning your sending identity. Orchestrate verifies readiness, protects reputation, suppresses bad follow-up, attributes replies correctly, and keeps every dispatch auditable.',
           plans: catalog.opportunity,
           trialRequested: trialRequested,
           trialDays: catalog.trialDays,
@@ -401,7 +401,7 @@ class _LaneMatrixSection extends StatelessWidget {
           laneCode: 'revenue',
           laneTitle: 'Revenue lane',
           laneCaption:
-              'Opportunity lane plus revenue continuity. Invoices, statements, reminders, agreements, and payment-accountability records governed alongside execution — same infrastructure, same audit trail.',
+              'Expand governed execution into revenue continuity. Keep the same readiness checks, reputation protection, suppression, and audit trail while Orchestrate also governs invoices, reminders, statements, and payment accountability.',
           plans: catalog.revenue,
           trialRequested: trialRequested,
           trialDays: catalog.trialDays,
@@ -439,7 +439,7 @@ class _LaneAlignmentDisclosure extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              'Operational pricing alignment. Opportunity and Revenue lanes currently share the same introductory operational pricing while Orchestrate expands lane-specific execution infrastructure. The boundary between identity and operation, and the runtime each lane operates, are unchanged.',
+              'Pricing is aligned across lanes because the governed execution core stays the same. The difference is whether Orchestrate stops at opportunity execution or continues into revenue continuity on the same audited infrastructure.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppTheme.publicMuted,
                     height: 1.45,
@@ -577,6 +577,8 @@ class _TierCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final description = (plan.description ?? '').trim();
     final fullName = (plan.name ?? '').trim();
+    final outcome = _tierOutcome(lane, plan.tier);
+    final differentiators = _tierDifferentiators(lane, plan.tier);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -592,8 +594,17 @@ class _TierCard extends StatelessWidget {
             plan.label,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
+          const SizedBox(height: 8),
+          Text(
+            outcome,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.publicText,
+                  fontWeight: FontWeight.w600,
+                  height: 1.45,
+                ),
+          ),
           if (fullName.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               fullName,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -629,8 +640,35 @@ class _TierCard extends StatelessWidget {
                   ),
             ),
           ],
+          const SizedBox(height: 14),
+          for (final item in differentiators) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: Icon(
+                    Icons.check_circle_outline,
+                    size: 16,
+                    color: AppTheme.publicAccent,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    item,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.publicMuted,
+                          height: 1.45,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
           if (trialRequested) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 6),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
@@ -643,7 +681,7 @@ class _TierCard extends StatelessWidget {
                 border: Border.all(color: AppTheme.publicLine),
               ),
               child: Text(
-                '$trialDays-day trial carries forward.',
+                '$trialDays-day trial carries forward. Secure checkout sets up the subscription now; monthly billing starts after the trial.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.publicMuted,
                     ),
@@ -702,17 +740,17 @@ class _TierScopeRow extends StatelessWidget {
     (
       'Focused',
       'Single country, multiple regions',
-      'Disciplined market-entry scope. One country with regional coverage inside the execution runtime.',
+      'Best when you need governed execution to prove one market cleanly: one country, regional coverage, verified readiness, and protected follow-up inside a contained operating scope.',
     ),
     (
       'Multi',
       'Multiple countries, multiple regions',
-      'Cross-market scope. Multiple countries inside the same operational runtime — no infrastructure split.',
+      'Best when you need one governed system across several markets: expand countries and regions without splitting readiness, reply attribution, or auditability.',
     ),
     (
       'Precision',
       'City-level, prioritized markets',
-      'High-resolution scope. City and metro targeting with include / exclude logic and priority-market sequencing.',
+      'Best when execution depends on tight targeting: prioritize cities and metros, refine where Orchestrate operates, and keep suppression, reputation protection, and auditability intact.',
     ),
   ];
 
@@ -730,12 +768,12 @@ class _TierScopeRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'What changes operationally between tiers.',
+            'What each tier helps you accomplish.',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 10),
           Text(
-            'Tier scope is the same axis in both lanes. The runtime stays the same; the execution scope widens.',
+            'The governed execution core does not change. What changes is how much market coverage and targeting depth Orchestrate carries for you.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -1118,7 +1156,7 @@ class _Footnote extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Monthly billing begins through secure checkout. The $trialDays-day option on this page carries forward with the plan you select.',
+            'Secure checkout uses Stripe to set up the subscription. If you start with the $trialDays-day trial, the trial runs first and monthly billing begins after it ends.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 10),
@@ -1467,4 +1505,49 @@ String _route(
       if (trialRequested) 'trial': '15d',
     },
   ).toString();
+}
+
+String _tierOutcome(String lane, String tier) {
+  final revenue = lane == 'revenue';
+  switch (tier) {
+    case 'precision':
+      return revenue
+          ? 'Expand governed execution into the exact markets where revenue continuity needs the tightest control.'
+          : 'Run governed execution in the exact markets where targeting precision matters most.';
+    case 'multi':
+      return revenue
+          ? 'Scale governed execution and revenue continuity across multiple markets from one operating system.'
+          : 'Scale governed execution across multiple markets without losing control of follow-up or reputation.';
+    default:
+      return revenue
+          ? 'Start with one governed market and keep billing continuity attached from the first workflow onward.'
+          : 'Start with one governed market and protect reputation while Orchestrate handles execution end to end.';
+  }
+}
+
+List<String> _tierDifferentiators(String lane, String tier) {
+  final revenue = lane == 'revenue';
+  switch (tier) {
+    case 'precision':
+      return [
+        'SPF, DKIM, and DMARC readiness verification before execution starts',
+        'Reply attribution, follow-up suppression, and reputation protection stay in force',
+        if (revenue)
+          'Invoices, reminders, and payment accountability stay under the same audit trail',
+      ];
+    case 'multi':
+      return [
+        'Governed execution stays auditable as scope widens across countries and regions',
+        'Readiness verification and reputation protection apply across the expanded footprint',
+        if (revenue)
+          'Revenue continuity expands with the same auditability and suppression controls',
+      ];
+    default:
+      return [
+        'Readiness verification checks sending identity before managed execution begins',
+        'Follow-up suppression and reply attribution protect the operating surface from day one',
+        if (revenue)
+          'Revenue continuity runs on the same governed infrastructure as execution',
+      ];
+  }
 }

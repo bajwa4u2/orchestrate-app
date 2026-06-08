@@ -78,7 +78,7 @@ class _Hero extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760),
             child: Text(
-              'The chain the platform walks every account through. Ownership is tagged per stage (Client vs Orchestrate); the readiness engine drives each stage forward in dependency order. When signed in, the workspace renders the same chain with live state — there is no separate activation wizard sitting alongside the runtime.',
+              'The chain the platform walks every account through. Ownership is tagged per stage (Client vs Orchestrate); the readiness engine drives each stage forward in dependency order. Stripe checkout sets up the subscription first, the 15-day trial runs first when selected, and this same activation chain begins as soon as checkout completes. When signed in, the workspace renders the same chain with live state — there is no separate activation wizard sitting alongside the runtime.',
               style: theme.textTheme.bodyLarge
                   ?.copyWith(color: AppTheme.publicMuted, height: 1.5),
             ),
