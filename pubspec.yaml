@@ -42,6 +42,7 @@ msix_config:
   identity_name: AuraPlatformLLC.Orchestrateoperations
   publisher: CN=3E4027A7-4D4D-4492-B8DE-BBE425E307E5
   msix_version: 0.1.3.0
+  store: true
   logo_path: store_assets/source/orchestrate-app-icon-master-1024.png
   capabilities: internetClient
   architecture: x64
