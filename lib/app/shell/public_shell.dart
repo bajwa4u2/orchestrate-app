@@ -663,7 +663,11 @@ class _PublicFooterBottomRow extends StatelessWidget {
             children: [
               lockup,
               const Spacer(),
-              links,
+              // Bound the link Wrap's width so it wraps onto additional rows
+              // instead of overflowing the Row at narrower "wide" widths
+              // (e.g. the 800px test surface). Without this the Wrap is given
+              // unbounded width and lays every link on one line.
+              Flexible(child: links),
             ],
           );
         }
