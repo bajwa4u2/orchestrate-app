@@ -75,6 +75,26 @@ class ClientAccountRepository {
     if (json == null) return null;
     return Map<String, dynamic>.from(json as Map);
   }
+
+  /// Permanent account deletion (Apple Guideline 5.1.1(v)). Unlike
+  /// [deactivateClientAccount], this cannot be undone: credentials and
+  /// personal data are erased server-side and the account can no longer be
+  /// signed into.
+  Future<Map<String, dynamic>?> deleteClientAccount({
+    String? confirmationText,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/clients/me/delete',
+      surface: ApiSurface.client,
+      body: {
+        if (confirmationText != null && confirmationText.trim().isNotEmpty)
+          'confirmationText': confirmationText.trim(),
+      },
+    );
+
+    if (json == null) return null;
+    return Map<String, dynamic>.from(json as Map);
+  }
 }
 
 extension ClientAccountRepositorySafe on ClientAccountRepository {

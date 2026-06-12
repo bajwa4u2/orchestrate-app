@@ -106,6 +106,20 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
     }
   }
 
+  Future<void> _showDeleteDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) =>
+          _DeleteAccountDialog(repository: _accountRepository),
+    );
+
+    if (result == true && mounted) {
+      await AuthSessionController.instance.clear();
+      if (mounted) context.go('/auth/login');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_AccountViewData>(
@@ -271,13 +285,22 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                             : '${_intValue(billing['invoiceCount'])} invoices are on record.',
                       ),
                       _RowData(
-                        title: 'Support and account closure',
+                        title: 'Deactivate account',
                         primary:
-                            'Help stays available directly from the client side.',
+                            'Temporarily close the workspace. Access is paused and active subscriptions are canceled.',
                         secondary:
-                            'If you need to stop the account, use the closure action here rather than leaving the workspace unclear.',
+                            'Choose this to step away without permanently erasing your data.',
                         actionLabel: 'Deactivate account',
                         onTap: _showDeactivateDialog,
+                      ),
+                      _RowData(
+                        title: 'Delete account',
+                        primary:
+                            'Permanently delete your account and personal data. This cannot be undone.',
+                        secondary:
+                            'Active subscriptions are canceled and you are signed out. Records required for legal, tax, or billing obligations are retained only as long as the law requires.',
+                        actionLabel: 'Delete account',
+                        onTap: _showDeleteDialog,
                       ),
                     ],
                     emptyLabel: 'No billing control is available yet.',
@@ -596,6 +619,117 @@ class _DeactivateAccountDialogState extends State<_DeactivateAccountDialog> {
                 FilledButton(
                   onPressed: _working ? null : _submit,
                   child: Text(_working ? 'Working...' : 'Deactivate'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog({required this.repository});
+
+  final ClientAccountRepository repository;
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final TextEditingController _confirmation = TextEditingController();
+  bool _working = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _confirmation.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_confirmation.text.trim().toUpperCase() != 'DELETE') {
+      setState(() => _error = 'Type DELETE to confirm.');
+      return;
+    }
+
+    setState(() {
+      _working = true;
+      _error = null;
+    });
+
+    try {
+      await widget.repository.deleteClientAccount(
+        confirmationText: _confirmation.text.trim(),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _working = false;
+        _error = 'The account could not be deleted right now. Please try again.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radius)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Delete account',
+                style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 8),
+            Text(
+              'This permanently deletes your account and personal data. It cannot '
+              'be undone. Any active subscription is canceled and you will be '
+              'signed out. Records we are legally required to keep (for tax, '
+              'billing, or fraud prevention) are retained only for as long as the '
+              'law requires.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(color: AppTheme.publicMuted),
+            ),
+            const SizedBox(height: 18),
+            _Field(
+              controller: _confirmation,
+              label: 'Type DELETE to confirm',
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 14),
+              Text(
+                _error!,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.red.shade700),
+              ),
+            ],
+            const SizedBox(height: 22),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed:
+                      _working ? null : () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 10),
+                FilledButton(
+                  style:
+                      FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+                  onPressed: _working ? null : _submit,
+                  child: Text(_working ? 'Deleting...' : 'Delete account'),
                 ),
               ],
             ),

@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:orchestrate_app/app/shell/auth_shell.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 
@@ -544,6 +545,24 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   String _humanize(Object error) {
     final text = error.toString().toLowerCase();
+    final api = error is ApiException ? error : null;
+
+    // Transport problems never reach the server — surface them as such
+    // rather than collapsing into a generic "request failed" message.
+    if (api == null &&
+        (text.contains('socketexception') ||
+            text.contains('clientexception') ||
+            text.contains('failed host lookup') ||
+            text.contains('connection refused') ||
+            text.contains('connection closed') ||
+            text.contains('network is unreachable') ||
+            text.contains('xmlhttprequest'))) {
+      return 'We could not reach Orchestrate. Check your internet connection and try again.';
+    }
+    if (text.contains('timeout') || text.contains('timed out')) {
+      return 'The request timed out. Check your connection and try again.';
+    }
+
     if (text.contains('popup_closed') || text.contains('popup closed')) {
       return 'Google sign-in was closed before it finished.';
     }
@@ -556,11 +575,27 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (text.contains('did not return a valid sign-in token')) {
       return 'Google signed in, but no valid ID token came back.';
     }
-    if (text.contains('incorrect')) {
+
+    // Account exists but email is not yet confirmed — the most common
+    // new-account dead end. Point the reviewer/user at the next step.
+    if (text.contains('verify your email') ||
+        text.contains('email not verified') ||
+        text.contains('not verified') ||
+        text.contains('email_not_verified')) {
+      return 'Please verify your email first. Open the confirmation link we '
+          'emailed you, then sign in. You can request a fresh link from the '
+          'verify-email screen.';
+    }
+    if (text.contains('incorrect') || text.contains('did not match')) {
       return 'That email or password did not match our records.';
     }
     if (text.contains('already exists')) {
-      return 'An account with this email already exists.';
+      return 'An account with this email already exists. Try signing in instead.';
+    }
+    if (text.contains('too many') ||
+        text.contains('rate limit') ||
+        api?.statusCode == 429) {
+      return 'Too many attempts. Please wait a moment and try again.';
     }
     if (text.contains('expired')) {
       return 'That link has expired. Request a fresh one and try again.';
@@ -568,15 +603,52 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (text.contains('invalid')) {
       return 'That link is not valid anymore.';
     }
-    return 'We could not complete that request.';
+
+    // Known server responses: prefer the backend's own actionable message;
+    // 5xx gets a calm retry message carrying a support reference.
+    if (api != null) {
+      if (api.statusCode >= 500) {
+        final ref = api.displayId;
+        return 'Something went wrong on our end. Please try again in a moment.'
+            '${ref.isNotEmpty ? ' Reference: $ref' : ''}';
+      }
+      final msg = api.message.trim();
+      if (msg.isNotEmpty &&
+          msg.toLowerCase() != 'request failed' &&
+          msg.length <= 160) {
+        return msg;
+      }
+    }
+    return 'We could not complete that request. Please try again, or contact '
+        'support if it keeps happening.';
   }
 
   String _humanizeCodeError(Object error) {
     final text = error.toString().toLowerCase();
+    final api = error is ApiException ? error : null;
+    if (api == null &&
+        (text.contains('socketexception') ||
+            text.contains('clientexception') ||
+            text.contains('failed host lookup') ||
+            text.contains('connection refused') ||
+            text.contains('network is unreachable') ||
+            text.contains('xmlhttprequest'))) {
+      return 'We could not reach Orchestrate. Check your connection and try again.';
+    }
+    if (text.contains('timeout') || text.contains('timed out')) {
+      return 'The request timed out. Check your connection and try again.';
+    }
     if (text.contains('expired')) return 'That code expired. Request a fresh code and try again.';
     if (text.contains('invalid')) return 'That code did not work. Check it and try again.';
-    if (text.contains('wait')) return 'Please wait before requesting another code.';
-    return 'We could not verify that code.';
+    if (text.contains('too many') || text.contains('wait') || api?.statusCode == 429) {
+      return 'Please wait before requesting another code.';
+    }
+    if (api != null && api.statusCode >= 500) {
+      final ref = api.displayId;
+      return 'Something went wrong on our end. Please try again in a moment.'
+          '${ref.isNotEmpty ? ' Reference: $ref' : ''}';
+    }
+    return 'We could not verify that code. Please try again.';
   }
 }
 

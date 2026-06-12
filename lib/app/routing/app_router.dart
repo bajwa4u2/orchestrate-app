@@ -709,24 +709,25 @@ final router = GoRouter(
                 'Orchestrate by Aura Platform LLC. Support: support@orchestrateops.com.',
             sections: [
               ContentSection(
-                title: 'Request from inside the app',
+                title: 'Delete your account from inside the app',
                 body:
-                    'Users can request account deletion from inside the app: Client workspace → Settings → Account → Deactivate account.',
+                    'You can permanently delete your account yourself, without contacting support: Client workspace → Account → Delete account. Deletion is confirmed in-app and cannot be undone.',
               ),
               ContentSection(
                 title: 'Alternative contact method',
                 body:
-                    'You may also request deletion by emailing support@orchestrateops.com from the email address associated with your Orchestrate account.',
+                    'If you prefer, you may also request deletion by emailing support@orchestrateops.com from the email address associated with your Orchestrate account.',
               ),
               ContentSection(
                 title: 'What is deleted',
                 body:
-                    'When an account deletion request is processed, Orchestrate deletes or deactivates eligible account profile information, workspace access, client account records where eligible, and user-provided account data where deletion is legally permitted.',
+                    'When you delete your account, Orchestrate erases your login credentials and sign-in identities, your profile information (name and email), workspace access, and the contact details on your client record, and cancels any active subscription. After deletion the account can no longer be signed into or recovered.',
                 points: [
-                  'account profile',
+                  'login credentials and sign-in identities',
+                  'profile information (name and email)',
                   'workspace access',
-                  'client account records where eligible',
-                  'user-provided account data where deletion is legally permitted',
+                  'contact details on your client record',
+                  'active subscription (canceled on deletion)',
                 ],
               ),
               ContentSection(
