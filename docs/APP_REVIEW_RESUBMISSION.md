@@ -112,15 +112,21 @@ governed managed-outbound execution for businesses. Plain answers for Apple:
 > confirm. Deletion is permanent; please test it last (the dedicated account #1
 > can be re-seeded by us afterward).
 
-## Reviewer credentials structure (operator fills in the real values)
+## Reviewer credentials structure
 
-| Account  | Email (env `REVIEWER_EMAIL`)        | `REVIEWER_SUBSCRIPTION_STATE` | Password (`REVIEWER_PASSWORD`) |
-|----------|-------------------------------------|-------------------------------|--------------------------------|
-| Active   | `reviewer@orchestrateops.com`       | (unset / `active`)            | operator-chosen                |
-| Expired  | `reviewer-expired@orchestrateops.com` | `expired`                   | operator-chosen                |
+Both accounts share ONE password — the value of `REVIEWER_PASSWORD` already set
+in Railway. The seeding script writes `user.passwordHash` from `REVIEWER_PASSWORD`
+on every run (it **resets** the password for an existing account; it does not
+preserve an old one), so both accounts are deterministically set to it.
 
-Both emails MUST be in `STORE_REVIEWER_EMAILS` and `REVIEW_MODE_ENABLED=true`
-on the production deployment.
+| Account  | Email (`REVIEWER_EMAIL`)              | `REVIEWER_SUBSCRIPTION_STATE` | Password               |
+|----------|---------------------------------------|-------------------------------|------------------------|
+| Active   | `reviewer@orchestrateops.com`         | (unset / `active`)            | shared `REVIEWER_PASSWORD` |
+| Expired  | `reviewer-expired@orchestrateops.com` | `expired`                     | shared `REVIEWER_PASSWORD` |
+
+**Both emails MUST be in `STORE_REVIEWER_EMAILS`** (the login review-safe
+allowlist is built only from `STORE_REVIEWER_EMAILS` / `GOOGLE_PLAY_REVIEWER_EMAIL`
+— it does NOT include the script's default email), and `REVIEW_MODE_ENABLED=true`.
 
 ---
 
@@ -129,19 +135,35 @@ on the production deployment.
 1. **Set production env (Railway, backend):**
    - `REVIEW_MODE_ENABLED=true`
    - `STORE_REVIEWER_EMAILS=reviewer@orchestrateops.com,reviewer-expired@orchestrateops.com`
+   - `REVIEWER_PASSWORD=<shared reviewer password>` (already set)
 2. **Deploy the backend** (account-deletion endpoint + seeding script changes).
-3. **Seed the two reviewer accounts** (against production DB):
+   The expired-state seeding requires the NEW script, so deploy before step 3.
+3. **Seed the two reviewer accounts** (against production DB — `REVIEWER_PASSWORD`
+   is read from the env both times, so both get the same password):
    ```bash
-   # Active reviewer
-   REVIEWER_EMAIL=reviewer@orchestrateops.com REVIEWER_PASSWORD='<pw1>' \
+   # Active reviewer (uses REVIEWER_PASSWORD from env)
+   REVIEWER_EMAIL=reviewer@orchestrateops.com \
      node scripts/create-reviewer-account.js
-   # Expired reviewer
-   REVIEWER_EMAIL=reviewer-expired@orchestrateops.com REVIEWER_PASSWORD='<pw2>' \
-     REVIEWER_SUBSCRIPTION_STATE=expired node scripts/create-reviewer-account.js
+   # Expired reviewer (same password; expired subscription)
+   REVIEWER_EMAIL=reviewer-expired@orchestrateops.com \
+     REVIEWER_SUBSCRIPTION_STATE=expired \
+     node scripts/create-reviewer-account.js
    ```
-4. **Verify** both accounts log in (OTP-free) and the expired one shows the
-   restricted/expired billing state; verify Delete account works on a throwaway
-   reviewer account.
+   Note: re-running on an existing account RESETS the password to
+   `REVIEWER_PASSWORD` (it does not preserve the old one).
+4. **Verify login end-to-end against production** (must return a token and must
+   NOT return `requiresEmailCodeChallenge`):
+   ```bash
+   curl -sS -X POST https://api.orchestrateops.com/auth/client/login \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"reviewer@orchestrateops.com","password":"<REVIEWER_PASSWORD>"}'
+   curl -sS -X POST https://api.orchestrateops.com/auth/client/login \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"reviewer-expired@orchestrateops.com","password":"<REVIEWER_PASSWORD>"}'
+   ```
+   Then in-app: confirm the expired account shows the restricted/expired billing
+   state, and that Delete account works (use a throwaway reviewer account, since
+   deletion is permanent).
 5. **Build & submit** the iOS app (0.1.3 build 5) via Codemagic `ios-testflight`.
 6. **Enter the credentials + notes** above in App Store Connect and resubmit.
 
