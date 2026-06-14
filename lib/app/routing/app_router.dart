@@ -68,6 +68,8 @@ import 'package:orchestrate_app/app/shell/operator_shell.dart';
 import 'package:orchestrate_app/app/shell/client_shell.dart';
 import 'package:orchestrate_app/app/shell/public_shell.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
+import 'package:orchestrate_app/core/platform/billing_gate.dart';
+import 'package:orchestrate_app/core/platform/ios_route_policy.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _clientShellNavigatorKey = GlobalKey<NavigatorState>();
@@ -166,6 +168,27 @@ final router = GoRouter(
     final isOperatorArea =
         (path.startsWith('/ops/') || path.startsWith('/operator/')) &&
             !isOpsAuth;
+
+    // iOS App Store build: operational-workspace-only routing. The entire
+    // customer-acquisition journey — registration, onboarding/setup, plan
+    // & trial selection, subscription activation, and the commercial
+    // marketing funnel — is unreachable. This single branch is the source
+    // of truth for the iOS policy and deliberately bypasses the web
+    // onboarding/subscription gates below. (See [_iosRedirect]; App Store
+    // Guideline 3.1.1.) Web / Android / desktop never enter this branch.
+    if (isIosAppStorePlatform) {
+      return iosRouteRedirect(
+        path: path,
+        isAuthenticated: session.isAuthenticated,
+        surface: session.surface,
+        emailVerified: session.emailVerified,
+        isOperatorArea: isOperatorArea,
+        isOpsAuth: isOpsAuth,
+        isClientAuth: isClientAuth,
+        isVerification: isVerification,
+        isReset: isReset,
+      );
+    }
 
     if (!session.isAuthenticated) {
       if (isOperatorArea) return '/ops/login';

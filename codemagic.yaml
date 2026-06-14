@@ -46,8 +46,8 @@ workflows:
       - name: Build signed IPA
         script: |
           # Version + build number come from pubspec.yaml (currently
-          # 0.1.2+3 -> CFBundleShortVersionString 0.1.2, CFBundleVersion
-          # 3). Bump pubspec for each release so TestFlight build numbers
+          # 0.1.4+6 -> CFBundleShortVersionString 0.1.4, CFBundleVersion
+          # 6). Bump pubspec for each release so TestFlight build numbers
           # never collide.
           flutter build ipa --release \
             --export-options-plist=/Users/builder/export_options.plist
