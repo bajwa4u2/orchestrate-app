@@ -12,9 +12,11 @@ class PublicRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
-  /// Platform-wide commercial-lifecycle aggregates (DB-backed) for the
-  /// public home funnel cards: entitiesEvaluated, suppressed,
-  /// opportunities, dispatch, replies, meetings, invoices, payments.
+  /// Dynamic commercial-journey cards (DB-backed) for the public home.
+  /// Returns `{ cards: [...], hidden: [...], source }` where `cards` holds
+  /// only the eligible commercial stages / retained assets whose value > 0,
+  /// ordered by commercial progression. The card set is registry-driven, so
+  /// the homepage evolves automatically as metrics move 0→1 and 1→0.
   Future<Map<String, dynamic>> fetchLifecycle() async {
     final json = await _apiClient.getJson('/public/lifecycle');
     return Map<String, dynamic>.from(json as Map);

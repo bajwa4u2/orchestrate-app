@@ -55,88 +55,32 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
       return const _OverviewShell(child: _EmptyState());
     }
 
-    // DB-backed commercial-lifecycle funnel (platform-wide). Every value
-    // is a live count from /public/lifecycle — never hard-coded. A field
-    // absent from the payload renders as "Not available" (truthful
-    // degradation); a real 0 renders as "0".
-    String n(String key) {
-      final v = _data![key];
-      if (v == null) return 'Not available';
-      if (v is num) return v.toInt().toString();
-      return int.tryParse('$v')?.toString() ?? 'Not available';
-    }
-
-    final invoiceAmount = (_data!['invoicesIssuedAmountCents'] ?? 0) as num;
-    final paymentAmount = (_data!['paymentsClearedAmountCents'] ?? 0) as num;
-
-    // Public funnel = the connected, single-unit client-execution lifecycle
-    // only (leads → … → payments). Upstream acquisition counters ("Raw
-    // Results") and discovery entities are intentionally not shown here:
-    // they are a different unit with no row-lineage into this funnel and
-    // would imply current-client pipeline they are not.
-    final cards = [
-      _FlowCard(
-        title: 'Leads',
-        value: n('leads'),
-        suffix: 'created',
-        tone: _FlowTone.normal,
-      ),
-      _FlowCard(
-        title: 'Suppressed',
-        value: n('suppressed'),
-        suffix: 'governed exclusions',
-        tone: _FlowTone.normal,
-      ),
-      _FlowCard(
-        title: 'Opportunities',
-        value: n('opportunities'),
-        suffix: 'qualified',
-        tone: _FlowTone.normal,
-      ),
-      _FlowCard(
-        title: 'Dispatch',
-        value: n('dispatch'),
-        suffix: 'governed sends',
-        tone: _FlowTone.normal,
-      ),
-      _FlowCard(
-        title: 'Replies',
-        value: n('replies'),
-        suffix: 'classified',
-        tone: _FlowTone.normal,
-      ),
-      _FlowCard(
-        title: 'Meetings',
-        value: n('meetings'),
-        suffix: 'handed off',
-        tone: _FlowTone.emphasis,
-      ),
-      _FlowCard(
-        title: 'Invoices',
-        value: n('invoices'),
-        suffix: 'issued',
-        detail: invoiceAmount > 0
-            ? '${_formatCurrency((invoiceAmount / 100).round())} issued'
-            : null,
-        tone: _FlowTone.strong,
-      ),
-      _FlowCard(
-        title: 'Payments',
-        value: n('payments'),
-        suffix: 'cleared',
-        detail: paymentAmount > 0
-            ? '${_formatCurrency((paymentAmount / 100).round())} cleared'
-            : null,
-        tone: _FlowTone.strongest,
-      ),
+    // PUBLIC HOME METRICS DOCTRINE — dynamic commercial journey.
+    //
+    // The card set is NOT hardcoded here. The backend's /public/lifecycle
+    // registry resolves every eligible commercial stage / retained asset from
+    // DB truth and returns only the cards whose value > 0 (ordered by commercial
+    // progression). This widget renders exactly that list — so a stage appears
+    // automatically when its count moves 0→1 and disappears when it returns to
+    // 0, with no code change here. There is no per-card title list and no
+    // visibility logic in the frontend.
+    final rawCards = (_data!['cards'] as List?) ?? const [];
+    final cards = <_FlowCard>[
+      for (final entry in rawCards)
+        if (entry is Map) _cardFromPayload(Map<String, dynamic>.from(entry)),
     ];
+
+    if (cards.isEmpty) {
+      return const _OverviewShell(child: _EmptyState());
+    }
 
     return _OverviewShell(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Responsive grid via a Wrap with width-computed cells, so it
-          // can never overflow horizontally regardless of device width:
-          //   >= 720px (desktop/tablet) → 5 columns → 10 cards = 5 + 5
+          // Responsive grid via a Wrap with width-computed cells, so it can
+          // never overflow horizontally regardless of device width or how many
+          // cards the registry currently resolves to non-zero:
+          //   >= 720px (desktop/tablet) → max 5 columns → auto-wrap 5 + 5 + 5
           //   >= 420px (mobile wide)    → 2 columns
           //   <  420px (mobile narrow)  → 1 column
           const gap = 12.0;
@@ -160,6 +104,31 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
           );
         },
       ),
+    );
+  }
+
+  // Map one registry-resolved card payload to a render model. Tone is derived
+  // from the metric's kind (STAGE vs retained ASSET) — never from a hardcoded
+  // per-card list — so newly registered metrics style themselves automatically.
+  _FlowCard _cardFromPayload(Map<String, dynamic> entry) {
+    final value = entry['value'];
+    final String valueText = value is num
+        ? value.toInt().toString()
+        : (int.tryParse('$value')?.toString() ?? 'Not available');
+
+    final amount = (entry['amountCents'] ?? 0) as num;
+    final String? detail =
+        amount > 0 ? _formatCurrency((amount / 100).round()) : null;
+
+    final _FlowTone tone =
+        '${entry['kind']}' == 'ASSET' ? _FlowTone.emphasis : _FlowTone.normal;
+
+    return _FlowCard(
+      title: '${entry['label'] ?? entry['key'] ?? ''}',
+      value: valueText,
+      suffix: '${entry['suffix'] ?? ''}',
+      detail: detail,
+      tone: tone,
     );
   }
 
