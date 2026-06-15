@@ -182,6 +182,14 @@ class ClientHomeScreen extends StatelessWidget {
       experience: experience,
       metrics: experience != null
           ? [
+              // Governance funnel — placed before Opportunities. Both are
+              // DB-backed (Lead rows + governance state); a null value
+              // (backend could not compute) renders "Not available" rather
+              // than a fabricated number.
+              _Metric('Entities evaluated',
+                  _intLabel(experience.growth.entitiesEvaluated)),
+              _Metric('Suppressed — governed exclusions',
+                  _intLabel(experience.growth.governedExclusions)),
               _Metric('Opportunities identified',
                   '${experience.growth.opportunitiesIdentified}'),
               _Metric('In market',
@@ -490,3 +498,8 @@ int _countValue(dynamic value) {
 }
 
 String _countLabel(dynamic value) => '${_countValue(value)}';
+
+/// Truthful render of a nullable DB-backed count: a real number (incl.
+/// 0) renders as-is; `null` (backend could not compute) renders
+/// "Not available" — never a fabricated default. (Metrics doctrine.)
+String _intLabel(int? value) => value == null ? 'Not available' : '$value';

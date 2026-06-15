@@ -83,12 +83,19 @@ class ClientConfidenceSignal {
 
 class ClientGrowth {
   const ClientGrowth({
+    required this.entitiesEvaluated,
+    required this.governedExclusions,
     required this.opportunitiesIdentified,
     required this.opportunitiesInMarket,
     required this.conversationsActive,
     required this.meetingsCoordinated,
   });
 
+  /// Nullable on purpose: `null` means the backend did not return a
+  /// value (compute the card as "Not available"); `0` is a genuine
+  /// zero. This preserves the metrics doctrine — never fabricate a value.
+  final int? entitiesEvaluated;
+  final int? governedExclusions;
   final int opportunitiesIdentified;
   final int opportunitiesInMarket;
   final int conversationsActive;
@@ -101,7 +108,17 @@ class ClientGrowth {
       return int.tryParse('${v ?? ''}') ?? 0;
     }
 
+    // Distinguish absent (null -> "Not available") from a real 0.
+    int? asIntOrNull(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse('$v');
+    }
+
     return ClientGrowth(
+      entitiesEvaluated: asIntOrNull(json['entitiesEvaluated']),
+      governedExclusions: asIntOrNull(json['governedExclusions']),
       opportunitiesIdentified: asInt(json['opportunitiesIdentified']),
       opportunitiesInMarket: asInt(json['opportunitiesInMarket']),
       conversationsActive: asInt(json['conversationsActive']),
