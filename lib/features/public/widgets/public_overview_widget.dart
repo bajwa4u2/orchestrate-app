@@ -69,19 +69,12 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
     final invoiceAmount = (_data!['invoicesIssuedAmountCents'] ?? 0) as num;
     final paymentAmount = (_data!['paymentsClearedAmountCents'] ?? 0) as num;
 
+    // Public funnel = the connected, single-unit client-execution lifecycle
+    // only (leads → … → payments). Upstream acquisition counters ("Raw
+    // Results") and discovery entities are intentionally not shown here:
+    // they are a different unit with no row-lineage into this funnel and
+    // would imply current-client pipeline they are not.
     final cards = [
-      _FlowCard(
-        title: 'Raw Results',
-        value: n('rawResults'),
-        suffix: 'provider results',
-        tone: _FlowTone.normal,
-      ),
-      _FlowCard(
-        title: 'Entities',
-        value: n('entities'),
-        suffix: 'evaluated',
-        tone: _FlowTone.normal,
-      ),
       _FlowCard(
         title: 'Leads',
         value: n('leads'),
