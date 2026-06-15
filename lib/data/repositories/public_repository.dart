@@ -12,6 +12,14 @@ class PublicRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  /// Platform-wide commercial-lifecycle aggregates (DB-backed) for the
+  /// public home funnel cards: entitiesEvaluated, suppressed,
+  /// opportunities, dispatch, replies, meetings, invoices, payments.
+  Future<Map<String, dynamic>> fetchLifecycle() async {
+    final json = await _apiClient.getJson('/public/lifecycle');
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   /// Public journey catalog list — { key, title, audience, intent,
   /// stageCount } per journey.
   Future<Map<String, dynamic>> fetchJourneys() async {

@@ -30,7 +30,7 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
     });
 
     try {
-      final payload = await _repository.fetchOverview();
+      final payload = await _repository.fetchLifecycle();
       if (!mounted) return;
       setState(() {
         _data = payload;
@@ -55,56 +55,73 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
       return const _OverviewShell(child: _EmptyState());
     }
 
-    final leadsActive = (_data!['leadsActive'] ?? 0) as num;
-    final outreachSent = (_data!['outreachSent'] ?? 0) as num;
-    final repliesReceived = (_data!['repliesReceived'] ?? 0) as num;
-    final meetingsScheduled = (_data!['meetingsScheduled'] ?? 0) as num;
-    final invoicesIssuedAmount = (_data!['invoicesIssuedAmount'] ?? 0) as num;
-    final paymentsClearedAmount = (_data!['paymentsClearedAmount'] ?? 0) as num;
-    final paymentsDueAmount = (_data!['paymentsDueAmount'] ?? 0) as num;
+    // DB-backed commercial-lifecycle funnel (platform-wide). Every value
+    // is a live count from /public/lifecycle — never hard-coded. A field
+    // absent from the payload renders as "Not available" (truthful
+    // degradation); a real 0 renders as "0".
+    String n(String key) {
+      final v = _data![key];
+      if (v == null) return 'Not available';
+      if (v is num) return v.toInt().toString();
+      return int.tryParse('$v')?.toString() ?? 'Not available';
+    }
+
+    final invoiceAmount = (_data!['invoicesIssuedAmountCents'] ?? 0) as num;
+    final paymentAmount = (_data!['paymentsClearedAmountCents'] ?? 0) as num;
 
     final cards = [
       _FlowCard(
+        title: 'Entities Evaluated',
+        value: n('entitiesEvaluated'),
+        suffix: 'entered evaluation',
+        tone: _FlowTone.normal,
+      ),
+      _FlowCard(
+        title: 'Suppressed',
+        value: n('suppressed'),
+        suffix: 'governed exclusions',
+        tone: _FlowTone.normal,
+      ),
+      _FlowCard(
         title: 'Opportunities',
-        value: leadsActive.toString(),
-        suffix: 'qualified',
+        value: n('opportunities'),
+        suffix: 'survived governance',
         tone: _FlowTone.normal,
       ),
       _FlowCard(
         title: 'Dispatch',
-        value: outreachSent.toString(),
+        value: n('dispatch'),
         suffix: 'governed sends',
         tone: _FlowTone.normal,
       ),
       _FlowCard(
         title: 'Replies',
-        value: repliesReceived.toString(),
+        value: n('replies'),
         suffix: 'classified',
         tone: _FlowTone.normal,
       ),
       _FlowCard(
         title: 'Meetings',
-        value: meetingsScheduled.toString(),
+        value: n('meetings'),
         suffix: 'handed off',
-        detail: 'Managed-execution outcome',
         tone: _FlowTone.emphasis,
       ),
       _FlowCard(
         title: 'Invoices',
-        value: _formatCurrency(invoicesIssuedAmount),
+        value: n('invoices'),
         suffix: 'issued',
-        detail: paymentsDueAmount > 0
-            ? '${_formatCurrency(paymentsDueAmount)} open'
-            : 'Issued under revenue continuity',
+        detail: invoiceAmount > 0
+            ? '${_formatCurrency((invoiceAmount / 100).round())} issued'
+            : null,
         tone: _FlowTone.strong,
       ),
       _FlowCard(
         title: 'Payments',
-        value: _formatCurrency(paymentsClearedAmount),
+        value: n('payments'),
         suffix: 'cleared',
-        detail: paymentsDueAmount > 0
-            ? '${_formatCurrency(paymentsDueAmount)} open'
-            : 'Revenue continuity completed',
+        detail: paymentAmount > 0
+            ? '${_formatCurrency((paymentAmount / 100).round())} cleared'
+            : null,
         tone: _FlowTone.strongest,
       ),
     ];
@@ -139,10 +156,10 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(child: cards[4]),
-                      const SizedBox(width: 12),
-                      Expanded(child: cards[5]),
-                      const Spacer(flex: 2),
+                      for (int i = 4; i < 8; i++) ...[
+                        Expanded(child: cards[i]),
+                        if (i != 7) const SizedBox(width: 12),
+                      ],
                     ],
                   ),
                 ),
