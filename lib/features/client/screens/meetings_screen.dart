@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_meetings_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workflow_state_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_charts.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class MeetingsScreen extends StatefulWidget {
@@ -107,6 +108,27 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               ClientMetric('Completed', '${summary['completed'] ?? 0}'),
             ]),
             const SizedBox(height: 18),
+            ...(() {
+              final dist = <ClientChartDatum>[
+                ClientChartDatum('Open handoffs', _mi(summary['openHandoffs']),
+                    tone: ClientBarTone.attention),
+                ClientChartDatum('Booked', _mi(summary['booked'])),
+                ClientChartDatum('Completed', _mi(summary['completed']),
+                    tone: ClientBarTone.positive),
+                ClientChartDatum('Missed', _mi(summary['missed']),
+                    tone: ClientBarTone.negative),
+              ];
+              if (!chartHasSignal(dist)) return <Widget>[];
+              return <Widget>[
+                ClientPanel(
+                  title: 'Meeting status',
+                  subtitle:
+                      'Where your meetings stand — each a live count from your records.',
+                  children: [ClientBarChart(data: dist)],
+                ),
+                const SizedBox(height: 18),
+              ];
+            })(),
             ClientPanel(
               title: 'Calendar and provider state',
               children: [
@@ -191,6 +213,11 @@ class _MeetingGroup extends StatelessWidget {
             ],
     );
   }
+}
+
+int _mi(dynamic value) {
+  if (value is num) return value.toInt();
+  return int.tryParse('${value ?? ''}') ?? 0;
 }
 
 String? _resolveUpstreamBlocker(

@@ -7,6 +7,7 @@ import 'package:orchestrate_app/data/repositories/client/client_billing_reposito
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/models/client_experience.dart';
+import 'package:orchestrate_app/features/client/widgets/client_charts.dart';
 import 'package:orchestrate_app/features/client/widgets/client_experience_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
@@ -67,6 +68,10 @@ class ClientHomeScreen extends StatelessWidget {
                 _MetricRow(metrics: data.metrics),
                 const SizedBox(height: 18),
               ],
+              if (section == ClientSection.home) ...[
+                _HomeFunnel(summary: data.summary),
+                const SizedBox(height: 18),
+              ],
               LayoutBuilder(builder: (context, constraints) {
                 final stacked =
                     constraints.maxWidth < WorkspaceBreakpoints.stacked;
@@ -109,6 +114,11 @@ class ClientHomeScreen extends StatelessWidget {
     final experience = section == ClientSection.home
         ? await _safeFetchExperience(portalRepo)
         : null;
+    // Precise, DB-backed qualification buckets for the home funnel + cards.
+    final summary = section == ClientSection.home
+        ? await _safeFetchSummary(portalRepo)
+        : const <String, dynamic>{};
+    final byQualification = _asMap(summary['byQualification']);
 
     final client = _asMap(overview['client']);
     final activity = _asMap(overview['activity']);
@@ -180,32 +190,19 @@ class ClientHomeScreen extends StatelessWidget {
           'Your managed growth operation — representation, market reach, and engagement in one place.',
       subscription: subscription ?? const {},
       experience: experience,
-      metrics: experience != null
-          ? [
-              // Governance funnel — placed before Opportunities. Both are
-              // DB-backed (Lead rows + governance state); a null value
-              // (backend could not compute) renders "Not available" rather
-              // than a fabricated number.
-              _Metric('Entities evaluated',
-                  _intLabel(experience.growth.entitiesEvaluated)),
-              _Metric('Suppressed — governed exclusions',
-                  _intLabel(experience.growth.governedExclusions)),
-              _Metric('Opportunities identified',
-                  '${experience.growth.opportunitiesIdentified}'),
-              _Metric('In market',
-                  '${experience.growth.opportunitiesInMarket}'),
-              _Metric('Conversations',
-                  '${experience.growth.conversationsActive}'),
-              _Metric('Meetings',
-                  '${experience.growth.meetingsCoordinated}'),
-            ]
-          : [
-              _Metric('Replies', _countLabel(activity['replies'])),
-              _Metric(
-                  'Meetings',
-                  _countLabel(
-                      activity['meetings'] ?? activity['meetingCount'])),
-            ],
+      // Precise, DB-backed operating buckets read from
+      // /client/opportunities/summary (Lead rows, client-scoped). Replaces
+      // the prior soft "In market" / "Conversations" labels.
+      summary: summary,
+      metrics: [
+        _Metric('Evaluated', '${_countValue(summary['entitiesEvaluated'])}'),
+        _Metric('Suppressed',
+            '${_countValue(byQualification['suppressed'])}'),
+        _Metric('Opportunities',
+            '${_countValue(byQualification['qualified'])}'),
+        _Metric('Dispatched',
+            '${_countValue(byQualification['dispatched'])}'),
+      ],
       primaryTitle: 'Your growth operation',
       primaryRows: [
         _Row(
@@ -280,6 +277,15 @@ Future<ClientExperience?> _safeFetchExperience(
   }
 }
 
+Future<Map<String, dynamic>> _safeFetchSummary(
+    ClientPortalRepository repo) async {
+  try {
+    return await repo.fetchOpportunitySummary();
+  } catch (_) {
+    return const <String, dynamic>{};
+  }
+}
+
 class _ViewData {
   const _ViewData(
       {required this.title,
@@ -292,10 +298,12 @@ class _ViewData {
       required this.secondaryRows,
       required this.secondaryEmpty,
       this.subscription = const <String, dynamic>{},
+      this.summary = const <String, dynamic>{},
       this.experience});
   final String title;
   final String subtitle;
   final List<_Metric> metrics;
+  final Map<String, dynamic> summary;
   final String primaryTitle;
   final List<_Row> primaryRows;
   final String primaryEmpty;
@@ -389,6 +397,49 @@ class _MetricRow extends StatelessWidget {
         ]
       ]);
     });
+  }
+}
+
+/// Compact progression funnel for Home. Every stage is a live, client-
+/// scoped DB count from /client/opportunities/summary. When no stage has
+/// moved, a truthful empty state is shown instead of an empty chart.
+class _HomeFunnel extends StatelessWidget {
+  const _HomeFunnel({required this.summary});
+  final Map<String, dynamic> summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final byq = _asMap(summary['byQualification']);
+    final data = <ClientChartDatum>[
+      ClientChartDatum('Evaluated', _countValue(summary['entitiesEvaluated']),
+          tone: ClientBarTone.neutral),
+      ClientChartDatum('Qualified', _countValue(byq['qualified'])),
+      ClientChartDatum('Dispatch-ready', _countValue(byq['dispatchReady'])),
+      ClientChartDatum('Dispatched', _countValue(byq['dispatched']),
+          tone: ClientBarTone.positive),
+    ];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppTheme.radius),
+          border: Border.all(color: AppTheme.publicLine)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Your operation at a glance',
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 16),
+        if (chartHasSignal(data))
+          ClientBarChart(data: data)
+        else
+          const ClientEmptyState(
+              message:
+                  'Your operation is coming online. Stages fill in here as Orchestrate evaluates and dispatches for your business.'),
+      ]),
+    );
   }
 }
 
@@ -498,8 +549,3 @@ int _countValue(dynamic value) {
 }
 
 String _countLabel(dynamic value) => '${_countValue(value)}';
-
-/// Truthful render of a nullable DB-backed count: a real number (incl.
-/// 0) renders as-is; `null` (backend could not compute) renders
-/// "Not available" — never a fabricated default. (Metrics doctrine.)
-String _intLabel(int? value) => value == null ? 'Not available' : '$value';

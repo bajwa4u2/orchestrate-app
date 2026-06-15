@@ -5,6 +5,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_mailbox_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workflow_state_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_charts.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientRepliesScreen extends StatefulWidget {
@@ -94,9 +95,34 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
               ClientMetric('Total', '${summary['total'] ?? replies.length}'),
               ClientMetric('Needs review', '${summary['needsReview'] ?? 0}'),
               ClientMetric('Interested', '${summary['interested'] ?? 0}'),
-              ClientMetric('Meetings', '${summary['meetings'] ?? 0}'),
+              ClientMetric(
+                  'Meeting candidates', '${summary['meetings'] ?? 0}'),
             ]),
             const SizedBox(height: 18),
+            // Chart only when replies exist (mission: no chart over zero data).
+            ...(() {
+              final total =
+                  _ri(summary['total']) == 0 ? replies.length : _ri(summary['total']);
+              if (total <= 0) return <Widget>[];
+              final dist = <ClientChartDatum>[
+                ClientChartDatum('Needs review', _ri(summary['needsReview']),
+                    tone: ClientBarTone.attention),
+                ClientChartDatum('Interested', _ri(summary['interested']),
+                    tone: ClientBarTone.positive),
+                ClientChartDatum(
+                    'Meeting candidates', _ri(summary['meetings']),
+                    tone: ClientBarTone.primary),
+              ];
+              return <Widget>[
+                ClientPanel(
+                  title: 'Reply classification',
+                  subtitle:
+                      'How your inbound replies break down — each a live count from classified replies.',
+                  children: [ClientBarChart(data: dist)],
+                ),
+                const SizedBox(height: 18),
+              ];
+            })(),
             LayoutBuilder(builder: (context, constraints) {
               final stacked =
                   constraints.maxWidth < WorkspaceBreakpoints.stacked;
@@ -106,7 +132,7 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
                     ? const [
                         ClientEmptyState(
                             message:
-                                'Replies appear here when inbound mail is matched to outreach Orchestrate sent on your behalf. Unrelated mailbox content is not ingested.')
+                                'No replies classified yet. Replies appear here when inbound mail is matched to outreach Orchestrate sent on your behalf; unrelated mailbox content is not ingested.')
                       ]
                     : _groupedReplyItems(
                         selected: selected,
@@ -141,6 +167,11 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
       },
     );
   }
+}
+
+int _ri(dynamic value) {
+  if (value is num) return value.toInt();
+  return int.tryParse('${value ?? ''}') ?? 0;
 }
 
 class _ReplyListItem extends StatelessWidget {

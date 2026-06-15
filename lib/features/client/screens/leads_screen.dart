@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_charts.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class LeadsScreen extends StatelessWidget {
@@ -34,6 +35,8 @@ class LeadsScreen extends StatelessWidget {
               _Hero(summary: data.summary),
               const SizedBox(height: 18),
               _SummaryGrid(summary: data.summary),
+              const SizedBox(height: 18),
+              _QualificationDistribution(summary: data.summary),
               const SizedBox(height: 18),
               if (data.summary.governanceReviewQueue > 0)
                 _GovernanceQueueCallout(
@@ -382,6 +385,46 @@ class _Hero extends StatelessWidget {
       return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Readiness gates have not passed — dispatch is not yet eligible. Open the home runtime line for the named blocker.';
     }
     return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Readiness gates passed and a campaign is active. Whether messages are in flight right now is named on the runtime line on Home.';
+  }
+}
+
+/// Qualification distribution — a single visual of how this client's
+/// opportunities split across the disjoint qualification states. Every
+/// bar is a live count from /client/opportunities/summary; an all-zero
+/// set renders a truthful empty state instead of a chart.
+class _QualificationDistribution extends StatelessWidget {
+  const _QualificationDistribution({required this.summary});
+
+  final _OpportunitySummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final data = <ClientChartDatum>[
+      ClientChartDatum('Under qualification', summary.underQualification,
+          tone: ClientBarTone.neutral),
+      ClientChartDatum('Qualified', summary.qualified),
+      ClientChartDatum('Dispatch-ready', summary.dispatchReady),
+      ClientChartDatum('Dispatched', summary.dispatched,
+          tone: ClientBarTone.positive),
+      ClientChartDatum('Suppressed', summary.suppressed,
+          tone: ClientBarTone.negative),
+      ClientChartDatum('Blocked by governance', summary.blockedByGovernance,
+          tone: ClientBarTone.attention),
+    ];
+    return ClientPanel(
+      title: 'Qualification distribution',
+      subtitle:
+          'Where your opportunities sit across qualification — each a live, disjoint count.',
+      children: [
+        if (chartHasSignal(data))
+          ClientBarChart(data: data)
+        else
+          const ClientEmptyState(
+            message:
+                'No opportunities have entered qualification yet. This distribution fills in as discovery surfaces ICP-aligned businesses.',
+          ),
+      ],
+    );
   }
 }
 
