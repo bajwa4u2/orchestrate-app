@@ -71,9 +71,21 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
 
     final cards = [
       _FlowCard(
-        title: 'Entities Evaluated',
-        value: n('entitiesEvaluated'),
-        suffix: 'entered evaluation',
+        title: 'Raw Results',
+        value: n('rawResults'),
+        suffix: 'provider results',
+        tone: _FlowTone.normal,
+      ),
+      _FlowCard(
+        title: 'Entities',
+        value: n('entities'),
+        suffix: 'evaluated',
+        tone: _FlowTone.normal,
+      ),
+      _FlowCard(
+        title: 'Leads',
+        value: n('leads'),
+        suffix: 'created',
         tone: _FlowTone.normal,
       ),
       _FlowCard(
@@ -85,7 +97,7 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
       _FlowCard(
         title: 'Opportunities',
         value: n('opportunities'),
-        suffix: 'survived governance',
+        suffix: 'qualified',
         tone: _FlowTone.normal,
       ),
       _FlowCard(
@@ -129,64 +141,28 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
     return _OverviewShell(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth >= 1120) {
-            // Equal-height card rows. CrossAxisAlignment.stretch needs a
-            // bounded vertical extent, but the public shell renders this
-            // inside an unbounded-height SingleChildScrollView. Each
-            // stretch Row must therefore be wrapped in IntrinsicHeight,
-            // otherwise the subtree fails layout and blanks the whole
-            // page body at desktop width (>= 1120) — only reproducible
-            // when the window is wide/maximized. Mirrors the treatment
-            // in PublicHomeScreen._BurdenTransformSection.
-            return Column(
-              children: [
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (int i = 0; i < 4; i++) ...[
-                        Expanded(child: cards[i]),
-                        if (i != 3) const SizedBox(width: 12),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (int i = 4; i < 8; i++) ...[
-                        Expanded(child: cards[i]),
-                        if (i != 7) const SizedBox(width: 12),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }
-
-          if (constraints.maxWidth >= 720) {
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                for (final card in cards)
-                  SizedBox(
-                    width: (constraints.maxWidth - 12) / 2,
-                    child: card,
-                  ),
-              ],
-            );
-          }
-
-          return Column(
+          // Responsive grid via a Wrap with width-computed cells, so it
+          // can never overflow horizontally regardless of device width:
+          //   >= 720px (desktop/tablet) → 5 columns → 10 cards = 5 + 5
+          //   >= 420px (mobile wide)    → 2 columns
+          //   <  420px (mobile narrow)  → 1 column
+          const gap = 12.0;
+          final w = constraints.maxWidth;
+          final int columns = w >= 720
+              ? 5
+              : w >= 420
+                  ? 2
+                  : 1;
+          // Floor the cell width so rounding never pushes a row past the
+          // available width (prevents a 6th card wrapping onto row 1).
+          final double cellWidth =
+              ((w - gap * (columns - 1)) / columns).floorToDouble();
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
             children: [
-              for (int i = 0; i < cards.length; i++) ...[
-                cards[i],
-                if (i != cards.length - 1) const SizedBox(height: 12),
-              ],
+              for (final card in cards)
+                SizedBox(width: cellWidth, child: card),
             ],
           );
         },
