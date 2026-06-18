@@ -377,7 +377,7 @@ final router = GoRouter(
             eyebrow: 'Product',
             title: 'Commercial intelligence + execution infrastructure.',
             subtitle:
-                'Orchestrate is managed revenue automation infrastructure. You connect your business identity and sending identity. Orchestrate detects opportunity, verifies readiness, runs governed execution, and keeps it running.',
+                'Orchestrate is commercial execution infrastructure for B2B firms in regulated and reputation-sensitive sectors. It runs governed outbound for you under your own verified identity, turns market signals into qualified opportunity, and refuses the sends that would burn your reputation — refusal is a first-class outcome, not an error. You connect identity; Orchestrate runs the rest.',
             sideNote:
                 'Pick the scope of managed execution at activation: execution alone, or execution plus revenue continuity (invoices, statements, reminders, agreements).',
             sideActions: [
@@ -689,7 +689,7 @@ final router = GoRouter(
             title:
                 'Commercial intelligence + execution infrastructure.',
             subtitle:
-                'Orchestrate exists because revenue automation deserves to be infrastructure, not another tool you operate. Connect business identity and sending identity — Orchestrate detects opportunity, verifies readiness, and runs governed execution end to end.',
+                'Orchestrate exists because, for firms in regulated and reputation-sensitive sectors, outbound is either outsourced — burning the sending identity — or left undone. Revenue execution deserves to be governed infrastructure you activate, not another tool you operate. Connect your verified identity; Orchestrate runs governed outbound end to end, and refuses what would burn you.',
             sections: [
               ContentSection(
                 title: 'The category',
@@ -702,9 +702,9 @@ final router = GoRouter(
                     'Clients own four inputs: business identity, mailbox, mailbox ownership, sending-domain verification. Everything after readiness belongs to Orchestrate. The infrastructure is the product — not a workspace of buttons.',
               ),
               ContentSection(
-                title: 'Why the separation matters',
+                title: 'Why move now',
                 body:
-                    'Visitors get a clear category. Clients get verified state and explainable outcomes. Operators get the deeper infrastructure controls. No surface tries to be all three.',
+                    'The status quo is a forced choice: hand outbound to an agency that burns your domain, hire and run a revenue-operations team, or leave pipeline on the table. Orchestrate replaces that choice with governed execution under your own verified identity — activated, not operated — so the move is off a liability, not onto another tool.',
               ),
             ],
           ),

@@ -132,7 +132,7 @@ class _Hero extends StatelessWidget {
           final subtitle = ConstrainedBox(
             constraints: BoxConstraints(maxWidth: stacked ? 640 : 560),
             child: Text(
-              'You connect your business identity and sending identity. Orchestrate detects commercial opportunity from market signals, qualifies it, verifies readiness, and runs governed execution end to end — with operational continuity built in.',
+              'For B2B firms in regulated and reputation-sensitive sectors, outbound is a liability: outsource it and your sending identity gets burned; skip it and the pipeline stays quiet. Orchestrate runs governed outbound for you, under your own verified identity — and refuses the sends that would damage your reputation. Refusal is a first-class outcome, not an error.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.publicMuted,
                   ),
@@ -159,7 +159,7 @@ class _Hero extends StatelessWidget {
                 child: const Text('Start 15-Day Trial'),
               ),
               OutlinedButton(
-                onPressed: () => context.go('/how-it-works'),
+                onPressed: () => context.go('/diagnostics'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.publicText,
                   side: const BorderSide(color: AppTheme.publicLine),
@@ -171,7 +171,7 @@ class _Hero extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppTheme.radius),
                   ),
                 ),
-                child: const Text('See How It Works'),
+                child: const Text('Run the Free Diagnostic'),
               ),
               TextButton(
                 onPressed: onSupportTap,
