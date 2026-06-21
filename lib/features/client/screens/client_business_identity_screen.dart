@@ -251,7 +251,7 @@ class _ClientBusinessIdentityScreenState
             const SizedBox(height: 18),
             _IdentitySectionCard(
               title: 'Representation profile',
-              subtitle: 'Who Orchestrate represents — the entity facts that anchor every dispatch.',
+              subtitle: 'Entity facts that anchor every dispatch.',
               guidanceLabel: 'Why this matters',
               // ignore: sort_child_properties_last
               child: Column(
@@ -315,7 +315,7 @@ class _ClientBusinessIdentityScreenState
             const SizedBox(height: 16),
             _IdentitySectionCard(
               title: 'Ideal customer profile',
-              subtitle: 'The qualification scope — what signal-driven discovery should watch for and what it should never dispatch against.',
+              subtitle: 'What discovery watches for and what it never dispatches against.',
               // ignore: sort_child_properties_last
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -722,14 +722,14 @@ class _RepresentationAuthPanelState extends State<_RepresentationAuthPanel> {
     return ClientPanel(
       title: 'Representation authorization',
       subtitle:
-          'Required acknowledgement that Orchestrate may send outbound on the business’s behalf. Resolved inline — no scavenger-hunt navigation.',
+          ‘Authorization for Orchestrate to send outbound on your behalf.’,
       children: [
         ClientInfoRow(
           title: 'Status',
           primary: widget.loading
               ? 'Loading…'
               : widget.authorized
-                  ? 'Authorized — managed execution can run under this representation.'
+                  ? 'Authorized. Managed execution can run.'
                   : 'Not yet authorized. Authorization is a one-time client-owned acknowledgement.',
           trailing: widget.authorized
               ? const ClientBadge(label: 'Authorized')

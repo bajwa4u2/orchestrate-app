@@ -260,7 +260,7 @@ ClientStatusBanner _billingBanner({
         tone: expiring ? ClientBannerTone.warning : ClientBannerTone.info,
         title: expiring ? 'Trial ends soon' : 'Trial is active',
         message: purchaseAllowed
-            ? 'Full managed execution runs during the trial. Use the portal to update payment details before the trial ends, or leave it — billing follows the current subscription terms automatically.'
+            ? 'Full managed execution runs during the trial. Billing follows the subscription terms automatically.'
             : 'Full managed execution runs during the trial. Billing '
                 'follows the current subscription terms automatically. '
                 '$kIosPlanManagementNotice',
@@ -269,7 +269,7 @@ ClientStatusBanner _billingBanner({
     case 'past due':
       return ClientStatusBanner(
         tone: ClientBannerTone.blocked,
-        title: 'Billing past due — dispatch gated',
+        title: 'Billing past due. Dispatch paused.',
         message:
             'New dispatch is paused until billing is current. Reply ingestion on engaged threads continues, and mailbox transport, sending domain, and audit trail remain attached. $portalInstruction',
       );
@@ -284,14 +284,14 @@ ClientStatusBanner _billingBanner({
     case 'cancelled':
       return const ClientStatusBanner(
         tone: ClientBannerTone.warning,
-        title: 'Subscription canceled — paid period continues',
+        title: 'Subscription canceled. Paid period continues.',
         message:
             'Dispatch runs through the end of the current paid period. Reply ingestion continues until then. Mailbox transport stays attached so reactivation does not require reconnect.',
       );
     case 'expired':
       return const ClientStatusBanner(
         tone: ClientBannerTone.warning,
-        title: 'Subscription expired — dispatch ended',
+        title: 'Subscription expired. Dispatch ended.',
         message:
             'Dispatch has ended. Reply ingestion continues as long as the mailbox transport remains attached. Reactivate the plan to restore managed execution under the same lane and tier.',
       );

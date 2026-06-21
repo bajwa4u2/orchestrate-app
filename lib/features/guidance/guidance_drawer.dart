@@ -314,7 +314,7 @@ class _SystemBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              "System-aware guidance — not a chatbot. Every answer is read from real backend state and shows its sources. Not a human.",
+              "System-aware guidance. Every answer is grounded in real state. Not a chatbot.",
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.35,

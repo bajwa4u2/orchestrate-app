@@ -127,18 +127,17 @@ class _ClientShellState extends State<ClientShell> {
             '')
         .toString()
         .trim();
-    return [service, tier].where((e) => e.isNotEmpty).join(' · ');
+    String cap(String s) =>
+        s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
+    return [service, tier].where((e) => e.isNotEmpty).map(cap).join(' · ');
   }
 
   String _billingLabel(AuthSessionController session) {
-    return (_subscription?['status'] ?? session.subscriptionStatus)
-            .toString()
-            .trim()
-            .isEmpty
-        ? 'Unknown'
-        : (_subscription?['status'] ?? session.subscriptionStatus)
-            .toString()
-            .trim();
+    final raw = (_subscription?['status'] ?? session.subscriptionStatus)
+        .toString()
+        .trim();
+    if (raw.isEmpty) return 'Unknown';
+    return raw[0].toUpperCase() + raw.substring(1).toLowerCase();
   }
 
   String _topTitle() {
@@ -203,69 +202,69 @@ class _ClientShellState extends State<ClientShell> {
 
   String _topStateLine(AuthSessionController session) {
     if (!session.emailVerified) {
-      return 'Confirm your email to open your workspace.';
+      return 'Confirm your email to continue.';
     }
     if (!session.hasSetupCompleted) {
-      return 'Finish setup so your target market and service preferences are ready.';
+      return 'Complete setup to begin your operation.';
     }
     if (session.normalizedSubscriptionStatus != 'active') {
-      return 'Complete billing to activate your managed growth operation.';
+      return 'Activate billing to start your operation.';
     }
 
     switch (widget.currentPath) {
       case '/client/overview':
-        return 'Your managed growth operation at a glance — momentum, confidence, and anything that needs you.';
+        return 'Overview of your operation.';
       case '/client/setup':
-        return 'Setup captures your business profile, target customers, market, offer, and authorization.';
+        return 'Business profile, market, and authorization.';
       case '/client/representation':
       case '/client/business-identity':
       case '/client/campaign':
       case '/client/campaign/targeting':
-        return 'How Orchestrate represents your business operationally — identity, ICP, voice, constraints, authorization.';
+        return 'Identity, ICP, voice, and authorization.';
       case '/client/opportunities':
       case '/client/leads':
-        return 'Opportunities Orchestrate is identifying and qualifying for your business.';
+        return 'Qualified B2B opportunities.';
       case '/client/operations':
       case '/client/outreach':
-        return 'What Orchestrate is doing for your business — outreach momentum and engagement progress.';
+        return 'Outreach momentum and engagement.';
       case '/client/replies':
-        return 'Conversations from businesses Orchestrate has reached for you.';
+        return 'Inbound conversations.';
       case '/client/meetings':
-        return 'Meetings Orchestrate is coordinating from your conversations.';
+        return 'Meetings from conversations.';
       case '/client/infrastructure':
       case '/client/mailbox':
-        return 'Your sending mailbox and domain — connection and verification.';
+        return 'Sending mailbox and domain.';
       case '/client/billing':
       case '/client/invoices':
       case '/client/receipts':
       case '/client/agreements':
       case '/client/statements':
       case '/client/reminders':
-        return 'Billing, documents, and service records stay easy to review.';
+        return 'Service standing and billing records.';
       case '/client/notifications':
-        return 'Notifications show account notices available for your workspace.';
+        return 'Account notices.';
       case '/client/support':
-        return 'Human help for setup, billing, or anything you need guidance on.';
+        return 'Human support.';
       case '/client/settings':
-        return 'Settings shows account details, setup status, and authorization.';
+        return 'Account details and authorization.';
       case '/app/contacts':
-        return 'Contacts show sourced records and readiness.';
+        return 'Sourced contacts and readiness.';
       case '/app/campaigns':
-        return 'Representation scope — the market, geography, and ICP Orchestrate operates against.';
+        return 'Market, geography, and ICP scope.';
       case '/app/activity':
-        return 'Activity shows replies, meetings, and engagement progress.';
+        return 'Replies, meetings, and engagement.';
       case '/app/mailbox':
-        return 'Infrastructure: your sending mailbox and domain verification.';
+        return 'Sending mailbox and domain.';
       case '/app/newsletter':
-        return 'Update controls will appear here when available for your account.';
+        return 'Update controls for your account.';
       case '/app/branding':
-        return 'Brand controls will appear here when available for your account.';
+        return 'Brand controls for your account.';
       case '/app/billing':
-        return 'Billing stays clear so service standing is easy to review.';
+        return 'Service standing and billing.';
       case '/app/account':
-        return 'Profile, password, billing links, and account controls stay here.';
+        return 'Profile, password, and account controls.';
       default:
-        return 'Home shows what is happening now, what is ready, what needs action, and what happens next.';
+        return 'Overview of your operation.';
     }
   }
 
@@ -687,7 +686,7 @@ class _Pill extends StatelessWidget {
         border: Border.all(color: AppTheme.publicLine),
       ),
       child: Text(
-        '$label: $value',
+        value,
         style: Theme.of(context)
             .textTheme
             .titleMedium

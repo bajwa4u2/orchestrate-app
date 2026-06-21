@@ -116,7 +116,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       }
       setState(() {
         _resultMessage = 'Opened ${_providerLabel(provider)} consent in your '
-            'browser. Approve the request — Orchestrate will finish the connection.';
+            'browser. Approve the request. Orchestrate will finish the connection.';
         _future = _load();
       });
     } catch (error) {
@@ -155,7 +155,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       setState(() {
         _resultMessage = ready
             ? 'Sending domain verified. Orchestrate can send on your behalf.'
-            : 'Verification did not pass yet. Make sure each record is published and try again — DNS can take time to propagate.';
+            : 'Verification did not pass. DNS can take time to propagate. Publish each record and try again.';
         _future = _load();
       });
     } catch (error) {
@@ -285,7 +285,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
             ClientPanel(
               title: 'Readiness chain',
               subtitle:
-                  'Each layer below depends on the one above. "Waiting" rows are not your action yet — they unblock automatically once the prerequisite clears.',
+                  'Each layer depends on the one above. Waiting rows unblock automatically.',
               children: [
                 for (final step in data.identitySteps)
                   ClientInfoRow(
@@ -562,7 +562,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         description: hasMailbox
             ? 'Connected: ${readText(mailbox, 'address', fallback: readText(mailbox, 'fromEmail'))}.'
             : domainAttached
-                ? 'Choose a sending transport — Google mailbox, Microsoft 365 mailbox, or a custom SMTP provider.'
+                ? 'Choose a sending transport: Google, Microsoft 365, or custom SMTP.'
                 : 'Attach a sending domain first; the transport layer plugs into it.',
       ),
       _IdentityStep(
@@ -981,17 +981,17 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         return const _MailboxHero(
           headline: 'Authorize your sending mailbox',
           subtitle:
-              'Platform transport is available for Orchestrate-owned correspondence, but it cannot send on behalf of your tenant. Managed dispatch requires a client-authorized mailbox — connect Google, Microsoft 365, or SMTP+IMAP to enable outreach.',
+              'Platform transport handles Orchestrate correspondence only. Connect Google, Microsoft 365, or SMTP+IMAP to enable managed dispatch.',
           bannerTitle: 'Client transport authorization required',
           bannerMessage:
-              'Platform bootstrap transport ≠ tenant dispatch authority. Connect your own mailbox below — until then dispatch is held.',
+              'Platform transport cannot send on your behalf. Connect your mailbox to enable dispatch.',
           bannerTone: ClientBannerTone.warning,
         );
       }
       return const _MailboxHero(
         headline: 'Attach sending infrastructure',
         subtitle:
-            'Orchestrate dispatches against your domain identity. Start with the sending domain — SPF and DMARC become publishable immediately. The transport layer (Google, Microsoft 365, SMTP) plugs in beneath.',
+            'Orchestrate dispatches from your domain. Attach the sending domain first; SPF and DMARC are available immediately. The transport layer plugs in beneath.',
         bannerTitle: 'Sending infrastructure is incomplete',
         bannerMessage:
             'Attach a sending domain in the panel below, then choose a transport. Dispatch eligibility is granted once both layers and DNS verification clear.',
@@ -1105,7 +1105,7 @@ class _PersonalMailboxPanel extends StatelessWidget {
     final upgradeHeadline = (upgradePath['headline'] ?? '').toString();
     final upgradeDetail = (upgradePath['detail'] ?? '').toString();
     return ClientPanel(
-      title: 'Sending identity — personal mailbox',
+      title: 'Personal mailbox',
       subtitle:
           'This mailbox is on a provider-owned consumer domain. You do not '
           'control its DNS, so SPF / DKIM / DMARC verification does not '
@@ -1358,7 +1358,7 @@ class _TransportAuthorityPanel extends StatelessWidget {
     return ClientPanel(
       title: 'Transport authority',
       subtitle:
-          'Platform transport exists for Orchestrate-owned correspondence. Client dispatch requires a client-authorized mailbox — they are separate authorities.',
+          'Platform transport handles Orchestrate correspondence only. Client dispatch requires your mailbox.',
       children: [
         ClientInfoRow(
           title: 'Platform transport (Orchestrate-owned)',
@@ -1384,7 +1384,7 @@ class _TransportAuthorityPanel extends StatelessWidget {
           primary: clientTransportAuthorized
               ? 'Eligible. The runtime line on Home reports whether dispatch is in flight right now.'
               : (platformTransportAvailable
-                  ? 'Blocked. Platform transport cannot send on behalf of this tenant — managed dispatch requires client transport authorization.'
+                  ? 'Blocked. Managed dispatch requires a client-authorized mailbox.'
                   : 'Blocked. Neither client transport nor platform transport is currently authoritative.'),
           trailing: ClientBadge(
             label: clientTransportAuthorized ? 'Eligible' : 'Blocked',
@@ -1596,7 +1596,7 @@ class _SendingDomainPanel extends StatelessWidget {
       return ClientPanel(
         title: 'Sending domain',
         subtitle:
-            'The domain Orchestrate dispatches from. Attach it first — SPF and DMARC become publishable immediately. DKIM keys are generated per transport when you connect one.',
+            'The domain Orchestrate dispatches from. SPF and DMARC are available immediately after attaching. DKIM keys are generated when you connect a transport.',
         children: [
           if (inferred.isNotEmpty && sourceLabel != null) ...[
             Text(
@@ -1817,7 +1817,7 @@ class _OperationalIdentityPanel extends StatelessWidget {
         identity.sendingIdentityReady ? 'Verified' : 'Pending';
     final dispatchPrimary = identity.dispatchEligible
         ? 'Dispatch eligibility granted'
-        : 'Dispatch eligibility pending — every layer above must be verified';
+        : 'Dispatch eligibility pending. Each layer above must be verified.';
     final dispatchBadge =
         identity.dispatchEligible ? 'Eligible' : 'Blocked';
 
@@ -1867,7 +1867,7 @@ class _OperationalIdentityPanel extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                '${entry.label}: provider setup pending — not yet operational on this deployment.',
+                '${entry.label}: setup pending. Not yet operational.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -2016,7 +2016,7 @@ class _TransportChoicesPanel extends StatelessWidget {
     return ClientPanel(
       title: 'Sending transport',
       subtitle:
-          'Transport is how Orchestrate physically dispatches messages — interchangeable infrastructure beneath your domain identity. SMTP / custom transports are a first-class path: no operator-side OAuth required, full DKIM signing inside Orchestrate.',
+          'Transport is interchangeable infrastructure beneath your domain identity. Google, Microsoft 365, and SMTP are all first-class paths.',
       children: [
         tile(
           title: 'Google Workspace mailbox',
@@ -2024,7 +2024,7 @@ class _TransportChoicesPanel extends StatelessWidget {
               ? 'OAuth-based connection. Tap "Connect a Google mailbox" in the page header.'
               : google.available
                   ? 'OAuth-based connection. Use the Connect action in the page header.'
-                  : 'Provider setup pending on this deployment — not yet operational. Use SMTP if your sending infrastructure is ready.',
+                  : 'Provider setup pending. Use SMTP if your infrastructure is ready.',
           badge: google?.available == true ? 'Available' : 'Setup pending',
         ),
         tile(
@@ -2033,7 +2033,7 @@ class _TransportChoicesPanel extends StatelessWidget {
               ? 'OAuth-based connection. Tap "Connect a Microsoft 365 mailbox" in the page header.'
               : microsoft.available
                   ? 'OAuth-based connection. Use the Connect action in the page header.'
-                  : 'Provider setup pending on this deployment — not yet operational. Use SMTP if your sending infrastructure is ready.',
+                  : 'Provider setup pending. Use SMTP if your infrastructure is ready.',
           badge: microsoft?.available == true ? 'Available' : 'Setup pending',
         ),
         tile(
@@ -2046,7 +2046,7 @@ class _TransportChoicesPanel extends StatelessWidget {
         if (!hasMailbox) ...[
           const SizedBox(height: 8),
           Text(
-            'No transport is connected yet. Domain attachment + DNS verification are independent of transport selection — both can progress in parallel.',
+            'No transport connected. Domain and DNS setup can happen in parallel with transport selection.',
             style: theme.textTheme.bodySmall,
           ),
         ],

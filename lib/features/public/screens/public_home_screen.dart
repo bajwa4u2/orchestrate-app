@@ -128,7 +128,7 @@ class _Hero extends StatelessWidget {
         );
 
         final headline = Text(
-          'Get qualified B2B opportunities and governed outreach — without hiring or running a revenue operations team.',
+          'Get qualified B2B opportunities and governed outreach without building a revenue operations team.',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                 fontSize: headlineSize,
                 height: 1.12,
@@ -138,7 +138,7 @@ class _Hero extends StatelessWidget {
         final subtitle = ConstrainedBox(
           constraints: BoxConstraints(maxWidth: stacked ? 640 : 560),
           child: Text(
-            'For B2B firms in regulated and reputation-sensitive sectors, outbound is a liability: outsource it and your sending identity gets burned; skip it and the pipeline stays quiet. Orchestrate runs governed outbound for you, under your own verified identity — and refuses the sends that would damage your reputation. Refusal is a first-class outcome, not an error.',
+            'For B2B firms in regulated and reputation-sensitive sectors, outbound is a liability: outsource it and your sending identity gets burned; skip it and the pipeline stays quiet. Orchestrate runs governed outbound under your verified identity. Sends that would damage your reputation are refused. Refusal is a first-class outcome.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -276,7 +276,7 @@ class _HeroPanel extends StatelessWidget {
           _Signal(
             title: 'Signal-driven opportunity detection',
             body:
-                'Orchestrate watches your defined market for commercial signals — not a static contact list — and turns them into qualified, contactable opportunities.',
+                'Orchestrate watches your defined market for commercial signals and turns them into qualified, contactable opportunities. Not a static contact list.',
           ),
           SizedBox(height: 14),
           _Signal(
@@ -331,7 +331,7 @@ class _SystemStrip extends StatelessWidget {
       ),
       _StripItem(
         'Orchestrate executes',
-        'Signal discovery, qualification, governed dispatch, follow-up continuity, and automatic recovery — without manual lifecycle controls.',
+        'Signal discovery, qualification, governed dispatch, follow-up continuity, and automatic recovery. No manual lifecycle controls.',
       ),
       _StripItem(
         'Operational continuity',
@@ -425,7 +425,7 @@ class _JourneySection extends StatelessWidget {
       _JourneyStage(
         '2',
         'Connect your mailbox transport',
-        'Three first-class transports: Google Workspace OAuth, Microsoft 365 OAuth, or custom SMTP + IMAP (SES, Mailgun, SendGrid, regional providers, your own server). Credentials are sealed in an encrypted vault — never your browser, never the database.',
+        'Three first-class transports: Google Workspace OAuth, Microsoft 365 OAuth, or custom SMTP + IMAP (SES, Mailgun, SendGrid, regional providers, your own server). Credentials are sealed in an encrypted vault.',
       ),
       _JourneyStage(
         '3',
@@ -440,7 +440,7 @@ class _JourneySection extends StatelessWidget {
       _JourneyStage(
         '5',
         'Managed execution begins',
-        'Discovery, qualification, dispatch governance, follow-up continuity, recovery, and reply handling run as managed infrastructure. You watch the outcomes — never the buttons.',
+        'Discovery, qualification, dispatch governance, follow-up continuity, recovery, and reply handling run as managed infrastructure. You watch outcomes.',
       ),
     ];
 
@@ -461,7 +461,7 @@ class _JourneySection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Client identity, mailbox, and sending-domain verification on your side — then Orchestrate takes over readiness orchestration and managed execution. The handoff is the product.',
+            'You provide identity, mailbox, and sending-domain verification. Orchestrate takes over readiness orchestration and managed execution. The handoff is the product.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -678,7 +678,7 @@ class _TruthSection extends StatelessWidget {
         final right = _TruthCard(
           title: 'What Orchestrate is not',
           body:
-              'Not a CRM. Not an AI SDR. Not sequence software. Not a dashboard you operate manually. Orchestrate is infrastructure your business activates — not a tool you configure and run.',
+              'Not a CRM. Not an AI SDR. Not sequence software. Not a dashboard you operate manually. Orchestrate is infrastructure your business activates.',
         );
         if (stacked) {
           return Column(
@@ -769,7 +769,7 @@ class _PlansSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Both scopes can begin with a 15-day trial. Stripe sets up the subscription first, the trial runs immediately, and monthly billing begins after the trial. The infrastructure is the same — the difference is how far Orchestrate carries revenue continuity for you.',
+            'Both scopes begin with a 15-day trial. Stripe sets up the subscription first, the trial runs immediately, and monthly billing begins after the trial. The infrastructure is the same across both.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -872,7 +872,7 @@ class _ClosingSection extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Pick your managed-execution scope on the pricing page. If you want to walk through fit first, contact and quick guidance both work — no commitment until your business identity is in place.',
+                'Pick your managed-execution scope on the pricing page. Contact or quick guidance works if you want to walk through fit first.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppTheme.publicMuted,
                     ),
@@ -964,9 +964,9 @@ class _BurdenTransformSection extends StatelessWidget {
           items: const [
             'DNS verification runs continuously, no registrar trips',
             'Encrypted vault, OAuth + custom SMTP/IMAP, no token drift',
-            'Governed dispatch under per-mailbox pacing — no manual cadence',
+            'Governed dispatch under per-mailbox pacing. No manual cadence.',
             'Operation-scoped IMAP reply ingestion, follow-ups auto-cancelled',
-            'Suppression enforced before every send — no bypass path',
+            'Suppression enforced before every send. No bypass path.',
             'AI bounded by attribution, every invocation auditable',
             'Recovery branches re-converge readiness, ownership clear',
             'One readiness authority across Operations / Infrastructure / Home',

@@ -135,7 +135,7 @@ class ClientHomeScreen extends StatelessWidget {
       return _ViewData(
         title: 'Billing and service standing',
         subtitle:
-            'Billing stays separate from your growth operation so account standing remains clear.',
+            'Service standing and account billing.',
         subscription: subscription ?? const {},
         metrics: [
           _Metric(
@@ -166,7 +166,7 @@ class ClientHomeScreen extends StatelessWidget {
           _Row(
               title: 'Representation scope',
               primary:
-                  'How Orchestrate represents your business in the market — identity, ICP, voice, constraints, and authorization.',
+                  'Business identity, ICP, voice, and authorization.',
               secondary:
                   'This scope is how Orchestrate represents you across every outreach.',
               actionLabel: 'Open representation',
@@ -187,7 +187,7 @@ class ClientHomeScreen extends StatelessWidget {
     return _ViewData(
       title: title,
       subtitle:
-          'Your managed growth operation — representation, market reach, and engagement in one place.',
+          'Representation, outreach, and engagement in one place.',
       subscription: subscription ?? const {},
       experience: experience,
       // Precise, DB-backed operating buckets read from
@@ -208,7 +208,7 @@ class ClientHomeScreen extends StatelessWidget {
         _Row(
             title: 'Representation scope',
             primary:
-                'How Orchestrate represents your business in the market — identity, ICP, voice, constraints, and authorization.',
+                'Business identity, ICP, voice, and authorization.',
             secondary:
                 'This scope is how Orchestrate represents you across every outreach.',
             actionLabel: 'Open representation',

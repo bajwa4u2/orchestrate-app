@@ -184,7 +184,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           case 'SATURATED':
             return 'Dispatch queue is at capacity';
           case 'STALLED':
-            return 'Execution slowed — operator review';
+            return 'Execution slowed. Operator review queued.';
           default:
             return 'Managed execution is running';
         }
@@ -195,9 +195,9 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
       case 'ERROR':
         return 'Orchestrate is recovering execution';
       case 'NEEDS_REBUILD':
-        return 'Targeting changed — execution will rebuild';
+        return 'Targeting changed. Execution rebuilding.';
       default:
-        return 'Targeting saved — execution will activate';
+        return 'Targeting saved. Execution activating.';
     }
   }
 
@@ -215,16 +215,16 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
           case 'SATURATED':
             return 'Outbound queue is at governed capacity. New sends resume as in-flight messages clear.';
           case 'STALLED':
-            return 'Throughput slowed below expected. An operator review is queued — no client action.';
+            return 'Throughput slowed. Operator review queued.';
           default:
             return 'Signal discovery, qualification, and governed dispatch are running against your saved targeting.';
         }
       case 'PAUSED':
-        return 'Execution is paused. Orchestrate will resume automatically once recovery completes — your saved targeting is intact.';
+        return 'Execution is paused. Orchestrate will resume automatically.';
       case 'BLOCKED':
         return _campaignBlockedReasonLabel;
       case 'ERROR':
-        return 'Activation did not finish cleanly. Orchestrate is investigating — no client action.';
+        return 'Activation did not finish cleanly. Orchestrate is investigating.';
       case 'NEEDS_REBUILD':
         return 'Targeting changed after activation. Orchestrate will rebuild the execution scope automatically on the next pass.';
       default:
@@ -1496,7 +1496,7 @@ String? _resolveActivationMessage(
       return 'Operational execution is active. Orchestrate is working for you.';
     case 'activation_failed':
       return lastError.isEmpty
-          ? 'Operational issue detected. Orchestrate has flagged this for review — no client action yet.'
+          ? 'Operational issue detected. Flagged for review.'
           : 'Operational issue detected: $lastError';
     default:
       return null;

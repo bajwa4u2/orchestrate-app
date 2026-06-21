@@ -92,7 +92,7 @@ class _OperationalContinuityStripState
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.preparing,
           text:
-              'Readiness gates passed. No claim about runtime activity is made from this signal alone — see the runtime line below.',
+              'Readiness gates passed.',
         ));
         break;
       case 'recovering':
@@ -106,14 +106,14 @@ class _OperationalContinuityStripState
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.recovering,
           text:
-              'Internal dependency being restored — operator attention queued; no client action.',
+              'Internal dependency being restored. Operator attention queued.',
         ));
         break;
       case 'degraded':
         lines.add(const _ContinuityLine(
           kind: _ContinuityKind.recovering,
           text:
-              'Execution is running degraded — operator review queued on the subsystem flagged below.',
+              'Execution is running degraded. Operator review queued.',
         ));
         break;
       case 'client_action_required':
@@ -138,13 +138,13 @@ class _OperationalContinuityStripState
       lines.add(const _ContinuityLine(
         kind: _ContinuityKind.active,
         text:
-            'Sending identity verified at the last DNS check — SPF, DKIM, and DMARC all matched.',
+            'Sending identity verified. SPF, DKIM, and DMARC matched.',
       ));
     } else if (identityStatus == 'PENDING') {
       lines.add(const _ContinuityLine(
         kind: _ContinuityKind.preparing,
         text:
-            'DNS verification in progress — Orchestrate re-checks SPF / DKIM / DMARC on the polling cadence.',
+            'DNS verification in progress. Rechecking SPF, DKIM, and DMARC.',
       ));
     } else if (identityStatus.isNotEmpty) {
       lines.add(_ContinuityLine(
@@ -162,19 +162,19 @@ class _OperationalContinuityStripState
       lines.add(const _ContinuityLine(
         kind: _ContinuityKind.action,
         text:
-            'Mailbox reconnect required — the OAuth credential is no longer valid. Open Infrastructure to reconnect.',
+            'Mailbox reconnect required. Open Infrastructure to reconnect.',
       ));
     } else if (mailboxState == 'AUTHORIZED' || mailboxState == 'BOOTSTRAPPED') {
       lines.add(const _ContinuityLine(
         kind: _ContinuityKind.active,
         text:
-            'Mailbox is connected — the credential is stored in the vault; Orchestrate will surface a reconnect prompt if a refresh ever fails.',
+            'Mailbox connected.',
       ));
     } else if (mailboxState == 'PENDING_AUTH') {
       lines.add(const _ContinuityLine(
         kind: _ContinuityKind.action,
         text:
-            'Mailbox awaiting OAuth — open Infrastructure to grant access to a sending mailbox.',
+            'Mailbox awaiting connection. Open Infrastructure to connect.',
       ));
     }
 
@@ -203,26 +203,26 @@ class _OperationalContinuityStripState
         return const _ContinuityLine(
           kind: _ContinuityKind.action,
           text:
-              'Billing past due — new dispatch is gated. Reply ingestion on engaged threads continues. Open billing to resolve.',
+              'Billing past due. New dispatch is gated. Open billing to resolve.',
         );
       case 'PAUSED':
         return const _ContinuityLine(
           kind: _ContinuityKind.recovering,
           text:
-              'Subscription paused — dispatch is paused; reply ingestion continues; transport stays attached.',
+              'Subscription paused. Dispatch paused. Reply ingestion continues.',
         );
       case 'CANCELED':
       case 'CANCELLED':
         return const _ContinuityLine(
           kind: _ContinuityKind.recovering,
           text:
-              'Subscription canceled — dispatch runs through the end of the paid period; reply ingestion continues until then.',
+              'Subscription canceled. Dispatch continues through the paid period.',
         );
       case 'EXPIRED':
         return const _ContinuityLine(
           kind: _ContinuityKind.action,
           text:
-              'Subscription expired — dispatch has ended. Reply ingestion continues while the mailbox transport remains attached.',
+              'Subscription expired. Dispatch ended.',
         );
       case 'INCOMPLETE':
       case 'INCOMPLETE_EXPIRED':
@@ -230,7 +230,7 @@ class _OperationalContinuityStripState
         return const _ContinuityLine(
           kind: _ContinuityKind.action,
           text:
-              'Activation incomplete at the billing provider — dispatch is gated until initial payment posts.',
+              'Activation incomplete. Dispatch gated until billing confirms.',
         );
       case 'NONE':
         return null;
@@ -245,21 +245,21 @@ class _OperationalContinuityStripState
   String _clientActionLine(String blockerCode) {
     switch (blockerCode) {
       case 'SUBSCRIPTION_BLOCKED':
-        return 'Awaiting subscription — readiness orchestration is gated until billing is current.';
+        return 'Awaiting subscription.';
       case 'BUSINESS_IDENTITY_INCOMPLETE':
-        return 'Awaiting business identity — open Representation to teach Orchestrate offer, ICP, and boundaries.';
+        return 'Awaiting business identity. Open Representation.';
       case 'SENDING_IDENTITY_UNVERIFIED':
-        return 'Awaiting sending-identity verification — Orchestrate is watching DNS for SPF / DKIM / DMARC.';
+        return 'Awaiting sending domain verification.';
       case 'MAILBOX_MISSING':
-        return 'Awaiting mailbox connection — open Infrastructure to connect the sending mailbox.';
+        return 'Awaiting mailbox connection. Open Infrastructure.';
       case 'MAILBOX_DISCONNECTED':
-        return 'Mailbox connection lost — reconnect from Infrastructure to resume dispatch.';
+        return 'Mailbox connection lost. Open Infrastructure to reconnect.';
       case 'MAILBOX_UNVERIFIED':
-        return 'Mailbox not verified for sending — complete verification from Infrastructure.';
+        return 'Mailbox not verified. Complete verification in Infrastructure.';
       case '':
-        return 'Awaiting a client-owned step — see the section below for the named gate.';
+        return 'Awaiting your action. See the gate below.';
       default:
-        return 'Awaiting client action — $blockerCode.';
+        return 'Action required: $blockerCode.';
     }
   }
 }

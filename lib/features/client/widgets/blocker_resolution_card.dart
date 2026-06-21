@@ -181,7 +181,7 @@ BlockerAction resolveBlockerAction(String code) {
         route: null,
         fallbackTitle: 'Outbound provider is being reconfigured',
         fallbackDetail:
-            'Orchestrate is handling this — the provider dependency is internal. Execution resumes automatically.',
+            'Orchestrate is handling this. Execution resumes automatically.',
       );
     case 'SENDING_IDENTITY_UNVERIFIED':
       return const BlockerAction(

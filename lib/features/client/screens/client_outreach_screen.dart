@@ -76,7 +76,7 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
           eyebrow: 'Operations',
           title: 'Momentum and execution',
           subtitle:
-              'What Orchestrate has evaluated, dispatched, and brought back — and what is moving right now.',
+              'Evaluated, dispatched, and returned. Live execution counts.',
           actions: [
             OutlinedButton.icon(
               onPressed: _refresh,
@@ -254,7 +254,7 @@ class _OperationsData {
     if (campaignActive && (sent > 0 || queuedSends > 0)) {
       return _OperationsStatus(
         ClientBannerTone.success,
-        'Active — dispatching',
+        'Active',
         'Your operation is live. $sent sent, $queuedSends queued.',
       );
     }
