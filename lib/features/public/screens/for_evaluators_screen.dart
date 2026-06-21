@@ -105,14 +105,14 @@ class _AccessSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TrustGuaranteePanel(
-      title: 'What Orchestrate accesses — at a glance',
+      title: 'What Orchestrate accesses, at a glance',
       subtitle:
           'Mailbox access is bounded at the read layer, not just by policy.',
       guarantees: [
         'Outbound dispatch via the transport the client connects (OAuth send-only scope, or custom SMTP with the client\'s own credentials).',
         'Inbound mail only when ingestion is wired (custom IMAP today). IMAP fetches headers first; bodies are fetched only for messages that match an outbound operation Orchestrate sent.',
         'Sending domain DNS records (live SPF / DKIM / DMARC lookups, no third-party deliverability vendor).',
-        'Business identity, representation authorization, sending-domain rows, mailbox metadata, dispatched-message records, matched replies, audit logs — all in the platform database.',
+        'Business identity, representation authorization, sending-domain rows, mailbox metadata, dispatched-message records, matched replies, and audit logs, all in the platform database.',
       ],
     );
   }
@@ -141,7 +141,7 @@ class _ArchitectureLayers extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Five operational layers, each with its own ownership and trust boundary. The boundary between them is the product — the client owns identity, the platform owns operation.',
+            'Five operational layers, each with its own ownership and trust boundary. The boundary between them is the product. The client owns identity; the platform owns operation.',
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: AppTheme.publicMuted),
           ),
@@ -167,7 +167,7 @@ class _ArchitectureLayers extends StatelessWidget {
                 ReadinessBoundaryCard(
                   title: '3. Transport',
                   body:
-                      'Google Workspace OAuth, Microsoft 365 OAuth, or custom SMTP + IMAP. Provider-agnostic by construction — domain identity is primary, transport is interchangeable infrastructure beneath it.',
+                      'Google Workspace OAuth, Microsoft 365 OAuth, or custom SMTP + IMAP. Provider-agnostic by construction. Domain identity is primary; transport is interchangeable infrastructure beneath it.',
                   state: TrustState.verified,
                   ownership: OperationalOwnership.client,
                 ),
@@ -297,7 +297,7 @@ class _RuntimeToPolicyMapping extends StatelessWidget {
     ),
     const _Mapping(
       runtime:
-          'Audit rows (SMTP_MAILBOX_CONNECTED, IMAP_INBOUND_ATTACHED, REPLY_INGESTED, FOLLOWUP_SUPPRESSED_BY_REPLY, vault store/read/rotate/revoke) capture metadata only — never credentials, never message bodies.',
+          'Audit rows (SMTP_MAILBOX_CONNECTED, IMAP_INBOUND_ATTACHED, REPLY_INGESTED, FOLLOWUP_SUPPRESSED_BY_REPLY, vault store/read/rotate/revoke) capture metadata only, never credentials, never message bodies.',
       policy: 'Retention and deletion policy',
       path: '/legal/retention',
     ),
@@ -432,7 +432,7 @@ class _GuaranteeStrip extends StatelessWidget {
     return TrustGuaranteePanel(
       title: 'Negative guarantees',
       subtitle:
-          'What the runtime will not do, by construction. These are not policy promises — they are structural properties of the implementation.',
+          'What the runtime will not do, by construction. These are not policy promises. They are structural properties of the implementation.',
       guarantees: [
         'Will not read the body of an inbox message that does not resolve to a known Orchestrate operation.',
         'Will not dispatch to a recipient with a matching SuppressionEntry.',
@@ -440,7 +440,7 @@ class _GuaranteeStrip extends StatelessWidget {
         'Will not claim "ready" while any layer of the readiness chain is unresolved.',
         'Will not feed an AI pipeline with mailbox content that is not operation-attributed.',
         'Will not boot in production with the in-memory vault adapter (refuses to start).',
-        'Will not auto-imply Google/Microsoft inbound monitoring exists — OAuth is send-only on this deployment.',
+        'Will not auto-imply Google/Microsoft inbound monitoring exists. OAuth is send-only on this deployment.',
         'Will not mirror the Sent folder; only Orchestrate-generated outbound is stored.',
       ],
     );

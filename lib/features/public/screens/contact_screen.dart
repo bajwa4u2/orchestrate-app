@@ -150,7 +150,7 @@ class _ContactIntro extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Use this page when you want a direct conversation before activating. Orchestrate is commercial intelligence + execution infrastructure, not outreach software — so the right conversation is usually about scope, sending identity readiness, and which infrastructure scope (Opportunity or revenue continuity) you want Orchestrate to operate.',
+            'Use this page when you want a direct conversation before activating. Orchestrate is commercial intelligence + execution infrastructure, not outreach software. The right conversation is usually about scope, sending identity readiness, and which infrastructure scope (Opportunity or revenue continuity) you want Orchestrate to operate.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -171,7 +171,7 @@ class _ContactIntro extends StatelessWidget {
           const _DetailCard(
             title: 'When quick guidance helps',
             body:
-                'Use quick guidance if you want support to stay open while you compare scopes or review another public page — it is faster than booking a call when the question is short.',
+                'Use quick guidance if you want support to stay open while you compare scopes or review another public page. It is faster than booking a call when the question is short.',
           ),
           const SizedBox(height: 22),
           OutlinedButton(

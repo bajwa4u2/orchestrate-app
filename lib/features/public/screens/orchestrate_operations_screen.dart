@@ -96,7 +96,7 @@ class OrchestrateOperationsScreen extends StatelessWidget {
           label: 'Replies matched',
           ownership: 'orchestrate',
           body:
-              'IMAP ingestion runs operation-scoped. Phase 1 reads headers only; phase 2 matches inbound to this client\'s outbound via In-Reply-To / References / operation-id header; phase 3 fetches bodies ONLY for matched UIDs. Unmatched mail stays in the upstream mailbox — body never read.',
+              'IMAP ingestion runs operation-scoped. Phase 1 reads headers only; phase 2 matches inbound to this client\'s outbound via In-Reply-To / References / operation-id header; phase 3 fetches bodies ONLY for matched UIDs. Unmatched mail stays in the upstream mailbox. Body is never read.',
           bullets: [
             'Header-first, body-on-match-only',
             'Deduplication keyed by upstream message-id',
@@ -119,7 +119,7 @@ class OrchestrateOperationsScreen extends StatelessWidget {
           label: 'Operational continuity maintained',
           ownership: 'orchestrate',
           body:
-              'When something degrades — OAuth revoked, SMTP throttle, DNS regression — the readiness chain names the dependency, ownership, and concrete next action. Recovery branches re-converge readiness without client lifecycle controls.',
+              'When something degrades (OAuth revoked, SMTP throttle, DNS regression), the readiness chain names the dependency, ownership, and concrete next action. Recovery branches re-converge readiness without client lifecycle controls.',
           bullets: [
             'Append-only audit trail across vault, connect, reply, suppression',
             'Recovery is Orchestrate-owned by default',
@@ -174,7 +174,7 @@ class _Hero extends StatelessWidget {
             child: Text(
               'A linear walkthrough of what actually happens after a client '
               'connects identity to the platform. Every layer below maps to '
-              'real runtime behavior — operational truth, not feature copy.',
+              'real runtime behavior, operational truth rather than feature copy.',
               style: theme.textTheme.bodyLarge
                   ?.copyWith(color: AppTheme.publicMuted),
             ),
@@ -277,6 +277,6 @@ class _OperationalGuaranteesSection extends StatelessWidget {
     'No claim of "ready" while any dependency in the chain is unresolved',
     'No credential is exposed in API responses, logs, or browser state',
     'No AI invocation receives mailbox content that is not operation-attributed',
-    'No silent transport failure — every degraded state names its owner + next action',
+    'No silent transport failure. Every degraded state names its owner and next action.',
   ];
 }

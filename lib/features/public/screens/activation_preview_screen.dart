@@ -78,7 +78,7 @@ class _Hero extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760),
             child: Text(
-              'Activation turns four inputs into governed outbound that runs for you — under your own verified identity, with reputation protection and an auditable record, and nothing for you to operate. Below is the chain the platform walks every account through. Ownership is tagged per stage (Client vs Orchestrate); the readiness engine drives each stage forward in dependency order. Stripe checkout sets up the subscription first, the 15-day trial runs first when selected, and this same activation chain begins as soon as checkout completes. When signed in, the workspace renders the same chain with live state — there is no separate activation wizard sitting alongside the runtime.',
+              'Activation turns four inputs into governed outbound that runs for you, under your own verified identity, with reputation protection and an auditable record, and nothing for you to operate. Below is the chain the platform walks every account through. Ownership is tagged per stage (Client vs Orchestrate); the readiness engine drives each stage forward in dependency order. Stripe checkout sets up the subscription first, the 15-day trial runs first when selected, and this same activation chain begins as soon as checkout completes. When signed in, the workspace renders the same chain with live state. There is no separate activation wizard sitting alongside the runtime.',
               style: theme.textTheme.bodyLarge
                   ?.copyWith(color: AppTheme.publicMuted, height: 1.5),
             ),

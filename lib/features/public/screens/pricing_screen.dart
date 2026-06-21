@@ -1194,7 +1194,7 @@ class _OperationalBoundaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Identity belongs to the client. Operation belongs to Orchestrate. The plan picks how far the operational runtime extends — never the boundary itself.',
+            'Identity belongs to the client. Operation belongs to Orchestrate. The plan picks how far the operational runtime extends, never the boundary itself.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),
@@ -1209,7 +1209,7 @@ class _OperationalBoundaryCard extends StatelessWidget {
                 tone: _OwnershipTone.client,
                 items: [
                   'Business identity, market, and offer context',
-                  'Mailbox transport — Google Workspace, Microsoft 365, or custom SMTP + IMAP',
+                  'Mailbox transport: Google Workspace, Microsoft 365, or custom SMTP + IMAP',
                   'Sending domain (publish SPF / DKIM / DMARC at your DNS host)',
                   'Representation authorization',
                   'Commercial responsibility for who you target and what you say',
@@ -1223,7 +1223,7 @@ class _OperationalBoundaryCard extends StatelessWidget {
                   'Live DNS verification of SPF / DKIM / DMARC + automatic re-checks',
                   'Operation-scoped mailbox ingestion (header-first, body-on-match-only)',
                   'Governed dispatch + per-mailbox in-flight cap + DKIM signing',
-                  'Suppression enforcement at every send path — no bypass',
+                  'Suppression enforcement at every send path, no bypass',
                   'Reply attribution + automatic follow-up suppression on response',
                   'Readiness engine, audit trail, recovery, and operational continuity',
                 ],
@@ -1361,7 +1361,7 @@ class _InfrastructureBurdenCard extends StatelessWidget {
     ),
     (
       'Audit + traceability',
-      'Append-only audit trail. Metadata only — never credentials, never message bodies.',
+      'Append-only audit trail. Metadata only, never credentials, never message bodies.',
     ),
   ];
 

@@ -40,8 +40,8 @@ class PublicDiagnosticsScreen extends StatelessWidget {
               const SubstrateDoctrine(
                 text:
                     'Verification has three states, not two. When the substrate '
-                    'hasn\'t evaluated a record yet, the result is UNKNOWN — '
-                    'never coerced into PASS.',
+                    'hasn\'t evaluated a record yet, the result is UNKNOWN '
+                    'and is never coerced into PASS.',
               ),
               const SizedBox(height: 16),
               const SubstrateCitation(
@@ -93,7 +93,7 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'No account required. The check below runs live SPF / DKIM / DMARC lookups against the domain you supply. The same verification logic gates dispatch eligibility on activated accounts — nothing here is mocked or estimated.',
+            'No account required. The check below runs live SPF / DKIM / DMARC lookups against the domain you supply. The same verification logic gates dispatch eligibility on activated accounts. Nothing here is mocked or estimated.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),

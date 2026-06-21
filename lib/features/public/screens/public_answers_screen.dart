@@ -380,7 +380,7 @@ class _PublicAnswersScreenState extends State<PublicAnswersScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Rather than guess, the support system honestly returns "no match" when a question falls outside the curated catalog. If you need an answer, contact us directly — a human will reply.',
+            'Rather than guess, the support system honestly returns "no match" when a question falls outside the curated catalog. If you need an answer, contact us directly. A human will reply.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.publicMuted,
                   height: 1.5,
