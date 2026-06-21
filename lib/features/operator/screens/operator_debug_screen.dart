@@ -710,7 +710,7 @@ class _QueueControls extends StatelessWidget {
               title: _read(job, 'type', 'Failed job'),
               severity: _read(job, 'status', 'FAILED'),
               subtitle:
-                  '${_read(job, 'campaignName', 'Campaign unknown')} - ${_read(job, 'error', 'No error message')}',
+                  '${_read(job, 'campaignName', 'Campaign unknown')}: ${_read(job, 'error', 'No error message')}',
               timestamp: _read(job, 'updatedAt', ''),
               actions: [
                 TextButton.icon(
@@ -866,7 +866,7 @@ class _CampaignRecovery extends StatelessWidget {
           title: _read(campaign, 'name', 'Campaign'),
           severity: status,
           subtitle:
-              '${_statusLabel(status)} - ${_read(operational, 'campaignStatus', _read(campaign, 'channel', ''))}',
+              '${_statusLabel(status)}: ${_read(operational, 'campaignStatus', _read(campaign, 'channel', ''))}',
           timestamp: _firstText(campaign, ['updatedAt', 'createdAt'], ''),
           actions: [
             if (id.isNotEmpty && status != 'ACTIVE')

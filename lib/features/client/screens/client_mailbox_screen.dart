@@ -1108,8 +1108,8 @@ class _PersonalMailboxPanel extends StatelessWidget {
       title: 'Personal mailbox',
       subtitle:
           'This mailbox is on a provider-owned consumer domain. You do not '
-          'control its DNS, so SPF / DKIM / DMARC verification does not '
-          'apply — and is never required here.',
+          'control its DNS, so SPF / DKIM / DMARC verification does not apply '
+          'and is never required here.',
       children: [
         ClientInfoRow(
           title: 'Personal mailbox connected',
@@ -1128,7 +1128,7 @@ class _PersonalMailboxPanel extends StatelessWidget {
           title: 'Limited dispatch eligible',
           primary:
               'Managed execution can dispatch at the limited personal-mailbox '
-              'tier — conservative throughput and pacing.',
+              'tier with conservative throughput and pacing.',
           secondary:
               'Suitable for onboarding, small operators, and early-stage use.',
           trailing: const ClientBadge(label: 'Limited tier'),

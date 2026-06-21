@@ -154,9 +154,11 @@ class ClientErrorView extends StatelessWidget {
 class ClientPage extends StatelessWidget {
   const ClientPage({
     super.key,
-    required this.eyebrow,
-    required this.title,
-    required this.subtitle,
+    // eyebrow / title / subtitle are accepted for call-site compatibility
+    // but are not rendered — the shell header already names the page.
+    this.eyebrow = '',
+    this.title = '',
+    this.subtitle = '',
     required this.children,
     this.actions = const [],
     this.banner,
@@ -176,13 +178,13 @@ class ClientPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (actions.isNotEmpty) ...[
-            Wrap(spacing: 10, runSpacing: 10, children: actions),
-            const SizedBox(height: 14),
-          ],
           if (banner != null) ...[
             banner!,
             const SizedBox(height: 18),
+          ],
+          if (actions.isNotEmpty) ...[
+            Wrap(spacing: 10, runSpacing: 10, children: actions),
+            const SizedBox(height: 14),
           ],
           ...children,
         ],
@@ -256,38 +258,6 @@ class ClientStatusBanner extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-class ClientHero extends StatelessWidget {
-  const ClientHero({
-    super.key,
-    required this.eyebrow,
-    required this.title,
-    required this.subtitle,
-    this.actions = const [],
-  });
-
-  // eyebrow is the section name already shown in the shell header — not rendered.
-  final String eyebrow;
-  final String title;
-  final String subtitle;
-  final List<Widget> actions;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 8),
-        Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
-        if (actions.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Wrap(spacing: 10, runSpacing: 10, children: actions),
-        ],
-      ],
     );
   }
 }

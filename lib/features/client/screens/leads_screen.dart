@@ -57,7 +57,7 @@ class LeadsScreen extends StatelessWidget {
               _Panel(
                 title: 'Opportunities visible to your workspace',
                 emptyLabel:
-                    'Signal discovery is watching for ICP-aligned opportunities. None have reached the client surface yet — refine the representation scope or wait for the next discovery pass.',
+                    'Signal discovery is watching for ICP-aligned opportunities. None have reached the client surface yet. Refine the representation scope or wait for the next discovery pass.',
                 items: data.rows,
               ),
             ],
@@ -292,100 +292,6 @@ class _LeadIntelligence {
       (qualificationDecision?.isNotEmpty ?? false);
 }
 
-class _Hero extends StatelessWidget {
-  const _Hero({required this.summary});
-
-  final _OpportunitySummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final headline = _buildHeadline(summary);
-    final detail = _buildDetail(summary);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Opportunities',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(color: AppTheme.publicMuted),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            headline,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            detail,
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: AppTheme.publicMuted),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _buildHeadline(_OpportunitySummary s) {
-    if (s.total == 0) {
-      return 'Signal discovery is watching — no opportunities surfaced yet';
-    }
-    final parts = <String>[];
-    if (s.underQualification > 0) {
-      parts.add('${s.underQualification} under qualification');
-    }
-    if (s.qualified > 0) parts.add('${s.qualified} qualified');
-    if (s.dispatchReady > 0) parts.add('${s.dispatchReady} dispatch-ready');
-    if (parts.isEmpty) {
-      return '${s.total} opportunit${s.total == 1 ? 'y' : 'ies'} in workspace';
-    }
-    return parts.join(' · ');
-  }
-
-  String _buildDetail(_OpportunitySummary s) {
-    // Doctrine: dispatch-ready DOES NOT mean dispatching. The runtime
-    // line on the home screen is the only thing that can claim
-    // dispatch is in flight. Here we describe the bucket state, then
-    // defer to the runtime line.
-    if (s.dispatchReady == 0 && s.qualified == 0) {
-      if (s.suppressed > 0) {
-        return 'No qualified opportunities right now. ${s.suppressed} suppressed lead${s.suppressed == 1 ? '' : 's'} not in scope. Qualification continues — dispatch waits until a lead is dispatch-ready.';
-      }
-      return 'No qualified opportunities right now. The qualification engine validates business-fit, timing, and contact readiness before any lead becomes dispatch-ready.';
-    }
-    if (s.dispatchReady == 0) {
-      return '${s.qualified} qualified lead${s.qualified == 1 ? '' : 's'} await dispatch-readiness — outreach only proceeds after a lead clears qualification and has a verified contact path.';
-    }
-    if (!s.runtime.campaignActive) {
-      return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'}, but no campaign is currently ACTIVE. Dispatch will not move until a campaign is activated — readiness alone does not start outreach.';
-    }
-    if (s.runtime.governanceBlocked) {
-      return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Governance is currently holding dispatch — see the runtime line on Home for the named gate.';
-    }
-    if (s.runtime.rateLimited) {
-      return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Send policy pacing is currently active — dispatch resumes automatically when the window opens.';
-    }
-    if (!s.runtime.readinessReady) {
-      return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Readiness gates have not passed — dispatch is not yet eligible. Open the home runtime line for the named blocker.';
-    }
-    return '${s.dispatchReady} dispatch-ready lead${s.dispatchReady == 1 ? '' : 's'} in scope. Readiness gates passed and a campaign is active. Whether messages are in flight right now is named on the runtime line on Home.';
-  }
-}
-
 /// Qualification distribution — a single visual of how this client's
 /// opportunities split across the disjoint qualification states. Every
 /// bar is a live count from /client/opportunities/summary; an all-zero
@@ -412,7 +318,7 @@ class _QualificationDistribution extends StatelessWidget {
     return ClientPanel(
       title: 'Qualification distribution',
       subtitle:
-          'Where your opportunities sit across qualification — each a live, disjoint count.',
+          'Where your opportunities sit across qualification, each a live and disjoint count.',
       children: [
         if (chartHasSignal(data))
           ClientBarChart(data: data)

@@ -206,7 +206,7 @@ class _ClientBusinessIdentityScreenState
           eyebrow: 'Representation',
           title: 'How Orchestrate represents your business operationally',
           subtitle:
-              'Five guided sections + authorization. Required vs recommended is named plainly. Partial saves work — readiness orchestration re-checks on each save and activates managed execution once the gates pass.',
+              'Five guided sections + authorization. Required vs recommended is named plainly. Partial saves work. Readiness orchestration re-checks on each save and activates managed execution once the gates pass.',
           banner: ClientStatusBanner(
             tone: requiredComplete
                 ? ClientBannerTone.success

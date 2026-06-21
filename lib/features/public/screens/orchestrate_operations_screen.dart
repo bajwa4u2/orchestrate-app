@@ -54,7 +54,7 @@ class OrchestrateOperationsScreen extends StatelessWidget {
           body:
               'Live DNS lookups verify SPF, DKIM, and DMARC. A polling worker re-checks pending domains automatically and records per-record propagation history.',
           bullets: [
-            'node:dns queries — no third-party deliverability vendor',
+            'node:dns queries, no third-party deliverability vendor',
             'Per-record verification history kept for audit',
             'Trust classification: pending → limited → warmup → full-trust',
           ],
@@ -67,14 +67,14 @@ class OrchestrateOperationsScreen extends StatelessWidget {
           bullets: [
             'OAuth: send-only scope (no inbox read)',
             'Custom SMTP + IMAP: per-transport DKIM, header-first ingestion',
-            'Encrypted vault — no browser exposure, no plaintext DB',
+            'Encrypted vault, no browser exposure, no plaintext DB',
           ],
         ),
         OperationalFlowStage(
           label: 'Readiness governed',
           ownership: 'orchestrate',
           body:
-              'A single backend authority evaluates the eight-layer dependency chain. Every client surface — Operations, Infrastructure, Settings, Home, guidance drawer — reads from this one authority, so readiness never drifts per screen.',
+              'A single backend authority evaluates the eight-layer dependency chain. Every client surface (Operations, Infrastructure, Settings, Home, guidance drawer) reads from this one authority, so readiness never drifts per screen.',
           bullets: [
             'Setup → billing → representation → identity → domain → trust → transport → dispatch',
             'Per-layer state: ready / pending / waiting / blocked',

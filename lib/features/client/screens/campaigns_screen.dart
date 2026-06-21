@@ -615,18 +615,6 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      'Campaign targeting',
-                      style: theme.textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'This is the one place for targeting, geography, and activation control.',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 20),
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,

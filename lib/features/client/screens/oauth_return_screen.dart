@@ -73,7 +73,7 @@ class OAuthReturnScreen extends StatelessWidget {
               ? '$_providerLabel did not connect'
               : 'OAuth result',
       subtitle: _isSuccess
-          ? 'Credentials are sealed in the vault. The transport is now part of the readiness chain — see Infrastructure for the next step.'
+          ? 'Credentials are sealed in the vault. The transport is now part of the readiness chain. See Infrastructure for the next step.'
           : _isError
               ? 'No credentials were stored. The mailbox row is still in its previous state; retry the connect flow whenever you are ready.'
               : 'This page renders the result of a mailbox-OAuth return redirect.',
@@ -141,7 +141,7 @@ class OAuthReturnScreen extends StatelessWidget {
               title: 'Outbound dispatch',
               primary: _isSuccess
                   ? 'Authorized. Orchestrate can dispatch messages on behalf of your business via $_providerLabel.'
-                  : 'Not authorized — the consent flow did not complete.',
+                  : 'Not authorized. The consent flow did not complete.',
               trailing:
                   ClientBadge(label: _isSuccess ? 'Granted' : 'Not granted'),
             ),
@@ -179,7 +179,7 @@ class OAuthReturnScreen extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         Text(
-          'Tokens for $_providerLabel are sealed by the encrypted vault adapter and never appear in API responses, browser state, or logs. Audit log entries record the connect event with metadata only — no credential contents.',
+          'Tokens for $_providerLabel are sealed by the encrypted vault adapter and never appear in API responses, browser state, or logs. Audit log entries record the connect event with metadata only, no credential contents.',
           style:
               theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
         ),

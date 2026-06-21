@@ -789,7 +789,7 @@ class _ReviewQueueCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Dispatches the runtime could not complete. Each row carries the persisted error + governance metadata so retry, convert, or escalate decisions are made against truth — not guesswork.',
+            'Dispatches the runtime could not complete. Each row carries the persisted error and governance metadata so retry, convert, or escalate decisions are made against truth, not guesswork.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.muted,
                   height: 1.45,

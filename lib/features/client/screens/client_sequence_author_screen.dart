@@ -168,7 +168,7 @@ class _StepRow extends StatelessWidget {
                 child: Text(
                   subject.isNotEmpty
                       ? subject
-                      : (templateKey ?? '(no subject — non-email step)'),
+                      : (templateKey ?? '(no subject, non-email step)'),
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppTheme.publicText,

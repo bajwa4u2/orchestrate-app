@@ -595,8 +595,8 @@ class _SetupIntro extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             trial == '15d'
-                ? 'Define your business identity — market, targets, offer context, and representation authorization. Once this is in place, you continue into Stripe to set up the subscription and start the 15-day trial before monthly billing. Orchestrate then handles signal discovery, qualification, and governed execution on top of it.'
-                : 'Define your business identity — market, targets, offer context, and representation authorization. Once this is in place, you continue into Stripe to set up the subscription. Orchestrate then handles signal discovery, qualification, and governed execution on top of it.',
+                ? 'Define your business identity: market, targets, offer context, and representation authorization. Once this is in place, you continue into Stripe to set up the subscription and start the 15-day trial before monthly billing. Orchestrate then handles signal discovery, qualification, and governed execution on top of it.'
+                : 'Define your business identity: market, targets, offer context, and representation authorization. Once this is in place, you continue into Stripe to set up the subscription. Orchestrate then handles signal discovery, qualification, and governed execution on top of it.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge

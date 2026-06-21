@@ -332,31 +332,6 @@ class _Row {
   final String? route;
 }
 
-class _Hero extends StatelessWidget {
-  const _Hero({required this.title, required this.subtitle});
-  final String title;
-  final String subtitle;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppTheme.radius),
-            border: Border.all(color: AppTheme.publicLine)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title,
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          Text(subtitle, style: Theme.of(context).textTheme.bodyLarge)
-        ]));
-  }
-}
-
 class _MetricRow extends StatelessWidget {
   const _MetricRow({required this.metrics});
   final List<_Metric> metrics;

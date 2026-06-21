@@ -550,8 +550,8 @@ class _ReadinessCard extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
             trialRequested
-                ? 'Secure checkout opens next in Stripe to set up the subscription and start your ${trialDays}-day trial. No monthly billing starts today. After the trial ends, Stripe moves the subscription into monthly billing unless you change it there first. Once checkout completes, readiness orchestration begins — Orchestrate then waits on mailbox connection and sending-identity verification before activating execution.'
-                : 'Secure checkout opens next in Stripe to set up monthly billing. Once checkout completes, readiness orchestration begins — Orchestrate then waits on mailbox connection and sending-identity verification before activating execution.',
+                ? 'Secure checkout opens next in Stripe to set up the subscription and start your ${trialDays}-day trial. No monthly billing starts today. After the trial ends, Stripe moves the subscription into monthly billing unless you change it there first. Once checkout completes, readiness orchestration begins. Orchestrate then waits on mailbox connection and sending-identity verification before activating execution.'
+                : 'Secure checkout opens next in Stripe to set up monthly billing. Once checkout completes, readiness orchestration begins. Orchestrate then waits on mailbox connection and sending-identity verification before activating execution.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge

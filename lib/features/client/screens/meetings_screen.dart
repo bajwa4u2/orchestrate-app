@@ -123,7 +123,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                 ClientPanel(
                   title: 'Meeting status',
                   subtitle:
-                      'Where your meetings stand — each a live count from your records.',
+                      'Where your meetings stand, each a live count from your records.',
                   children: [ClientBarChart(data: dist)],
                 ),
                 const SizedBox(height: 18),
@@ -273,7 +273,7 @@ ClientStatusBanner _meetingBanner({
       tone: ClientBannerTone.info,
       title: 'No meetings scheduled yet',
       message:
-          'Meetings appear when a recipient replies and classifies as interested. Calendar integration is not automatic — booking occurs through the client\'s configured booking URL.',
+          'Meetings appear when a recipient replies and classifies as interested. Calendar integration is not automatic. Booking occurs through the configured booking URL.',
     );
   }
   return const ClientStatusBanner(

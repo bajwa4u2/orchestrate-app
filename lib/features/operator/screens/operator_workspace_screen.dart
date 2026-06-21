@@ -197,10 +197,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           secondaryKeys: const ['source', 'createdAt'],
         );
         return _OperatorData(
-          eyebrow: 'Command',
-          title: 'Command board for priority, health, and recovery',
-          subtitle:
-              'See what needs attention first, confirm operating health, and dispatch supported recovery actions.',
           runtimeMetrics: runtimeMetrics,
           metrics: [
             _Metric('Sent today', _read(today, 'sent', fallback: '0')),
@@ -245,10 +241,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final leads = await repo.fetchLeads();
         final campaigns = await repo.fetchCampaigns();
         return _OperatorData(
-          eyebrow: 'Flow',
-          title: 'Lead intake and campaign supply',
-          subtitle:
-              'Shows lead supply, campaign intake, and where work is pointed before outreach runs.',
           metrics: [
             _Metric('Leads', '${leads.length}'),
             _Metric('Campaigns', '${campaigns.length}'),
@@ -285,10 +277,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final inquiries = await repo.fetchInquiries(limit: 12);
         final items = (inquiries['items'] as List? ?? const []).cast<dynamic>();
         return _OperatorData(
-          eyebrow: 'Conversations',
-          title: 'Inbound contact and handling queue',
-          subtitle:
-              'New contact should remain visible as active operator work, not as a detached inbox.',
           metrics: [
             _Metric('Open', _countByStatus(items, 'open')),
             _Metric('In progress', _countByStatus(items, 'in_progress')),
@@ -326,10 +314,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final replies = await repo.fetchReplies();
         final meetings = await repo.fetchMeetings();
         return _OperatorData(
-          eyebrow: 'Conversations',
-          title: 'Replies and handoff pressure',
-          subtitle:
-              'Reply work belongs close to handoff readiness so operator can judge when conversation becomes meeting work.',
           metrics: [
             _Metric('Replies', '${replies.length}'),
             _Metric('Meetings', '${meetings.length}'),
@@ -366,10 +350,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final meetings = await repo.fetchMeetings();
         final clients = await repo.fetchClients();
         return _OperatorData(
-          eyebrow: 'Conversations',
-          title: 'Meetings and client readiness',
-          subtitle:
-              'Booked calls should stay tied to who is arriving and what standing they have in the system.',
           metrics: [
             _Metric('Meetings', '${meetings.length}'),
             _Metric('Clients', '${clients.length}'),
@@ -407,10 +387,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final invoices = await repo.fetchInvoices();
         final subscriptions = await repo.fetchSubscriptions();
         return _OperatorData(
-          eyebrow: 'System',
-          title: 'Revenue continuity and subscription standing',
-          subtitle:
-              'Money movement should remain visible from the same operator environment without becoming a detached admin area.',
           metrics: [
             _Metric('Invoices', '${invoices.length}'),
             _Metric('Subscriptions', '${subscriptions.length}'),
@@ -456,10 +432,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         }).length;
         final degradedMailboxes = mailboxes.length - healthyMailboxes;
         return _OperatorData(
-          eyebrow: 'System',
-          title: 'Mailboxes and sending posture',
-          subtitle:
-              'Healthy mailbox posture protects the rest of the operator chain. This area should stay close to execution reality.',
           metrics: [
             _Metric('Mailboxes', '${mailboxes.length}'),
             _Metric('Healthy', '$healthyMailboxes'),
@@ -501,10 +473,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final inquiryItems =
             (inquiries['items'] as List? ?? const []).cast<dynamic>();
         return _OperatorData(
-          eyebrow: 'Conversations',
-          title: 'Outbound and inbound communication record',
-          subtitle:
-              'Dispatch history and inbound intake should stay visible together so communication does not split into separate worlds.',
           metrics: [
             _Metric('Dispatches', '${emails.length}'),
             _Metric('Inquiries', '${inquiryItems.length}'),
@@ -542,10 +510,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final agreements = await repo.fetchAgreements();
         final statements = await repo.fetchStatements();
         return _OperatorData(
-          eyebrow: 'System',
-          title: 'Agreements, statements, and formal records',
-          subtitle:
-              'Formal records should stay inside the operator environment, not become detached back-office files.',
           metrics: [
             _Metric('Agreements', '${agreements.length}'),
             _Metric('Statements', '${statements.length}'),
@@ -589,10 +553,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final summary = _asMap(activity['summary']);
         final byKind = _asMap(summary['byKind']);
         return _OperatorData(
-          eyebrow: 'Records',
-          title: 'Audit stream and operator-visible activity',
-          subtitle:
-              'Recent durable activity events ordered by system time, with client and campaign context when available.',
           metrics: [
             _Metric('Visible events', '${items.length}'),
             _Metric('Messages', _read(byKind, 'MESSAGE_SENT', fallback: '0')),
@@ -629,10 +589,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
         final summary = _asMap(execution['summary']);
         final byStatus = _asMap(summary['byStatus']);
         return _OperatorData(
-          eyebrow: 'Execution',
-          title: 'Jobs, queues, and worker pressure',
-          subtitle:
-              'Queue pressure and recent execution are read from durable job records so failed or stuck work remains visible.',
           metrics: [
             _Metric('Queued', _read(byStatus, 'QUEUED', fallback: '0')),
             _Metric('Running', _read(byStatus, 'RUNNING', fallback: '0')),
@@ -681,10 +637,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           return status == 'FAILED' || status == 'BOUNCED';
         }).length;
         return _OperatorData(
-          eyebrow: 'Analytics',
-          title: 'Revenue operations movement',
-          subtitle:
-              'Aggregate conversion and movement indicators from campaigns, dispatches, replies, meetings, and revenue records.',
           metrics: [
             _Metric('Campaigns', '${campaigns.length}'),
             _Metric('Sent', '$sent'),
@@ -723,10 +675,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
       case OperatorSection.settings:
         final auth = await repo.fetchAuthContext();
         return _OperatorData(
-          eyebrow: 'System',
-          title: 'Workspace context and access',
-          subtitle:
-              'Operator access stays visible here without pretending this area is a product feature of its own.',
           metrics: [
             _Metric('Workspace', _read(auth, 'surface', fallback: 'operator'))
           ],
@@ -750,41 +698,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           secondaryEmpty: 'No notes are available.',
         );
     }
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.data});
-
-  final _OperatorData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            data.eyebrow,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(color: AppTheme.subdued),
-          ),
-          const SizedBox(height: 8),
-          Text(data.title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
-          Text(data.subtitle, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
   }
 }
 
@@ -958,7 +871,7 @@ class _RuntimeMetricsPanel extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
-            'Per-client execution state across the org. "Ready" is not "dispatching" — categories below come from the same runtime model the client home uses.',
+            'Per-client execution state across the org. "Ready" is not "dispatching". Categories below come from the same runtime model the client home uses.',
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -1289,9 +1202,6 @@ class _RowTile extends StatelessWidget {
 
 class _OperatorData {
   const _OperatorData({
-    required this.eyebrow,
-    required this.title,
-    required this.subtitle,
     required this.metrics,
     required this.primaryTitle,
     required this.primaryRows,
@@ -1302,9 +1212,6 @@ class _OperatorData {
     this.runtimeMetrics,
   });
 
-  final String eyebrow;
-  final String title;
-  final String subtitle;
   final List<_Metric> metrics;
   final String primaryTitle;
   final List<_Row> primaryRows;

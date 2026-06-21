@@ -117,7 +117,7 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
                 ClientPanel(
                   title: 'Reply classification',
                   subtitle:
-                      'How your inbound replies break down — each a live count from classified replies.',
+                      'How your inbound replies break down, each a live count from classified replies.',
                   children: [ClientBarChart(data: dist)],
                 ),
                 const SizedBox(height: 18),

@@ -46,7 +46,7 @@ class ClientActivityScreen extends StatelessWidget {
                   final left = _Panel(
                     title: 'Reply movement',
                     emptyLabel:
-                        'No replies yet. Once managed execution is running, replies surface here automatically — Orchestrate keeps the inbound pipeline polling on your behalf.',
+                        'No replies yet. Once managed execution is running, replies surface here automatically. Orchestrate keeps the inbound pipeline polling on your behalf.',
                     items: data.replyRows,
                   );
                   final right = _Panel(
