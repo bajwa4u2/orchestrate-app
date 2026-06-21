@@ -367,6 +367,10 @@ class _ClientShellState extends State<ClientShell> {
                   plan: _subscriptionLabel(session),
                   billing: _billingLabel(session),
                   horizontalPadding: 16,
+                  // On mobile the AppBar already shows the page title.
+                  // Suppressing the title block here removes ~88 px of
+                  // duplicated chrome so content starts sooner.
+                  hideTitleBlock: true,
                   child: content,
                 )
               : Row(
@@ -496,6 +500,7 @@ class _ContentArea extends StatelessWidget {
     required this.billing,
     required this.child,
     required this.horizontalPadding,
+    this.hideTitleBlock = false,
   });
 
   final AuthSessionController session;
@@ -505,6 +510,7 @@ class _ContentArea extends StatelessWidget {
   final String billing;
   final Widget child;
   final double horizontalPadding;
+  final bool hideTitleBlock;
 
   @override
   Widget build(BuildContext context) {
@@ -571,6 +577,13 @@ class _ContentArea extends StatelessWidget {
                           _Pill(label: 'Billing', value: billing),
                         ],
                       );
+                      // Mobile: the AppBar already shows the page title and
+                      // the title+stateLine block would duplicate it. Show
+                      // only the utility pills so account status stays
+                      // visible without the redundant header text.
+                      if (hideTitleBlock) {
+                        return utility;
+                      }
                       if (compact) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

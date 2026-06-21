@@ -49,31 +49,43 @@ class PublicHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 28, 28, 44),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Hero(onSupportTap: () => _openPublicSupportDrawer(context)),
-          const SizedBox(height: 24),
-          const _SystemStrip(),
-          const SizedBox(height: 24),
-          const _BurdenTransformSection(),
-          const SizedBox(height: 24),
-          const PublicOverviewWidget(),
-          const SizedBox(height: 24),
-          const _CapabilitySection(),
-          const SizedBox(height: 24),
-          const _JourneySection(),
-          const SizedBox(height: 24),
-          const _TruthSection(),
-          const SizedBox(height: 24),
-          const _PlansSection(),
-          const SizedBox(height: 24),
-          _ClosingSection(
-              onSupportTap: () => _openPublicSupportDrawer(context)),
-        ],
-      ),
+    // The PublicShell already provides 28px horizontal gutters. This screen
+    // adds only vertical spacing. On narrow viewports the vertical gaps also
+    // tighten so the page does not become an excessive scroll tower.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 640;
+        final gap = compact ? 16.0 : 24.0;
+        return Padding(
+          padding: EdgeInsets.only(
+            top: compact ? 16 : 28,
+            bottom: compact ? 28 : 44,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Hero(onSupportTap: () => _openPublicSupportDrawer(context)),
+              SizedBox(height: gap),
+              const _SystemStrip(),
+              SizedBox(height: gap),
+              const _BurdenTransformSection(),
+              SizedBox(height: gap),
+              const PublicOverviewWidget(),
+              SizedBox(height: gap),
+              const _CapabilitySection(),
+              SizedBox(height: gap),
+              const _JourneySection(),
+              SizedBox(height: gap),
+              const _TruthSection(),
+              SizedBox(height: gap),
+              const _PlansSection(),
+              SizedBox(height: gap),
+              _ClosingSection(
+                  onSupportTap: () => _openPublicSupportDrawer(context)),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -85,133 +97,135 @@ class _Hero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(34, 34, 34, 36),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          // Below this the hero stacks (narrow window / tablet / mobile).
-          final stacked = width < 980;
-          // Responsive headline cap. The headline is a long sentence, so
-          // an uncapped large size turned it into a vertically excessive
-          // tower of single words at maximized desktop width. Desktop is
-          // held at 42 (down from 52) AND the headline spans the hero
-          // instead of being trapped in a narrow flex column; stacked
-          // widths keep the prior 38 so mobile/tablet are unchanged.
-          final double headlineSize = stacked ? 38 : 42;
+    // Single outer LayoutBuilder so container padding, headline size, and
+    // layout all respond to the same width signal. The inner content width
+    // (used to trigger stacked vs desktop layout) is derived from the outer
+    // width minus the dynamic padding, so the switch point stays consistent.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final outerWidth = constraints.maxWidth;
+        final phone = outerWidth < 480;
+        final stacked = outerWidth < 980;
+        // Phone: compact headline so the first screen-worth is readable.
+        // Tablet/stacked: 34 balances density vs presence.
+        // Desktop: 42 with the full-width headline treatment.
+        final double headlineSize = phone ? 26 : stacked ? 34 : 42;
+        final double pad = phone ? 18 : stacked ? 24 : 34;
 
-          final badge = Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.publicAccentSoft,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              'Governed Revenue Automation',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(color: AppTheme.publicAccent),
-            ),
-          );
+        final badge = Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.publicAccentSoft,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            'Governed Revenue Automation',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: AppTheme.publicAccent),
+          ),
+        );
 
-          final headline = Text(
-            'Get qualified B2B opportunities and governed outreach — without hiring or running a revenue operations team.',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontSize: headlineSize,
-                  height: 1.12,
-                ),
-          );
-
-          final subtitle = ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: stacked ? 640 : 560),
-            child: Text(
-              'For B2B firms in regulated and reputation-sensitive sectors, outbound is a liability: outsource it and your sending identity gets burned; skip it and the pipeline stays quiet. Orchestrate runs governed outbound for you, under your own verified identity — and refuses the sends that would damage your reputation. Refusal is a first-class outcome, not an error.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
-            ),
-          );
-
-          final actions = Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              FilledButton(
-                onPressed: () => context.go('/pricing?trial=15d'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.publicText,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radius),
-                  ),
-                ),
-                child: const Text('Start 15-Day Trial'),
+        final headline = Text(
+          'Get qualified B2B opportunities and governed outreach — without hiring or running a revenue operations team.',
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                fontSize: headlineSize,
+                height: 1.12,
               ),
-              OutlinedButton(
-                onPressed: () => context.go('/diagnostics'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.publicText,
-                  side: const BorderSide(color: AppTheme.publicLine),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radius),
-                  ),
+        );
+
+        final subtitle = ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: stacked ? 640 : 560),
+          child: Text(
+            'For B2B firms in regulated and reputation-sensitive sectors, outbound is a liability: outsource it and your sending identity gets burned; skip it and the pipeline stays quiet. Orchestrate runs governed outbound for you, under your own verified identity — and refuses the sends that would damage your reputation. Refusal is a first-class outcome, not an error.',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.publicMuted,
                 ),
-                child: const Text('Run the Free Diagnostic'),
-              ),
-              TextButton(
-                onPressed: onSupportTap,
-                child: const Text('Talk to Orchestrate'),
-              ),
-            ],
-          );
+          ),
+        );
 
-          const right = _HeroPanel();
+        final actions = Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            FilledButton(
+              onPressed: () => context.go('/pricing?trial=15d'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.publicText,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                ),
+              ),
+              child: const Text('Start 15-Day Trial'),
+            ),
+            OutlinedButton(
+              onPressed: () => context.go('/diagnostics'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.publicText,
+                side: const BorderSide(color: AppTheme.publicLine),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                ),
+              ),
+              child: const Text('Run the Free Diagnostic'),
+            ),
+            TextButton(
+              onPressed: onSupportTap,
+              child: const Text('Talk to Orchestrate'),
+            ),
+          ],
+        );
 
-          if (stacked) {
-            // Mobile / tablet: unchanged stacked composition.
-            return Column(
+        const right = _HeroPanel();
+
+        final containerDecoration = BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppTheme.radius),
+          border: Border.all(color: AppTheme.publicLine),
+        );
+
+        if (stacked) {
+          return Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(pad, pad, pad, pad + 2),
+            decoration: containerDecoration,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    badge,
-                    const SizedBox(height: 18),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 640),
-                      child: headline,
-                    ),
-                    const SizedBox(height: 16),
-                    subtitle,
-                    const SizedBox(height: 24),
-                    actions,
-                  ],
+                badge,
+                SizedBox(height: phone ? 14 : 18),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 640),
+                  child: headline,
                 ),
-                const SizedBox(height: 18),
+                SizedBox(height: phone ? 12 : 16),
+                subtitle,
+                SizedBox(height: phone ? 18 : 24),
+                actions,
+                SizedBox(height: phone ? 14 : 18),
                 right,
               ],
-            );
-          }
+            ),
+          );
+        }
 
-          // Desktop: the headline spans the full hero width so it stays a
-          // few balanced lines instead of a narrow tower of single words.
-          // Supporting copy + actions sit in a stable two-column grid
-          // beside the signal panel underneath.
-          return Column(
+        // Desktop: headline spans the full hero width, then supporting copy
+        // and actions sit in a two-column grid beside the signal panel.
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(pad, pad, pad, pad + 2),
+          decoration: containerDecoration,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               badge,
@@ -237,9 +251,9 @@ class _Hero extends StatelessWidget {
                 ],
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -329,12 +343,27 @@ class _SystemStrip extends StatelessWidget {
       builder: (context, constraints) {
         final stacked = constraints.maxWidth < 980;
         if (stacked) {
+          // 2×2 grid halves the vertical height versus a single full-width
+          // column of four cards, which is too tall on mobile.
           return Column(
             children: [
-              for (int i = 0; i < items.length; i++) ...[
-                _StripCard(item: items[i]),
-                if (i != items.length - 1) const SizedBox(height: 12),
-              ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _StripCard(item: items[0])),
+                  const SizedBox(width: 12),
+                  Expanded(child: _StripCard(item: items[1])),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _StripCard(item: items[2])),
+                  const SizedBox(width: 12),
+                  Expanded(child: _StripCard(item: items[3])),
+                ],
+              ),
             ],
           );
         }
@@ -442,14 +471,24 @@ class _JourneySection extends StatelessWidget {
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 820;
               if (stacked) {
-                return Column(
-                  children: [
-                    for (int i = 0; i < stages.length; i++) ...[
-                      _JourneyCard(stage: stages[i]),
-                      if (i != stages.length - 1) const SizedBox(height: 12),
+                // 2-column arrangement on narrow screens: 5 cards become
+                // 3 rows (2+2+1) instead of a 5-card single column.
+                final rows = <Widget>[];
+                for (int i = 0; i < stages.length; i += 2) {
+                  if (i > 0) rows.add(const SizedBox(height: 12));
+                  rows.add(Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _JourneyCard(stage: stages[i])),
+                      if (i + 1 < stages.length) ...[
+                        const SizedBox(width: 12),
+                        Expanded(child: _JourneyCard(stage: stages[i + 1])),
+                      ] else
+                        const Expanded(child: SizedBox()),
                     ],
-                  ],
-                );
+                  ));
+                }
+                return Column(children: rows);
               }
               return Row(
                 children: [
@@ -529,11 +568,9 @@ class _CapabilitySection extends StatelessWidget {
           const SizedBox(height: 20),
           LayoutBuilder(
             builder: (context, constraints) {
-              final columns = constraints.maxWidth >= 980
-                  ? 4
-                  : constraints.maxWidth >= 640
-                      ? 2
-                      : 1;
+              // Minimum 2 columns at all widths so 6 cards never stack
+              // into a single tall column on mobile.
+              final columns = constraints.maxWidth >= 980 ? 4 : 2;
               final width =
                   (constraints.maxWidth - ((columns - 1) * 12)) / columns;
               return Wrap(

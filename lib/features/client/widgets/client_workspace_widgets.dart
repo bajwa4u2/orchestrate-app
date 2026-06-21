@@ -272,6 +272,7 @@ class ClientHero extends StatelessWidget {
     this.actions = const [],
   });
 
+  // eyebrow is the section name already shown in the shell header — not rendered.
   final String eyebrow;
   final String title;
   final String subtitle;
@@ -279,28 +280,17 @@ class ClientHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: _panelDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(eyebrow,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(color: AppTheme.publicMuted)),
-          const SizedBox(height: 8),
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
-          Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
-          if (actions.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            Wrap(spacing: 10, runSpacing: 10, children: actions),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 8),
+        Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
+        if (actions.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Wrap(spacing: 10, runSpacing: 10, children: actions),
         ],
-      ),
+      ],
     );
   }
 }
