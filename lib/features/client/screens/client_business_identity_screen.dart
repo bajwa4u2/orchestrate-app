@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_business_identity_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
@@ -722,7 +722,7 @@ class _RepresentationAuthPanelState extends State<_RepresentationAuthPanel> {
     return ClientPanel(
       title: 'Representation authorization',
       subtitle:
-          ‘Authorization for Orchestrate to send outbound on your behalf.’,
+          'Authorization for Orchestrate to send outbound on your behalf.',
       children: [
         ClientInfoRow(
           title: 'Status',
