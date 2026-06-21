@@ -176,13 +176,10 @@ class ClientPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClientHero(
-            eyebrow: eyebrow,
-            title: title,
-            subtitle: subtitle,
-            actions: actions,
-          ),
-          const SizedBox(height: 18),
+          if (actions.isNotEmpty) ...[
+            Wrap(spacing: 10, runSpacing: 10, children: actions),
+            const SizedBox(height: 14),
+          ],
           if (banner != null) ...[
             banner!,
             const SizedBox(height: 18),

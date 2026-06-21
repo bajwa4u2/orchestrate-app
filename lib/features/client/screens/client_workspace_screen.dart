@@ -63,8 +63,6 @@ class ClientHomeScreen extends StatelessWidget {
                     signals: experience.confidenceSignals),
                 const SizedBox(height: 18),
               ] else ...[
-                _Hero(title: data.title, subtitle: data.subtitle),
-                const SizedBox(height: 18),
                 _MetricRow(metrics: data.metrics),
                 const SizedBox(height: 18),
               ],

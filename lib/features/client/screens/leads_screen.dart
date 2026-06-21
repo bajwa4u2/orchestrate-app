@@ -32,8 +32,6 @@ class LeadsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Hero(summary: data.summary),
-              const SizedBox(height: 18),
               _SummaryGrid(summary: data.summary),
               const SizedBox(height: 18),
               _QualificationDistribution(summary: data.summary),

@@ -108,8 +108,6 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Header(data: data),
-              const SizedBox(height: 18),
               if (data.runtimeMetrics != null) ...[
                 _RuntimeMetricsPanel(metrics: data.runtimeMetrics!),
                 const SizedBox(height: 18),
