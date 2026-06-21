@@ -530,10 +530,8 @@ class _ContentArea extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
                       maxWidth: _ClientShellState._maxContentWidth),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final compact =
-                          constraints.maxWidth < WorkspaceBreakpoints.stacked;
+                  child: Builder(
+                    builder: (context) {
                       final titleBlock = Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -557,16 +555,6 @@ class _ContentArea extends StatelessWidget {
                         runSpacing: 10,
                         children: [
                           _Pill(
-                            // Rename: the header pill refers to
-                            // ACCOUNT onboarding (representation
-                            // auth + plan + business identity),
-                            // NOT to infrastructure readiness.
-                            // Calling it "Setup complete" while
-                            // the Infrastructure page banner says
-                            // "Sending infrastructure incomplete"
-                            // produced the contradiction the user
-                            // reported. Disambiguating the label
-                            // is the fix.
                             label: 'Account',
                             value: session.hasSetupCompleted
                                 ? 'Onboarded'
@@ -576,24 +564,16 @@ class _ContentArea extends StatelessWidget {
                           _Pill(label: 'Billing', value: billing),
                         ],
                       );
-                      // Mobile: the AppBar already shows the page title and
-                      // the title+stateLine block would duplicate it. Show
-                      // only the utility pills so account status stays
-                      // visible without the redundant header text.
+                      // Mobile: the AppBar already shows the page title.
+                      // Show only the utility pills.
                       if (hideTitleBlock) {
                         return utility;
                       }
-                      if (compact) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            titleBlock,
-                            const SizedBox(height: 14),
-                            utility,
-                          ],
-                        );
-                      }
+                      // Always use a Row on desktop — titleBlock is Expanded
+                      // and utility is a Wrap, both handle narrow widths
+                      // without forcing a column stack.
                       return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(child: titleBlock),
                           const SizedBox(width: 20),
