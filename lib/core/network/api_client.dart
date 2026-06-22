@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../auth/auth_session.dart';
 import '../config/app_config.dart';
@@ -47,6 +48,29 @@ class ApiClient {
     return _decode(response);
   }
 
+  Future<dynamic> postMultipart(
+    String path, {
+    required List<int> fileBytes,
+    required String filename,
+    required String fieldName,
+    String contentType = 'text/csv',
+    ApiSurface surface = ApiSurface.public,
+  }) async {
+    final uri = _uri(path);
+    final authHeaders = await _headersNoContentType(surface);
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll(authHeaders)
+      ..files.add(http.MultipartFile.fromBytes(
+        fieldName,
+        fileBytes,
+        filename: filename,
+        contentType: MediaType.parse(contentType),
+      ));
+    final streamed = await request.send().timeout(AppConfig.apiTimeout);
+    final response = await http.Response.fromStream(streamed);
+    return _decode(response);
+  }
+
   Future<dynamic> patchJson(
     String path, {
     required Map<String, dynamic> body,
@@ -74,18 +98,15 @@ class ApiClient {
   }
 
   Future<Map<String, String>> _headers(ApiSurface surface) async {
+    final base = await _headersNoContentType(surface);
+    return {...base, 'Content-Type': 'application/json'};
+  }
+
+  Future<Map<String, String>> _headersNoContentType(ApiSurface surface) async {
     final session = AuthSessionController.instance;
-
-    final headers = <String, String>{
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    };
-
+    final headers = <String, String>{'Accept': 'application/json'};
     final token = session.token.trim();
-    if (token.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
-    }
-
+    if (token.isNotEmpty) headers['Authorization'] = 'Bearer $token';
     return headers;
   }
 

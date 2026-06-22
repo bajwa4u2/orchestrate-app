@@ -500,14 +500,14 @@ class _ClientRelationshipsScreenState
   }
 
   Future<void> _importCsv() async {
-    final result = await showDialog<Map<String, String>?>(
+    final result = await showDialog<_CsvFileSelection?>(
       context: context,
       builder: (ctx) => const _CsvImportDialog(),
     );
     if (result == null || !mounted) return;
     setState(() => _isImportingCsv = true);
     try {
-      final res = await _repo.importCsv(result['content']!);
+      final res = await _repo.importCsv(result.bytes, result.filename);
       if (!mounted) return;
       final imported = res['imported'] as int? ?? 0;
       final updated = res['updated'] as int? ?? 0;
@@ -1374,6 +1374,19 @@ class _RemoveGenericSourceDialogState
   }
 }
 
+// ─── CSV file selection result ────────────────────────────────────────────────
+
+class _CsvFileSelection {
+  const _CsvFileSelection({
+    required this.bytes,
+    required this.filename,
+    required this.rowCount,
+  });
+  final List<int> bytes;
+  final String filename;
+  final int rowCount;
+}
+
 // ─── CSV import dialog ────────────────────────────────────────────────────────
 
 class _CsvImportDialog extends StatefulWidget {
@@ -1385,7 +1398,7 @@ class _CsvImportDialog extends StatefulWidget {
 
 class _CsvImportDialogState extends State<_CsvImportDialog> {
   String? _fileName;
-  String? _fileContent;
+  List<int>? _fileBytes;
   String? _validationError;
   int _rowCount = 0;
 
@@ -1397,19 +1410,24 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
       final file = input.files?.first;
       if (file == null) return;
       final reader = html.FileReader();
-      reader.readAsText(file);
+      reader.readAsArrayBuffer(file);
       reader.onLoad.listen((_) {
-        final content = reader.result as String? ?? '';
+        final result = reader.result;
+        if (result == null) return;
+        // dart:html FileReader.readAsArrayBuffer returns a ByteBuffer
+        // ignore: avoid_dynamic_calls
+        final bytes = (result as dynamic).asUint8List() as List<int>;
+        final content = String.fromCharCodes(bytes);
         final lines = content
             .split(RegExp(r'\r?\n'))
             .where((l) => l.trim().isNotEmpty)
             .toList();
         final header = lines.isNotEmpty ? lines.first.toLowerCase() : '';
-        final hasEmail = header.split(',').any((col) =>
-            col.trim().replaceAll('"', '') == 'email');
+        final hasEmail = header.split(',').any(
+            (col) => col.trim().replaceAll('"', '') == 'email');
         setState(() {
           _fileName = file.name;
-          _fileContent = content;
+          _fileBytes = bytes;
           _rowCount = lines.length > 1 ? lines.length - 1 : 0;
           _validationError = hasEmail
               ? null
@@ -1422,10 +1440,10 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final canImport = _fileContent != null && _validationError == null && _rowCount > 0;
+    final canImport = _fileBytes != null && _validationError == null && _rowCount > 0;
 
     return AlertDialog(
-      title: const Text('Import CSV'),
+      title: const Text('Upload CSV'),
       content: SizedBox(
         width: 440,
         child: Column(
@@ -1433,7 +1451,7 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Choose a CSV file. Required header column: email. '
+              'Choose a CSV file from your device. Required header column: email. '
               'Optional columns: name, organization.',
               style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
             ),
@@ -1495,7 +1513,14 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
         ),
         FilledButton(
           onPressed: canImport
-              ? () => Navigator.pop(context, {'content': _fileContent!})
+              ? () => Navigator.pop(
+                    context,
+                    _CsvFileSelection(
+                      bytes: _fileBytes!,
+                      filename: _fileName!,
+                      rowCount: _rowCount,
+                    ),
+                  )
               : null,
           child: const Text('Import'),
         ),

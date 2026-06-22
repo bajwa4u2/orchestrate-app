@@ -133,24 +133,18 @@ class ClientRelationshipRepository {
     return _asMap(json);
   }
 
-  /// Import relationships from CSV content.
-  /// Returns { imported, updated, skipped } counts.
+  /// Upload a CSV file and import relationships from it.
+  /// Sends multipart/form-data. Returns { imported, updated, skipped, assetFileId }.
   Future<Map<String, dynamic>> importCsv(
-    String content, {
-    String? emailColumn,
-    String? nameColumn,
-    String? organizationColumn,
-  }) async {
-    final columns = <String, dynamic>{};
-    if (emailColumn != null) columns['email'] = emailColumn;
-    if (nameColumn != null) columns['name'] = nameColumn;
-    if (organizationColumn != null) columns['organization'] = organizationColumn;
-    final json = await _apiClient.postJson(
+    List<int> fileBytes,
+    String filename,
+  ) async {
+    final json = await _apiClient.postMultipart(
       '/client/intelligence/relationships/sources/csv',
-      body: <String, dynamic>{
-        'content': content,
-        if (columns.isNotEmpty) 'columns': columns,
-      },
+      fileBytes: fileBytes,
+      filename: filename,
+      fieldName: 'file',
+      contentType: 'text/csv',
       surface: ApiSurface.client,
     );
     return _asMap(json);
