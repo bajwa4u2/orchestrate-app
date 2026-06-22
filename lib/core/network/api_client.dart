@@ -55,6 +55,7 @@ class ApiClient {
     required String fieldName,
     String contentType = 'text/csv',
     ApiSurface surface = ApiSurface.public,
+    Duration? timeout,
   }) async {
     final uri = _uri(path);
     final authHeaders = await _headersNoContentType(surface);
@@ -66,7 +67,7 @@ class ApiClient {
         filename: filename,
         contentType: MediaType.parse(contentType),
       ));
-    final streamed = await request.send().timeout(AppConfig.apiTimeout);
+    final streamed = await request.send().timeout(timeout ?? AppConfig.apiTimeout);
     final response = await http.Response.fromStream(streamed);
     return _decode(response);
   }

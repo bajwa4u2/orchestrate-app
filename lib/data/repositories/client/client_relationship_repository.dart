@@ -146,6 +146,7 @@ class ClientRelationshipRepository {
       fieldName: 'file',
       contentType: 'text/csv',
       surface: ApiSurface.client,
+      timeout: const Duration(seconds: 120),
     );
     return _asMap(json);
   }
