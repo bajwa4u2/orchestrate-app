@@ -71,6 +71,10 @@ class _ClientShellState extends State<ClientShell> {
         path: '/client/representation',
         icon: Icons.fingerprint),
     _ClientNavItem(
+        label: 'Branding',
+        path: '/app/branding',
+        icon: Icons.palette_outlined),
+    _ClientNavItem(
         label: 'Records',
         path: '/client/records',
         icon: Icons.description_outlined),
