@@ -62,11 +62,13 @@ class ApiClient {
 
   Future<dynamic> deleteJson(
     String path, {
+    Map<String, dynamic>? body,
     ApiSurface surface = ApiSurface.public,
   }) async {
     final response = await _httpClient.delete(
       _uri(path),
       headers: await _headers(surface),
+      body: body != null ? jsonEncode(body) : null,
     ).timeout(AppConfig.apiTimeout);
     return _decode(response);
   }
