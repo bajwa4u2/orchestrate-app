@@ -133,6 +133,90 @@ class ClientRelationshipRepository {
     return _asMap(json);
   }
 
+  /// Import relationships from CSV content.
+  /// Returns { imported, updated, skipped } counts.
+  Future<Map<String, dynamic>> importCsv(
+    String content, {
+    String? emailColumn,
+    String? nameColumn,
+    String? organizationColumn,
+  }) async {
+    final columns = <String, dynamic>{};
+    if (emailColumn != null) columns['email'] = emailColumn;
+    if (nameColumn != null) columns['name'] = nameColumn;
+    if (organizationColumn != null) columns['organization'] = organizationColumn;
+    final json = await _apiClient.postJson(
+      '/client/intelligence/relationships/sources/csv',
+      body: <String, dynamic>{
+        'content': content,
+        if (columns.isNotEmpty) 'columns': columns,
+      },
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Remove CSV-imported contacts.
+  /// behavior: 'keep' | 'remove_exclusive' | 'remove_all'
+  Future<Map<String, dynamic>> removeCsvSource(String behavior) async {
+    final json = await _apiClient.deleteJson(
+      '/client/intelligence/relationships/sources/csv',
+      body: <String, dynamic>{'behavior': behavior},
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Sync relationships from a connected Google mailbox.
+  /// Returns { status, count? } — status may be 'synced', 'no_google_mailbox',
+  /// 'insufficient_scope', or 'failed'.
+  Future<Map<String, dynamic>> syncGoogleContacts() async {
+    final json = await _apiClient.postJson(
+      '/client/intelligence/relationships/sources/google/sync',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Remove Google-synced contacts.
+  Future<Map<String, dynamic>> removeGoogleSource(String behavior) async {
+    final json = await _apiClient.deleteJson(
+      '/client/intelligence/relationships/sources/google',
+      body: <String, dynamic>{'behavior': behavior},
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Manually add a single contact.
+  Future<Map<String, dynamic>> addManual(
+    String email, {
+    String? name,
+    String? organization,
+  }) async {
+    final json = await _apiClient.postJson(
+      '/client/intelligence/relationships/sources/manual',
+      body: <String, dynamic>{
+        'email': email,
+        if (name != null) 'name': name,
+        if (organization != null) 'organization': organization,
+      },
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Remove manually-added contacts.
+  Future<Map<String, dynamic>> removeManualSource(String behavior) async {
+    final json = await _apiClient.deleteJson(
+      '/client/intelligence/relationships/sources/manual',
+      body: <String, dynamic>{'behavior': behavior},
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   Map<String, dynamic> _asMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) return value.map((k, v) => MapEntry('$k', v));

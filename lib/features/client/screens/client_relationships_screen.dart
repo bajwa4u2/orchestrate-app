@@ -103,11 +103,19 @@ class _Inventory {
     this.generatedAt,
     required this.summary,
     required this.contacts,
+    this.hasConnectedMailbox = false,
+    this.hasGoogleMailbox = false,
   });
   final String scanId;
   final String? generatedAt;
   final _Summary summary;
   final List<_RelContact> contacts;
+  final bool hasConnectedMailbox;
+  final bool hasGoogleMailbox;
+
+  int get csvContactCount => contacts.where((c) => c.sources.contains('CSV_IMPORT')).length;
+  int get googleContactCount => contacts.where((c) => c.sources.contains('GOOGLE_CONTACTS')).length;
+  int get manualContactCount => contacts.where((c) => c.sources.contains('MANUAL')).length;
 }
 
 // ─── Parsers ─────────────────────────────────────────────────────────────────
@@ -120,9 +128,9 @@ _Summary _parseSummary(Map<String, dynamic> m) => _Summary(
     );
 
 _RelContact _parseContact(Map<String, dynamic> m) {
+  // sources is a flat String[] from the backend, not a List<{source}>
   final sources = (m['sources'] as List? ?? [])
-      .whereType<Map>()
-      .map((s) => _str(s['source']))
+      .map((s) => s?.toString() ?? '')
       .where((s) => s.isNotEmpty)
       .toList();
   return _RelContact(
@@ -178,6 +186,8 @@ class _ClientRelationshipsScreenState
   _SortBy _sortBy = _SortBy.lastActivity;
   bool _isSyncing = false;
   bool _isRebuilding = false;
+  bool _isSyncingGoogle = false;
+  bool _isImportingCsv = false;
 
   static const _pollInterval = Duration(seconds: 5);
   static const _pollTimeout = Duration(minutes: 3);
@@ -218,15 +228,28 @@ class _ClientRelationshipsScreenState
 
   void _applyInventoryResponse(Map<String, dynamic> data) {
     final scanState = _str(data['scanState']);
+    final hasConnectedMailbox = data['hasConnectedMailbox'] == true;
+    final hasGoogleMailbox = data['hasGoogleMailbox'] == true;
 
-    if (scanState == 'none') {
-      final hasMailbox = data['hasConnectedMailbox'] != false;
-      setState(() => _state = hasMailbox ? _PageState.none : _PageState.noMailbox);
+    // Parse contacts regardless of scan state (CSV/manual exist independently)
+    final summaryMap = data['summary'] is Map
+        ? Map<String, dynamic>.from(data['summary'] as Map)
+        : <String, dynamic>{};
+    final contactsList = (data['contacts'] as List? ?? [])
+        .whereType<Map>()
+        .map((m) => _parseContact(Map<String, dynamic>.from(m)))
+        .toList();
+    final hasContacts = contactsList.isNotEmpty;
+
+    // No mailbox and no contacts of any kind → show no-mailbox prompt
+    if (scanState == 'no_mailbox' && !hasContacts) {
+      setState(() => _state = _PageState.noMailbox);
       return;
     }
 
-    if (scanState == 'no_mailbox') {
-      setState(() => _state = _PageState.noMailbox);
+    // Mailbox present but no scan yet, and no other contacts → consent panel
+    if (scanState == 'none' && !hasContacts) {
+      setState(() => _state = _PageState.none);
       return;
     }
 
@@ -240,7 +263,7 @@ class _ClientRelationshipsScreenState
       return;
     }
 
-    if (scanState == 'failed') {
+    if (scanState == 'failed' && !hasContacts) {
       setState(() {
         _state = _PageState.failed;
         _error = _str(data['failureReason']);
@@ -248,15 +271,7 @@ class _ClientRelationshipsScreenState
       return;
     }
 
-    // complete
-    final summaryMap = data['summary'] is Map
-        ? Map<String, dynamic>.from(data['summary'] as Map)
-        : <String, dynamic>{};
-    final contactsList = (data['contacts'] as List? ?? [])
-        .whereType<Map>()
-        .map((m) => _parseContact(Map<String, dynamic>.from(m)))
-        .toList();
-
+    // complete / failed-with-contacts / none-with-contacts / no_mailbox-with-contacts
     setState(() {
       _state = _PageState.complete;
       _scanId = _str(data['scanId']);
@@ -266,6 +281,8 @@ class _ClientRelationshipsScreenState
         generatedAt: _generatedAt,
         summary: _parseSummary(summaryMap),
         contacts: contactsList,
+        hasConnectedMailbox: hasConnectedMailbox,
+        hasGoogleMailbox: hasGoogleMailbox,
       );
     });
   }
@@ -427,6 +444,122 @@ class _ClientRelationshipsScreenState
     } catch (_) {}
   }
 
+  Future<void> _syncGoogleContacts() async {
+    if (_isSyncingGoogle) return;
+    setState(() => _isSyncingGoogle = true);
+    try {
+      final result = await _repo.syncGoogleContacts();
+      final status = _str(result['status']);
+      if (!mounted) return;
+      if (status == 'insufficient_scope') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Contacts access not granted. Reconnect your Google account and allow contacts permission.',
+            ),
+            duration: Duration(seconds: 6),
+          ),
+        );
+      } else if (status == 'failed') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_str(result['error']).isNotEmpty
+              ? _str(result['error'])
+              : 'Google Contacts sync failed.')),
+        );
+      } else {
+        final count = result['count'] as int? ?? 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Synced $count contacts from Google.')),
+        );
+        _load();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sync failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSyncingGoogle = false);
+    }
+  }
+
+  Future<void> _importCsv() async {
+    final result = await showDialog<Map<String, String>?>(
+      context: context,
+      builder: (ctx) => const _CsvImportDialog(),
+    );
+    if (result == null || !mounted) return;
+    setState(() => _isImportingCsv = true);
+    try {
+      final res = await _repo.importCsv(result['content']!);
+      if (!mounted) return;
+      final imported = res['imported'] as int? ?? 0;
+      final updated = res['updated'] as int? ?? 0;
+      final skipped = res['skipped'] as int? ?? 0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Imported $imported · Updated $updated · Skipped $skipped'),
+        ),
+      );
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Import failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isImportingCsv = false);
+    }
+  }
+
+  Future<void> _addManual() async {
+    final result = await showDialog<Map<String, String>?>(
+      context: context,
+      builder: (ctx) => const _AddManualDialog(),
+    );
+    if (result == null || !mounted) return;
+    try {
+      await _repo.addManual(
+        result['email']!,
+        name: result['name']?.isNotEmpty == true ? result['name'] : null,
+        organization: result['organization']?.isNotEmpty == true ? result['organization'] : null,
+      );
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not add contact: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeCsvSource() async {
+    final behavior = await _showRemoveGenericSourceDialog(
+      title: 'Remove CSV-imported contacts?',
+      sourceLabel: 'CSV import',
+    );
+    if (behavior == null || !mounted) return;
+    try {
+      await _repo.removeCsvSource(behavior);
+      _load();
+    } catch (_) {}
+  }
+
+  Future<void> _removeGoogleSource() async {
+    final behavior = await _showRemoveGenericSourceDialog(
+      title: 'Remove Google Contacts?',
+      sourceLabel: 'Google Contacts',
+    );
+    if (behavior == null || !mounted) return;
+    try {
+      await _repo.removeGoogleSource(behavior);
+      _load();
+    } catch (_) {}
+  }
+
   Future<void> _resolveReDiscovery(String email, {required bool keep}) async {
     try {
       await _repo.resolveReDiscovery(email, keep: keep);
@@ -538,6 +671,19 @@ class _ClientRelationshipsScreenState
     return showDialog<String>(
       context: context,
       builder: (ctx) => _RemoveSourceDialog(),
+    );
+  }
+
+  Future<String?> _showRemoveGenericSourceDialog({
+    required String title,
+    required String sourceLabel,
+  }) async {
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => _RemoveGenericSourceDialog(
+        title: title,
+        sourceLabel: sourceLabel,
+      ),
     );
   }
 
@@ -697,11 +843,23 @@ class _ClientRelationshipsScreenState
           const SizedBox(height: 18),
           _SourceManagement(
             generatedAt: inv.generatedAt,
+            hasConnectedMailbox: inv.hasConnectedMailbox,
+            hasGoogleMailbox: inv.hasGoogleMailbox,
+            csvContactCount: inv.csvContactCount,
+            googleContactCount: inv.googleContactCount,
+            manualContactCount: inv.manualContactCount,
             isSyncing: _isSyncing,
             isRebuilding: _isRebuilding,
+            isSyncingGoogle: _isSyncingGoogle,
+            isImportingCsv: _isImportingCsv,
             onResync: _resync,
             onRebuild: _rebuild,
             onRemoveSource: _removeSource,
+            onSyncGoogle: _syncGoogleContacts,
+            onImportCsv: _importCsv,
+            onAddManual: _addManual,
+            onRemoveCsvSource: _removeCsvSource,
+            onRemoveGoogleSource: _removeGoogleSource,
           ),
           const SizedBox(height: 18),
           _InventoryPanel(
@@ -860,26 +1018,49 @@ class _MetricTile extends StatelessWidget {
 class _SourceManagement extends StatelessWidget {
   const _SourceManagement({
     required this.generatedAt,
+    required this.hasConnectedMailbox,
+    required this.hasGoogleMailbox,
+    required this.csvContactCount,
+    required this.googleContactCount,
+    required this.manualContactCount,
     required this.isSyncing,
     required this.isRebuilding,
+    required this.isSyncingGoogle,
+    required this.isImportingCsv,
     required this.onResync,
     required this.onRebuild,
     required this.onRemoveSource,
+    required this.onSyncGoogle,
+    required this.onImportCsv,
+    required this.onAddManual,
+    required this.onRemoveCsvSource,
+    required this.onRemoveGoogleSource,
   });
 
   final String? generatedAt;
+  final bool hasConnectedMailbox;
+  final bool hasGoogleMailbox;
+  final int csvContactCount;
+  final int googleContactCount;
+  final int manualContactCount;
   final bool isSyncing;
   final bool isRebuilding;
+  final bool isSyncingGoogle;
+  final bool isImportingCsv;
   final VoidCallback onResync;
   final VoidCallback onRebuild;
   final VoidCallback onRemoveSource;
+  final VoidCallback onSyncGoogle;
+  final VoidCallback onImportCsv;
+  final VoidCallback onAddManual;
+  final VoidCallback onRemoveCsvSource;
+  final VoidCallback onRemoveGoogleSource;
 
   String get _scanLabel {
     if (generatedAt == null) return 'Not scanned';
     try {
       final dt = DateTime.parse(generatedAt!).toLocal();
-      final now = DateTime.now();
-      final diff = now.difference(dt);
+      final diff = DateTime.now().difference(dt);
       if (diff.inMinutes < 1) return 'Just now';
       if (diff.inHours < 1) return '${diff.inMinutes}m ago';
       if (diff.inDays < 1) return '${diff.inHours}h ago';
@@ -892,6 +1073,8 @@ class _SourceManagement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final showAddGoogle = hasGoogleMailbox && googleContactCount == 0;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -900,72 +1083,436 @@ class _SourceManagement extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: AppTheme.publicLine),
       ),
-      child: LayoutBuilder(builder: (context, constraints) {
-        final narrow = constraints.maxWidth < WorkspaceBreakpoints.mobile;
-        final meta = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Container(
-                width: 8,
-                height: 8,
-                margin: const EdgeInsets.only(right: 8),
-                decoration: const BoxDecoration(
-                  color: AppTheme.coVerdant,
-                  shape: BoxShape.circle,
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Sources',
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 14),
+
+          // ── Mailbox row ──────────────────────────────────────────────────
+          if (hasConnectedMailbox) ...[
+            _SourceRow(
+              dot: AppTheme.coVerdant,
+              title: 'Connected mailbox',
+              subtitle: 'Header analysis · Last scanned $_scanLabel · 90-day window',
+              actions: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: isSyncing ? null : onResync,
+                    child: Text(isSyncing ? 'Syncing…' : 'Resync'),
+                  ),
+                  OutlinedButton(
+                    onPressed: isRebuilding ? null : onRebuild,
+                    child: Text(isRebuilding ? 'Rebuilding…' : 'Rebuild'),
+                  ),
+                  TextButton(
+                    onPressed: onRemoveSource,
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                    ),
+                    child: const Text('Remove source'),
+                  ),
+                ],
               ),
-              Text(
-                'Connected mailbox',
+            ),
+          ],
+
+          // ── Google Contacts row ──────────────────────────────────────────
+          if (googleContactCount > 0) ...[
+            if (hasConnectedMailbox) const Divider(height: 24),
+            _SourceRow(
+              dot: AppTheme.coVerdant,
+              title: 'Google Contacts',
+              subtitle: '$googleContactCount contacts from Google directory',
+              actions: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: isSyncingGoogle ? null : onSyncGoogle,
+                    child: Text(isSyncingGoogle ? 'Syncing…' : 'Sync again'),
+                  ),
+                  TextButton(
+                    onPressed: onRemoveGoogleSource,
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                    ),
+                    child: const Text('Remove source'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // ── CSV row ──────────────────────────────────────────────────────
+          if (csvContactCount > 0) ...[
+            if (hasConnectedMailbox || googleContactCount > 0) const Divider(height: 24),
+            _SourceRow(
+              dot: AppTheme.coMist,
+              title: 'CSV import',
+              subtitle: '$csvContactCount contacts from last import',
+              actions: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: isImportingCsv ? null : onImportCsv,
+                    child: Text(isImportingCsv ? 'Importing…' : 'Re-import'),
+                  ),
+                  TextButton(
+                    onPressed: onRemoveCsvSource,
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                    ),
+                    child: const Text('Remove source'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // ── Manual row ───────────────────────────────────────────────────
+          if (manualContactCount > 0) ...[
+            if (hasConnectedMailbox || googleContactCount > 0 || csvContactCount > 0)
+              const Divider(height: 24),
+            _SourceRow(
+              dot: AppTheme.coSun,
+              title: 'Manual',
+              subtitle: '$manualContactCount contacts added manually',
+              actions: const SizedBox.shrink(),
+            ),
+          ],
+
+          // ── Add a source ─────────────────────────────────────────────────
+          const Divider(height: 24),
+          Text(
+            'Add contacts',
+            style: theme.textTheme.labelMedium
+                ?.copyWith(color: AppTheme.publicMuted),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (showAddGoogle)
+                OutlinedButton.icon(
+                  onPressed: isSyncingGoogle ? null : onSyncGoogle,
+                  icon: const Icon(Icons.account_circle_outlined, size: 16),
+                  label: Text(isSyncingGoogle ? 'Syncing…' : 'Sync Google Contacts'),
+                ),
+              OutlinedButton.icon(
+                onPressed: isImportingCsv ? null : onImportCsv,
+                icon: const Icon(Icons.upload_file_outlined, size: 16),
+                label: Text(isImportingCsv ? 'Importing…' : 'Import CSV'),
+              ),
+              OutlinedButton.icon(
+                onPressed: onAddManual,
+                icon: const Icon(Icons.person_add_outlined, size: 16),
+                label: const Text('Add manually'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SourceRow extends StatelessWidget {
+  const _SourceRow({
+    required this.dot,
+    required this.title,
+    required this.subtitle,
+    required this.actions,
+  });
+
+  final Color dot;
+  final String title;
+  final String subtitle;
+  final Widget actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LayoutBuilder(builder: (context, constraints) {
+      final narrow = constraints.maxWidth < WorkspaceBreakpoints.mobile;
+      final meta = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+            ),
+            Expanded(
+              child: Text(
+                title,
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w600),
               ),
-            ]),
-            const SizedBox(height: 4),
-            Text(
-              'Header analysis · Last scanned $_scanLabel · 90-day window',
+            ),
+          ]),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Text(
+              subtitle,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: AppTheme.publicMuted),
             ),
-          ],
+          ),
+        ],
+      );
+      if (narrow) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [meta, const SizedBox(height: 12), actions],
         );
+      }
+      return Row(
+        children: [
+          Expanded(child: meta),
+          const SizedBox(width: 16),
+          actions,
+        ],
+      );
+    });
+  }
+}
 
-        final actions = Wrap(
-          spacing: 8,
-          runSpacing: 8,
+// ─── Generic remove source dialog ────────────────────────────────────────────
+
+class _RemoveGenericSourceDialog extends StatefulWidget {
+  const _RemoveGenericSourceDialog({
+    required this.title,
+    required this.sourceLabel,
+  });
+  final String title;
+  final String sourceLabel;
+
+  @override
+  State<_RemoveGenericSourceDialog> createState() =>
+      _RemoveGenericSourceDialogState();
+}
+
+class _RemoveGenericSourceDialogState
+    extends State<_RemoveGenericSourceDialog> {
+  String _behavior = 'keep';
+
+  @override
+  Widget build(BuildContext context) {
+    final label = widget.sourceLabel;
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RadioListTile<String>(
+            value: 'keep',
+            groupValue: _behavior,
+            onChanged: (v) => setState(() => _behavior = v!),
+            title: const Text('Keep contacts'),
+            subtitle: Text(
+              'Contacts from $label remain in your inventory.',
+            ),
+            contentPadding: EdgeInsets.zero,
+          ),
+          RadioListTile<String>(
+            value: 'remove_exclusive',
+            groupValue: _behavior,
+            onChanged: (v) => setState(() => _behavior = v!),
+            title: const Text('Remove contacts with no other sources'),
+            subtitle: Text(
+              'Only contacts that came exclusively from $label are removed.',
+            ),
+            contentPadding: EdgeInsets.zero,
+          ),
+          RadioListTile<String>(
+            value: 'remove_all',
+            groupValue: _behavior,
+            onChanged: (v) => setState(() => _behavior = v!),
+            title: Text('Remove all $label contacts'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, _behavior),
+          child: const Text('Confirm'),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── CSV import dialog ────────────────────────────────────────────────────────
+
+class _CsvImportDialog extends StatefulWidget {
+  const _CsvImportDialog();
+
+  @override
+  State<_CsvImportDialog> createState() => _CsvImportDialogState();
+}
+
+class _CsvImportDialogState extends State<_CsvImportDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Import CSV'),
+      content: SizedBox(
+        width: 480,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            OutlinedButton(
-              onPressed: isSyncing ? null : onResync,
-              child: Text(isSyncing ? 'Syncing…' : 'Resync'),
+            Text(
+              'Paste CSV content below. The first row must be a header. '
+              'Required column: email. Optional columns: name, organization.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.publicMuted,
+                  ),
             ),
-            OutlinedButton(
-              onPressed: isRebuilding ? null : onRebuild,
-              child: Text(isRebuilding ? 'Rebuilding…' : 'Rebuild'),
-            ),
-            TextButton(
-              onPressed: onRemoveSource,
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              maxLines: 8,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              decoration: const InputDecoration(
+                hintText: 'email,name,organization\njohn@example.com,John Doe,Acme',
+                border: OutlineInputBorder(),
+                isDense: true,
               ),
-              child: const Text('Remove source'),
             ),
           ],
-        );
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final content = _controller.text.trim();
+            if (content.isEmpty) return;
+            Navigator.pop(context, {'content': content});
+          },
+          child: const Text('Import'),
+        ),
+      ],
+    );
+  }
+}
 
-        if (narrow) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [meta, const SizedBox(height: 14), actions],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(child: meta),
-            const SizedBox(width: 16),
-            actions,
-          ],
-        );
-      }),
+// ─── Add manually dialog ──────────────────────────────────────────────────────
+
+class _AddManualDialog extends StatefulWidget {
+  const _AddManualDialog();
+
+  @override
+  State<_AddManualDialog> createState() => _AddManualDialogState();
+}
+
+class _AddManualDialogState extends State<_AddManualDialog> {
+  final _emailCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _orgCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _nameCtrl.dispose();
+    _orgCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add contact'),
+      content: SizedBox(
+        width: 380,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _emailCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Email address',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Required';
+                  if (!v.contains('@')) return 'Enter a valid email';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _nameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Name (optional)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _orgCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Organization (optional)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) return;
+            Navigator.pop(context, {
+              'email': _emailCtrl.text.trim(),
+              'name': _nameCtrl.text.trim(),
+              'organization': _orgCtrl.text.trim(),
+            });
+          },
+          child: const Text('Add'),
+        ),
+      ],
     );
   }
 }
@@ -1335,7 +1882,9 @@ class _ContactTile extends StatelessWidget {
       case 'GOOGLE_CONTACTS':
         return 'Google';
       case 'CSV_IMPORT':
-        return 'Import';
+        return 'CSV';
+      case 'MANUAL':
+        return 'Manual';
       default:
         return source;
     }
