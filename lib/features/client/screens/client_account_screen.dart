@@ -222,16 +222,22 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                     rows: [
                       _RowData(
                         title: workspaceName,
-                        primary: _joinNonEmpty([
-                          _read(profile, 'legalName'),
-                          _read(profile, 'brandName'),
-                        ]),
+                        primary: _read(profile, 'legalName'),
                         secondary: _joinNonEmpty([
                           _read(profile, 'primaryEmail',
                               fallback: session.email),
                           _read(profile, 'primaryTimezone'),
                         ]),
                         actionLabel: 'Edit profile',
+                        onTap: () => _showProfileEditor(data),
+                      ),
+                      _RowData(
+                        title: 'Brand name',
+                        primary: _read(profile, 'brandName').isNotEmpty
+                            ? _read(profile, 'brandName')
+                            : 'Not configured',
+                        secondary: 'Used in outbound identity and communications.',
+                        actionLabel: 'Edit brand',
                         onTap: () => _showProfileEditor(data),
                       ),
                       _RowData(

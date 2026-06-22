@@ -6,6 +6,7 @@ import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_branding_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientShell extends StatefulWidget {
@@ -21,8 +22,10 @@ class ClientShell extends StatefulWidget {
 
 class _ClientShellState extends State<ClientShell> {
   final ClientBillingRepository _billingRepository = ClientBillingRepository();
+  final ClientBrandingRepository _brandingRepository = ClientBrandingRepository();
   final AuthRepository _authRepository = AuthRepository();
   Map<String, dynamic>? _subscription;
+  String? _clientLogoUrl;
   bool _signingOut = false;
 
   static const double _sidebarWidth = 284;
@@ -94,6 +97,7 @@ class _ClientShellState extends State<ClientShell> {
     super.initState();
     AuthSessionController.instance.addListener(_handleSessionChanged);
     _refreshSubscription();
+    _refreshBranding();
   }
 
   @override
@@ -115,6 +119,18 @@ class _ClientShellState extends State<ClientShell> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _subscription = null);
+    }
+  }
+
+  Future<void> _refreshBranding() async {
+    try {
+      final data = await _brandingRepository.fetchBranding();
+      if (!mounted) return;
+      final logo = data['logo'] as Map?;
+      final url = logo?['url']?.toString().trim();
+      setState(() => _clientLogoUrl = (url?.isNotEmpty == true) ? url : null);
+    } catch (_) {
+      // Non-fatal — fallback to Orchestrate logo
     }
   }
 
@@ -356,6 +372,7 @@ class _ClientShellState extends State<ClientShell> {
                   child: _SidebarContent(
                       name: name,
                       email: email,
+                      clientLogoUrl: _clientLogoUrl,
                       isSelected: _isSelected,
                       signingOut: _signingOut,
                       onSignOut: () => _signOut(context)))
@@ -389,6 +406,7 @@ class _ClientShellState extends State<ClientShell> {
                       child: _SidebarContent(
                         name: name,
                         email: email,
+                        clientLogoUrl: _clientLogoUrl,
                         isSelected: _isSelected,
                         signingOut: _signingOut,
                         onSignOut: () => _signOut(context),
@@ -420,10 +438,12 @@ class _SidebarContent extends StatelessWidget {
     required this.isSelected,
     required this.signingOut,
     required this.onSignOut,
+    this.clientLogoUrl,
   });
 
   final String name;
   final String email;
+  final String? clientLogoUrl;
   final bool Function(String path) isSelected;
   final bool signingOut;
   final VoidCallback onSignOut;
@@ -444,7 +464,14 @@ class _SidebarContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    BrandAssets.logo(context, height: 30),
+                    clientLogoUrl != null
+                        ? Image.network(
+                            clientLogoUrl!,
+                            height: 30,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => BrandAssets.logo(context, height: 30),
+                          )
+                        : BrandAssets.logo(context, height: 30),
                     const SizedBox(height: 16),
                     Text(
                       name,
