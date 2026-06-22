@@ -1460,24 +1460,30 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
   int _rowCount = 0;
 
   void _pickFile() {
-    // Use InputElement with explicit type rather than FileUploadInputElement —
-    // avoids dart2js specialisation edge-cases where onChange.listen misfires.
+    // Must be visible (not display:none) — some browsers suppress the change
+    // event on hidden inputs. Positioned off-screen so it never shows.
     final input = html.InputElement(type: 'file')
       ..accept = '.csv'
-      ..multiple = false
-      ..style.display = 'none'
-      ..style.position = 'absolute';
+      ..multiple = false;
+    input.style
+      ..position = 'fixed'
+      ..top = '-9999px'
+      ..left = '-9999px'
+      ..width = '1px'
+      ..height = '1px'
+      ..opacity = '0';
 
-    // Appended to body before click() — detached inputs drop change events
-    // in Firefox and Safari.
+    // Must be in DOM before click() — detached inputs drop change events.
     html.document.body?.append(input);
 
-    // addEventListener('change', ...) bypasses the dart2js EventStreamProvider
-    // wrapping that can silently drop events in production builds.
-    void onChange(html.Event event) {
-      input.removeEventListener('change', onChange);
-      input.remove();
+    // Use onChange.listen (dart:html wrapper) — most compatible path in
+    // Flutter web dart2js. addEventListener with a local Dart closure can
+    // silently fail removeEventListener because dart2js wraps each call.
+    StreamSubscription<html.Event>? sub;
+    sub = input.onChange.listen((_) {
+      sub?.cancel();
       final file = input.files?.first;
+      input.remove();
       if (file == null) return;
 
       final reader = html.FileReader();
@@ -1488,7 +1494,6 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
         if (result is ByteBuffer) {
           bytes = result.asUint8List();
         } else {
-          // dart2js may return a typed-data object directly
           try {
             bytes = (result as dynamic).asUint8List() as Uint8List;
           } catch (_) {
@@ -1505,6 +1510,7 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
         final hasEmail = header
             .split(',')
             .any((col) => col.trim().replaceAll('"', '') == 'email');
+        if (!mounted) return;
         setState(() {
           _fileName = file.name;
           _fileBytes = bytes;
@@ -1516,9 +1522,8 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
       });
 
       reader.readAsArrayBuffer(file);
-    }
+    });
 
-    input.addEventListener('change', onChange);
     input.click();
   }
 
