@@ -192,6 +192,7 @@ class _ClientRelationshipsScreenState
   _SortBy _sortBy = _SortBy.lastActivity;
   bool _isSyncing = false;
   bool _isRebuilding = false;
+  bool _inventoryExpanded = false;
   bool _isSyncingGoogle = false;
   bool _isImportingCsv = false;
   bool _isConnectingGoogle = false;
@@ -894,6 +895,8 @@ class _ClientRelationshipsScreenState
     );
   }
 
+  static const _inventoryCollapseThreshold = 50;
+
   Widget _buildComplete() {
     final inv = _inventory;
     if (inv == null) return _buildScanning();
@@ -901,6 +904,9 @@ class _ClientRelationshipsScreenState
     final contacts = _sortedContacts;
     final reDiscovered = contacts.where((c) => c.isReDiscovered).toList();
     final normal = contacts.where((c) => !c.isReDiscovered).toList();
+    final active = normal.where((c) => !c.isSuppressed).toList();
+    final isLarge = normal.length > _inventoryCollapseThreshold;
+    final showInventory = !isLarge || _inventoryExpanded;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(top: 12, bottom: 28),
@@ -932,17 +938,28 @@ class _ClientRelationshipsScreenState
             onRemoveCsvSource: _removeCsvSource,
             onRemoveGoogleSource: _removeGoogleSource,
           ),
+          if (active.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            _IntelligenceSection(contacts: active),
+          ],
           const SizedBox(height: 18),
-          _InventoryPanel(
-            contacts: normal,
-            reDiscovered: reDiscovered,
-            sortBy: _sortBy,
-            onSortChanged: (s) => setState(() => _sortBy = s),
-            onSuppress: _suppress,
-            onUnsuppress: _unsuppress,
-            onDelete: _deleteContact,
-            onResolveReDiscovery: _resolveReDiscovery,
-          ),
+          if (showInventory)
+            _InventoryPanel(
+              contacts: normal,
+              reDiscovered: reDiscovered,
+              sortBy: _sortBy,
+              onSortChanged: (s) => setState(() => _sortBy = s),
+              onSuppress: _suppress,
+              onUnsuppress: _unsuppress,
+              onDelete: _deleteContact,
+              onResolveReDiscovery: _resolveReDiscovery,
+            )
+          else
+            _InventoryCollapsedBanner(
+              total: normal.length,
+              suppressed: normal.where((c) => c.isSuppressed).length,
+              onExpand: () => setState(() => _inventoryExpanded = true),
+            ),
         ],
       ),
     );
@@ -1757,9 +1774,197 @@ class _RemoveSourceDialogState extends State<_RemoveSourceDialog> {
   }
 }
 
+// ─── Intelligence section ─────────────────────────────────────────────────────
+
+class _IntelligenceSection extends StatelessWidget {
+  const _IntelligenceSection({required this.contacts});
+  final List<_RelContact> contacts;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final hasMailbox = contacts.any((c) => c.totalMessageCount > 0);
+    final recentlyActive = hasMailbox
+        ? contacts.where((c) => c.totalMessageCount > 0 && c.daysSinceLastActivity <= 30).length
+        : 0;
+    final strongConnections = hasMailbox
+        ? contacts.where((c) => c.isBidirectional && c.totalMessageCount >= 5).length
+        : 0;
+    final dormant = hasMailbox
+        ? contacts.where((c) => c.totalMessageCount > 0 && c.daysSinceLastActivity > 90).length
+        : 0;
+
+    final orgCounts = <String, int>{};
+    for (final c in contacts) {
+      orgCounts[c.displayOrg] = (orgCounts[c.displayOrg] ?? 0) + 1;
+    }
+    final multiOrgs = orgCounts.values.where((n) => n >= 2).length;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurface,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Intelligence',
+            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _InsightCard(
+                icon: Icons.people_outline,
+                value: '${contacts.length}',
+                label: 'Total contacts',
+                color: AppTheme.publicText,
+              ),
+              if (hasMailbox) ...[
+                _InsightCard(
+                  icon: Icons.schedule_outlined,
+                  value: '$recentlyActive',
+                  label: 'Active in 30 days',
+                  color: const Color(0xFF2E7D32),
+                ),
+                _InsightCard(
+                  icon: Icons.swap_horiz_outlined,
+                  value: '$strongConnections',
+                  label: 'Two-way (5+ msg)',
+                  color: AppTheme.coSun,
+                ),
+                if (dormant > 0)
+                  _InsightCard(
+                    icon: Icons.hourglass_empty_outlined,
+                    value: '$dormant',
+                    label: 'Dormant (90+ days)',
+                    color: AppTheme.publicMuted,
+                  ),
+              ],
+              if (multiOrgs > 0)
+                _InsightCard(
+                  icon: Icons.business_outlined,
+                  value: '$multiOrgs',
+                  label: 'Orgs with 2+ contacts',
+                  color: AppTheme.coMist,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  const _InsightCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 154,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurfaceSoft,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: theme.textTheme.headlineMedium
+                ?.copyWith(fontWeight: FontWeight.w700, color: color),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Inventory collapsed banner ───────────────────────────────────────────────
+
+class _InventoryCollapsedBanner extends StatelessWidget {
+  const _InventoryCollapsedBanner({
+    required this.total,
+    required this.suppressed,
+    required this.onExpand,
+  });
+  final int total;
+  final int suppressed;
+  final VoidCallback onExpand;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurface,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Relationship inventory',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$total contacts · ${suppressed > 0 ? '$suppressed suppressed · ' : ''}Search, filter and manage individual records.',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppTheme.publicMuted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          OutlinedButton.icon(
+            onPressed: onExpand,
+            icon: const Icon(Icons.people_outline, size: 16),
+            label: Text('Review $total contacts'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Inventory panel ──────────────────────────────────────────────────────────
 
-class _InventoryPanel extends StatelessWidget {
+class _InventoryPanel extends StatefulWidget {
   const _InventoryPanel({
     required this.contacts,
     required this.reDiscovered,
@@ -1781,8 +1986,51 @@ class _InventoryPanel extends StatelessWidget {
   final Future<void> Function(String, {required bool keep}) onResolveReDiscovery;
 
   @override
+  State<_InventoryPanel> createState() => _InventoryPanelState();
+}
+
+class _InventoryPanelState extends State<_InventoryPanel> {
+  static const _pageSize = 50;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _sourceFilter; // null = all
+  bool _showSuppressed = false;
+  int _visibleCount = _pageSize;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<_RelContact> get _filtered {
+    var list = widget.contacts.where((c) {
+      if (!_showSuppressed && c.isSuppressed) return false;
+      if (_sourceFilter != null && !c.sources.contains(_sourceFilter)) {
+        return false;
+      }
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase();
+        if (!c.email.contains(q) &&
+            !c.displayName.toLowerCase().contains(q) &&
+            !(c.organizationName ?? '').toLowerCase().contains(q) &&
+            !c.domain.contains(q)) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+    return list;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final filtered = _filtered;
+    final visible = filtered.take(_visibleCount).toList();
+    final remaining = filtered.length - visible.length;
+    final suppressed = widget.contacts.where((c) => c.isSuppressed).length;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -1794,48 +2042,127 @@ class _InventoryPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
+          // Header
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'People in your network',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Relationship inventory',
+                      style: theme.textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      '${widget.contacts.length} contacts${suppressed > 0 ? ' · $suppressed suppressed' : ''}',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppTheme.publicMuted),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 12),
-              _SortDropdown(value: sortBy, onChanged: onSortChanged),
+              _SortDropdown(value: widget.sortBy, onChanged: widget.onSortChanged),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Search + filter bar
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() {
+                      _searchQuery = v.trim();
+                      _visibleCount = _pageSize;
+                    }),
+                    decoration: InputDecoration(
+                      hintText: 'Search name, email, company…',
+                      prefixIcon: const Icon(Icons.search, size: 16),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 14),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                  _visibleCount = _pageSize;
+                                });
+                              },
+                            )
+                          : null,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(color: AppTheme.publicLine),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(color: AppTheme.publicLine),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              _SourceFilterDropdown(
+                value: _sourceFilter,
+                onChanged: (v) => setState(() {
+                  _sourceFilter = v;
+                  _visibleCount = _pageSize;
+                }),
+              ),
+              if (suppressed > 0) ...[
+                const SizedBox(width: 10),
+                FilterChip(
+                  label: Text('Suppressed ($suppressed)'),
+                  selected: _showSuppressed,
+                  onSelected: (v) => setState(() {
+                    _showSuppressed = v;
+                    _visibleCount = _pageSize;
+                  }),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
 
           // Re-discovered banners
-          for (final c in reDiscovered) ...[
+          for (final c in widget.reDiscovered) ...[
             _ReDiscoveredBanner(
               contact: c,
-              onKeep: () => onResolveReDiscovery(c.email, keep: true),
-              onSkip: () => onResolveReDiscovery(c.email, keep: false),
+              onKeep: () => widget.onResolveReDiscovery(c.email, keep: true),
+              onSkip: () => widget.onResolveReDiscovery(c.email, keep: false),
             ),
             const SizedBox(height: 10),
           ],
 
           // Empty state
-          if (contacts.isEmpty && reDiscovered.isEmpty) ...[
+          if (filtered.isEmpty && widget.reDiscovered.isEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'No relationships found in the past 90 days',
+                    _searchQuery.isNotEmpty || _sourceFilter != null
+                        ? 'No contacts match your filters'
+                        : 'No relationships found in the past 90 days',
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'The mailbox scan completed but all discovered addresses '
-                    'were filtered as automated senders. If you expected to '
-                    'see real contacts, try rebuilding the inventory.',
+                    _searchQuery.isNotEmpty || _sourceFilter != null
+                        ? 'Try a different search or clear the filter.'
+                        : 'The mailbox scan completed but all discovered addresses '
+                          'were filtered as automated senders. If you expected to '
+                          'see real contacts, try rebuilding the inventory.',
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: AppTheme.publicMuted),
                   ),
@@ -1844,18 +2171,61 @@ class _InventoryPanel extends StatelessWidget {
             ),
           ],
 
-          // Contact list
-          for (int i = 0; i < contacts.length; i++) ...[
+          // Contact list (paginated)
+          for (int i = 0; i < visible.length; i++) ...[
             _ContactTile(
-              contact: contacts[i],
-              onSuppress: () => onSuppress(contacts[i].email),
-              onUnsuppress: () => onUnsuppress(contacts[i].email),
-              onDelete: () => onDelete(contacts[i].email),
+              contact: visible[i],
+              onSuppress: () => widget.onSuppress(visible[i].email),
+              onUnsuppress: () => widget.onUnsuppress(visible[i].email),
+              onDelete: () => widget.onDelete(visible[i].email),
             ),
-            if (i < contacts.length - 1) const Divider(height: 22),
+            if (i < visible.length - 1) const Divider(height: 22),
+          ],
+
+          // Load more
+          if (remaining > 0) ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                OutlinedButton(
+                  onPressed: () => setState(() => _visibleCount += _pageSize),
+                  child: Text('Show ${remaining > _pageSize ? _pageSize : remaining} more'),
+                ),
+                const SizedBox(width: 10),
+                TextButton(
+                  onPressed: () => setState(() => _visibleCount = filtered.length),
+                  child: Text('Show all ${filtered.length}'),
+                ),
+              ],
+            ),
           ],
         ],
       ),
+    );
+  }
+}
+
+class _SourceFilterDropdown extends StatelessWidget {
+  const _SourceFilterDropdown({required this.value, required this.onChanged});
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<String?>(
+      value: value,
+      hint: const Text('All sources'),
+      underline: const SizedBox(),
+      isDense: true,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+      items: const [
+        DropdownMenuItem(value: null, child: Text('All sources')),
+        DropdownMenuItem(value: 'MAILBOX_INTELLIGENCE', child: Text('Mailbox')),
+        DropdownMenuItem(value: 'GOOGLE_CONTACTS', child: Text('Google')),
+        DropdownMenuItem(value: 'CSV_IMPORT', child: Text('CSV')),
+        DropdownMenuItem(value: 'MANUAL', child: Text('Manual')),
+      ],
+      onChanged: onChanged,
     );
   }
 }
