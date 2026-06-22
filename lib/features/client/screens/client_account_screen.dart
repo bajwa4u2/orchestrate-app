@@ -150,6 +150,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
         final profile = _asMap(rawProfile['profile']).isNotEmpty
             ? _asMap(rawProfile['profile'])
             : rawProfile;
+        final profileBranding = _asMap(profile['branding']);
+        final brandName = _read(profileBranding, 'brandName',
+            fallback: _read(profile, 'brandName'));
         final subscription = data.subscription ?? const <String, dynamic>{};
         final client = _asMap(data.overview['client']);
         final billing = _asMap(data.overview['billing']);
@@ -233,8 +236,8 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                       ),
                       _RowData(
                         title: 'Brand name',
-                        primary: _read(profile, 'brandName').isNotEmpty
-                            ? _read(profile, 'brandName')
+                        primary: brandName.isNotEmpty
+                            ? brandName
                             : 'Not configured',
                         secondary: 'Used in outbound identity and communications.',
                         actionLabel: 'Edit brand',
