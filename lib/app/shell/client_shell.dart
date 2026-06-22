@@ -40,13 +40,17 @@ class _ClientShellState extends State<ClientShell> {
         path: '/client/overview',
         icon: Icons.space_dashboard_outlined),
     _ClientNavItem(
-        label: 'Operations',
-        path: '/client/operations',
-        icon: Icons.timeline_outlined),
+        label: 'Relationships',
+        path: '/client/relationships',
+        icon: Icons.group_outlined),
     _ClientNavItem(
         label: 'Opportunities',
         path: '/client/opportunities',
         icon: Icons.insights_outlined),
+    _ClientNavItem(
+        label: 'Operations',
+        path: '/client/operations',
+        icon: Icons.timeline_outlined),
     _ClientNavItem(
         label: 'Replies',
         path: '/client/replies',

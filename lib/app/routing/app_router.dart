@@ -6,7 +6,7 @@ import 'package:orchestrate_app/features/auth/screens/ops_login_screen.dart';
 import 'package:orchestrate_app/features/client/screens/campaigns_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_activity_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_branding_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_contacts_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_relationships_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_mailbox_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_newsletter_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_account_screen.dart';
@@ -77,7 +77,6 @@ final _operatorShellNavigatorKey = GlobalKey<NavigatorState>();
 
 const _clientCoreRoutes = <String>{
   '/app/home',
-  '/app/contacts',
   '/app/campaigns',
   '/app/activity',
   '/app/mailbox',
@@ -96,11 +95,13 @@ const _clientCanonicalRoutes = <String>{
   '/client/subscribe',
   '/client/workspace',
   // New operational IA — these are the canonical paths.
+  '/client/relationships',
   '/client/operations',
   '/client/opportunities',
   '/client/infrastructure',
   '/client/representation',
   // Legacy paths kept so deep links keep resolving via redirects.
+  '/client/contacts',
   '/client/leads',
   '/client/outreach',
   '/client/mailbox',
@@ -1116,13 +1117,20 @@ final router = GoRouter(
         GoRoute(
             path: '/client/subscribe',
             builder: (context, state) => const ClientSubscribeScreen()),
+        // Relationships — mailbox-derived relationship intelligence.
+        GoRoute(
+            path: '/client/relationships',
+            builder: (context, state) => const ClientRelationshipsScreen()),
+        GoRoute(
+            path: '/client/contacts',
+            redirect: (context, state) => '/client/relationships'),
         // Opportunities — signal-driven intelligence (was "Leads").
         GoRoute(
             path: '/client/opportunities',
             builder: (context, state) => const LeadsScreen()),
         GoRoute(
             path: '/client/leads',
-            redirect: (context, state) => '/client/opportunities'),
+            redirect: (context, state) => '/client/relationships'),
         // Operations — managed execution runtime (was "Outreach").
         GoRoute(
             path: '/client/operations',
@@ -1192,13 +1200,13 @@ final router = GoRouter(
                 const ClientHomeScreen(section: ClientSection.home)),
         GoRoute(
             path: '/app/contacts',
-            builder: (context, state) => const ClientContactsScreen()),
+            redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/app/contacts/import',
-            redirect: (context, state) => '/app/contacts'),
+            redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/app/contacts/:contactId',
-            redirect: (context, state) => '/app/contacts'),
+            redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/app/campaigns',
             builder: (context, state) => const CampaignsScreen()),
