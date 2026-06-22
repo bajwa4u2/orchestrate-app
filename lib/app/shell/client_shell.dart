@@ -465,8 +465,8 @@ class _SidebarContent extends StatelessWidget {
             children: [
               InkWell(
                 onTap: () => context.go('/client/overview'),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     hasClientLogo
                         ? Image.network(
@@ -477,19 +477,33 @@ class _SidebarContent extends StatelessWidget {
                             errorBuilder: (_, __, ___) => BrandAssets.logo(context, height: 30),
                           )
                         : BrandAssets.logo(context, height: 30),
-                    const SizedBox(height: 16),
-                    Text(
-                      name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          if (email.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              email,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                    if (email.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(email,
-                          style: Theme.of(context).textTheme.bodyMedium),
-                    ],
                   ],
                 ),
               ),
