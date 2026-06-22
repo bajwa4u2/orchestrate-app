@@ -534,6 +534,8 @@ class _ClientRelationshipsScreenState
       builder: (ctx) => const _CsvImportDialog(),
     );
     if (result == null || !mounted) return;
+
+    final csvCountBefore = _inventory?.csvContactCount ?? 0;
     setState(() => _isImportingCsv = true);
     try {
       final res = await _repo.importCsv(result.bytes, result.filename);
@@ -542,11 +544,33 @@ class _ClientRelationshipsScreenState
       final updated = res['updated'] as int? ?? 0;
       final skipped = res['skipped'] as int? ?? 0;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Imported $imported · Updated $updated · Skipped $skipped'),
-        ),
+        SnackBar(content: Text('Imported $imported · Updated $updated · Skipped $skipped')),
       );
       _load();
+    } on TimeoutException {
+      // Backend may have finished after the timeout. Refresh inventory to find out.
+      if (!mounted) return;
+      try {
+        final data = await _repo.fetchInventory();
+        if (!mounted) return;
+        _applyInventoryResponse(data);
+        final csvCountAfter = _inventory?.csvContactCount ?? 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              csvCountAfter > csvCountBefore
+                  ? 'Import completed — $csvCountAfter contacts from CSV'
+                  : 'Import is still processing. Refresh in a moment.',
+            ),
+          ),
+        );
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Import timed out. Refresh to check if contacts were imported.')),
+          );
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
