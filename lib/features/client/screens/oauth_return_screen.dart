@@ -31,10 +31,15 @@ class OAuthReturnScreen extends StatelessWidget {
   final String? email;
   final String? mailboxId;
 
+  bool get _isGoogleContacts =>
+      (provider ?? '').toLowerCase() == 'google_contacts';
+
   String get _providerLabel {
     switch ((provider ?? '').toLowerCase()) {
       case 'google':
         return 'Google Workspace';
+      case 'google_contacts':
+        return 'Google Contacts';
       case 'microsoft':
         return 'Microsoft 365';
       default:
@@ -66,48 +71,64 @@ class OAuthReturnScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ClientPage(
-      eyebrow: 'Mailbox transport',
+      eyebrow: _isGoogleContacts ? 'Relationship sources' : 'Mailbox transport',
       title: _isSuccess
           ? 'Connected $_providerLabel'
           : _isError
               ? '$_providerLabel did not connect'
               : 'OAuth result',
-      subtitle: _isSuccess
-          ? 'Credentials are sealed in the vault. The transport is now part of the readiness chain. See Infrastructure for the next step.'
-          : _isError
-              ? 'No credentials were stored. The mailbox row is still in its previous state; retry the connect flow whenever you are ready.'
-              : 'This page renders the result of a mailbox-OAuth return redirect.',
+      subtitle: _isGoogleContacts
+          ? (_isSuccess
+              ? 'Google Contacts is now authorized. Sync your contacts from the Relationships page.'
+              : 'Authorization did not complete. No credentials were stored; you can retry from Relationships.')
+          : (_isSuccess
+              ? 'Credentials are sealed in the vault. The transport is now part of the readiness chain. See Infrastructure for the next step.'
+              : _isError
+                  ? 'No credentials were stored. The mailbox row is still in its previous state; retry the connect flow whenever you are ready.'
+                  : 'This page renders the result of a mailbox-OAuth return redirect.'),
       banner: ClientStatusBanner(
         tone: _isSuccess
             ? ClientBannerTone.success
             : ClientBannerTone.warning,
         title: _isSuccess
-            ? 'OAuth complete'
+            ? 'Authorization complete'
             : _isError
-                ? 'OAuth did not complete'
+                ? 'Authorization did not complete'
                 : 'No OAuth result on this URL',
         message: _isSuccess
-            ? 'Orchestrate runs OAuth backend-side; tokens never touched this browser. The sending transport is now connected.'
+            ? (_isGoogleContacts
+                ? 'Google Contacts is authorized. Orchestrate can now read your contact list for relationship intelligence. Token never touched this browser.'
+                : 'Orchestrate runs OAuth backend-side; tokens never touched this browser. The sending transport is now connected.')
             : _isError
                 ? (_readableReason.isEmpty
                     ? 'No detailed reason was returned.'
                     : _readableReason)
-                : 'Navigate to Infrastructure to connect or reconnect a mailbox transport.',
+                : (_isGoogleContacts
+                    ? 'Navigate to Relationships to connect Google Contacts.'
+                    : 'Navigate to Infrastructure to connect or reconnect a mailbox transport.'),
       ),
       actions: [
-        FilledButton.icon(
-          onPressed: () => context.go('/client/infrastructure'),
-          icon: const Icon(Icons.arrow_forward, size: 18),
-          label: Text(_isSuccess
-              ? 'Continue to Infrastructure'
-              : 'Open Infrastructure'),
-        ),
-        if (!_isSuccess)
-          OutlinedButton.icon(
-            onPressed: () => context.go('/client/operations'),
-            icon: const Icon(Icons.timeline_outlined, size: 18),
-            label: const Text('View operational state'),
+        if (_isGoogleContacts) ...[
+          FilledButton.icon(
+            onPressed: () => context.go('/client/relationships'),
+            icon: const Icon(Icons.people_outline, size: 18),
+            label: Text(_isSuccess ? 'Go to Relationships' : 'Open Relationships'),
           ),
+        ] else ...[
+          FilledButton.icon(
+            onPressed: () => context.go('/client/infrastructure'),
+            icon: const Icon(Icons.arrow_forward, size: 18),
+            label: Text(_isSuccess
+                ? 'Continue to Infrastructure'
+                : 'Open Infrastructure'),
+          ),
+          if (!_isSuccess)
+            OutlinedButton.icon(
+              onPressed: () => context.go('/client/operations'),
+              icon: const Icon(Icons.timeline_outlined, size: 18),
+              label: const Text('View operational state'),
+            ),
+        ],
       ],
       children: [
         if (_isSuccess && (email ?? '').isNotEmpty)

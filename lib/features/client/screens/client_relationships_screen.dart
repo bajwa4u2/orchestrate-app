@@ -6,6 +6,7 @@ import 'dart:html' as html;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
@@ -109,6 +110,7 @@ class _Inventory {
     required this.contacts,
     this.hasConnectedMailbox = false,
     this.hasGoogleMailbox = false,
+    this.hasGoogleContactsAuth = false,
   });
   final String scanId;
   final String? generatedAt;
@@ -116,6 +118,7 @@ class _Inventory {
   final List<_RelContact> contacts;
   final bool hasConnectedMailbox;
   final bool hasGoogleMailbox;
+  final bool hasGoogleContactsAuth;
 
   int get csvContactCount => contacts.where((c) => c.sources.contains('CSV_IMPORT')).length;
   int get googleContactCount => contacts.where((c) => c.sources.contains('GOOGLE_CONTACTS')).length;
@@ -192,6 +195,7 @@ class _ClientRelationshipsScreenState
   bool _isRebuilding = false;
   bool _isSyncingGoogle = false;
   bool _isImportingCsv = false;
+  bool _isConnectingGoogle = false;
 
   static const _pollInterval = Duration(seconds: 5);
   static const _pollTimeout = Duration(minutes: 3);
@@ -234,6 +238,7 @@ class _ClientRelationshipsScreenState
     final scanState = _str(data['scanState']);
     final hasConnectedMailbox = data['hasConnectedMailbox'] == true;
     final hasGoogleMailbox = data['hasGoogleMailbox'] == true;
+    final hasGoogleContactsAuth = data['hasGoogleContactsAuth'] == true;
 
     // Parse contacts regardless of scan state (CSV/manual exist independently)
     final summaryMap = data['summary'] is Map
@@ -287,6 +292,7 @@ class _ClientRelationshipsScreenState
         contacts: contactsList,
         hasConnectedMailbox: hasConnectedMailbox,
         hasGoogleMailbox: hasGoogleMailbox,
+        hasGoogleContactsAuth: hasGoogleContactsAuth,
       );
     });
   }
@@ -448,6 +454,32 @@ class _ClientRelationshipsScreenState
     } catch (_) {}
   }
 
+  Future<void> _connectGoogleContacts() async {
+    if (_isConnectingGoogle) return;
+    setState(() => _isConnectingGoogle = true);
+    try {
+      final result = await _repo.beginGoogleContactsAuth();
+      final authUrl = _str(result['authUrl']);
+      if (authUrl.isEmpty || !mounted) return;
+      final uri = Uri.tryParse(authUrl);
+      if (uri == null) return;
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open Google authorization page.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not start Google authorization: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isConnectingGoogle = false);
+    }
+  }
+
   Future<void> _syncGoogleContacts() async {
     if (_isSyncingGoogle) return;
     setState(() => _isSyncingGoogle = true);
@@ -455,17 +487,13 @@ class _ClientRelationshipsScreenState
       final result = await _repo.syncGoogleContacts();
       final status = _str(result['status']);
       if (!mounted) return;
-      if (status == 'no_google_mailbox') {
+      if (status == 'no_google_contacts_auth' || status == 'no_google_mailbox') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-              'No Google account connected. Connect a Google mailbox in Infrastructure first.',
+              'Google Contacts not connected. Use "Connect Google Contacts" to authorize.',
             ),
             duration: const Duration(seconds: 6),
-            action: SnackBarAction(
-              label: 'Infrastructure',
-              onPressed: () => context.go('/client/infrastructure'),
-            ),
           ),
         );
       } else if (status == 'insufficient_scope') {
@@ -862,6 +890,7 @@ class _ClientRelationshipsScreenState
             generatedAt: inv.generatedAt,
             hasConnectedMailbox: inv.hasConnectedMailbox,
             hasGoogleMailbox: inv.hasGoogleMailbox,
+            hasGoogleContactsAuth: inv.hasGoogleContactsAuth,
             csvContactCount: inv.csvContactCount,
             googleContactCount: inv.googleContactCount,
             manualContactCount: inv.manualContactCount,
@@ -869,9 +898,11 @@ class _ClientRelationshipsScreenState
             isRebuilding: _isRebuilding,
             isSyncingGoogle: _isSyncingGoogle,
             isImportingCsv: _isImportingCsv,
+            isConnectingGoogle: _isConnectingGoogle,
             onResync: _resync,
             onRebuild: _rebuild,
             onRemoveSource: _removeSource,
+            onConnectGoogle: _connectGoogleContacts,
             onSyncGoogle: _syncGoogleContacts,
             onImportCsv: _importCsv,
             onAddManual: _addManual,
@@ -1037,6 +1068,7 @@ class _SourceManagement extends StatelessWidget {
     required this.generatedAt,
     required this.hasConnectedMailbox,
     required this.hasGoogleMailbox,
+    required this.hasGoogleContactsAuth,
     required this.csvContactCount,
     required this.googleContactCount,
     required this.manualContactCount,
@@ -1044,9 +1076,11 @@ class _SourceManagement extends StatelessWidget {
     required this.isRebuilding,
     required this.isSyncingGoogle,
     required this.isImportingCsv,
+    required this.isConnectingGoogle,
     required this.onResync,
     required this.onRebuild,
     required this.onRemoveSource,
+    required this.onConnectGoogle,
     required this.onSyncGoogle,
     required this.onImportCsv,
     required this.onAddManual,
@@ -1057,6 +1091,7 @@ class _SourceManagement extends StatelessWidget {
   final String? generatedAt;
   final bool hasConnectedMailbox;
   final bool hasGoogleMailbox;
+  final bool hasGoogleContactsAuth;
   final int csvContactCount;
   final int googleContactCount;
   final int manualContactCount;
@@ -1064,9 +1099,11 @@ class _SourceManagement extends StatelessWidget {
   final bool isRebuilding;
   final bool isSyncingGoogle;
   final bool isImportingCsv;
+  final bool isConnectingGoogle;
   final VoidCallback onResync;
   final VoidCallback onRebuild;
   final VoidCallback onRemoveSource;
+  final VoidCallback onConnectGoogle;
   final VoidCallback onSyncGoogle;
   final VoidCallback onImportCsv;
   final VoidCallback onAddManual;
@@ -1090,7 +1127,12 @@ class _SourceManagement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showAddGoogle = googleContactCount == 0;
+    // Show Google active source row only when there are contacts already synced
+    final showGoogleSourceRow = googleContactCount > 0 || hasGoogleContactsAuth;
+    // Whether to show "Connect Google Contacts" in the add section
+    final showConnectGoogle = !hasGoogleContactsAuth;
+    // Whether to show "Sync now" in add section (authorized but 0 contacts yet)
+    final showSyncNowGoogle = hasGoogleContactsAuth && googleContactCount == 0;
 
     return Container(
       width: double.infinity,
@@ -1141,27 +1183,34 @@ class _SourceManagement extends StatelessWidget {
           ],
 
           // ── Google Contacts row ──────────────────────────────────────────
-          if (googleContactCount > 0) ...[
+          if (showGoogleSourceRow) ...[
             if (hasConnectedMailbox) const Divider(height: 24),
             _SourceRow(
               dot: AppTheme.coVerdant,
               title: 'Google Contacts',
-              subtitle: '$googleContactCount contacts from Google directory',
+              subtitle: googleContactCount > 0
+                  ? '$googleContactCount contacts synced from Google'
+                  : 'Connected · No contacts synced yet',
               actions: Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   OutlinedButton(
                     onPressed: isSyncingGoogle ? null : onSyncGoogle,
-                    child: Text(isSyncingGoogle ? 'Syncing…' : 'Sync again'),
+                    child: Text(isSyncingGoogle
+                        ? 'Syncing…'
+                        : googleContactCount > 0
+                            ? 'Sync again'
+                            : 'Sync now'),
                   ),
-                  TextButton(
-                    onPressed: onRemoveGoogleSource,
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colorScheme.error,
+                  if (googleContactCount > 0)
+                    TextButton(
+                      onPressed: onRemoveGoogleSource,
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
+                      child: const Text('Remove source'),
                     ),
-                    child: const Text('Remove source'),
-                  ),
                 ],
               ),
             ),
@@ -1169,7 +1218,7 @@ class _SourceManagement extends StatelessWidget {
 
           // ── CSV row ──────────────────────────────────────────────────────
           if (csvContactCount > 0) ...[
-            if (hasConnectedMailbox || googleContactCount > 0) const Divider(height: 24),
+            if (hasConnectedMailbox || showGoogleSourceRow) const Divider(height: 24),
             _SourceRow(
               dot: AppTheme.coMist,
               title: 'CSV import',
@@ -1196,7 +1245,7 @@ class _SourceManagement extends StatelessWidget {
 
           // ── Manual row ───────────────────────────────────────────────────
           if (manualContactCount > 0) ...[
-            if (hasConnectedMailbox || googleContactCount > 0 || csvContactCount > 0)
+            if (hasConnectedMailbox || showGoogleSourceRow || csvContactCount > 0)
               const Divider(height: 24),
             _SourceRow(
               dot: AppTheme.coSun,
@@ -1218,10 +1267,16 @@ class _SourceManagement extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (showAddGoogle)
+              if (showConnectGoogle)
+                OutlinedButton.icon(
+                  onPressed: isConnectingGoogle ? null : onConnectGoogle,
+                  icon: const Icon(Icons.account_circle_outlined, size: 16),
+                  label: Text(isConnectingGoogle ? 'Opening…' : 'Connect Google Contacts'),
+                ),
+              if (showSyncNowGoogle)
                 OutlinedButton.icon(
                   onPressed: isSyncingGoogle ? null : onSyncGoogle,
-                  icon: const Icon(Icons.account_circle_outlined, size: 16),
+                  icon: const Icon(Icons.sync_outlined, size: 16),
                   label: Text(isSyncingGoogle ? 'Syncing…' : 'Sync Google Contacts'),
                 ),
               OutlinedButton.icon(
@@ -1405,30 +1460,42 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
   int _rowCount = 0;
 
   void _pickFile() {
-    final input = html.FileUploadInputElement()
+    // Use InputElement with explicit type rather than FileUploadInputElement —
+    // avoids dart2js specialisation edge-cases where onChange.listen misfires.
+    final input = html.InputElement(type: 'file')
       ..accept = '.csv'
-      ..multiple = false;
+      ..multiple = false
+      ..style.display = 'none'
+      ..style.position = 'absolute';
 
-    // Must be appended to the document body before click() — detached inputs
-    // silently drop the change event in Firefox and Safari.
-    html.document.body!.append(input);
+    // Appended to body before click() — detached inputs drop change events
+    // in Firefox and Safari.
+    html.document.body?.append(input);
 
-    // Attach listener BEFORE calling click so no event is missed.
-    input.onChange.listen((_) {
+    // addEventListener('change', ...) bypasses the dart2js EventStreamProvider
+    // wrapping that can silently drop events in production builds.
+    void onChange(html.Event event) {
+      input.removeEventListener('change', onChange);
+      input.remove();
       final file = input.files?.first;
-      input.remove(); // clean up DOM immediately after reading selection
       if (file == null) return;
 
       final reader = html.FileReader();
-
-      // onLoadEnd fires after both success and error, and readyState is DONE.
       reader.onLoadEnd.listen((_) {
         if (reader.readyState != html.FileReader.DONE) return;
-        // readAsArrayBuffer stores a dart:typed_data ByteBuffer in result.
-        final buffer = reader.result as ByteBuffer;
-        final bytes = buffer.asUint8List();
+        final result = reader.result;
+        Uint8List bytes;
+        if (result is ByteBuffer) {
+          bytes = result.asUint8List();
+        } else {
+          // dart2js may return a typed-data object directly
+          try {
+            bytes = (result as dynamic).asUint8List() as Uint8List;
+          } catch (_) {
+            return;
+          }
+        }
 
-        // Decode as UTF-8 (handles BOM and non-ASCII names correctly).
         final content = utf8.decode(bytes, allowMalformed: true);
         final lines = content
             .split(RegExp(r'\r?\n'))
@@ -1449,8 +1516,9 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
       });
 
       reader.readAsArrayBuffer(file);
-    });
+    }
 
+    input.addEventListener('change', onChange);
     input.click();
   }
 

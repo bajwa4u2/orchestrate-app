@@ -161,8 +161,19 @@ class ClientRelationshipRepository {
     return _asMap(json);
   }
 
-  /// Sync relationships from a connected Google mailbox.
-  /// Returns { status, count? } — status may be 'synced', 'no_google_mailbox',
+  /// Begin Google Contacts OAuth flow. Returns { authUrl } which the caller
+  /// must open in a browser (url_launcher) to complete authorization.
+  Future<Map<String, dynamic>> beginGoogleContactsAuth() async {
+    final json = await _apiClient.postJson(
+      '/client/intelligence/relationships/sources/google/connect',
+      body: const <String, dynamic>{},
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
+  /// Sync relationships from a connected Google Contacts auth.
+  /// Returns { status, count? } — status may be 'synced', 'no_google_contacts_auth',
   /// 'insufficient_scope', or 'failed'.
   Future<Map<String, dynamic>> syncGoogleContacts() async {
     final json = await _apiClient.postJson(
