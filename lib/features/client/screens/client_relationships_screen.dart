@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1459,72 +1458,33 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
   String? _validationError;
   int _rowCount = 0;
 
-  void _pickFile() {
-    // Must be visible (not display:none) — some browsers suppress the change
-    // event on hidden inputs. Positioned off-screen so it never shows.
-    final input = html.InputElement(type: 'file')
-      ..accept = '.csv'
-      ..multiple = false;
-    input.style
-      ..position = 'fixed'
-      ..top = '-9999px'
-      ..left = '-9999px'
-      ..width = '1px'
-      ..height = '1px'
-      ..opacity = '0';
+  void _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+      withData: true,
+    );
+    if (!mounted) return;
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    final bytes = file.bytes;
+    if (bytes == null) return;
 
-    // Must be in DOM before click() — detached inputs drop change events.
-    html.document.body?.append(input);
-
-    // Use onChange.listen (dart:html wrapper) — most compatible path in
-    // Flutter web dart2js. addEventListener with a local Dart closure can
-    // silently fail removeEventListener because dart2js wraps each call.
-    StreamSubscription<html.Event>? sub;
-    sub = input.onChange.listen((_) {
-      sub?.cancel();
-      final file = input.files?.first;
-      input.remove();
-      if (file == null) return;
-
-      final reader = html.FileReader();
-      reader.onLoadEnd.listen((_) {
-        if (reader.readyState != html.FileReader.DONE) return;
-        final result = reader.result;
-        Uint8List bytes;
-        if (result is ByteBuffer) {
-          bytes = result.asUint8List();
-        } else {
-          try {
-            bytes = (result as dynamic).asUint8List() as Uint8List;
-          } catch (_) {
-            return;
-          }
-        }
-
-        final content = utf8.decode(bytes, allowMalformed: true);
-        final lines = content
-            .split(RegExp(r'\r?\n'))
-            .where((l) => l.trim().isNotEmpty)
-            .toList();
-        final header = lines.isNotEmpty ? lines.first.toLowerCase() : '';
-        final hasEmail = header
-            .split(',')
-            .any((col) => col.trim().replaceAll('"', '') == 'email');
-        if (!mounted) return;
-        setState(() {
-          _fileName = file.name;
-          _fileBytes = bytes;
-          _rowCount = lines.length > 1 ? lines.length - 1 : 0;
-          _validationError = hasEmail
-              ? null
-              : 'No "email" column found in first row.';
-        });
-      });
-
-      reader.readAsArrayBuffer(file);
+    final content = utf8.decode(bytes, allowMalformed: true);
+    final lines = content
+        .split(RegExp(r'\r?\n'))
+        .where((l) => l.trim().isNotEmpty)
+        .toList();
+    final header = lines.isNotEmpty ? lines.first.toLowerCase() : '';
+    final hasEmail = header
+        .split(',')
+        .any((col) => col.trim().replaceAll('"', '') == 'email');
+    setState(() {
+      _fileName = file.name;
+      _fileBytes = bytes;
+      _rowCount = lines.length > 1 ? lines.length - 1 : 0;
+      _validationError = hasEmail ? null : 'No "email" column found in first row.';
     });
-
-    input.click();
   }
 
   @override
