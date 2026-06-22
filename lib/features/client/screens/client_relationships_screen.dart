@@ -1,4 +1,6 @@
 import 'dart:async';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -451,7 +453,20 @@ class _ClientRelationshipsScreenState
       final result = await _repo.syncGoogleContacts();
       final status = _str(result['status']);
       if (!mounted) return;
-      if (status == 'insufficient_scope') {
+      if (status == 'no_google_mailbox') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'No Google account connected. Connect a Google mailbox in Infrastructure first.',
+            ),
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'Infrastructure',
+              onPressed: () => context.go('/client/infrastructure'),
+            ),
+          ),
+        );
+      } else if (status == 'insufficient_scope') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -1073,7 +1088,7 @@ class _SourceManagement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showAddGoogle = hasGoogleMailbox && googleContactCount == 0;
+    final showAddGoogle = googleContactCount == 0;
 
     return Container(
       width: double.infinity,
@@ -1369,42 +1384,107 @@ class _CsvImportDialog extends StatefulWidget {
 }
 
 class _CsvImportDialogState extends State<_CsvImportDialog> {
-  final _controller = TextEditingController();
+  String? _fileName;
+  String? _fileContent;
+  String? _validationError;
+  int _rowCount = 0;
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void _pickFile() {
+    final input = html.FileUploadInputElement()
+      ..accept = '.csv,text/csv'
+      ..click();
+    input.onChange.listen((_) {
+      final file = input.files?.first;
+      if (file == null) return;
+      final reader = html.FileReader();
+      reader.readAsText(file);
+      reader.onLoad.listen((_) {
+        final content = reader.result as String? ?? '';
+        final lines = content
+            .split(RegExp(r'\r?\n'))
+            .where((l) => l.trim().isNotEmpty)
+            .toList();
+        final header = lines.isNotEmpty ? lines.first.toLowerCase() : '';
+        final hasEmail = header.split(',').any((col) =>
+            col.trim().replaceAll('"', '') == 'email');
+        setState(() {
+          _fileName = file.name;
+          _fileContent = content;
+          _rowCount = lines.length > 1 ? lines.length - 1 : 0;
+          _validationError = hasEmail
+              ? null
+              : 'No "email" column found. The first row must include an email header.';
+        });
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final canImport = _fileContent != null && _validationError == null && _rowCount > 0;
+
     return AlertDialog(
       title: const Text('Import CSV'),
       content: SizedBox(
-        width: 480,
+        width: 440,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Paste CSV content below. The first row must be a header. '
-              'Required column: email. Optional columns: name, organization.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
+              'Choose a CSV file. Required header column: email. '
+              'Optional columns: name, organization.',
+              style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _controller,
-              maxLines: 8,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-              decoration: const InputDecoration(
-                hintText: 'email,name,organization\njohn@example.com,John Doe,Acme',
-                border: OutlineInputBorder(),
-                isDense: true,
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _pickFile,
+              icon: const Icon(Icons.upload_file_outlined, size: 18),
+              label: const Text('Choose file'),
+            ),
+            if (_fileName != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.publicSurfaceSoft,
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                  border: Border.all(color: AppTheme.publicLine),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.insert_drive_file_outlined, size: 16,
+                        color: AppTheme.publicMuted),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _fileName!,
+                        style: theme.textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_validationError == null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '$_rowCount row${_rowCount == 1 ? '' : 's'}',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppTheme.publicMuted),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
+            ],
+            if (_validationError != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                _validationError!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1414,11 +1494,9 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () {
-            final content = _controller.text.trim();
-            if (content.isEmpty) return;
-            Navigator.pop(context, {'content': content});
-          },
+          onPressed: canImport
+              ? () => Navigator.pop(context, {'content': _fileContent!})
+              : null,
           child: const Text('Import'),
         ),
       ],
