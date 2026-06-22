@@ -5,7 +5,10 @@ import 'package:orchestrate_app/features/auth/screens/client_login_screen.dart';
 import 'package:orchestrate_app/features/auth/screens/ops_login_screen.dart';
 import 'package:orchestrate_app/features/client/screens/campaigns_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_activity_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_artifacts_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_branding_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_evidence_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_trust_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_relationships_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_mailbox_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_newsletter_screen.dart';
@@ -82,6 +85,9 @@ const _clientCoreRoutes = <String>{
   '/app/mailbox',
   '/app/newsletter',
   '/app/branding',
+  '/app/trust',
+  '/app/evidence',
+  '/app/artifacts',
   '/app/billing',
   '/app/account',
   '/app/setup',
@@ -1246,6 +1252,15 @@ final router = GoRouter(
         GoRoute(
             path: '/app/branding/signatures',
             redirect: (context, state) => '/app/branding'),
+        GoRoute(
+            path: '/app/trust',
+            builder: (context, state) => const ClientTrustScreen()),
+        GoRoute(
+            path: '/app/evidence',
+            builder: (context, state) => const ClientEvidenceScreen()),
+        GoRoute(
+            path: '/app/artifacts',
+            builder: (context, state) => const ClientArtifactsScreen()),
         GoRoute(
             path: '/app/billing',
             builder: (context, state) =>

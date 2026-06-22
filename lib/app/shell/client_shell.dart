@@ -76,6 +76,18 @@ class _ClientShellState extends State<ClientShell> {
         path: '/app/branding',
         icon: Icons.palette_outlined),
     _ClientNavItem(
+        label: 'Credentials',
+        path: '/app/trust',
+        icon: Icons.verified_outlined),
+    _ClientNavItem(
+        label: 'Evidence',
+        path: '/app/evidence',
+        icon: Icons.library_books_outlined),
+    _ClientNavItem(
+        label: 'Artifacts',
+        path: '/app/artifacts',
+        icon: Icons.analytics_outlined),
+    _ClientNavItem(
         label: 'Records',
         path: '/client/records',
         icon: Icons.description_outlined),
@@ -218,6 +230,12 @@ class _ClientShellState extends State<ClientShell> {
         return 'Newsletter';
       case '/app/branding':
         return 'Branding';
+      case '/app/trust':
+        return 'Credentials';
+      case '/app/evidence':
+        return 'Evidence';
+      case '/app/artifacts':
+        return 'Artifacts';
       case '/app/billing':
         return 'Billing';
       case '/app/account':
@@ -289,6 +307,12 @@ class _ClientShellState extends State<ClientShell> {
         return 'Update controls for your account.';
       case '/app/branding':
         return 'Brand controls for your account.';
+      case '/app/trust':
+        return 'Certifications, licenses, and verifiable credentials.';
+      case '/app/evidence':
+        return 'Case studies, proof points, and capability records.';
+      case '/app/artifacts':
+        return 'Generated identity reports, capability docs, and proposals.';
       case '/app/billing':
         return 'Service standing and billing.';
       case '/app/account':
