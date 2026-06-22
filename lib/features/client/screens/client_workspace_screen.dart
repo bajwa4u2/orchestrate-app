@@ -170,13 +170,12 @@ class ClientHomeScreen extends StatelessWidget {
               actionLabel: 'Open representation',
               route: '/client/representation'),
           _Row(
-              title: 'Contacts and intelligence',
-              primary:
-                  'Sourced contacts and reach are tracked separately from billing.',
+              title: 'Relationships',
+              primary: 'Your network, derived from mailbox activity.',
               secondary:
-                  'Use contacts to review sourced records and engagement.',
-              actionLabel: 'Open contacts',
-              route: '/app/contacts'),
+                  'See who you communicate with and understand the relationships connected to your business.',
+              actionLabel: 'Open relationships',
+              route: '/client/relationships'),
         ],
         secondaryEmpty: 'No direct actions are available.',
       );
@@ -212,15 +211,12 @@ class ClientHomeScreen extends StatelessWidget {
             actionLabel: 'Open representation',
             route: '/client/representation'),
         _Row(
-            title: 'Contacts and intelligence',
-            primary: _join([
-              '${_countValue(activity['leadCount'] ?? activity['leads'])} contacts',
-              '${_countValue(activity['sendableLeadCount'] ?? activity['sendableLeads'])} reachable',
-            ]),
+            title: 'Relationships',
+            primary: 'Your network, derived from mailbox activity.',
             secondary:
-                'Review the businesses Orchestrate has sourced and is engaging for you.',
-            actionLabel: 'Open contacts',
-            route: '/app/contacts'),
+                'See who you communicate with and understand the relationships connected to your business.',
+            actionLabel: 'Open relationships',
+            route: '/client/relationships'),
         _Row(
             title: 'Meetings',
             primary: _join([
@@ -257,7 +253,7 @@ class ClientHomeScreen extends StatelessWidget {
                 ? 'Support is available whenever you need guidance.'
                 : '${notifications.length} notices currently visible.',
             secondary:
-                'Help stays available without mixing with contacts or meetings.',
+                'Help stays available when you need it.',
             actionLabel: 'Open help',
             route: '/client/support'),
       ],
