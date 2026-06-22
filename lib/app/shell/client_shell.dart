@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
+import 'package:orchestrate_app/core/config/app_config.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
@@ -25,7 +26,7 @@ class _ClientShellState extends State<ClientShell> {
   final ClientBrandingRepository _brandingRepository = ClientBrandingRepository();
   final AuthRepository _authRepository = AuthRepository();
   Map<String, dynamic>? _subscription;
-  String? _clientLogoUrl;
+  bool _hasClientLogo = false;
   bool _signingOut = false;
 
   static const double _sidebarWidth = 284;
@@ -131,8 +132,7 @@ class _ClientShellState extends State<ClientShell> {
       final data = await _brandingRepository.fetchBranding();
       if (!mounted) return;
       final logo = data['logo'] as Map?;
-      final url = logo?['url']?.toString().trim();
-      setState(() => _clientLogoUrl = (url?.isNotEmpty == true) ? url : null);
+      setState(() => _hasClientLogo = logo != null);
     } catch (_) {
       // Non-fatal — fallback to Orchestrate logo
     }
@@ -376,7 +376,7 @@ class _ClientShellState extends State<ClientShell> {
                   child: _SidebarContent(
                       name: name,
                       email: email,
-                      clientLogoUrl: _clientLogoUrl,
+                      hasClientLogo: _hasClientLogo,
                       isSelected: _isSelected,
                       signingOut: _signingOut,
                       onSignOut: () => _signOut(context)))
@@ -410,7 +410,7 @@ class _ClientShellState extends State<ClientShell> {
                       child: _SidebarContent(
                         name: name,
                         email: email,
-                        clientLogoUrl: _clientLogoUrl,
+                        hasClientLogo: _hasClientLogo,
                         isSelected: _isSelected,
                         signingOut: _signingOut,
                         onSignOut: () => _signOut(context),
@@ -442,12 +442,12 @@ class _SidebarContent extends StatelessWidget {
     required this.isSelected,
     required this.signingOut,
     required this.onSignOut,
-    this.clientLogoUrl,
+    required this.hasClientLogo,
   });
 
   final String name;
   final String email;
-  final String? clientLogoUrl;
+  final bool hasClientLogo;
   final bool Function(String path) isSelected;
   final bool signingOut;
   final VoidCallback onSignOut;
@@ -468,9 +468,10 @@ class _SidebarContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    clientLogoUrl != null
+                    hasClientLogo
                         ? Image.network(
-                            clientLogoUrl!,
+                            '${AppConfig.normalizedApiBaseUrl}/clients/me/branding/logo/logo_primary',
+                            headers: {'Authorization': 'Bearer ${AuthSessionController.instance.token}'},
                             height: 30,
                             fit: BoxFit.contain,
                             errorBuilder: (_, __, ___) => BrandAssets.logo(context, height: 30),

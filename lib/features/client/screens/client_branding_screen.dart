@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:orchestrate_app/core/auth/auth_session.dart';
+import 'package:orchestrate_app/core/config/app_config.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_branding_repository.dart';
 
@@ -327,8 +329,10 @@ class _LogoSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = _str(assetData?['url']);
+    final hasLogo = assetData != null;
     final hasBusy = uploading || removing;
+    final proxyUrl = '${AppConfig.normalizedApiBaseUrl}/clients/me/branding/logo/$assetType';
+    final token = AuthSessionController.instance.token;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,11 +345,12 @@ class _LogoSlot extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppTheme.radius),
             border: Border.all(color: AppTheme.publicLine),
           ),
-          child: url != null
+          child: hasLogo
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(AppTheme.radius - 1),
                   child: Image.network(
-                    url,
+                    proxyUrl,
+                    headers: {'Authorization': 'Bearer $token'},
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => const Center(
                       child: Icon(Icons.broken_image_outlined, color: Colors.grey),
@@ -361,9 +366,9 @@ class _LogoSlot extends StatelessWidget {
             children: [
               Text(label, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              if (url != null) ...[
+              if (hasLogo) ...[
                 Text(
-                  'PNG · ${_str(assetData?['mimeType'])?.replaceFirst('image/', '').toUpperCase() ?? ''}',
+                  _str(assetData?['mimeType'])?.replaceFirst('image/', '').toUpperCase() ?? '',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
                 ),
                 const SizedBox(height: 10),
@@ -378,7 +383,7 @@ class _LogoSlot extends StatelessWidget {
                     icon: hasBusy && uploading
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 1.5))
                         : const Icon(Icons.upload_outlined, size: 16),
-                    label: Text(url != null ? 'Replace' : 'Upload'),
+                    label: Text(hasLogo ? 'Replace' : 'Upload'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.publicAccent,
                       side: const BorderSide(color: AppTheme.publicAccent),
@@ -386,7 +391,7 @@ class _LogoSlot extends StatelessWidget {
                       textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ),
-                  if (url != null) ...[
+                  if (hasLogo) ...[
                     const SizedBox(width: 8),
                     TextButton(
                       onPressed: hasBusy ? null : () => onRemove(assetType),
