@@ -155,6 +155,9 @@ class _ClientShellState extends State<ClientShell> {
       case '/client/campaign':
       case '/client/campaign/targeting':
         return 'Representation';
+      case '/client/relationships':
+      case '/client/contacts':
+        return 'Relationships';
       case '/client/opportunities':
       case '/client/leads':
         return 'Opportunities';
@@ -225,6 +228,9 @@ class _ClientShellState extends State<ClientShell> {
       case '/client/campaign':
       case '/client/campaign/targeting':
         return 'Identity, ICP, voice, and authorization.';
+      case '/client/relationships':
+      case '/client/contacts':
+        return 'People you communicate with.';
       case '/client/opportunities':
       case '/client/leads':
         return 'Qualified B2B opportunities.';
