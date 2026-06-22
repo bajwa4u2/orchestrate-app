@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
@@ -1404,37 +1406,52 @@ class _CsvImportDialogState extends State<_CsvImportDialog> {
 
   void _pickFile() {
     final input = html.FileUploadInputElement()
-      ..accept = '.csv,text/csv'
-      ..click();
+      ..accept = '.csv'
+      ..multiple = false;
+
+    // Must be appended to the document body before click() — detached inputs
+    // silently drop the change event in Firefox and Safari.
+    html.document.body!.append(input);
+
+    // Attach listener BEFORE calling click so no event is missed.
     input.onChange.listen((_) {
       final file = input.files?.first;
+      input.remove(); // clean up DOM immediately after reading selection
       if (file == null) return;
+
       final reader = html.FileReader();
-      reader.readAsArrayBuffer(file);
-      reader.onLoad.listen((_) {
-        final result = reader.result;
-        if (result == null) return;
-        // dart:html FileReader.readAsArrayBuffer returns a ByteBuffer
-        // ignore: avoid_dynamic_calls
-        final bytes = (result as dynamic).asUint8List() as List<int>;
-        final content = String.fromCharCodes(bytes);
+
+      // onLoadEnd fires after both success and error, and readyState is DONE.
+      reader.onLoadEnd.listen((_) {
+        if (reader.readyState != html.FileReader.DONE) return;
+        // readAsArrayBuffer stores a dart:typed_data ByteBuffer in result.
+        final buffer = reader.result as ByteBuffer;
+        final bytes = buffer.asUint8List();
+
+        // Decode as UTF-8 (handles BOM and non-ASCII names correctly).
+        final content = utf8.decode(bytes, allowMalformed: true);
         final lines = content
             .split(RegExp(r'\r?\n'))
             .where((l) => l.trim().isNotEmpty)
             .toList();
         final header = lines.isNotEmpty ? lines.first.toLowerCase() : '';
-        final hasEmail = header.split(',').any(
-            (col) => col.trim().replaceAll('"', '') == 'email');
+        final hasEmail = header
+            .split(',')
+            .any((col) => col.trim().replaceAll('"', '') == 'email');
         setState(() {
           _fileName = file.name;
           _fileBytes = bytes;
           _rowCount = lines.length > 1 ? lines.length - 1 : 0;
           _validationError = hasEmail
               ? null
-              : 'No "email" column found. The first row must include an email header.';
+              : 'No "email" column found in first row.';
         });
       });
+
+      reader.readAsArrayBuffer(file);
     });
+
+    input.click();
   }
 
   @override
