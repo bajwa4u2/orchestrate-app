@@ -264,7 +264,9 @@ class _EvidenceEditDialogState extends State<_EvidenceEditDialog> {
 
   @override
   void dispose() {
-    for (final c in [_titleCtrl, _summaryCtrl, _industryCtrl, _geoCtrl]) c.dispose();
+    for (final c in [_titleCtrl, _summaryCtrl, _industryCtrl, _geoCtrl]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
