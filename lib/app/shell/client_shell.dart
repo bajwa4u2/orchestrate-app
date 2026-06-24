@@ -509,12 +509,12 @@ class _SidebarContent extends StatelessWidget {
                         children: [
                           Text(
                             name,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context)
                                 .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                                .bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700, height: 1.25),
                           ),
                           if (email.isNotEmpty) ...[
                             const SizedBox(height: 2),
