@@ -39,6 +39,7 @@ class LeadsScreen extends StatelessWidget {
               if (data.summary.governanceReviewQueue > 0)
                 _GovernanceQueueCallout(
                   count: data.summary.governanceReviewQueue,
+                  runtime: data.summary.runtime,
                 ),
               if (data.summary.governanceReviewQueue > 0)
                 const SizedBox(height: 18),
@@ -462,9 +463,24 @@ class _SummaryTile extends StatelessWidget {
 }
 
 class _GovernanceQueueCallout extends StatelessWidget {
-  const _GovernanceQueueCallout({required this.count});
+  const _GovernanceQueueCallout({
+    required this.count,
+    required this.runtime,
+  });
 
   final int count;
+  final _OpportunityRuntime runtime;
+
+  String get _message {
+    final attempts = count == 1 ? '1 delivery failure' : '$count delivery failures';
+    if (!runtime.readinessReady) {
+      return 'Mailbox authorization required — $attempts held pending mailbox setup.';
+    }
+    if (runtime.governanceBlocked) {
+      return 'Governance review required — $attempts held pending review.';
+    }
+    return '$attempts require review. Check mailbox credentials or contact support.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -483,7 +499,7 @@ class _GovernanceQueueCallout extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              '$count failed dispatch attempt${count == 1 ? '' : 's'} are queued for operator review. New dispatch may be held by governance until they clear.',
+              _message,
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -698,8 +714,7 @@ class _IntelligenceCampaignTile extends StatelessWidget {
     for (final entry in campaign.qualificationBreakdown.entries) {
       qualifyParts.add('${entry.value} ${entry.key.toLowerCase()}');
     }
-    final qualifyLabel =
-        qualifyParts.isEmpty ? 'No qualification activity yet' : qualifyParts.join(' · ');
+    final qualifyLabel = qualifyParts.isEmpty ? '' : qualifyParts.join(' · ');
     final lastRun = campaign.lastRunAt;
     final nextRun = campaign.nextRunAt;
     final scheduleLine = <String>[
@@ -709,8 +724,8 @@ class _IntelligenceCampaignTile extends StatelessWidget {
         'Next scheduled ${_formatDate(nextRun)}',
     ].join(' · ');
     final signalsLine = campaign.signalsRecent == 0
-        ? '0 signals detected yet · $qualifyLabel'
-        : '${campaign.signalsRecent} signals detected · $qualifyLabel';
+        ? '0 signals surfaced yet'
+        : '${campaign.signalsRecent} signals surfaced';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -747,6 +762,14 @@ class _IntelligenceCampaignTile extends StatelessWidget {
           style: theme.textTheme.bodyMedium
               ?.copyWith(color: AppTheme.publicText),
         ),
+        if (qualifyLabel.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            'Qualification: $qualifyLabel',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: AppTheme.publicMuted),
+          ),
+        ],
       ],
     );
   }
