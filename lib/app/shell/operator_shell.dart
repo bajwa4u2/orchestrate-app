@@ -8,17 +8,13 @@ import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/operator_workspace/models/cognition_models.dart';
 import 'package:orchestrate_app/features/operator_workspace/repositories/operator_cognition_repository.dart';
-import 'package:orchestrate_app/features/operator_workspace/widgets/operator_attention_badge.dart';
 import 'package:orchestrate_app/features/operator_workspace/widgets/operator_trust_ribbon.dart';
 
-/// Operator shell expressing the seven-faculty IA from
-/// OPERATOR_WORKSPACE_SPECIFICATION.md §4. Cognition / Trust & Readiness
-/// / Continuity / Runtime Truth / Adaptation / Governance / Platform
-/// Supervision — plus a Developer drawer for debug-class surfaces
-/// below the IA fold.
+/// Operations console shell. Ten operational surfaces replacing the
+/// legacy seven-faculty observation model.
 ///
-/// The shell mounts a periodic 60s poll against /operator/cognition/home
-/// to power the trust ribbon and faculty attention badges.
+/// Doctrine: every surface must support RESOLVE / INTERRUPT / FORWARD /
+/// DISMISS. Surfaces that only observe are demoted under System & Tools.
 class OperatorShell extends StatefulWidget {
   const OperatorShell({
     super.key,
@@ -29,7 +25,7 @@ class OperatorShell extends StatefulWidget {
   final String currentPath;
   final Widget child;
 
-  static const double sidebarWidth = 296;
+  static const double sidebarWidth = 264;
   static const double maxContentWidth = 1320;
 
   @override
@@ -50,7 +46,6 @@ class _OperatorShellState extends State<OperatorShell> {
 
   Future<void> _kickoff() async {
     await _poll();
-    // Poll every 60s while the shell is mounted.
     Future<void> loop() async {
       while (!_disposed) {
         await Future<void>.delayed(const Duration(seconds: 60));
@@ -58,7 +53,6 @@ class _OperatorShellState extends State<OperatorShell> {
         await _poll();
       }
     }
-
     unawaited(loop());
   }
 
@@ -82,111 +76,58 @@ class _OperatorShellState extends State<OperatorShell> {
     super.dispose();
   }
 
-  // ── faculty groups (seven faculties + developer drawer) ──
+  int get _totalAttention {
+    if (_home == null) return 0;
+    return _home!.attentionByFaculty.values.fold(0, (s, v) => s + v);
+  }
 
   List<_NavGroup> get groups => [
         _NavGroup(
-          label: 'Cognition',
-          facultyKey: 'cognition',
+          label: 'Operations',
+          attentionKey: 'ops',
           items: const [
-            _NavItem('Home', '/ops/overview', Icons.radar_outlined),
+            _NavItem('Work queue', '/ops/work', Icons.inbox_outlined),
+            _NavItem('Clients', '/ops/clients', Icons.people_outline),
+            _NavItem('Campaigns', '/ops/campaigns', Icons.campaign_outlined),
+            _NavItem(
+                'Inventory & imports', '/ops/inventory', Icons.inventory_2_outlined),
+            _NavItem('Transport', '/ops/transport', Icons.send_outlined),
+            _NavItem(
+                'Dispatch', '/ops/dispatch', Icons.policy_outlined),
+            _NavItem('Jobs', '/ops/jobs', Icons.work_outline),
           ],
         ),
         _NavGroup(
-          label: 'Trust & Readiness',
-          facultyKey: 'trustReadiness',
+          label: 'Support',
+          attentionKey: null,
           items: const [
-            _NavItem('Readiness board', '/ops/trust-readiness',
-                Icons.verified_user_outlined),
+            _NavItem('Inquiries', '/ops/inquiries', Icons.support_agent_outlined),
           ],
         ),
         _NavGroup(
-          label: 'Continuity',
-          facultyKey: 'continuity',
+          label: 'System',
+          attentionKey: null,
           items: const [
-            _NavItem('Execution continuity', '/ops/continuity',
-                Icons.timeline_outlined),
-            _NavItem('Campaign lifecycle', '/ops/continuity/campaigns',
-                Icons.campaign_outlined),
-            _NavItem('Governance review',
-                '/ops/governance', Icons.shield_outlined),
+            _NavItem('Audit history', '/ops/history', Icons.history_outlined),
+            _NavItem(
+                'System & tools', '/ops/system', Icons.settings_outlined),
           ],
         ),
         _NavGroup(
-          label: 'Runtime Truth',
-          facultyKey: 'runtimeTruth',
-          items: const [
-            _NavItem('Providers · mailboxes · DNS', '/ops/runtime-truth',
-                Icons.signal_cellular_alt_outlined),
-            _NavItem('Signal sources', '/ops/runtime-truth/discovery',
-                Icons.travel_explore_outlined),
-          ],
-        ),
-        _NavGroup(
-          label: 'Adaptation & Cognition',
-          facultyKey: 'adaptation',
-          items: const [
-            _NavItem('Hub', '/ops/adaptation', Icons.psychology_outlined),
-            _NavItem('Green path & budgets', '/ops/adaptation/green-path',
-                Icons.bolt_outlined),
-            _NavItem('Convergence metrics', '/ops/adaptation/convergence',
-                Icons.trending_down_outlined),
-            _NavItem('AI economy', '/ops/adaptation/ai-economy',
-                Icons.account_balance_outlined),
-            _NavItem('Escalations', '/ops/adaptation/escalations',
-                Icons.escalator_warning_outlined),
-            _NavItem('Reasoning cache', '/ops/adaptation/reasoning-cache',
-                Icons.cached_outlined),
-            _NavItem('Suggestions', '/ops/adaptation/suggestions',
-                Icons.lightbulb_outline),
-            _NavItem('Playbooks', '/ops/adaptation/playbooks',
-                Icons.menu_book_outlined),
-            _NavItem('Self-healing', '/ops/adaptation/healing',
-                Icons.healing_outlined),
-            _NavItem('Cost guardrails', '/ops/adaptation/guardrails',
-                Icons.shield_moon_outlined),
-            _NavItem('Patterns', '/ops/adaptation/patterns',
-                Icons.scatter_plot_outlined),
-            _NavItem('Learning feed', '/ops/adaptation/learning-feed',
-                Icons.list_alt_outlined),
-            _NavItem('Operational memory', '/ops/adaptation/memory',
-                Icons.memory_outlined),
-          ],
-        ),
-        _NavGroup(
-          label: 'Governance',
-          facultyKey: 'governance',
-          items: const [
-            _NavItem('Dispatch governance', '/ops/governance',
-                Icons.policy_outlined),
-            _NavItem('AI approvals', '/ops/governance/ai-approvals',
-                Icons.gavel_outlined),
-            _NavItem('Audit timeline', '/ops/governance/audit',
-                Icons.history_outlined),
-            _NavItem('Inquiries', '/ops/inquiries',
-                Icons.support_agent_outlined),
-          ],
-        ),
-        _NavGroup(
-          label: 'Platform Supervision',
-          facultyKey: 'platformSupervision',
-          items: const [
-            _NavItem('Cross-tenant', '/ops/platform-supervision',
-                Icons.public_outlined),
-          ],
-        ),
-        _NavGroup(
-          label: 'Developer drawer',
-          facultyKey: null,
+          label: 'Developer',
+          attentionKey: null,
           items: const [
             _NavItem('System Doctor', '/operator/system-doctor',
                 Icons.health_and_safety_outlined),
-            _NavItem('Backend surfaces', '/operator/system',
-                Icons.code_outlined),
-            _NavItem('Debug / system checks', '/ops/debug', Icons.tune_outlined),
+            _NavItem(
+                'Backend surfaces', '/operator/system', Icons.code_outlined),
+            _NavItem(
+                'Debug / system checks', '/ops/debug', Icons.tune_outlined),
           ],
         ),
       ];
+
+  Map<String, int> get _attentionMap => {'ops': _totalAttention};
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +139,7 @@ class _OperatorShellState extends State<OperatorShell> {
             _Sidebar(
               currentPath: widget.currentPath,
               groups: groups,
-              attention: _home?.attentionByFaculty ?? const {},
+              attention: _attentionMap,
             ),
             Expanded(
               child: Column(
@@ -210,17 +151,11 @@ class _OperatorShellState extends State<OperatorShell> {
                     child: Container(
                       color: AppTheme.background,
                       child: Padding(
-                        padding:
-                            const EdgeInsets.fromLTRB(28, 22, 28, 22),
+                        padding: const EdgeInsets.fromLTRB(28, 22, 28, 22),
                         child: Center(
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(
                                 maxWidth: OperatorShell.maxContentWidth),
-                            // Operator surface content is selectable by
-                            // default — diagnostics, IDs, rationale,
-                            // logs, and runtime truth must be copyable.
-                            // Buttons and nav remain in the chrome
-                            // outside this SelectionArea.
                             child: SizedBox.expand(
                               child: SelectionArea(child: widget.child),
                             ),
@@ -260,52 +195,24 @@ class _Sidebar extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 24, 18, 24),
+          padding: const EdgeInsets.fromLTRB(18, 20, 14, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _Brand(currentPath: currentPath),
-              const SizedBox(height: 18),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppTheme.panel,
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radius),
-                  border: Border.all(color: AppTheme.line),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.emerald,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text('Supervision live',
-                          style: Theme.of(context).textTheme.titleMedium),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Expanded(
                 child: ListView.separated(
+                  padding: EdgeInsets.zero,
                   itemCount: groups.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final group = groups[index];
                     return _NavGroupWidget(
                       group: group,
                       currentPath: currentPath,
                       attentionCount:
-                          attention[group.facultyKey ?? ''] ?? 0,
+                          attention[group.attentionKey ?? ''] ?? 0,
                     );
                   },
                 ),
@@ -324,10 +231,10 @@ class _Brand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected = currentPath == '/ops/overview';
+    final selected = currentPath == '/ops/work';
     return InkWell(
       borderRadius: BorderRadius.circular(AppTheme.radius),
-      onTap: () => context.go('/ops/overview'),
+      onTap: () => context.go('/ops/work'),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 12, 14, 14),
@@ -342,12 +249,12 @@ class _Brand extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             BrandAssets.operatorLockup(context),
-            const SizedBox(height: 14),
-            Text('Supervision console',
+            const SizedBox(height: 12),
+            Text('Operations console',
                 style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
-              'Cognition · Readiness · Continuity · Truth · Adaptation · Governance · Platform',
+              'Resolve · Interrupt · Forward · Dismiss',
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -372,9 +279,15 @@ class _TopBar extends StatelessWidget {
         if (item.path == currentPath) return '${group.label} · ${item.label}';
       }
     }
-    // Detail / drill routes
-    if (currentPath.startsWith('/ops/inquiries/')) return 'Governance · Inquiry detail';
-    if (currentPath.startsWith('/ops/continuity')) return 'Continuity';
+    if (currentPath.startsWith('/ops/inquiries/')) return 'Support · Inquiry detail';
+    if (currentPath.startsWith('/ops/dispatch')) return 'Operations · Dispatch';
+    if (currentPath.startsWith('/ops/transport')) return 'Operations · Transport';
+    if (currentPath.startsWith('/ops/campaigns')) return 'Operations · Campaigns';
+    if (currentPath.startsWith('/ops/clients')) return 'Operations · Clients';
+    if (currentPath.startsWith('/ops/inventory')) return 'Operations · Inventory & imports';
+    if (currentPath.startsWith('/ops/jobs')) return 'Operations · Jobs';
+    if (currentPath.startsWith('/ops/history')) return 'System · Audit history';
+    if (currentPath.startsWith('/ops/system')) return 'System · Tools';
     return 'Operator';
   }
 
@@ -392,8 +305,8 @@ class _TopBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(28, 18, 28, 14),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                  maxWidth: OperatorShell.maxContentWidth),
+              constraints:
+                  const BoxConstraints(maxWidth: OperatorShell.maxContentWidth),
               child: Row(
                 children: [
                   Expanded(
@@ -401,10 +314,7 @@ class _TopBar extends StatelessWidget {
                       _title(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             color: AppTheme.subdued,
                             fontWeight: FontWeight.w600,
                           ),
@@ -416,9 +326,7 @@ class _TopBar extends StatelessWidget {
                   TextButton(
                     onPressed: () async {
                       await AuthSessionController.instance.clear();
-                      if (context.mounted) {
-                        context.go('/ops/login');
-                      }
+                      if (context.mounted) context.go('/ops/login');
                     },
                     child: const Text('Sign out'),
                   ),
@@ -467,7 +375,7 @@ class _NavGroupWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 10, bottom: 8),
+          padding: const EdgeInsets.only(left: 10, bottom: 6),
           child: Row(
             children: [
               Expanded(
@@ -476,19 +384,38 @@ class _NavGroupWidget extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppTheme.subdued,
                         letterSpacing: 0.4,
+                        fontSize: 11,
                       ),
                 ),
               ),
-              OperatorAttentionBadge(count: attentionCount),
+              if (attentionCount > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.rose.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$attentionCount',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.rose,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
         for (final item in group.items) ...[
           _ShellNavButton(
             item: item,
-            selected: currentPath == item.path,
+            selected: currentPath == item.path ||
+                (item.path != '/ops/work' &&
+                    currentPath.startsWith('${item.path}/')),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
         ],
       ],
     );
@@ -512,18 +439,18 @@ class _ShellNavButton extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: selected ? AppTheme.panelRaised : Colors.transparent,
             borderRadius: BorderRadius.circular(AppTheme.radius),
-            border: Border.all(
-                color: selected ? AppTheme.lineSoft : Colors.transparent),
+            border:
+                Border.all(color: selected ? AppTheme.lineSoft : Colors.transparent),
           ),
           child: Row(
             children: [
               Icon(
                 item.icon,
-                size: 17,
+                size: 16,
                 color: selected ? AppTheme.text : AppTheme.muted,
               ),
               const SizedBox(width: 10),
@@ -533,7 +460,7 @@ class _ShellNavButton extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: selected ? AppTheme.text : AppTheme.muted,
                       ),
                 ),
@@ -550,11 +477,11 @@ class _NavGroup {
   const _NavGroup({
     required this.label,
     required this.items,
-    required this.facultyKey,
+    required this.attentionKey,
   });
   final String label;
   final List<_NavItem> items;
-  final String? facultyKey;
+  final String? attentionKey;
 }
 
 class _NavItem {

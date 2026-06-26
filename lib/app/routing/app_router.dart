@@ -70,6 +70,15 @@ import 'package:orchestrate_app/features/public/screens/public_home_screen.dart'
 import 'package:orchestrate_app/app/shell/operator_shell.dart';
 import 'package:orchestrate_app/app/shell/client_shell.dart';
 import 'package:orchestrate_app/app/shell/public_shell.dart';
+import 'package:orchestrate_app/features/ops_console/ops_work_queue_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_dispatch_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_transport_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_clients_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_campaigns_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_inventory_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_jobs_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_history_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_system_screen.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/platform/ios_route_policy.dart';
@@ -208,10 +217,10 @@ final router = GoRouter(
     }
 
     if (session.surface == 'operator') {
-      if (isOpsAuth || path == '/') return '/ops/overview';
-      if (path.startsWith('/app/')) return '/ops/overview';
-      if (path.startsWith('/auth/')) return '/ops/overview';
-      if (path.startsWith('/client/')) return '/ops/overview';
+      if (isOpsAuth || path == '/') return '/ops/work';
+      if (path.startsWith('/app/')) return '/ops/work';
+      if (path.startsWith('/auth/')) return '/ops/work';
+      if (path.startsWith('/client/')) return '/ops/work';
       return null;
     }
 
@@ -1386,8 +1395,30 @@ final router = GoRouter(
         // reachable as a drill-down inside Continuity for operators
         // who want the metric-wall view.
         GoRoute(
+            path: '/ops/work',
+            builder: (context, state) => const OpsWorkQueueScreen()),
+        GoRoute(
+            path: '/ops/dispatch',
+            builder: (context, state) => const OpsDispatchScreen()),
+        GoRoute(
+            path: '/ops/transport',
+            builder: (context, state) => const OpsTransportScreen()),
+        GoRoute(
+            path: '/ops/inventory',
+            builder: (context, state) => const OpsInventoryScreen()),
+        GoRoute(
+            path: '/ops/jobs',
+            builder: (context, state) => const OpsJobsScreen()),
+        GoRoute(
+            path: '/ops/history',
+            builder: (context, state) => const OpsHistoryScreen()),
+        GoRoute(
+            path: '/ops/system',
+            builder: (context, state) => const OpsSystemScreen()),
+        // /ops/overview retained for inbound links but redirected to system hub
+        GoRoute(
             path: '/ops/overview',
-            builder: (context, state) => const CognitionHomeScreen()),
+            redirect: (context, state) => '/ops/system'),
         GoRoute(
             path: '/ops/overview-legacy',
             builder: (context, state) => const OperatorWorkspaceScreen(
@@ -1485,14 +1516,14 @@ final router = GoRouter(
                 '/ops/continuity?drill=workers'),
         GoRoute(
             path: '/ops/clients',
-            redirect: (context, state) => '/ops/continuity/campaigns'),
+            builder: (context, state) => const OpsClientsScreen()),
         GoRoute(
             path: '/ops/contacts',
             builder: (context, state) => const OperatorWorkspaceScreen(
                 section: OperatorSection.pipeline)),
         GoRoute(
             path: '/ops/campaigns',
-            redirect: (context, state) => '/ops/continuity/campaigns'),
+            builder: (context, state) => const OpsCampaignsScreen()),
         GoRoute(
             path: '/ops/mailboxes',
             builder: (context, state) => const OperatorWorkspaceScreen(
