@@ -74,9 +74,9 @@ class OrchestrateOperationsScreen extends StatelessWidget {
           label: 'Readiness governed',
           ownership: 'orchestrate',
           body:
-              'A single backend authority evaluates the eight-layer dependency chain. Every client surface (Operations, Infrastructure, Settings, Home, guidance drawer) reads from this one authority, so readiness never drifts per screen.',
+              'A single backend authority evaluates the nine-layer dependency chain. Every client surface (Operations, Infrastructure, Settings, Home, guidance drawer) reads from this one authority, so readiness never drifts per screen.',
           bullets: [
-            'Setup → billing → representation → identity → domain → trust → transport → dispatch',
+            'Setup → billing → representation → identity → domain → trust → transport → reply monitoring → dispatch',
             'Per-layer state: ready / pending / waiting / blocked',
             'Inline resolution CTA on every client-pending layer',
           ],

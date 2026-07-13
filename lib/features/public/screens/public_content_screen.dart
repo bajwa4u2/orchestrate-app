@@ -742,9 +742,9 @@ PublicContentScreen buildHowOrchestrateOperatesScreen() =>
         ContentSection(
           title: '4. Readiness governed',
           body:
-              'A single backend authority (ExecutionEligibilityService) evaluates the full dependency chain: subscription, representation, business identity, sending domain, trust classification, sending transport, reply monitoring, dispatch eligibility. Every client surface (Operations, Infrastructure, Settings, Home, guidance drawer) reads from this one authority. There is no per-screen readiness composition that can drift.',
+              'A single backend authority (ExecutionEligibilityService) evaluates the full dependency chain: setup, subscription, representation, business identity, sending domain, trust classification, sending transport, reply monitoring, dispatch eligibility. Every client surface (Operations, Infrastructure, Settings, Home, guidance drawer) reads from this one authority. There is no per-screen readiness composition that can drift.',
           points: [
-            '8-layer dependency chain with per-layer state (ready / pending / waiting / blocked)',
+            '9-layer dependency chain with per-layer state (ready / pending / waiting / blocked)',
             'Single backend authority, no per-screen recomposition',
             'Owner tagging: client / Orchestrate / operator per layer',
             'Inline resolution CTA on every client-pending layer',

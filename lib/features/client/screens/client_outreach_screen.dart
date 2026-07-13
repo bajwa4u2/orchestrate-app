@@ -202,6 +202,7 @@ class _OperationsData {
     required this.governanceReviewQueue,
     required this.campaignActive,
     required this.governanceBlocked,
+    required this.canStartCampaign,
   });
 
   final int evaluated;
@@ -217,6 +218,7 @@ class _OperationsData {
   final int governanceReviewQueue;
   final bool campaignActive;
   final bool governanceBlocked;
+  final bool canStartCampaign;
 
   factory _OperationsData.parse({
     required Map<String, dynamic> summary,
@@ -226,6 +228,7 @@ class _OperationsData {
     final blocking = asMap(summary['blocking']);
     final runtime = asMap(summary['runtime']);
     final outSummary = asMap(outreach['summary']);
+    final readiness = asMap(outreach['readiness']);
     return _OperationsData(
       evaluated: _int(summary['entitiesEvaluated'] ?? summary['total']),
       qualified: _int(byq['qualified']),
@@ -240,6 +243,11 @@ class _OperationsData {
       governanceReviewQueue: _int(blocking['governanceReviewQueue']),
       campaignActive: runtime['campaignActive'] == true,
       governanceBlocked: runtime['governanceBlocked'] == true,
+      // Defaults to true only when the field is genuinely absent (older
+      // backend payloads without this readiness field) — never let a
+      // missing signal silently produce a false "blocked" reading, but
+      // an explicit false must always be honored.
+      canStartCampaign: readiness['canStartCampaign'] ?? true,
     );
   }
 
@@ -251,7 +259,7 @@ class _OperationsData {
         'Some leads or messages are held by governance. Orchestrate is working them and will not send anything that is not cleared.',
       );
     }
-    if (campaignActive && (sent > 0 || queuedSends > 0)) {
+    if (campaignActive && canStartCampaign && (sent > 0 || queuedSends > 0)) {
       return _OperationsStatus(
         ClientBannerTone.success,
         'Active',
