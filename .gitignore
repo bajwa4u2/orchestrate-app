@@ -49,3 +49,4 @@ app.*.map.json
 
 # Local screenshot/validation harness (not part of the app)
 .shots/
+.indexnow-state.json

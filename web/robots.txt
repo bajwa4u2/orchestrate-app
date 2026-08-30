@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /client/
+Disallow: /app/
+Disallow: /ops/
+Disallow: /operator/
+Disallow: /account/
+Disallow: /api/
+Sitemap: https://orchestrateops.com/sitemap.xml
