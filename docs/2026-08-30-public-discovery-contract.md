@@ -14,3 +14,8 @@ Unknown query state never creates a new canonical document and tracking
 parameters never redefine canonical identity. After a successful deployment,
 `node tool/notify_indexnow.mjs` hashes the canonical sitemap and sends one
 notification only when the public inventory changes.
+
+Native continuation is not modeled for this host unless a released supported
+native application and a stable public destination authority exist. The public
+URL remains the only canonical identity; no app URL system or forced store
+redirect is created by discovery.
