@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/app/shell/auth_shell.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 
@@ -48,8 +49,9 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
   Widget build(BuildContext context) {
     final createMode = widget.createMode;
     final pendingChallenge = _pendingChallenge;
-    return Scaffold(
-      body: Center(
+    return AuthShell(
+      maxContentWidth: 520,
+      child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
           child: Padding(
@@ -67,8 +69,8 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                             pendingChallenge != null
                                 ? 'Enter email code'
                                 : createMode
-                                ? 'Create operator access'
-                                : 'Operator sign in',
+                                    ? 'Create operator access'
+                                    : 'Operator sign in',
                             style: Theme.of(context).textTheme.headlineMedium),
                         const SizedBox(height: 12),
                         if (_error != null)
@@ -82,22 +84,22 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                           const SizedBox(height: 12),
                           TextFormField(
                               controller: _code,
-                              decoration:
-                                  const InputDecoration(labelText: 'Email code'),
+                              decoration: const InputDecoration(
+                                  labelText: 'Email code'),
                               validator: _required),
                           CheckboxListTile(
                             contentPadding: EdgeInsets.zero,
                             value: _trustDevice,
-                            onChanged: (value) => setState(
-                                () => _trustDevice = value == true),
+                            onChanged: (value) =>
+                                setState(() => _trustDevice = value == true),
                             controlAffinity: ListTileControlAffinity.leading,
                             title: const Text('Trust this device for 60 days'),
                           ),
                           const SizedBox(height: 12),
                           FilledButton(
                               onPressed: _busy ? null : _verifyCode,
-                              child: Text(
-                                  _busy ? 'Verifying...' : 'Verify code')),
+                              child:
+                                  Text(_busy ? 'Verifying...' : 'Verify code')),
                           TextButton(
                               onPressed: _busy
                                   ? null
@@ -108,49 +110,49 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                                       }),
                               child: const Text('Back to sign in')),
                         ] else ...[
-                        if (createMode) ...[
+                          if (createMode) ...[
+                            TextFormField(
+                                controller: _name,
+                                decoration: const InputDecoration(
+                                    labelText: 'Full name'),
+                                validator: _required),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                                controller: _workspace,
+                                decoration: const InputDecoration(
+                                    labelText: 'Workspace name'),
+                                validator: _required),
+                            const SizedBox(height: 12),
+                          ],
                           TextFormField(
-                              controller: _name,
+                              controller: _email,
                               decoration:
-                                  const InputDecoration(labelText: 'Full name'),
+                                  const InputDecoration(labelText: 'Email'),
                               validator: _required),
                           const SizedBox(height: 12),
                           TextFormField(
-                              controller: _workspace,
-                              decoration: const InputDecoration(
-                                  labelText: 'Workspace name'),
+                              controller: _password,
+                              decoration:
+                                  const InputDecoration(labelText: 'Password'),
+                              obscureText: true,
                               validator: _required),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => createMode ? _bootstrap() : _login(),
+                              child: Text(_busy
+                                  ? 'Working...'
+                                  : (createMode
+                                      ? 'Create operator account'
+                                      : 'Sign in'))),
                           const SizedBox(height: 12),
-                        ],
-                        TextFormField(
-                            controller: _email,
-                            decoration:
-                                const InputDecoration(labelText: 'Email'),
-                            validator: _required),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                            controller: _password,
-                            decoration:
-                                const InputDecoration(labelText: 'Password'),
-                            obscureText: true,
-                            validator: _required),
-                        const SizedBox(height: 20),
-                        FilledButton(
-                            onPressed: _busy
-                                ? null
-                                : () => createMode ? _bootstrap() : _login(),
-                            child: Text(_busy
-                                ? 'Working...'
-                                : (createMode
-                                    ? 'Create operator account'
-                                    : 'Sign in'))),
-                        const SizedBox(height: 12),
-                        TextButton(
-                            onPressed: () => context
-                                .go(createMode ? '/ops/login' : '/ops/join'),
-                            child: Text(createMode
-                                ? 'Use existing operator account'
-                                : 'Create operator access')),
+                          TextButton(
+                              onPressed: () => context
+                                  .go(createMode ? '/ops/login' : '/ops/join'),
+                              child: Text(createMode
+                                  ? 'Use existing operator account'
+                                  : 'Create operator access')),
                         ],
                       ]),
                 ),

@@ -451,117 +451,116 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
   Widget build(BuildContext context) {
     return AuthShell(
       maxContentWidth: 1180,
+      setupFlow: true,
       child: _loading
-                  ? const Padding(
-                      padding: EdgeInsets.all(40),
-                      child: CircularProgressIndicator(),
-                    )
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        final stacked = constraints.maxWidth < 980;
-                        final intro = _SetupIntro(
-                          laneLabel: _laneLabel(_planCode),
-                          tierLabel: _tierLabel(_tierCode),
-                          trial: _trial,
-                        );
-                        final builder = _BuilderCard(
-                          planCode: _planCode,
-                          tierCode: _tierCode,
-                          selectedCountries: _selectedCountryLabels(),
-                          selectedRegions: _selectedRegionLabels(),
-                          selectedMetros: _metroNames,
-                          industryLabel:
-                              GlobalSetupOptions.industryByCode(_industryCode)
-                                  ?.label,
-                          marketNotes: _marketNotes,
-                          error: _error,
-                          saving: _saving,
-                          onPlanChanged: _updatePlan,
-                          onTierChanged: _updateTier,
-                          onChooseCountries: () async {
-                            final result =
-                                await showModalBottomSheet<Set<String>>(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => _CountryPickerSheet(
-                                selected: _countryCodes,
-                                singleSelect: _tierCode == 'focused',
-                              ),
-                            );
-                            if (result == null || !mounted) return;
-                            setState(() {
-                              _countryCodes
-                                ..clear()
-                                ..addAll(result);
-                              _applyTierRules();
-                              _error = null;
-                            });
-                          },
-                          onChooseRegions: _countryCodes.isEmpty
-                              ? null
-                              : () async {
-                                  final result =
-                                      await showModalBottomSheet<Set<String>>(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (context) => _RegionPickerSheet(
-                                      groups: _groupedRegions(),
-                                      selected: _regionCodes,
-                                    ),
-                                  );
-                                  if (result == null || !mounted) return;
-                                  setState(() {
-                                    _regionCodes
-                                      ..clear()
-                                      ..addAll(result);
-                                    _error = null;
-                                  });
-                                },
-                          onAddMetro: (value) => _addMetro(value),
-                          metroInput: _metroInput,
-                          metroSuggestions: _metroSuggestions(),
-                          onRemoveMetro: _removeMetro,
-                          industryCode: _industryCode,
-                          onIndustryChanged: (value) =>
-                              setState(() => _industryCode = value),
-                          onContinue: _saving ? null : _save,
-                        );
-                        final review = _ReviewCard(
-                          summary: _buildReviewSummary(),
-                          tierDescription: _tierDescription(_tierCode),
-                          canContinue: !_saving,
-                        );
-
-                        if (stacked) {
-                          return Column(
-                            children: [
-                              intro,
-                              const SizedBox(height: 18),
-                              builder,
-                              const SizedBox(height: 18),
-                              review,
-                            ],
-                          );
-                        }
-
-                        return Column(
-                          children: [
-                            intro,
-                            const SizedBox(height: 18),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(flex: 7, child: builder),
-                                const SizedBox(width: 18),
-                                Expanded(flex: 5, child: review),
-                              ],
+          ? const Padding(
+              padding: EdgeInsets.all(40),
+              child: CircularProgressIndicator(),
+            )
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final stacked = constraints.maxWidth < 980;
+                final intro = _SetupIntro(
+                  laneLabel: _laneLabel(_planCode),
+                  tierLabel: _tierLabel(_tierCode),
+                  trial: _trial,
+                );
+                final builder = _BuilderCard(
+                  planCode: _planCode,
+                  tierCode: _tierCode,
+                  selectedCountries: _selectedCountryLabels(),
+                  selectedRegions: _selectedRegionLabels(),
+                  selectedMetros: _metroNames,
+                  industryLabel:
+                      GlobalSetupOptions.industryByCode(_industryCode)?.label,
+                  marketNotes: _marketNotes,
+                  error: _error,
+                  saving: _saving,
+                  onPlanChanged: _updatePlan,
+                  onTierChanged: _updateTier,
+                  onChooseCountries: () async {
+                    final result = await showModalBottomSheet<Set<String>>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => _CountryPickerSheet(
+                        selected: _countryCodes,
+                        singleSelect: _tierCode == 'focused',
+                      ),
+                    );
+                    if (result == null || !mounted) return;
+                    setState(() {
+                      _countryCodes
+                        ..clear()
+                        ..addAll(result);
+                      _applyTierRules();
+                      _error = null;
+                    });
+                  },
+                  onChooseRegions: _countryCodes.isEmpty
+                      ? null
+                      : () async {
+                          final result =
+                              await showModalBottomSheet<Set<String>>(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => _RegionPickerSheet(
+                              groups: _groupedRegions(),
+                              selected: _regionCodes,
                             ),
-                          ],
-                        );
-                      },
+                          );
+                          if (result == null || !mounted) return;
+                          setState(() {
+                            _regionCodes
+                              ..clear()
+                              ..addAll(result);
+                            _error = null;
+                          });
+                        },
+                  onAddMetro: (value) => _addMetro(value),
+                  metroInput: _metroInput,
+                  metroSuggestions: _metroSuggestions(),
+                  onRemoveMetro: _removeMetro,
+                  industryCode: _industryCode,
+                  onIndustryChanged: (value) =>
+                      setState(() => _industryCode = value),
+                  onContinue: _saving ? null : _save,
+                );
+                final review = _ReviewCard(
+                  summary: _buildReviewSummary(),
+                  tierDescription: _tierDescription(_tierCode),
+                  canContinue: !_saving,
+                );
+
+                if (stacked) {
+                  return Column(
+                    children: [
+                      intro,
+                      const SizedBox(height: 18),
+                      builder,
+                      const SizedBox(height: 18),
+                      review,
+                    ],
+                  );
+                }
+
+                return Column(
+                  children: [
+                    intro,
+                    const SizedBox(height: 18),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 7, child: builder),
+                        const SizedBox(width: 18),
+                        Expanded(flex: 5, child: review),
+                      ],
                     ),
+                  ],
+                );
+              },
+            ),
     );
   }
 }
@@ -721,19 +720,22 @@ class _BuilderCard extends StatelessWidget {
               children: [
                 _ChoiceCard(
                   title: 'Focused',
-                  subtitle: 'Start governed execution in one market with selected regional coverage.',
+                  subtitle:
+                      'Start governed execution in one market with selected regional coverage.',
                   selected: tierCode == 'focused',
                   onTap: () => onTierChanged('focused'),
                 ),
                 _ChoiceCard(
                   title: 'Multi',
-                  subtitle: 'Expand governed execution across multiple countries and regions.',
+                  subtitle:
+                      'Expand governed execution across multiple countries and regions.',
                   selected: tierCode == 'multi',
                   onTap: () => onTierChanged('multi'),
                 ),
                 _ChoiceCard(
                   title: 'Precision',
-                  subtitle: 'Tighten governed execution around priority cities and metros.',
+                  subtitle:
+                      'Tighten governed execution around priority cities and metros.',
                   selected: tierCode == 'precision',
                   onTap: () => onTierChanged('precision'),
                 ),

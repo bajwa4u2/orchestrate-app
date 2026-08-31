@@ -158,93 +158,88 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
 
     return AuthShell(
       maxContentWidth: 1120,
+      setupFlow: true,
       child: _loading
-                  ? const Padding(
-                      padding: EdgeInsets.all(40),
-                      child: CircularProgressIndicator(),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SubscribeHero(
-                          planCode: _planCode,
-                          trialRequested: _trialRequested,
-                          trialDays: catalog?.trialDays ?? 15,
-                        ),
-                        const SizedBox(height: 18),
-                        if (_error != null)
-                          _Banner(message: _error!, error: true),
-                        if (_error != null) const SizedBox(height: 18),
-                        if (selection == null)
-                          _MissingPricingCard(onRetry: _loadCatalogAndSyncRoute)
-                        else
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              final stacked = constraints.maxWidth < 940;
-                              final left = Column(
-                                children: [
-                                  _SelectionCard(
-                                    planCode: _planCode,
-                                    tierCode: _tierCode,
-                                    trialRequested: _trialRequested,
-                                    trialDays: catalog?.trialDays ?? 15,
-                                    onPlanChanged: (value) =>
-                                        _applySelection(plan: value),
-                                    onTierChanged: (value) =>
-                                        _applySelection(tier: value),
-                                    onTrialChanged: (value) =>
-                                        _applySelection(trialRequested: value),
-                                  ),
-                                  const SizedBox(height: 18),
-                                  _SummaryCard(
-                                      selection: selection,
-                                      trialRequested: _trialRequested),
-                                  if (setupDraft != null) ...[
-                                    const SizedBox(height: 18),
-                                    _ScopeSnapshotCard(draft: setupDraft),
-                                  ],
-                                ],
-                              );
-                              final right = externalPurchaseAllowed
-                                  ? _ReadinessCard(
-                                      selection: selection,
-                                      trialRequested: _trialRequested,
-                                      trialDays: catalog?.trialDays ?? 15,
-                                      activating: _subscribing,
-                                      onActivate:
-                                          _subscribing ? null : _activate,
-                                      onReviewAccount: () =>
-                                          context.go('/app/account'),
-                                      onReviewWorkspace: () =>
-                                          context.go('/app/home'),
-                                    )
-                                  : _IosPlanNoticeCard(
-                                      selection: selection,
-                                      onReviewAccount: () =>
-                                          context.go('/app/account'),
-                                      onReviewWorkspace: () =>
-                                          context.go('/app/home'),
-                                    );
-
-                              if (stacked) {
-                                return Column(children: [
-                                  left,
-                                  const SizedBox(height: 18),
-                                  right
-                                ]);
-                              }
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(flex: 6, child: left),
-                                  const SizedBox(width: 18),
-                                  Expanded(flex: 5, child: right),
-                                ],
-                              );
-                            },
+          ? const Padding(
+              padding: EdgeInsets.all(40),
+              child: CircularProgressIndicator(),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SubscribeHero(
+                  planCode: _planCode,
+                  trialRequested: _trialRequested,
+                  trialDays: catalog?.trialDays ?? 15,
+                ),
+                const SizedBox(height: 18),
+                if (_error != null) _Banner(message: _error!, error: true),
+                if (_error != null) const SizedBox(height: 18),
+                if (selection == null)
+                  _MissingPricingCard(onRetry: _loadCatalogAndSyncRoute)
+                else
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stacked = constraints.maxWidth < 940;
+                      final left = Column(
+                        children: [
+                          _SelectionCard(
+                            planCode: _planCode,
+                            tierCode: _tierCode,
+                            trialRequested: _trialRequested,
+                            trialDays: catalog?.trialDays ?? 15,
+                            onPlanChanged: (value) =>
+                                _applySelection(plan: value),
+                            onTierChanged: (value) =>
+                                _applySelection(tier: value),
+                            onTrialChanged: (value) =>
+                                _applySelection(trialRequested: value),
                           ),
-                      ],
-                    ),
+                          const SizedBox(height: 18),
+                          _SummaryCard(
+                              selection: selection,
+                              trialRequested: _trialRequested),
+                          if (setupDraft != null) ...[
+                            const SizedBox(height: 18),
+                            _ScopeSnapshotCard(draft: setupDraft),
+                          ],
+                        ],
+                      );
+                      final right = externalPurchaseAllowed
+                          ? _ReadinessCard(
+                              selection: selection,
+                              trialRequested: _trialRequested,
+                              trialDays: catalog?.trialDays ?? 15,
+                              activating: _subscribing,
+                              onActivate: _subscribing ? null : _activate,
+                              onReviewAccount: () => context.go('/app/account'),
+                              onReviewWorkspace: () => context.go('/app/home'),
+                            )
+                          : _IosPlanNoticeCard(
+                              selection: selection,
+                              onReviewAccount: () => context.go('/app/account'),
+                              onReviewWorkspace: () => context.go('/app/home'),
+                            );
+
+                      if (stacked) {
+                        return Column(children: [
+                          left,
+                          const SizedBox(height: 18),
+                          right
+                        ]);
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 6, child: left),
+                          const SizedBox(width: 18),
+                          Expanded(flex: 5, child: right),
+                        ],
+                      );
+                    },
+                  ),
+              ],
+            ),
     );
   }
 }
@@ -294,8 +289,7 @@ class _SubscribeHero extends StatelessWidget {
         const SizedBox(height: 16),
         Wrap(spacing: 10, runSpacing: 10, children: [
           _Pill(label: 'Scope: ${_title(planCode)}'),
-          if (trialRequested)
-            _Pill(label: '${trialDays}-day trial selected'),
+          if (trialRequested) _Pill(label: '${trialDays}-day trial selected'),
         ]),
       ]),
     );
@@ -534,7 +528,8 @@ class _ReadinessCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radius),
           border: Border.all(color: AppTheme.publicLine)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(trialRequested
+        Text(
+            trialRequested
                 ? 'Ready to start your trial setup'
                 : 'Ready to activate infrastructure',
             style: Theme.of(context)
