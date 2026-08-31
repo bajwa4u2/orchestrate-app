@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 
@@ -686,11 +687,14 @@ class _SupportAsset extends StatelessWidget {
       child: SizedBox(
           width: width,
           height: 42,
-          child: Image.asset(asset,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stack) => Text(label,
-                  style: const TextStyle(
-                      fontSize: 9, fontWeight: FontWeight.w700)))));
+          child: asset.endsWith('.svg')
+              ? SvgPicture.asset(asset,
+                  fit: BoxFit.contain, semanticsLabel: label)
+              : Image.asset(asset,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stack) => Text(label,
+                      style: const TextStyle(
+                          fontSize: 9, fontWeight: FontWeight.w700)))));
 }
 
 class _Kicker extends StatelessWidget {
