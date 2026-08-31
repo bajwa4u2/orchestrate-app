@@ -14,7 +14,7 @@ than treated as independent visual surfaces.
 | `/app/setup`, `/client/setup` | Establish market scope and activation inputs | AuthShell + setup journey rail | `/app/subscribe` | TRANSFORM |
 | `/app/subscribe`, `/client/subscribe` | Select execution scope and secure billing continuation | AuthShell + setup journey rail | `/client/overview` after activation | TRANSFORM |
 | `/client/oauth/return` | Render mailbox authorization result and next action | ClientShell / OAuth state | setup or infrastructure | CANONICAL |
-| `/client/overview`, `/app/home` | First operational product entry | ClientShell / workspace boundary | workspace navigation | EXEMPT_WITH_REASON: operational workspace is a separate dense product shell |
+| `/client/overview`, `/app/home` | First operational product entry | ClientShell / converged workspace boundary | workspace navigation | TRANSFORM: operational content remains dense, but the receiving shell now inherits the Orchestrate dark canvas, identity and chrome |
 | `/client/representation`, `/client/infrastructure`, `/client/records` | Complete identity, transport, readiness and records | ClientShell / authenticated workspace | `/client/overview` | EXEMPT_WITH_REASON: workspace UI, not public acquisition |
 | loading / validation / error / retry / blocked / success states | Preserve state meaning during auth, setup, billing and OAuth | Owning route plus AuthShell or ClientShell | resume, back, or next action | CANONICAL |
 
@@ -30,5 +30,7 @@ than treated as independent visual surfaces.
 - `ClientSetupScreen` and `ClientSubscribeScreen`: route-specific setup and
   billing content; they do not own global chrome.
 
-The first workspace is explicitly recorded as an authenticated product-shell
-boundary. It is not silently classified as a public surface or left unknown.
+The first workspace is not treated as an automatic exemption. Its operational
+content remains a separate dense product programme, while `ClientShell` owns a
+converged receiving boundary: dark Orchestrate canvas, identity, sidebar and
+page chrome around the existing operational content and states.

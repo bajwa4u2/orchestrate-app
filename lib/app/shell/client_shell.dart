@@ -23,7 +23,8 @@ class ClientShell extends StatefulWidget {
 
 class _ClientShellState extends State<ClientShell> {
   final ClientBillingRepository _billingRepository = ClientBillingRepository();
-  final ClientBrandingRepository _brandingRepository = ClientBrandingRepository();
+  final ClientBrandingRepository _brandingRepository =
+      ClientBrandingRepository();
   final AuthRepository _authRepository = AuthRepository();
   Map<String, dynamic>? _subscription;
   bool _hasClientLogo = false;
@@ -56,9 +57,7 @@ class _ClientShellState extends State<ClientShell> {
         path: '/client/operations',
         icon: Icons.timeline_outlined),
     _ClientNavItem(
-        label: 'Replies',
-        path: '/client/replies',
-        icon: Icons.forum_outlined),
+        label: 'Replies', path: '/client/replies', icon: Icons.forum_outlined),
     _ClientNavItem(
         label: 'Meetings',
         path: '/client/meetings',
@@ -72,9 +71,7 @@ class _ClientShellState extends State<ClientShell> {
         path: '/client/representation',
         icon: Icons.fingerprint),
     _ClientNavItem(
-        label: 'Branding',
-        path: '/app/branding',
-        icon: Icons.palette_outlined),
+        label: 'Branding', path: '/app/branding', icon: Icons.palette_outlined),
     _ClientNavItem(
         label: 'Credentials',
         path: '/app/trust',
@@ -394,7 +391,9 @@ class _ClientShellState extends State<ClientShell> {
       child: LayoutBuilder(builder: (context, constraints) {
         final mobile = constraints.maxWidth < WorkspaceBreakpoints.mobile;
         return Scaffold(
-          backgroundColor: AppTheme.publicBackground,
+          // Keep workspace content operationally light, but keep its receiving
+          // frame inside the same Orchestrate canvas as auth and setup.
+          backgroundColor: AppTheme.publicCanvas,
           drawer: mobile
               ? Drawer(
                   child: _SidebarContent(
@@ -408,9 +407,13 @@ class _ClientShellState extends State<ClientShell> {
           appBar: mobile
               ? AppBar(
                   title: Text(_topTitle()),
-                  backgroundColor: AppTheme.publicBackground,
-                  foregroundColor: AppTheme.publicText,
+                  backgroundColor: AppTheme.publicSecondaryField,
+                  foregroundColor: AppTheme.publicOnDark,
                   elevation: 0,
+                  bottom: const PreferredSize(
+                    preferredSize: Size.fromHeight(1),
+                    child: ColoredBox(color: Color(0xFF2A4A56)),
+                  ),
                 )
               : null,
           body: mobile
@@ -479,7 +482,7 @@ class _SidebarContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppTheme.publicSecondaryField,
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -495,12 +498,28 @@ class _SidebarContent extends StatelessWidget {
                     hasClientLogo
                         ? Image.network(
                             '${AppConfig.normalizedApiBaseUrl}/clients/me/branding/logo/logo_primary',
-                            headers: {'Authorization': 'Bearer ${AuthSessionController.instance.token}'},
+                            headers: {
+                              'Authorization':
+                                  'Bearer ${AuthSessionController.instance.token}'
+                            },
                             height: 30,
                             fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => BrandAssets.logo(context, height: 30),
+                            errorBuilder: (_, __, ___) =>
+                                BrandAssets.operatorLockup(
+                              context,
+                              symbolSize: 27,
+                              fontSize: 20,
+                              darkSurface: true,
+                              color: AppTheme.publicOnDark,
+                            ),
                           )
-                        : BrandAssets.logo(context, height: 30),
+                        : BrandAssets.operatorLockup(
+                            context,
+                            symbolSize: 27,
+                            fontSize: 20,
+                            darkSurface: true,
+                            color: AppTheme.publicOnDark,
+                          ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -514,7 +533,11 @@ class _SidebarContent extends StatelessWidget {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w700, height: 1.25),
+                                ?.copyWith(
+                                  color: AppTheme.publicOnDark,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.25,
+                                ),
                           ),
                           if (email.isNotEmpty) ...[
                             const SizedBox(height: 2),
@@ -522,7 +545,10 @@ class _SidebarContent extends StatelessWidget {
                               email,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: AppTheme.publicOnDarkMuted),
                             ),
                           ],
                         ],
@@ -597,8 +623,8 @@ class _ContentArea extends StatelessWidget {
       children: [
         Container(
           decoration: const BoxDecoration(
-            color: AppTheme.publicBackground,
-            border: Border(bottom: BorderSide(color: AppTheme.publicLine)),
+            color: AppTheme.publicDeepField,
+            border: Border(bottom: BorderSide(color: Color(0xFF294858))),
           ),
           child: SafeArea(
             bottom: false,
@@ -622,12 +648,16 @@ class _ContentArea extends StatelessWidget {
                                 .headlineSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.publicText,
+                                  color: AppTheme.publicOnDark,
                                 ),
                           ),
                           const SizedBox(height: 6),
                           Text(stateLine,
-                              style: Theme.of(context).textTheme.bodyMedium),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                      color: AppTheme.publicOnDarkMuted)),
                         ],
                       );
                       final utility = Wrap(
@@ -694,7 +724,7 @@ class _NavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppTheme.publicAccentSoft : Colors.transparent,
+      color: selected ? AppTheme.publicSupportField : Colors.transparent,
       borderRadius: BorderRadius.circular(AppTheme.radius),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppTheme.radius),
@@ -706,7 +736,7 @@ class _NavButton extends StatelessWidget {
               Icon(
                 item.icon,
                 size: 19,
-                color: selected ? AppTheme.publicAccent : AppTheme.publicMuted,
+                color: selected ? AppTheme.accent : AppTheme.publicOnDarkMuted,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -715,9 +745,8 @@ class _NavButton extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: selected
-                            ? AppTheme.publicAccent
-                            : AppTheme.publicText,
+                        color:
+                            selected ? AppTheme.accent : AppTheme.publicOnDark,
                         fontWeight: FontWeight.w700,
                       ),
                 ),

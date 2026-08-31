@@ -93,6 +93,18 @@ void main() {
     expect(journey, contains('Orchestrate visible journey register'));
   });
 
+  test('first workspace entry inherits the Orchestrate receiving frame', () {
+    final shell = read('lib/app/shell/client_shell.dart');
+    final journey = read('docs/ORCHESTRATE_VISIBLE_JOURNEY_REGISTER.md');
+    expect(shell, contains('backgroundColor: AppTheme.publicCanvas'));
+    expect(shell, contains('AppTheme.publicSecondaryField'));
+    expect(shell, contains('AppTheme.publicDeepField'));
+    expect(shell, contains('BrandAssets.operatorLockup'));
+    expect(journey, contains('converged receiving boundary'));
+    expect(
+        journey, isNot(contains('EXEMPT_WITH_REASON: operational workspace')));
+  });
+
   test('public content uses the shared visual chapter hook', () {
     final content =
         read('lib/features/public/screens/public_content_screen.dart');
