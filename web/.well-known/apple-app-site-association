@@ -1,0 +1,90 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "4WZQA8T5MT.com.orchestrateops.app"
+        ],
+        "components": [
+          {
+            "/": "/",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/product",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/how-it-works",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/ai-governed-revenue",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/lead-sourcing",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/trust-compliance",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/pricing",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/about",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/contact",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/terms",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/privacy",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/legal/terms",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/legal/privacy",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/why-orchestrate",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/how-orchestrate-operates",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/trust-architecture",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/for-evaluators",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/security-evaluation",
+            "comment": "public route, also served by the app"
+          },
+          {
+            "/": "/faq",
+            "comment": "public route, also served by the app"
+          }
+        ]
+      }
+    ]
+  }
+}

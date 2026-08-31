@@ -116,4 +116,62 @@ void main() {
               'app only: ${claimed.difference(eligible)}');
     });
   });
+
+  group('iOS Universal Links', () {
+    final aasa = File('web/.well-known/apple-app-site-association');
+
+    test('the AASA exists, is JSON, and has no file extension', () {
+      // Apple fetches this exact extensionless path and parses it as JSON.
+      expect(aasa.existsSync(), isTrue);
+      final raw = aasa.readAsStringSync();
+      expect(raw.trimLeft().startsWith('<'), isFalse,
+          reason: 'this is HTML — the SPA fallback answered instead of the file');
+      expect(jsonDecode(raw), isA<Map>());
+    });
+
+    test('it names the real App ID, team first', () {
+      final details = ((jsonDecode(aasa.readAsStringSync())
+          as Map)['applinks'] as Map)['details'] as List;
+      final appIDs = ((details.first as Map)['appIDs'] as List).cast<String>();
+      // Team 4WZQA8T5MT (MUHAMMAD SAKHAWAT), read from the Apple Developer
+      // identifiers list, which holds both this App ID and org.auraplatform.app.
+      expect(appIDs, contains('4WZQA8T5MT.com.orchestrateops.app'));
+    });
+
+    test('the entitlement is attached to the app target, not just written', () {
+      // An entitlements file the target does not point at is inert, and the
+      // build succeeds anyway — which is the quiet way this fails.
+      final ent = File('ios/Runner/Runner.entitlements');
+      expect(ent.existsSync(), isTrue);
+      expect(ent.readAsStringSync(), contains('applinks:orchestrateops.com'));
+
+      final pbx = File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+      expect(pbx, contains('CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;'),
+          reason: 'the Runner target does not reference the entitlements file');
+    });
+
+    test('iOS claims the same set as Android and the web rail', () {
+      final config =
+          File('lib/features/public/widgets/public_app_acquisition.dart')
+              .readAsStringSync();
+      final start = config.indexOf('orchestratePublicAppAcquisitionConfig');
+      final open = config.indexOf('eligiblePaths: {', start);
+      final body = config.substring(open, config.indexOf('},', open));
+      final eligible = RegExp("'([^']+)'")
+          .allMatches(body)
+          .map((m) => m.group(1)!)
+          .toSet();
+
+      final details = ((jsonDecode(aasa.readAsStringSync())
+          as Map)['applinks'] as Map)['details'] as List;
+      final components = ((details.first as Map)['components'] as List)
+          .map((c) => (c as Map)['/'] as String)
+          .toSet();
+
+      expect(components, equals(eligible),
+          reason: 'iOS association and acquisition eligibility disagree: '
+              'web only: ${eligible.difference(components)}; '
+              'iOS only: ${components.difference(eligible)}');
+    });
+  });
 }

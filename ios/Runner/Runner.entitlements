@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- UNIVERSAL LINKS.
+	     Pairs with https://orchestrateops.com/.well-known/apple-app-site-association,
+	     which claims exactly the public routes the acquisition rail treats as
+	     eligible - the same set the Android manifest claims. Apple fetches that
+	     file itself and needs JSON, so the front door serves it from disk with
+	     try_files $uri =404 rather than letting the SPA fallback answer.
+
+	     The App ID is 4WZQA8T5MT.com.orchestrateops.app: team 4WZQA8T5MT
+	     (MUHAMMAD SAKHAWAT), read from the Apple Developer identifiers list,
+	     which holds both this App ID and org.auraplatform.app. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:orchestrateops.com</string>
+	</array>
+</dict>
+</plist>
