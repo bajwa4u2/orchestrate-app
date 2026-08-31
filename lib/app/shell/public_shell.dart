@@ -482,17 +482,17 @@ class _PublicFooter extends StatelessWidget {
                     links: [
                       _FooterLink(
                           label: 'Product',
-                          onTap: () => context.go('/product')),
+                          onTap: () => context.push('/product')),
                       _FooterLink(
                           label: 'Signals and sourcing',
-                          onTap: () => context.go('/lead-sourcing')),
+                          onTap: () => context.push('/lead-sourcing')),
                       _FooterLink(
                           label: 'Activation journey',
-                          onTap: () => context.go('/how-it-works')),
+                          onTap: () => context.push('/how-it-works')),
                       _FooterLink(
                           label: 'DNS readiness check',
                           onTap: () =>
-                              context.go('/diagnostics?focus=dns-readiness')),
+                              context.push('/diagnostics?focus=dns-readiness')),
                     ],
                   ),
                   _FooterGroup(
@@ -500,16 +500,16 @@ class _PublicFooter extends StatelessWidget {
                     links: [
                       _FooterLink(
                           label: 'Operational answers',
-                          onTap: () => context.go('/answers')),
+                          onTap: () => context.push('/answers')),
                       _FooterLink(
                           label: 'Trust + compliance',
-                          onTap: () => context.go('/trust-compliance')),
+                          onTap: () => context.push('/trust-compliance')),
                       _FooterLink(
                           label: 'Trust architecture',
-                          onTap: () => context.go('/trust-architecture')),
+                          onTap: () => context.push('/trust-architecture')),
                       _FooterLink(
                           label: 'For evaluators',
-                          onTap: () => context.go('/for-evaluators')),
+                          onTap: () => context.push('/for-evaluators')),
                     ],
                   ),
                   _FooterGroup(
@@ -517,13 +517,13 @@ class _PublicFooter extends StatelessWidget {
                     links: [
                       _FooterLink(
                           label: 'Terms',
-                          onTap: () => context.go('/legal/terms')),
+                          onTap: () => context.push('/legal/terms')),
                       _FooterLink(
                           label: 'Privacy',
-                          onTap: () => context.go('/legal/privacy')),
+                          onTap: () => context.push('/legal/privacy')),
                       _FooterLink(
                           label: 'Billing',
-                          onTap: () => context.go('/legal/billing')),
+                          onTap: () => context.push('/legal/billing')),
                     ],
                   ),
                   _FooterGroup(
@@ -531,13 +531,14 @@ class _PublicFooter extends StatelessWidget {
                     links: [
                       _FooterLink(
                           label: 'Service agreement',
-                          onTap: () => context.go('/legal/service-agreement')),
+                          onTap: () =>
+                              context.push('/legal/service-agreement')),
                       _FooterLink(
                           label: 'Refunds',
-                          onTap: () => context.go('/legal/refunds')),
+                          onTap: () => context.push('/legal/refunds')),
                       _FooterLink(
                           label: 'Account deletion',
-                          onTap: () => context.go('/account-deletion')),
+                          onTap: () => context.push('/account-deletion')),
                     ],
                   ),
                 ];

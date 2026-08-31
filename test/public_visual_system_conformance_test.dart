@@ -149,6 +149,16 @@ void main() {
     expect(diagnostics, contains('Scrollable.ensureVisible'));
   });
 
+  test('footer destinations preserve browser return intent', () {
+    final shell = read('lib/app/shell/public_shell.dart');
+    final footer = shell.substring(
+      shell.indexOf('class _PublicFooter extends'),
+      shell.indexOf('class _FooterGroup extends'),
+    );
+    expect(footer, contains('context.push'));
+    expect(footer, isNot(contains('context.go')));
+  });
+
   test('footer rows and acquisition intent remain directly actionable', () {
     final shell = read('lib/app/shell/public_shell.dart');
     final auth = read('lib/features/auth/screens/client_login_screen.dart');
