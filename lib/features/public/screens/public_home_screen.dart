@@ -79,8 +79,6 @@ class PublicHomeScreen extends StatelessWidget {
               SizedBox(height: gap),
               const ResponsibleAiVisualChapter(),
               SizedBox(height: gap),
-              _ClosingSection(
-                  onSupportTap: () => _openPublicSupportDrawer(context)),
             ],
           ),
         );
@@ -847,90 +845,6 @@ class _PlanPeekCard extends StatelessWidget {
             child: const Text('View Plans'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ClosingSection extends StatelessWidget {
-  const _ClosingSection({required this.onSupportTap});
-
-  final VoidCallback onSupportTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = constraints.maxWidth < 860;
-          final left = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Ready to activate revenue automation infrastructure?',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Pick your managed-execution scope on the pricing page. Contact or quick guidance works if you want to walk through fit first.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.publicMuted,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Secure billing powered by Stripe.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.publicMuted,
-                    ),
-              ),
-            ],
-          );
-
-          final right = Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              FilledButton(
-                onPressed: () => context.go('/pricing?trial=15d'),
-                child: const Text('Start 15-Day Trial'),
-              ),
-              OutlinedButton(
-                onPressed: () => context.go('/contact'),
-                child: const Text('Talk to Orchestrate'),
-              ),
-              TextButton(
-                onPressed: onSupportTap,
-                child: const Text('Get quick guidance'),
-              ),
-            ],
-          );
-
-          if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                left,
-                const SizedBox(height: 16),
-                right,
-              ],
-            );
-          }
-          return Row(
-            children: [
-              Expanded(child: left),
-              const SizedBox(width: 16),
-              right,
-            ],
-          );
-        },
       ),
     );
   }

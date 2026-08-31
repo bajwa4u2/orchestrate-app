@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/public_app_acquisition.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
@@ -35,7 +34,7 @@ class PublicShell extends StatelessWidget {
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
-        backgroundColor: AppTheme.publicBackground,
+        backgroundColor: AppTheme.publicCanvas,
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -76,8 +75,7 @@ class PublicShell extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (currentPath != '/' &&
-                                currentPath != '/intake' &&
+                            if (currentPath != '/intake' &&
                                 currentPath != '/contact' &&
                                 !currentPath.startsWith('/legal/'))
                               const _CommercialClosingBand(),
@@ -110,8 +108,8 @@ class _PublicHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppTheme.publicBackground,
-        border: Border(bottom: BorderSide(color: AppTheme.publicLine)),
+        color: AppTheme.publicSecondaryField,
+        border: Border(bottom: BorderSide(color: Color(0xFF2A4A56))),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 9),
@@ -131,7 +129,11 @@ class _PublicHeader extends StatelessWidget {
                     height: 34,
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: BrandAssets.logo(context, height: 26),
+                      child: Image.asset(
+                        'assets/branding/logo/orchestrate_logo_dark.png',
+                        height: 26,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                 );
@@ -179,8 +181,8 @@ class _PublicHeader extends StatelessWidget {
                     OutlinedButton(
                       onPressed: () => context.go('/auth/login'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.publicText,
-                        side: const BorderSide(color: AppTheme.publicLine),
+                        foregroundColor: AppTheme.publicOnDark,
+                        side: const BorderSide(color: Color(0xFF416170)),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -193,7 +195,7 @@ class _PublicHeader extends StatelessWidget {
                     FilledButton(
                       onPressed: () => context.go('/auth/join'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.publicText,
+                        backgroundColor: AppTheme.publicAccent,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
@@ -234,9 +236,9 @@ class _PublicHeader extends StatelessWidget {
                         OutlinedButton(
                           onPressed: () => context.go('/auth/login'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.publicText,
+                            foregroundColor: AppTheme.publicOnDark,
                             side: const BorderSide(
-                              color: AppTheme.publicLine,
+                              color: Color(0xFF416170),
                             ),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
@@ -253,7 +255,7 @@ class _PublicHeader extends StatelessWidget {
                         FilledButton(
                           onPressed: () => context.go('/auth/join'),
                           style: FilledButton.styleFrom(
-                            backgroundColor: AppTheme.publicText,
+                            backgroundColor: AppTheme.publicAccent,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
@@ -287,7 +289,7 @@ class _CommercialClosingBand extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(top: 12),
+        margin: const EdgeInsets.only(top: 28),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 34),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -352,7 +354,13 @@ class _CommercializationSupportBand extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFFEAF5F2),
+      decoration: const BoxDecoration(
+        color: AppTheme.publicSupportField,
+        border: Border(
+          top: BorderSide(color: Color(0xFF2C5960)),
+          bottom: BorderSide(color: Color(0xFF2C5960)),
+        ),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
       child: Center(
         child: ConstrainedBox(
@@ -374,7 +382,7 @@ class _CommercializationSupportBand extends StatelessWidget {
                   Text(
                       'Orchestrate is being built in a commercialization environment that values durable execution.',
                       style: TextStyle(
-                          color: AppTheme.publicText,
+                          color: AppTheme.publicOnDark,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           height: 1.35)),
@@ -409,7 +417,7 @@ class _PublicFooter extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: const Color(0xFF09121D),
+        color: AppTheme.publicFooterField,
         border: const Border(top: BorderSide(color: Color(0xFF263B4A))),
       ),
       child: Padding(
@@ -577,7 +585,7 @@ class _PublicFooter extends StatelessWidget {
                         const description = Text(
                           'A managed path for readiness, relationships, delivery and revenue records.',
                           style: TextStyle(
-                              color: AppTheme.publicMuted, height: 1.5),
+                              color: AppTheme.publicOnDarkMuted, height: 1.5),
                         );
                         return stacked
                             ? Column(
@@ -658,9 +666,9 @@ class _HeaderLink extends StatelessWidget {
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        foregroundColor: active ? AppTheme.publicText : AppTheme.publicMuted,
+        foregroundColor: active ? AppTheme.publicOnDark : AppTheme.publicOnDarkMuted,
         backgroundColor:
-            active ? AppTheme.publicSurfaceSoft : Colors.transparent,
+            active ? const Color(0xFF1B4050) : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         minimumSize: const Size(0, 38),
         shape: RoundedRectangleBorder(
@@ -712,11 +720,11 @@ class _PublicMenuButton extends StatelessWidget {
     return PopupMenuButton<String>(
       tooltip: 'Open navigation',
       position: PopupMenuPosition.under,
-      color: AppTheme.publicSurface,
+      color: AppTheme.publicSecondaryField,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        side: const BorderSide(color: AppTheme.publicLine),
+        side: const BorderSide(color: Color(0xFF416170)),
       ),
       onSelected: (value) => context.go(value),
       itemBuilder: (context) => [
@@ -757,11 +765,11 @@ class _PublicMenuButton extends StatelessWidget {
         height: 42,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppTheme.publicSurface,
+          color: AppTheme.publicSecondaryField,
           borderRadius: BorderRadius.circular(AppTheme.radius),
-          border: Border.all(color: AppTheme.publicLine),
+          border: Border.all(color: const Color(0xFF416170)),
         ),
-        child: const Icon(Icons.menu, size: 20, color: AppTheme.publicText),
+        child: const Icon(Icons.menu, size: 20, color: AppTheme.publicOnDark),
       ),
     );
   }
@@ -772,7 +780,7 @@ class _PublicMenuButton extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: active ? AppTheme.publicText : AppTheme.publicMuted,
+          color: active ? AppTheme.publicOnDark : AppTheme.publicOnDarkMuted,
           fontWeight: active ? FontWeight.w700 : FontWeight.w500,
         ),
       ),

@@ -32,6 +32,18 @@ class AppTheme {
   static const publicAmberSoft = Color(0xFFFFF4D8);
   static const publicRoseSoft = Color(0xFFFFECEC);
 
+  // Orchestrate public-estate canvas tokens. Light chapters remain available
+  // as intentional content fields, but the page substrate is always owned by
+  // the Orchestrate environment.
+  static const publicCanvas = Color(0xFF091521);
+  static const publicDeepField = Color(0xFF0E1723);
+  static const publicSecondaryField = Color(0xFF132A38);
+  static const publicLightField = Color(0xFFF2F5F3);
+  static const publicSupportField = Color(0xFF15343A);
+  static const publicFooterField = Color(0xFF071019);
+  static const publicOnDark = Color(0xFFF4FAF8);
+  static const publicOnDarkMuted = Color(0xFFB9C8D6);
+
   // ─── Canonical substrate tokens ──────────────────────────────────
   // Mirror `company/visuals/system/tokens/design-tokens.md`. These are
   // the visual identifiers used on the public website and the flagship
