@@ -24,6 +24,9 @@ dependencies:
   file_picker: ^8.0.0
 
 dev_dependencies:
+  # Used only by the product-identity conformance test, which decodes the
+  # shipped launcher icons and checks them against the canonical mark.
+  image: ^4.8.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
