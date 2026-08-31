@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
-import 'package:orchestrate_app/features/public/widgets/public_overview_widget.dart';
 import 'package:orchestrate_app/features/public/widgets/commercial_execution_surface.dart';
+import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
 import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
 
 Future<void> _openPublicSupportDrawer(BuildContext context) async {
@@ -67,13 +67,17 @@ class PublicHomeScreen extends StatelessWidget {
             children: [
               CommercialHero(onTalk: () => _openPublicSupportDrawer(context)),
               SizedBox(height: gap),
-              const ExecutionLifecycleSection(),
+              const ExecutionObjectStage(),
               SizedBox(height: gap),
-              const ExecutionCapabilityGrid(),
+              const ExecutionGraphChapter(),
               SizedBox(height: gap),
-              const _BurdenTransformSection(),
+              const RecoveryVisualChapter(),
               SizedBox(height: gap),
-              const PublicOverviewWidget(),
+              const SignalsVisualChapter(),
+              SizedBox(height: gap),
+              const RevenueRecordsVisual(),
+              SizedBox(height: gap),
+              const ResponsibleAiVisualChapter(),
               SizedBox(height: gap),
               _ClosingSection(
                   onSupportTap: () => _openPublicSupportDrawer(context)),

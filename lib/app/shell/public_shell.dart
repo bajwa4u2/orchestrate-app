@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/public_app_acquisition.dart';
+import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
 
 class PublicShell extends StatelessWidget {
   const PublicShell(
@@ -310,25 +311,7 @@ class _CommercializationSupportBand extends StatelessWidget {
                           height: 1.35)),
                 ],
               );
-              final marks = Wrap(spacing: 10, runSpacing: 8, children: [
-                for (final name in const [
-                  'Microsoft for Startups',
-                  'Google for Startups',
-                  'AWS Activate'
-                ])
-                  Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: const Color(0xFFC7DFD9)),
-                          borderRadius: BorderRadius.circular(6)),
-                      child: Text(name,
-                          style: const TextStyle(
-                              color: AppTheme.publicMuted,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700)))
-              ]);
+              const marks = OfficialSupportMarks();
               return compact
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

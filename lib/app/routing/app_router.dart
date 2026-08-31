@@ -66,6 +66,7 @@ import 'package:orchestrate_app/features/public/screens/public_diagnostics_scree
 import 'package:orchestrate_app/features/public/screens/public_answers_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_journey_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
+import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
 import 'package:orchestrate_app/features/public/screens/public_home_screen.dart';
 import 'package:orchestrate_app/app/shell/operator_shell.dart';
 import 'package:orchestrate_app/app/shell/client_shell.dart';
@@ -394,6 +395,7 @@ final router = GoRouter(
           child: const PublicContentScreen(
             eyebrow: 'Product',
             title: 'Commercial intelligence + execution infrastructure',
+            visualChapter: const ExecutionObjectStage(),
             subtitle:
                 'Orchestrate is commercial execution infrastructure for B2B firms in regulated and reputation-sensitive sectors. It runs governed outbound for you under your own verified identity, turns market signals into qualified opportunity, and refuses the sends that would burn your reputation — refusal is a first-class outcome, not an error. You connect identity; Orchestrate runs the rest.',
             sideNote:
@@ -447,6 +449,7 @@ final router = GoRouter(
           child: const PublicContentScreen(
             eyebrow: 'Activation journey',
             title: 'From business identity to managed revenue execution.',
+            visualChapter: const ExecutionGraphChapter(),
             subtitle:
                 'A short, verifiable handoff. You verify business identity, mailbox, and sending domain. Orchestrate verifies readiness, then activates managed execution and keeps it running.',
             sideNote:
@@ -523,13 +526,17 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'AI governance',
+            visualChapter: const ResponsibleAiVisualChapter(),
             title: 'AI runs inside the governance layer — never around it.',
             subtitle:
                 'AI assists with strategy, message drafting, follow-up cadence, and revenue-document generation. Every action is reviewable, auditable, and gated by readiness checks before it affects live execution.',
             sideActions: [
               ContentAction(
-                  label: 'Start 15-Day Trial', path: '/auth/join?trial=15d', filled: true),
-              ContentAction(label: 'See activation journey', path: '/how-it-works'),
+                  label: 'Start 15-Day Trial',
+                  path: '/auth/join?trial=15d',
+                  filled: true),
+              ContentAction(
+                  label: 'See activation journey', path: '/how-it-works'),
             ],
             sections: [
               ContentSection(
@@ -559,6 +566,7 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Commercial intelligence',
+            visualChapter: const SignalsVisualChapter(),
             title:
                 'Signal-driven opportunity detection, not a rented contact list.',
             subtitle:
@@ -568,7 +576,8 @@ final router = GoRouter(
                   label: 'Start 15-Day Trial',
                   path: '/auth/join?trial=15d',
                   filled: true),
-              ContentAction(label: 'See how it operates', path: '/how-it-works'),
+              ContentAction(
+                  label: 'See how it operates', path: '/how-it-works'),
             ],
             sections: [
               ContentSection(
@@ -603,6 +612,7 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Trust and compliance',
+            visualChapter: const RecoveryVisualChapter(),
             title:
                 'Operation-scoped mailbox access, vaulted credentials, governed dispatch, audited execution.',
             subtitle:
@@ -621,12 +631,12 @@ final router = GoRouter(
                   label: 'Provider boundaries', path: '/legal/providers'),
               ContentAction(
                   label: 'Suppression / opt-out', path: '/legal/suppression'),
-              ContentAction(
-                  label: 'Abuse policy', path: '/legal/abuse'),
+              ContentAction(label: 'Abuse policy', path: '/legal/abuse'),
               ContentAction(
                   label: 'Retention / deletion', path: '/legal/retention'),
               ContentAction(
-                  label: 'Deliverability policy', path: '/legal/deliverability'),
+                  label: 'Deliverability policy',
+                  path: '/legal/deliverability'),
               ContentAction(
                   label: 'Acceptable use', path: '/legal/acceptable-use'),
             ],
@@ -704,8 +714,8 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'About',
-            title:
-                'Commercial intelligence + execution infrastructure',
+            visualChapter: const RevenueRecordsVisual(),
+            title: 'Commercial intelligence + execution infrastructure',
             subtitle:
                 'Orchestrate exists because, for firms in regulated and reputation-sensitive sectors, outbound is either outsourced — burning the sending identity — or left undone. Revenue execution deserves to be governed infrastructure you activate, not another tool you operate. Connect your verified identity; Orchestrate runs governed outbound end to end, and refuses what would burn you.',
             sections: [
@@ -935,8 +945,7 @@ final router = GoRouter(
       path: '/legal/suppression',
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
-            currentPath: state.uri.path,
-            child: buildSuppressionPolicyScreen()),
+            currentPath: state.uri.path, child: buildSuppressionPolicyScreen()),
       ),
     ),
     GoRoute(
@@ -981,16 +990,14 @@ final router = GoRouter(
       path: '/trust-architecture',
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
-            currentPath: state.uri.path,
-            child: buildTrustArchitectureScreen()),
+            currentPath: state.uri.path, child: buildTrustArchitectureScreen()),
       ),
     ),
     GoRoute(
       path: '/for-evaluators',
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
-            currentPath: state.uri.path,
-            child: const ForEvaluatorsScreen()),
+            currentPath: state.uri.path, child: const ForEvaluatorsScreen()),
       ),
     ),
     GoRoute(
@@ -1026,8 +1033,7 @@ final router = GoRouter(
       path: '/answers',
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
-            currentPath: state.uri.path,
-            child: const PublicAnswersScreen()),
+            currentPath: state.uri.path, child: const PublicAnswersScreen()),
       ),
     ),
     GoRoute(
@@ -1050,8 +1056,8 @@ final router = GoRouter(
         child: PublicShell(
           currentPath: state.uri.path,
           child: PublicJourneyScreen(
-            journeyKey: state.pathParameters['journeyKey'] ??
-                'evaluate_and_activate',
+            journeyKey:
+                state.pathParameters['journeyKey'] ?? 'evaluate_and_activate',
           ),
         ),
       ),
@@ -1419,8 +1425,7 @@ final router = GoRouter(
             builder: (context, state) => const OpsSystemScreen()),
         // /ops/overview retained for inbound links but redirected to system hub
         GoRoute(
-            path: '/ops/overview',
-            redirect: (context, state) => '/ops/system'),
+            path: '/ops/overview', redirect: (context, state) => '/ops/system'),
         GoRoute(
             path: '/ops/overview-legacy',
             builder: (context, state) => const OperatorWorkspaceScreen(
@@ -1499,23 +1504,19 @@ final router = GoRouter(
         // Faculty: Platform Supervision (honest empty state today)
         GoRoute(
             path: '/ops/platform-supervision',
-            builder: (context, state) =>
-                const PlatformSupervisionScreen()),
+            builder: (context, state) => const PlatformSupervisionScreen()),
         // Legacy queue/worker/job paths — redirect to Continuity drill
         // (OPERATOR_WORKSPACE_SPECIFICATION.md §4.3). The drill view
         // is engineering-altitude detail under supervision, not nav.
         GoRoute(
             path: '/operator/jobs-legacy',
-            redirect: (context, state) =>
-                '/ops/continuity?drill=jobs'),
+            redirect: (context, state) => '/ops/continuity?drill=jobs'),
         GoRoute(
             path: '/operator/queues-legacy',
-            redirect: (context, state) =>
-                '/ops/continuity?drill=queues'),
+            redirect: (context, state) => '/ops/continuity?drill=queues'),
         GoRoute(
             path: '/operator/workers-legacy',
-            redirect: (context, state) =>
-                '/ops/continuity?drill=workers'),
+            redirect: (context, state) => '/ops/continuity?drill=workers'),
         GoRoute(
             path: '/ops/clients',
             builder: (context, state) => const OpsClientsScreen()),
@@ -1609,7 +1610,6 @@ String _clientRoute(String path, {String? plan, String? tier, String? trial}) {
   if (query.isEmpty) return path;
   return Uri(path: path, queryParameters: query).toString();
 }
-
 
 /// The KIND of screen someone came from, never the path.
 ///

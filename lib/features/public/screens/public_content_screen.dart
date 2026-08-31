@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
 
 class PublicContentScreen extends StatelessWidget {
   const PublicContentScreen({
@@ -12,6 +13,7 @@ class PublicContentScreen extends StatelessWidget {
     required this.sections,
     this.sideNote,
     this.sideActions = const [],
+    this.visualChapter,
   });
 
   final String eyebrow;
@@ -20,6 +22,7 @@ class PublicContentScreen extends StatelessWidget {
   final List<ContentSection> sections;
   final String? sideNote;
   final List<ContentAction> sideActions;
+  final Widget? visualChapter;
 
   @override
   Widget build(BuildContext context) {
@@ -129,6 +132,10 @@ class PublicContentScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
+              if (visualChapter != null) ...[
+                visualChapter!,
+                const SizedBox(height: 24),
+              ],
               for (final section in sections) ...[
                 _SectionCard(section: section),
                 const SizedBox(height: 18),

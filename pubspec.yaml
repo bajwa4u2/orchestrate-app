@@ -37,6 +37,7 @@ flutter:
   assets:
     - assets/branding/logo/
     - assets/branding/icons/
+    - assets/branding/support/
 
 # Microsoft Store / MSIX packaging.
 # identity_name, publisher and publisher_display_name below are the exact
