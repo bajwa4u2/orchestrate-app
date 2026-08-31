@@ -102,6 +102,9 @@ class _OperatorShellState extends State<OperatorShell> {
           attentionKey: null,
           items: const [
             _NavItem('Inquiries', '/ops/inquiries', Icons.support_agent_outlined),
+            // Same job as Inquiries — listening — so it lives here rather
+            // than becoming a second console of its own.
+            _NavItem('Feedback', '/ops/feedback', Icons.rate_review_outlined),
           ],
         ),
         _NavGroup(

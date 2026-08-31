@@ -18,6 +18,9 @@ dependencies:
   http_parser: ^4.0.0
   shared_preferences: ^2.3.2
   url_launcher: ^6.3.1
+  # Reports the running app version with feedback, so a report says which
+  # build it came from without anyone maintaining a constant by hand.
+  package_info_plus: ^8.0.0
   file_picker: ^8.0.0
 
 dev_dependencies:

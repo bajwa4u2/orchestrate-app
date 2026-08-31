@@ -82,6 +82,8 @@ import 'package:orchestrate_app/features/ops_console/ops_system_screen.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/platform/ios_route_policy.dart';
+import '../../features/feedback/feedback_screen.dart';
+import '../../features/feedback/feedback_queue_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _clientShellNavigatorKey = GlobalKey<NavigatorState>();
@@ -1539,6 +1541,18 @@ final router = GoRouter(
             path: '/ops/inquiries',
             builder: (context, state) => const OperatorWorkspaceScreen(
                 section: OperatorSection.inquiries)),
+        // Product feedback. The operator queue sits beside Inquiries because
+        // it is the same job — listening — and not a second console.
+        GoRoute(
+            path: '/ops/feedback',
+            builder: (context, state) => const FeedbackQueueScreen()),
+        // Telling us something. Open to any member of any role: requiring
+        // seniority would collect only the opinions of people who can already
+        // change things.
+        GoRoute(
+            path: '/feedback',
+            builder: (context, state) => FeedbackScreen(
+                fromSurface: _firstSegment(state.uri.queryParameters['from']))),
         GoRoute(
             path: '/ops/inquiries/:id',
             builder: (context, state) => InquiryDetailScreen(
@@ -1594,4 +1608,15 @@ String _clientRoute(String path, {String? plan, String? tier, String? trial}) {
   };
   if (query.isEmpty) return path;
   return Uri(path: path, queryParameters: query).toString();
+}
+
+
+/// The KIND of screen someone came from, never the path.
+///
+/// Only the first segment survives: `/app/campaigns/<real id>` names a real
+/// campaign, and a feedback record has no business carrying that.
+String? _firstSegment(String? path) {
+  if (path == null || !path.startsWith('/')) return null;
+  final segments = path.split('/').where((s) => s.isNotEmpty);
+  return segments.isEmpty ? '/' : '/${segments.first}';
 }
