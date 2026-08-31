@@ -212,6 +212,13 @@ final router = GoRouter(
     if (!session.isAuthenticated) {
       if (isOperatorArea) return '/ops/login';
       if (isVerification || isReset) return null;
+      // A direct setup/subscribe deep link is acquisition intent, not an
+      // existing-user sign-in intent. Start account creation first so the
+      // visitor can establish access and carry the selected setup context
+      // into onboarding.
+      if (isSetup || isSubscribe) {
+        return _clientRoute('/auth/join', plan: plan, tier: tier, trial: trial);
+      }
       if (isClientArea || isSetup || isSubscribe) {
         return _clientRoute('/auth/login',
             plan: plan, tier: tier, trial: trial);

@@ -475,12 +475,6 @@ class _PublicFooter extends StatelessWidget {
                           label: 'Product',
                           onTap: () => context.go('/product')),
                       _FooterLink(
-                          label: 'Why Orchestrate exists',
-                          onTap: () => context.go('/why-orchestrate')),
-                      _FooterLink(
-                          label: 'How Orchestrate operates',
-                          onTap: () => context.go('/how-orchestrate-operates')),
-                      _FooterLink(
                           label: 'Signals and sourcing',
                           onTap: () => context.go('/lead-sourcing')),
                     ],

@@ -58,6 +58,8 @@ void main() {
     expect(shell, contains("slug: 'founder'"));
     expect(shell, isNot(contains("slug: 'company'")));
     expect(shell, isNot(contains("slug: 'orchestrate'")));
+    expect(shell, isNot(contains('Why Orchestrate exists')));
+    expect(shell, isNot(contains('How Orchestrate operates')));
     expect(shell, contains('final columnWidth'));
     expect(shell, contains('spacing: 20'));
   });
@@ -103,6 +105,14 @@ void main() {
     expect(journey, contains('converged receiving boundary'));
     expect(
         journey, isNot(contains('EXEMPT_WITH_REASON: operational workspace')));
+  });
+
+  test(
+      'direct setup intent begins with registration for unauthenticated visitors',
+      () {
+    final router = read('lib/app/routing/app_router.dart');
+    expect(router, contains("if (isSetup || isSubscribe)"));
+    expect(router, contains("_clientRoute('/auth/join'"));
   });
 
   test('public content uses the shared visual chapter hook', () {

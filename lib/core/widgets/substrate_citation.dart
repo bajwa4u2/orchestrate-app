@@ -26,15 +26,18 @@ class SubstrateCitation extends StatelessWidget {
     required this.paths,
     this.padding = const EdgeInsets.only(top: 16),
     this.muted = true,
+    this.darkSurface = false,
   });
 
   final List<String> paths;
   final EdgeInsetsGeometry padding;
   final bool muted;
+  final bool darkSurface;
 
   @override
   Widget build(BuildContext context) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
+    final isLight =
+        !darkSurface && Theme.of(context).brightness == Brightness.light;
     final foreground = muted
         ? (isLight ? AppTheme.publicMuted : AppTheme.coMist)
         : (isLight ? AppTheme.publicText : AppTheme.coSnow);
@@ -93,14 +96,17 @@ class SubstrateDoctrine extends StatelessWidget {
     super.key,
     required this.text,
     this.padding = const EdgeInsets.symmetric(vertical: 12),
+    this.darkSurface = false,
   });
 
   final String text;
   final EdgeInsetsGeometry padding;
+  final bool darkSurface;
 
   @override
   Widget build(BuildContext context) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
+    final isLight =
+        !darkSurface && Theme.of(context).brightness == Brightness.light;
     final accent = isLight ? AppTheme.coTealDeep : AppTheme.coTeal;
     final foreground = isLight ? AppTheme.publicText : AppTheme.coSnow;
 

@@ -38,6 +38,7 @@ class PublicDiagnosticsScreen extends StatelessWidget {
               const PublicDnsDiagnosticCard(),
               const SizedBox(height: 16),
               const SubstrateDoctrine(
+                darkSurface: true,
                 text:
                     'Verification has three states, not two. When the substrate '
                     'hasn\'t evaluated a record yet, the result is UNKNOWN '
@@ -45,6 +46,7 @@ class PublicDiagnosticsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const SubstrateCitation(
+                darkSurface: true,
                 paths: [
                   'orchestrate_backend/src/deliverability/sending-identity.service.ts',
                   'orchestrate_backend/src/runtime-truth/runtime-truth.types.ts (CanonicalDnsCheck)',
@@ -217,8 +219,7 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
         children: [
           Row(
             children: [
-              Icon(Icons.dns_outlined,
-                  size: 16, color: AppTheme.publicMuted),
+              Icon(Icons.dns_outlined, size: 16, color: AppTheme.publicMuted),
               const SizedBox(width: 8),
               Text(
                 'DNS readiness check',
@@ -311,9 +312,8 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
   Widget _renderResult(BuildContext context, Map<String, dynamic> result) {
     final domain = result['domain']?.toString() ?? '';
     final ready = result['ready'] == true;
-    final checks = (result['checks'] as List? ?? const [])
-        .whereType<Map>()
-        .toList();
+    final checks =
+        (result['checks'] as List? ?? const []).whereType<Map>().toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -334,9 +334,8 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
             children: [
               SubstrateChip(
                 label: ready ? 'READY' : 'INCOMPLETE',
-                state: ready
-                    ? SubstrateChipState.verdant
-                    : SubstrateChipState.sun,
+                state:
+                    ready ? SubstrateChipState.verdant : SubstrateChipState.sun,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -354,7 +353,8 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
           ),
         ),
         const SizedBox(height: 14),
-        for (final check in checks) _renderCheck(context, check.cast<String, dynamic>()),
+        for (final check in checks)
+          _renderCheck(context, check.cast<String, dynamic>()),
         const SizedBox(height: 12),
         Text(
           'No records were stored. The lookup runs against live DNS each time you press "Run check".',

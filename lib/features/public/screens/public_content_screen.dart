@@ -182,22 +182,29 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(4, 24, 4, 30),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        border: const Border(
-          bottom: BorderSide(color: AppTheme.publicLine),
-        ),
+        color: AppTheme.publicDeepField,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(color: const Color(0xFF203A4B)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(section.title,
-              style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            section.title,
+            style: Theme.of(context)
+                .textTheme
+                .headlineMedium
+                ?.copyWith(color: AppTheme.publicOnDark),
+          ),
           const SizedBox(height: 12),
           Text(
             section.body,
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(color: AppTheme.publicOnDarkMuted),
           ),
           if (section.highlight != null) ...[
             const SizedBox(height: 18),
@@ -234,7 +241,10 @@ class _SectionCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       point,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(color: AppTheme.publicOnDarkMuted),
                     ),
                   ),
                 ],
