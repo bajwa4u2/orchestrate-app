@@ -153,6 +153,7 @@ class _GraphField extends StatelessWidget {
           label: 'COMMERCIAL EXECUTION',
           detail: 'surfaced operating records',
           color: _teal,
+          compact: compact,
         ),
         const SizedBox(height: 12),
         _ExecutionRail(
@@ -169,6 +170,7 @@ class _GraphField extends StatelessWidget {
             label: 'RETAINED OPERATING INTELLIGENCE',
             detail: 'assets already available to the system',
             color: _blue,
+            compact: compact,
           ),
           const SizedBox(height: 12),
           _AssetRail(
@@ -272,32 +274,58 @@ class _FlagshipHeading extends StatelessWidget {
 
 class _RailLabel extends StatelessWidget {
   const _RailLabel(
-      {required this.label, required this.detail, required this.color});
+      {required this.label,
+      required this.detail,
+      required this.color,
+      required this.compact});
 
   final String label;
   final String detail;
   final Color color;
+  final bool compact;
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 9),
-          Text(label,
+  Widget build(BuildContext context) {
+    final labelRow = Row(
+      children: [
+        Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 9),
+        Flexible(
+          child: Text(label,
               style: TextStyle(
                   color: color,
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2)),
-          const SizedBox(width: 10),
-          Flexible(
-              child: Text(detail,
-                  style: const TextStyle(color: _muted, fontSize: 11))),
+        ),
+      ],
+    );
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          labelRow,
+          Padding(
+            padding: const EdgeInsets.only(left: 16, top: 4),
+            child: Text(detail,
+                style: const TextStyle(color: _muted, fontSize: 11)),
+          ),
         ],
       );
+    }
+    return Row(
+      children: [
+        labelRow,
+        const SizedBox(width: 10),
+        Flexible(
+            child: Text(detail,
+                style: const TextStyle(color: _muted, fontSize: 11))),
+      ],
+    );
+  }
 }
 
 class _ExecutionRail extends StatelessWidget {
