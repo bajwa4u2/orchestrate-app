@@ -680,11 +680,12 @@ class _SupportAsset extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
       image: true,
       label: label,
-      child: Container(
+      // These are the same governed originals used by the Company estate.
+      // Keep the marks free on the support field; a white wrapper makes them
+      // read as pasted image cards against Orchestrate's closing surface.
+      child: SizedBox(
           width: width,
           height: 42,
-          padding: const EdgeInsets.all(6),
-          color: Colors.white,
           child: Image.asset(asset,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stack) => Text(label,
