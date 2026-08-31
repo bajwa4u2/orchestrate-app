@@ -222,7 +222,7 @@ class _PublicHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     FilledButton(
-                      onPressed: () => context.go('/auth/join'),
+                      onPressed: () => context.go('/auth/register'),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.publicAccent,
                         foregroundColor: Colors.white,
@@ -282,7 +282,7 @@ class _PublicHeader extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         FilledButton(
-                          onPressed: () => context.go('/auth/join'),
+                          onPressed: () => context.go('/auth/register'),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppTheme.publicAccent,
                             foregroundColor: Colors.white,
@@ -477,25 +477,20 @@ class _PublicFooter extends StatelessWidget {
                       _FooterLink(
                           label: 'Signals and sourcing',
                           onTap: () => context.go('/lead-sourcing')),
-                    ],
-                  ),
-                  _FooterGroup(
-                    title: 'Readiness + trust',
-                    links: [
                       _FooterLink(
                           label: 'Activation journey',
                           onTap: () => context.go('/how-it-works')),
                       _FooterLink(
                           label: 'DNS readiness check',
                           onTap: () => context.go('/diagnostics')),
-                      _FooterLink(
-                          label: 'Operational answers',
-                          onTap: () => context.go('/answers')),
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Business + policy',
+                    title: 'Readiness + trust',
                     links: [
+                      _FooterLink(
+                          label: 'Operational answers',
+                          onTap: () => context.go('/answers')),
                       _FooterLink(
                           label: 'Trust + compliance',
                           onTap: () => context.go('/trust-compliance')),
@@ -505,13 +500,10 @@ class _PublicFooter extends StatelessWidget {
                       _FooterLink(
                           label: 'For evaluators',
                           onTap: () => context.go('/for-evaluators')),
-                      _FooterLink(
-                          label: 'Acceptable use',
-                          onTap: () => context.go('/legal/acceptable-use')),
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Legal + account',
+                    title: 'Business + policy',
                     links: [
                       _FooterLink(
                           label: 'Terms',
@@ -520,11 +512,16 @@ class _PublicFooter extends StatelessWidget {
                           label: 'Privacy',
                           onTap: () => context.go('/legal/privacy')),
                       _FooterLink(
-                          label: 'Service agreement',
-                          onTap: () => context.go('/legal/service-agreement')),
-                      _FooterLink(
                           label: 'Billing',
                           onTap: () => context.go('/legal/billing')),
+                    ],
+                  ),
+                  _FooterGroup(
+                    title: 'Legal + account',
+                    links: [
+                      _FooterLink(
+                          label: 'Service agreement',
+                          onTap: () => context.go('/legal/service-agreement')),
                       _FooterLink(
                           label: 'Refunds',
                           onTap: () => context.go('/legal/refunds')),
@@ -721,22 +718,25 @@ class _FooterLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: SizedBox(
-        width: double.infinity,
-        child: Padding(
+    return SizedBox(
+      width: double.infinity,
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          alignment: Alignment.centerLeft,
           padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFFB9C8D6),
-                  fontSize: 13,
-                  height: 1.25,
-                ),
+          minimumSize: const Size(0, 28),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          foregroundColor: const Color(0xFFB9C8D6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
+          textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 13,
+                height: 1.25,
+              ),
         ),
+        child: Text(label),
       ),
     );
   }
@@ -790,7 +790,7 @@ class _PublicMenuButton extends StatelessWidget {
           child: Text('Sign in'),
         ),
         const PopupMenuItem<String>(
-          value: '/auth/join',
+          value: '/auth/register',
           child: Text('Start setup'),
         ),
       ],

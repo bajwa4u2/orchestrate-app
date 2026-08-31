@@ -163,6 +163,7 @@ final router = GoRouter(
     final isClientAuth = <String>{
       '/auth/login',
       '/auth/join',
+      '/auth/register',
       '/login',
       '/join',
       '/client/login',
@@ -217,7 +218,8 @@ final router = GoRouter(
       // visitor can establish access and carry the selected setup context
       // into onboarding.
       if (isSetup || isSubscribe) {
-        return _clientRoute('/auth/join', plan: plan, tier: tier, trial: trial);
+        return _clientRoute('/auth/register',
+            plan: plan, tier: tier, trial: trial);
       }
       if (isClientArea || isSetup || isSubscribe) {
         return _clientRoute('/auth/login',
@@ -324,6 +326,12 @@ final router = GoRouter(
         builder: (context, state) => const ClientLoginScreen()),
     GoRoute(
         path: '/auth/join',
+        redirect: (context, state) => _clientRoute('/auth/register',
+            plan: state.uri.queryParameters['plan'],
+            tier: state.uri.queryParameters['tier'],
+            trial: state.uri.queryParameters['trial'])),
+    GoRoute(
+        path: '/auth/register',
         builder: (context, state) => const ClientLoginScreen(createMode: true)),
     GoRoute(
         path: '/auth/verify-email',

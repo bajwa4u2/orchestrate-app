@@ -87,6 +87,7 @@ void main() {
     expect(authShell, contains('class AuthShell'));
     expect(authShell, contains('_SetupJourneyHeader'));
     expect(router, contains("path: '/auth/login'"));
+    expect(router, contains("path: '/auth/register'"));
     expect(router, contains("path: '/app/setup'"));
     expect(router, contains("path: '/app/subscribe'"));
     expect(setup, contains('setupFlow: true'));
