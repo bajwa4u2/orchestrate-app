@@ -693,6 +693,16 @@ class _AuthIntro extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
+            isJoin ? 'CREATE ACCESS  →  SETUP  →  READINESS' : 'ACCOUNT ACCESS',
+            style: const TextStyle(
+              color: AppTheme.publicAccent,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
             isJoin
                 ? 'Create your workspace and move straight into setup.'
                 : 'Return to your client workspace.',

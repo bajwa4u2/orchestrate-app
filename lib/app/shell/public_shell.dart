@@ -724,15 +724,18 @@ class _FooterLink extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFFB9C8D6),
-                fontSize: 13,
-                height: 1.25,
-              ),
+      child: SizedBox(
+        width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFFB9C8D6),
+                  fontSize: 13,
+                  height: 1.25,
+                ),
+          ),
         ),
       ),
     );

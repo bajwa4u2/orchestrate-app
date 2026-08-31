@@ -134,4 +134,12 @@ void main() {
     expect(shell, isNot(contains("label: 'How Orchestrate operates'")));
     expect(contract, contains('Retired from footer'));
   });
+
+  test('footer rows and acquisition intent remain directly actionable', () {
+    final shell = read('lib/app/shell/public_shell.dart');
+    final auth = read('lib/features/auth/screens/client_login_screen.dart');
+    expect(shell, contains('width: double.infinity'));
+    expect(auth, contains('CREATE ACCESS  →  SETUP  →  READINESS'));
+    expect(auth, contains('ACCOUNT ACCESS'));
+  });
 }
