@@ -393,7 +393,7 @@ final router = GoRouter(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Product',
-            title: 'Commercial intelligence + execution infrastructure.',
+            title: 'Commercial intelligence + execution infrastructure',
             subtitle:
                 'Orchestrate is commercial execution infrastructure for B2B firms in regulated and reputation-sensitive sectors. It runs governed outbound for you under your own verified identity, turns market signals into qualified opportunity, and refuses the sends that would burn your reputation — refusal is a first-class outcome, not an error. You connect identity; Orchestrate runs the rest.',
             sideNote:
@@ -705,7 +705,7 @@ final router = GoRouter(
           child: const PublicContentScreen(
             eyebrow: 'About',
             title:
-                'Commercial intelligence + execution infrastructure.',
+                'Commercial intelligence + execution infrastructure',
             subtitle:
                 'Orchestrate exists because, for firms in regulated and reputation-sensitive sectors, outbound is either outsourced — burning the sending identity — or left undone. Revenue execution deserves to be governed infrastructure you activate, not another tool you operate. Connect your verified identity; Orchestrate runs governed outbound end to end, and refuses what would burn you.',
             sections: [
