@@ -380,7 +380,7 @@ class _PublicFooter extends StatelessWidget {
                 // — rather than as a towering footer column.
                 final groups = [
                   _FooterGroup(
-                    title: 'Product',
+                    title: 'Explore execution',
                     links: [
                       _FooterLink(
                           label: 'Product',
@@ -392,12 +392,12 @@ class _PublicFooter extends StatelessWidget {
                           label: 'How Orchestrate operates',
                           onTap: () => context.go('/how-orchestrate-operates')),
                       _FooterLink(
-                          label: 'Intelligence',
+                          label: 'Signals and sourcing',
                           onTap: () => context.go('/lead-sourcing')),
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Readiness',
+                    title: 'Readiness + trust',
                     links: [
                       _FooterLink(
                           label: 'Activation journey',
@@ -411,7 +411,7 @@ class _PublicFooter extends StatelessWidget {
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Trust',
+                    title: 'Business + policy',
                     links: [
                       _FooterLink(
                           label: 'Trust + compliance',
@@ -428,7 +428,7 @@ class _PublicFooter extends StatelessWidget {
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Legal',
+                    title: 'Legal + account',
                     links: [
                       _FooterLink(
                           label: 'Terms',
@@ -439,11 +439,6 @@ class _PublicFooter extends StatelessWidget {
                       _FooterLink(
                           label: 'Service agreement',
                           onTap: () => context.go('/legal/service-agreement')),
-                    ],
-                  ),
-                  _FooterGroup(
-                    title: 'Account',
-                    links: [
                       _FooterLink(
                           label: 'Billing',
                           onTap: () => context.go('/legal/billing')),
@@ -497,6 +492,60 @@ class _PublicFooter extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    LayoutBuilder(
+                      builder: (context, introConstraints) {
+                        final stacked = introConstraints.maxWidth < 620;
+                        final copy = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ORCHESTRATE',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color: AppTheme.accent,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.5,
+                                  ),
+                            ),
+                            const SizedBox(height: 9),
+                            Text(
+                              'Commercial execution, from prospect to complete.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ],
+                        );
+                        const description = Text(
+                          'A managed path for readiness, relationships, delivery and revenue records.',
+                          style: TextStyle(
+                              color: AppTheme.publicMuted, height: 1.5),
+                        );
+                        return stacked
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  copy,
+                                  const SizedBox(height: 12),
+                                  description
+                                ],
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: copy),
+                                  const SizedBox(width: 28),
+                                  const Expanded(child: description),
+                                ],
+                              );
+                      },
+                    ),
+                    const SizedBox(height: 30),
                     groupArea,
                     const SizedBox(height: 24),
                     Container(height: 1, color: AppTheme.publicLine),

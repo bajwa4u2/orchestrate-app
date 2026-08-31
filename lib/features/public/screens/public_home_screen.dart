@@ -75,8 +75,6 @@ class PublicHomeScreen extends StatelessWidget {
               SizedBox(height: gap),
               const PublicOverviewWidget(),
               SizedBox(height: gap),
-              const CommercialSupportBand(),
-              SizedBox(height: gap),
               _ClosingSection(
                   onSupportTap: () => _openPublicSupportDrawer(context)),
             ],
