@@ -7,7 +7,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/public_app_acquisition.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
 
-class PublicShell extends StatelessWidget {
+class PublicShell extends StatefulWidget {
   const PublicShell(
       {super.key, required this.currentPath, required this.child});
 
@@ -31,6 +31,25 @@ class PublicShell extends StatelessWidget {
   // using PublicShell.
 
   @override
+  State<PublicShell> createState() => _PublicShellState();
+}
+
+class _PublicShellState extends State<PublicShell> {
+  late final ScrollController _publicScrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _publicScrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _publicScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Theme(
       data: AppTheme.lightTheme,
@@ -40,49 +59,56 @@ class PublicShell extends StatelessWidget {
           bottom: false,
           child: Column(
             children: [
-              _PublicHeader(currentPath: currentPath),
+              _PublicHeader(currentPath: widget.currentPath),
               PublicAppAcquisition(
                 config: orchestratePublicAppAcquisitionConfig,
-                currentPath: currentPath,
+                currentPath: widget.currentPath,
               ),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      child: ConstrainedBox(
-                        constraints:
-                            BoxConstraints(minHeight: constraints.maxHeight),
-                        child: Column(
-                          children: [
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: (constraints.maxHeight -
-                                        _footerReserveHeight)
-                                    .clamp(0, double.infinity)
-                                    .toDouble(),
-                              ),
-                              child: Align(
-                                alignment: Alignment.topCenter,
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    maxWidth: _maxFrameWidth,
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 28,
+                    return Scrollbar(
+                      controller: _publicScrollController,
+                      thumbVisibility: true,
+                      trackVisibility: true,
+                      interactive: true,
+                      child: SingleChildScrollView(
+                        controller: _publicScrollController,
+                        child: ConstrainedBox(
+                          constraints:
+                              BoxConstraints(minHeight: constraints.maxHeight),
+                          child: Column(
+                            children: [
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: (constraints.maxHeight -
+                                          _footerReserveHeight)
+                                      .clamp(0, double.infinity)
+                                      .toDouble(),
+                                ),
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: _maxFrameWidth,
                                     ),
-                                    child: child,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 28,
+                                      ),
+                                      child: widget.child,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            if (currentPath != '/intake' &&
-                                currentPath != '/contact' &&
-                                !currentPath.startsWith('/legal/'))
-                              const _CommercialClosingBand(),
-                            const _CommercializationSupportBand(),
-                            const _PublicFooter(),
-                          ],
+                              if (widget.currentPath != '/intake' &&
+                                  widget.currentPath != '/contact' &&
+                                  !widget.currentPath.startsWith('/legal/'))
+                                const _CommercialClosingBand(),
+                              const _CommercializationSupportBand(),
+                              const _PublicFooter(),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -622,7 +648,7 @@ class _PublicFooter extends StatelessWidget {
                     const SizedBox(height: 24),
                     Container(height: 1, color: const Color(0xFF263B4A)),
                     const SizedBox(height: 16),
-                    const _PublicFooterAttribution(),
+                    const _PublicFooterBottomRow(),
                   ],
                 );
               },
@@ -863,13 +889,8 @@ class _OrchEcosystemEntry {
 const String _kOrchCompanyUrl = 'https://company.auraplatform.org';
 
 const List<_OrchEcosystemEntry> _kOrchEcosystemLinks = <_OrchEcosystemEntry>[
-  _OrchEcosystemEntry(slug: 'company', label: 'Company', url: _kOrchCompanyUrl),
   _OrchEcosystemEntry(
       slug: 'aura', label: 'Aura', url: 'https://auraplatform.org'),
-  _OrchEcosystemEntry(
-      slug: 'orchestrate',
-      label: 'Orchestrate',
-      url: 'https://orchestrateops.com'),
   _OrchEcosystemEntry(
       slug: 'bajwa-writes',
       label: 'Bajwa Writes',

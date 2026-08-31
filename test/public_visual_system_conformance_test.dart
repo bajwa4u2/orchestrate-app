@@ -52,10 +52,26 @@ void main() {
       shell.indexOf('class _PublicFooter extends'),
       shell.indexOf('class _FooterGroup extends'),
     );
-    expect(shell, contains('const _PublicFooterAttribution()'));
-    expect(footer, isNot(contains('_PublicFooterBottomRow')));
+    expect(footer, contains('const _PublicFooterBottomRow()'));
+    expect(shell, contains("slug: 'aura'"));
+    expect(shell, contains("slug: 'bajwa-writes'"));
+    expect(shell, contains("slug: 'founder'"));
+    expect(shell, isNot(contains("slug: 'company'")));
+    expect(shell, isNot(contains("slug: 'orchestrate'")));
     expect(shell, contains('final columnWidth'));
     expect(shell, contains('spacing: 20'));
+  });
+
+  test('public shell has one explicit scroll owner', () {
+    final shell = read('lib/app/shell/public_shell.dart');
+    expect(
+        shell, contains('class _PublicShellState extends State<PublicShell>'));
+    expect(shell, contains('final ScrollController _publicScrollController'));
+    expect(shell, contains('Scrollbar('));
+    expect(shell, contains('controller: _publicScrollController'));
+    expect(shell, contains('interactive: true'));
+    expect(shell, contains('SingleChildScrollView('));
+    expect(shell, isNot(contains('Listener(')));
   });
 
   test('public content uses the shared visual chapter hook', () {
