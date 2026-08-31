@@ -120,5 +120,18 @@ void main() {
         read('lib/features/public/screens/public_content_screen.dart');
     expect(content, contains('final Widget? visualChapter'));
     expect(content, contains('visualChapter!'));
+    expect(content, contains('color: AppTheme.publicDeepField'));
+    expect(content, contains('color: AppTheme.publicOnDarkMuted'));
+  });
+
+  test('public footer follows the current destination contract', () {
+    final shell = read('lib/app/shell/public_shell.dart');
+    final contract = read('docs/ORCHESTRATE_CLICKABLE_JOURNEY_MATRIX.md');
+    expect(shell, contains("label: 'Product'"));
+    expect(shell, contains("label: 'Signals and sourcing'"));
+    expect(shell, contains("label: 'DNS readiness check'"));
+    expect(shell, isNot(contains("label: 'Why Orchestrate exists'")));
+    expect(shell, isNot(contains("label: 'How Orchestrate operates'")));
+    expect(contract, contains('Retired from footer'));
   });
 }
