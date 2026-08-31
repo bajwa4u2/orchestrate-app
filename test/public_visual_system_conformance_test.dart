@@ -159,6 +159,11 @@ void main() {
     expect(footer, isNot(contains('context.go')));
   });
 
+  test('imperative web destinations project into browser URL history', () {
+    final router = read('lib/app/routing/app_router.dart');
+    expect(router, contains('GoRouter.optionURLReflectsImperativeAPIs = true'));
+  });
+
   test('footer rows and acquisition intent remain directly actionable', () {
     final shell = read('lib/app/shell/public_shell.dart');
     final auth = read('lib/features/auth/screens/client_login_screen.dart');
