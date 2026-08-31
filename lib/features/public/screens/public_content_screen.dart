@@ -182,11 +182,12 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.fromLTRB(4, 24, 4, 30),
       decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        color: Colors.transparent,
+        border: const Border(
+          bottom: BorderSide(color: AppTheme.publicLine),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

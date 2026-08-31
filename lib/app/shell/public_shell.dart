@@ -76,6 +76,11 @@ class PublicShell extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            if (currentPath != '/' &&
+                                currentPath != '/intake' &&
+                                currentPath != '/contact' &&
+                                !currentPath.startsWith('/legal/'))
+                              const _CommercialClosingBand(),
                             const _CommercializationSupportBand(),
                             const _PublicFooter(),
                           ],
@@ -109,7 +114,7 @@ class _PublicHeader extends StatelessWidget {
         border: Border(bottom: BorderSide(color: AppTheme.publicLine)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 9),
         child: Center(
           child: ConstrainedBox(
             constraints:
@@ -123,10 +128,10 @@ class _PublicHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppTheme.radius),
                   onTap: () => context.go('/'),
                   child: SizedBox(
-                    height: 38,
+                    height: 34,
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: BrandAssets.logo(context, height: 24),
+                      child: BrandAssets.logo(context, height: 26),
                     ),
                   ),
                 );
@@ -276,6 +281,70 @@ class _PublicHeader extends StatelessWidget {
   }
 }
 
+class _CommercialClosingBand extends StatelessWidget {
+  const _CommercialClosingBand();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 34),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0E1723), Color(0xFF173A3A)],
+          ),
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
+            child: LayoutBuilder(builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 760;
+              final copy = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('CONTINUE THE COMMERCIAL PATH',
+                      style: TextStyle(
+                          color: Color(0xFF67D2C4),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.4)),
+                  const SizedBox(height: 10),
+                  Text('Move from understanding to execution.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 7),
+                  const Text(
+                      'Talk through readiness, qualification, delivery and the commercial states that matter to your business.',
+                      style: TextStyle(color: Color(0xFFB9C8D6), height: 1.5)),
+                ],
+              );
+              final action = FilledButton(
+                onPressed: () => context.go('/intake'),
+                style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF67D2C4),
+                    foregroundColor: const Color(0xFF071311)),
+                child: const Text('Talk to Orchestrate'),
+              );
+              return stacked
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [copy, const SizedBox(height: 18), action])
+                  : Row(children: [
+                      Expanded(child: copy),
+                      const SizedBox(width: 24),
+                      action
+                    ]);
+            }),
+          ),
+        ),
+      );
+}
+
 class _CommercializationSupportBand extends StatelessWidget {
   const _CommercializationSupportBand();
 
@@ -340,8 +409,8 @@ class _PublicFooter extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppTheme.publicBackground,
-        border: Border(top: BorderSide(color: AppTheme.publicLine)),
+        color: const Color(0xFF09121D),
+        border: const Border(top: BorderSide(color: Color(0xFF263B4A))),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
@@ -499,6 +568,7 @@ class _PublicFooter extends StatelessWidget {
                                   .textTheme
                                   .headlineSmall
                                   ?.copyWith(
+                                    color: Colors.white,
                                     fontWeight: FontWeight.w700,
                                   ),
                             ),
@@ -531,7 +601,7 @@ class _PublicFooter extends StatelessWidget {
                     const SizedBox(height: 30),
                     groupArea,
                     const SizedBox(height: 24),
-                    Container(height: 1, color: AppTheme.publicLine),
+                    Container(height: 1, color: const Color(0xFF263B4A)),
                     const SizedBox(height: 16),
                     const _PublicFooterBottomRow(),
                   ],
@@ -563,7 +633,7 @@ class _FooterGroup extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.publicText,
+                color: Colors.white,
                 fontWeight: FontWeight.w700,
                 height: 1.3,
               ),
@@ -620,7 +690,7 @@ class _FooterLink extends StatelessWidget {
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.publicMuted,
+                color: const Color(0xFFB9C8D6),
                 fontSize: 13,
                 height: 1.25,
               ),
@@ -807,7 +877,7 @@ class _PublicFooterBottomRow extends StatelessWidget {
             Text(
               'Aura Platform LLC',
               style: TextStyle(
-                color: AppTheme.publicText,
+                color: Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
                 letterSpacing: 0.2,
@@ -817,7 +887,7 @@ class _PublicFooterBottomRow extends StatelessWidget {
             Text(
               'Part of Aura Platform LLC.',
               style: TextStyle(
-                color: AppTheme.publicMuted,
+                color: const Color(0xFFB9C8D6),
                 fontSize: 11,
                 height: 1.4,
               ),
@@ -843,7 +913,7 @@ class _OrchEcosystemLinkRow extends StatelessWidget {
         for (var i = 0; i < _kOrchEcosystemLinks.length; i++) ...[
           if (i > 0)
             const Text('·',
-                style: TextStyle(color: AppTheme.publicMuted, fontSize: 11)),
+                style: TextStyle(color: Color(0xFF6F8796), fontSize: 11)),
           _OrchEcosystemLink(
             link: _kOrchEcosystemLinks[i],
             currentSlug: currentSlug,
@@ -863,7 +933,7 @@ class _OrchEcosystemLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCurrent = link.slug == currentSlug;
     final style = TextStyle(
-      color: isCurrent ? AppTheme.publicText : AppTheme.publicMuted,
+      color: isCurrent ? Colors.white : const Color(0xFFB9C8D6),
       fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
       fontSize: 11,
       decoration: isCurrent ? TextDecoration.underline : TextDecoration.none,

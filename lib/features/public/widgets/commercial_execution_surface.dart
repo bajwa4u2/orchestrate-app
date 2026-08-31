@@ -471,24 +471,6 @@ class CommercialSupportBand extends StatelessWidget {
                           style: TextStyle(
                               color: AppTheme.publicMuted, height: 1.5))
                     ])),
-            Wrap(spacing: 10, children: [
-              for (final label in [
-                'Microsoft for Startups',
-                'Google for Startups',
-                'AWS Activate'
-              ])
-                Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFC8DED9))),
-                    child: Text(label,
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.publicText)))
-            ])
+            const OfficialSupportMarks()
           ]));
 }
