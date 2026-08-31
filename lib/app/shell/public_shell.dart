@@ -82,7 +82,7 @@ class _PublicShellState extends State<PublicShell> {
                               ConstrainedBox(
                                 constraints: BoxConstraints(
                                   minHeight: (constraints.maxHeight -
-                                          _footerReserveHeight)
+                                          PublicShell._footerReserveHeight)
                                       .clamp(0, double.infinity)
                                       .toDouble(),
                                 ),
@@ -90,7 +90,7 @@ class _PublicShellState extends State<PublicShell> {
                                   alignment: Alignment.topCenter,
                                   child: ConstrainedBox(
                                     constraints: const BoxConstraints(
-                                      maxWidth: _maxFrameWidth,
+                                      maxWidth: PublicShell._maxFrameWidth,
                                     ),
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
