@@ -145,7 +145,13 @@ const _clientCanonicalRoutes = <String>{
   '/client/oauth/return',
 };
 
-final router = GoRouter(
+// Imperative public navigation uses `push` so browser Back traverses the
+// visitor's real journey. GoRouter 14 defaults to keeping imperative pushes
+// out of the web address bar; enable its canonical web URL projection at the
+// router authority so the visible page and durable URL cannot diverge.
+GoRouter get router {
+  GoRouter.optionURLReflectsImperativeAPIs = true;
+  return GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
   refreshListenable: AuthSessionController.instance,
@@ -1592,7 +1598,8 @@ final router = GoRouter(
     child: const Scaffold(
         body: Center(child: Text('This surface is unavailable.'))),
   ),
-);
+  );
+}
 
 String? _normalizedPlan(String? value) {
   final text = value?.trim().toLowerCase();
