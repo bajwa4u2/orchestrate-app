@@ -75,6 +75,7 @@ class PublicShell extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            const _CommercializationSupportBand(),
                             const _PublicFooter(),
                           ],
                         ),
@@ -134,17 +135,17 @@ class _PublicHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _HeaderLink(
-                      label: 'Product',
+                      label: 'Execution',
                       active: _isActive(const ['/product']),
                       onTap: () => context.go('/product'),
                     ),
                     _HeaderLink(
-                      label: 'How it works',
+                      label: 'Readiness',
                       active: _isActive(const ['/how-it-works']),
                       onTap: () => context.go('/how-it-works'),
                     ),
                     _HeaderLink(
-                      label: 'Intelligence',
+                      label: 'Signals',
                       active: _isActive(const ['/lead-sourcing']),
                       onTap: () => context.go('/lead-sourcing'),
                     ),
@@ -154,12 +155,12 @@ class _PublicHeader extends StatelessWidget {
                       onTap: () => context.go('/trust-compliance'),
                     ),
                     _HeaderLink(
-                      label: 'Pricing',
+                      label: 'Plans',
                       active: _isActive(const ['/pricing']),
                       onTap: () => context.go('/pricing'),
                     ),
                     _HeaderLink(
-                      label: 'Contact',
+                      label: 'Talk to us',
                       active: _isActive(const ['/contact', '/intake']),
                       onTap: () => context.go('/intake'),
                     ),
@@ -267,6 +268,80 @@ class _PublicHeader extends StatelessWidget {
                 );
               },
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CommercializationSupportBand extends StatelessWidget {
+  const _CommercializationSupportBand();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFEAF5F2),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
+      child: Center(
+        child: ConstrainedBox(
+          constraints:
+              const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 760;
+              final copy = const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('MADE WITH SUPPORT',
+                      style: TextStyle(
+                          color: AppTheme.publicAccent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.4)),
+                  SizedBox(height: 8),
+                  Text(
+                      'Orchestrate is being built in a commercialization environment that values durable execution.',
+                      style: TextStyle(
+                          color: AppTheme.publicText,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          height: 1.35)),
+                ],
+              );
+              final marks = Wrap(spacing: 10, runSpacing: 8, children: [
+                for (final name in const [
+                  'Microsoft for Startups',
+                  'Google for Startups',
+                  'AWS Activate'
+                ])
+                  Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: const Color(0xFFC7DFD9)),
+                          borderRadius: BorderRadius.circular(6)),
+                      child: Text(name,
+                          style: const TextStyle(
+                              color: AppTheme.publicMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700)))
+              ]);
+              return compact
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [copy, const SizedBox(height: 16), marks])
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                          Expanded(child: copy),
+                          const SizedBox(width: 24),
+                          Flexible(child: marks)
+                        ]);
+            },
           ),
         ),
       ),

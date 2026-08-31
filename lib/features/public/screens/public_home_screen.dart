@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/public_overview_widget.dart';
+import 'package:orchestrate_app/features/public/widgets/commercial_execution_surface.dart';
 import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
 
 Future<void> _openPublicSupportDrawer(BuildContext context) async {
@@ -64,21 +65,17 @@ class PublicHomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Hero(onSupportTap: () => _openPublicSupportDrawer(context)),
+              CommercialHero(onTalk: () => _openPublicSupportDrawer(context)),
               SizedBox(height: gap),
-              const _SystemStrip(),
+              const ExecutionLifecycleSection(),
+              SizedBox(height: gap),
+              const ExecutionCapabilityGrid(),
               SizedBox(height: gap),
               const _BurdenTransformSection(),
               SizedBox(height: gap),
               const PublicOverviewWidget(),
               SizedBox(height: gap),
-              const _CapabilitySection(),
-              SizedBox(height: gap),
-              const _JourneySection(),
-              SizedBox(height: gap),
-              const _TruthSection(),
-              SizedBox(height: gap),
-              const _PlansSection(),
+              const CommercialSupportBand(),
               SizedBox(height: gap),
               _ClosingSection(
                   onSupportTap: () => _openPublicSupportDrawer(context)),
@@ -109,8 +106,16 @@ class _Hero extends StatelessWidget {
         // Phone: compact headline so the first screen-worth is readable.
         // Tablet/stacked: 34 balances density vs presence.
         // Desktop: 42 with the full-width headline treatment.
-        final double headlineSize = phone ? 26 : stacked ? 34 : 42;
-        final double pad = phone ? 18 : stacked ? 24 : 34;
+        final double headlineSize = phone
+            ? 26
+            : stacked
+                ? 34
+                : 42;
+        final double pad = phone
+            ? 18
+            : stacked
+                ? 24
+                : 34;
 
         final badge = Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1044,15 +1049,12 @@ class _BurdenColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isProblem = tone == _BurdenTone.problem;
-    final background = isProblem
-        ? AppTheme.publicSurfaceSoft
-        : AppTheme.publicSurface;
-    final accent = isProblem
-        ? theme.colorScheme.outline
-        : AppTheme.publicAccent;
-    final eyebrowColor = isProblem
-        ? theme.colorScheme.outline
-        : AppTheme.publicAccent;
+    final background =
+        isProblem ? AppTheme.publicSurfaceSoft : AppTheme.publicSurface;
+    final accent =
+        isProblem ? theme.colorScheme.outline : AppTheme.publicAccent;
+    final eyebrowColor =
+        isProblem ? theme.colorScheme.outline : AppTheme.publicAccent;
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(

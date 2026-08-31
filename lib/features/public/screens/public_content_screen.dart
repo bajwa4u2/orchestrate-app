@@ -34,9 +34,13 @@ class PublicContentScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: AppTheme.publicSurface,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0E1723), Color(0xFF173A3A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(AppTheme.radius),
-                  border: Border.all(color: AppTheme.publicLine),
+                  border: Border.all(color: const Color(0xFF2F5A5B)),
                 ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -57,7 +61,7 @@ class PublicContentScreen extends StatelessWidget {
                                 .textTheme
                                 .titleMedium
                                 ?.copyWith(
-                                  color: AppTheme.publicAccent,
+                                  color: AppTheme.accent,
                                 ),
                           ),
                         ),
@@ -72,7 +76,8 @@ class PublicContentScreen extends StatelessWidget {
                                 ?.copyWith(
                                   // Responsive cap: desktop is held at 44,
                                   // narrow widths scale down (not up).
-                                  fontSize: stacked ? 34 : 44,
+                                  color: Colors.white,
+                                  fontSize: stacked ? 34 : 48,
                                   height: 1.1,
                                   letterSpacing: 0,
                                 ),
@@ -85,7 +90,7 @@ class PublicContentScreen extends StatelessWidget {
                             subtitle,
                             style:
                                 Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: AppTheme.publicMuted,
+                                      color: const Color(0xFFD2E2DF),
                                     ),
                           ),
                         ),
@@ -329,8 +334,7 @@ PublicContentScreen buildPrivacyScreen() => const PublicContentScreen(
         ContentAction(
             label: 'Mailbox access policy', path: '/legal/mailbox-access'),
         ContentAction(label: 'AI usage disclosure', path: '/legal/ai-usage'),
-        ContentAction(
-            label: 'Credential handling', path: '/legal/credentials'),
+        ContentAction(label: 'Credential handling', path: '/legal/credentials'),
       ],
       sections: [
         ContentSection(
@@ -528,8 +532,7 @@ PublicContentScreen buildReplyMonitoringDisclosureScreen() =>
       ],
     );
 
-PublicContentScreen buildSuppressionPolicyScreen() =>
-    const PublicContentScreen(
+PublicContentScreen buildSuppressionPolicyScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',
       title: 'Suppression and opt-out policy',
       subtitle:
@@ -554,8 +557,7 @@ PublicContentScreen buildSuppressionPolicyScreen() =>
           title: 'No bypass',
           body:
               'There is no UI affordance, API endpoint, or operator tool that lets a dispatch path skip suppression check. Suppression check is in the FIRST_SEND code path, the FOLLOWUP_SEND code path, and the direct-email send path.',
-          highlight:
-              'No code path dispatches to a suppressed recipient.',
+          highlight: 'No code path dispatches to a suppressed recipient.',
         ),
         ContentSection(
           title: 'Visibility',
@@ -646,8 +648,7 @@ PublicContentScreen buildWhyOrchestrateExistsScreen() =>
             label: 'See how Orchestrate operates',
             path: '/how-it-works',
             filled: true),
-        ContentAction(
-            label: 'Trust architecture', path: '/trust-architecture'),
+        ContentAction(label: 'Trust architecture', path: '/trust-architecture'),
       ],
       sections: [
         ContentSection(
@@ -792,8 +793,7 @@ PublicContentScreen buildHowOrchestrateOperatesScreen() =>
       ],
     );
 
-PublicContentScreen buildTrustArchitectureScreen() =>
-    const PublicContentScreen(
+PublicContentScreen buildTrustArchitectureScreen() => const PublicContentScreen(
       eyebrow: 'Trust architecture',
       title:
           'Operation-scoped access, encrypted vault, governed dispatch, AI bounded by attribution.',
@@ -808,8 +808,7 @@ PublicContentScreen buildTrustArchitectureScreen() =>
         ContentAction(label: 'AI usage', path: '/legal/ai-usage'),
         ContentAction(
             label: 'Reply monitoring', path: '/legal/reply-monitoring'),
-        ContentAction(
-            label: 'Provider boundaries', path: '/legal/providers'),
+        ContentAction(label: 'Provider boundaries', path: '/legal/providers'),
         ContentAction(
             label: 'Suppression / opt-out', path: '/legal/suppression'),
         ContentAction(label: 'Retention / deletion', path: '/legal/retention'),
