@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
 
 class CommercialHero extends StatelessWidget {
   const CommercialHero({super.key, required this.onTalk});
@@ -33,7 +34,11 @@ class CommercialHero extends StatelessWidget {
                 'Move the work\nfrom prospect to complete.',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       color: Colors.white,
-                      fontSize: c.maxWidth < 520 ? 34 : 54,
+                      fontSize: c.maxWidth < 380
+                          ? 30
+                          : c.maxWidth < 520
+                              ? 34
+                              : 54,
                       height: .99,
                       letterSpacing: -.8,
                     ),
@@ -74,14 +79,14 @@ class CommercialHero extends StatelessWidget {
               ),
             ],
           );
-          final lane = const _LifecycleRail(compact: false);
+          final lane = const ExecutionObjectStage();
           if (stacked) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 copy,
                 const SizedBox(height: 30),
-                const _LifecycleRail(compact: true)
+                const ExecutionObjectStage()
               ],
             );
           }
