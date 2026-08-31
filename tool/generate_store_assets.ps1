@@ -203,7 +203,12 @@ Save-Png 512 512 (Join-Path $store "android\play-icon-512.png") {
 }
 Save-Png 1024 500 (Join-Path $store "android\feature-graphic-1024x500.png") {
   param($g, $w, $h)
+  # Play crops and overlays this banner, so the lockup is MEASURED and centred
+  # rather than placed at fixed coordinates. The previous version hard-coded a
+  # position that left the entire right half of the canvas empty and the lockup
+  # riding high, which reads as a mistake rather than as composition.
   $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+  $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::ClearTypeGridFit
   $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
     (New-Object System.Drawing.Rectangle(0, 0, $w, $h)),
     [System.Drawing.Color]::FromArgb(255, 0, 0, 0),
@@ -212,18 +217,41 @@ Save-Png 1024 500 (Join-Path $store "android\feature-graphic-1024x500.png") {
   )
   $g.FillRectangle($brush, 0, 0, $w, $h)
   $brush.Dispose()
-  $mark = New-Bitmap 220 220
+
+  $fontTitle = New-Object System.Drawing.Font("Segoe UI", 76, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
+  $fontSub = New-Object System.Drawing.Font("Segoe UI", 29, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
+  $title = "Orchestrate"
+  $sub = "AI-governed revenue operations workspace"
+  $fmt = [System.Drawing.StringFormat]::GenericTypographic
+
+  $titleSize = $g.MeasureString($title, $fontTitle, 10000, $fmt)
+  $subSize = $g.MeasureString($sub, $fontSub, 10000, $fmt)
+
+  $markSize = 190.0
+  $gap = 44.0
+  $textWidth = [Math]::Max($titleSize.Width, $subSize.Width)
+  $lockupWidth = $markSize + $gap + $textWidth
+  $left = ($w - $lockupWidth) / 2.0
+
+  # The text block is centred against the mark so the pair reads as one object.
+  $lead = 10.0
+  $textBlockHeight = $titleSize.Height + $lead + $subSize.Height
+  $textTop = ($h - $textBlockHeight) / 2.0
+  $markTop = ($h - $markSize) / 2.0
+
+  $mark = New-Bitmap ([int]$markSize) ([int]$markSize)
   $markGraphics = [System.Drawing.Graphics]::FromImage($mark)
-  Draw-Orchestrate-Mark $markGraphics 220 $true
-  $g.DrawImage($mark, 50, 140, 220, 220)
+  Draw-Orchestrate-Mark $markGraphics ([int]$markSize) $true 0.86
+  $g.DrawImage($mark, [single]$left, [single]$markTop, [single]$markSize, [single]$markSize)
   $markGraphics.Dispose()
   $mark.Dispose()
-  $fontTitle = New-Object System.Drawing.Font("Segoe UI", 70, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
-  $fontSub = New-Object System.Drawing.Font("Segoe UI", 30, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
+
   $white = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 245, 245, 245))
-  $muted = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 170, 170, 170))
-  $g.DrawString("Orchestrate", $fontTitle, $white, 280, 165)
-  $g.DrawString("AI-governed revenue operations workspace", $fontSub, $muted, 286, 255)
+  $muted = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 168, 168, 168))
+  $textLeft = $left + $markSize + $gap
+  $g.DrawString($title, $fontTitle, $white, [single]$textLeft, [single]$textTop, $fmt)
+  $g.DrawString($sub, $fontSub, $muted, [single]$textLeft, [single]($textTop + $titleSize.Height + $lead), $fmt)
+
   $fontTitle.Dispose()
   $fontSub.Dispose()
   $white.Dispose()
