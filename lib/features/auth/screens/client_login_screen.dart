@@ -323,7 +323,8 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       _error = null;
     });
     try {
-      final response = await AuthRepository().resendClientLoginCode(challengeId);
+      final response =
+          await AuthRepository().resendClientLoginCode(challengeId);
       if (!mounted) return;
       setState(() {
         _pendingChallenge = Map<String, dynamic>.from(
@@ -639,9 +640,13 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (text.contains('timeout') || text.contains('timed out')) {
       return 'The request timed out. Check your connection and try again.';
     }
-    if (text.contains('expired')) return 'That code expired. Request a fresh code and try again.';
-    if (text.contains('invalid')) return 'That code did not work. Check it and try again.';
-    if (text.contains('too many') || text.contains('wait') || api?.statusCode == 429) {
+    if (text.contains('expired'))
+      return 'That code expired. Request a fresh code and try again.';
+    if (text.contains('invalid'))
+      return 'That code did not work. Check it and try again.';
+    if (text.contains('too many') ||
+        text.contains('wait') ||
+        api?.statusCode == 429) {
       return 'Please wait before requesting another code.';
     }
     if (api != null && api.statusCode >= 500) {
@@ -680,7 +685,12 @@ class _AuthIntro extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          BrandAssets.logo(context, height: 28),
+          BrandAssets.operatorLockup(
+            context,
+            symbolSize: 28,
+            fontSize: 22,
+            color: AppTheme.publicText,
+          ),
           const SizedBox(height: 24),
           Text(
             isJoin
@@ -1043,89 +1053,94 @@ class _EmailCodeView extends StatelessWidget {
     return AuthShell(
       maxContentWidth: 560,
       child: Card(
-                elevation: 0,
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
-                  side: const BorderSide(color: AppTheme.publicLine),
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32),
+          side: const BorderSide(color: AppTheme.publicLine),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              BrandAssets.operatorLockup(
+                context,
+                symbolSize: 28,
+                fontSize: 22,
+                color: AppTheme.publicText,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Check your email',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'We sent a code to $email. Enter it to finish signing in.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.publicMuted,
+                    ),
+              ),
+              const SizedBox(height: 20),
+              if (state._message != null)
+                _Banner(message: state._message!, error: false),
+              if (state._error != null)
+                _Banner(message: state._error!, error: true),
+              _Field(
+                controller: state._loginCode,
+                label: 'Email code',
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 10),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: state._trustDevice,
+                onChanged: (value) => state.setState(
+                  () => state._trustDevice = value == true,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      BrandAssets.logo(context, height: 28),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Check your email',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'We sent a code to $email. Enter it to finish signing in.',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppTheme.publicMuted,
-                            ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (state._message != null)
-                        _Banner(message: state._message!, error: false),
-                      if (state._error != null)
-                        _Banner(message: state._error!, error: true),
-                      _Field(
-                        controller: state._loginCode,
-                        label: 'Email code',
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 10),
-                      CheckboxListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: state._trustDevice,
-                        onChanged: (value) => state.setState(
-                          () => state._trustDevice = value == true,
-                        ),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        title: const Text('Trust this device for 60 days'),
-                        subtitle: const Text(
-                          'Trusted devices skip the email code until they expire or are revoked.',
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: state._busy ? null : state.verifyLoginCode,
-                          child: Text(
-                            state._busy ? 'Verifying...' : 'Verify code',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          OutlinedButton(
-                            onPressed: state._resendingVerification
-                                ? null
-                                : state.resendLoginCode,
-                            child: Text(state._resendingVerification
-                                ? 'Sending...'
-                                : 'Resend code'),
-                          ),
-                          TextButton(
-                            onPressed: state._busy ? null : state.changeLoginEmail,
-                            child: const Text('Back and change email'),
-                          ),
-                        ],
-                      ),
-                    ],
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text('Trust this device for 60 days'),
+                subtitle: const Text(
+                  'Trusted devices skip the email code until they expire or are revoked.',
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: state._busy ? null : state.verifyLoginCode,
+                  child: Text(
+                    state._busy ? 'Verifying...' : 'Verify code',
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  OutlinedButton(
+                    onPressed: state._resendingVerification
+                        ? null
+                        : state.resendLoginCode,
+                    child: Text(state._resendingVerification
+                        ? 'Sending...'
+                        : 'Resend code'),
+                  ),
+                  TextButton(
+                    onPressed: state._busy ? null : state.changeLoginEmail,
+                    child: const Text('Back and change email'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1139,75 +1154,78 @@ class _VerificationView extends StatelessWidget {
     return AuthShell(
       maxContentWidth: 620,
       child: Card(
-                elevation: 0,
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
-                  side: const BorderSide(color: AppTheme.publicLine),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      BrandAssets.logo(context, height: 28),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Confirm your email',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        state._verificationComplete
-                            ? 'Your email is confirmed. Sign in to continue.'
-                            : 'Open the email we sent and confirm the address tied to this workspace.',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.copyWith(
-                              color: AppTheme.publicMuted,
-                            ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (state._message != null)
-                        _Banner(message: state._message!, error: false),
-                      if (state._error != null)
-                        _Banner(message: state._error!, error: true),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          FilledButton(
-                            onPressed: () =>
-                                context.go(state._route('/auth/login')),
-                            child: const Text('Go to sign in'),
-                          ),
-                          OutlinedButton(
-                            onPressed: state._verificationEmail == null ||
-                                    state._resendingVerification ||
-                                    state._busy
-                                ? null
-                                : state.resendVerification,
-                            child: Text(
-                              state._resendingVerification
-                                  ? 'Sending...'
-                                  : 'Resend verification',
-                            ),
-                          ),
-                          if (!isIosAppStorePlatform)
-                            TextButton(
-                              onPressed: () =>
-                                  context.go(state._route('/auth/join')),
-                              child: const Text('Use another email'),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32),
+          side: const BorderSide(color: AppTheme.publicLine),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              BrandAssets.operatorLockup(
+                context,
+                symbolSize: 28,
+                fontSize: 22,
+                color: AppTheme.publicText,
               ),
+              const SizedBox(height: 20),
+              Text(
+                'Confirm your email',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                state._verificationComplete
+                    ? 'Your email is confirmed. Sign in to continue.'
+                    : 'Open the email we sent and confirm the address tied to this workspace.',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.publicMuted,
+                    ),
+              ),
+              const SizedBox(height: 20),
+              if (state._message != null)
+                _Banner(message: state._message!, error: false),
+              if (state._error != null)
+                _Banner(message: state._error!, error: true),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  FilledButton(
+                    onPressed: () => context.go(state._route('/auth/login')),
+                    child: const Text('Go to sign in'),
+                  ),
+                  OutlinedButton(
+                    onPressed: state._verificationEmail == null ||
+                            state._resendingVerification ||
+                            state._busy
+                        ? null
+                        : state.resendVerification,
+                    child: Text(
+                      state._resendingVerification
+                          ? 'Sending...'
+                          : 'Resend verification',
+                    ),
+                  ),
+                  if (!isIosAppStorePlatform)
+                    TextButton(
+                      onPressed: () => context.go(state._route('/auth/join')),
+                      child: const Text('Use another email'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1221,80 +1239,82 @@ class _ResetView extends StatelessWidget {
     return AuthShell(
       maxContentWidth: 620,
       child: Card(
-                elevation: 0,
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
-                  side: const BorderSide(color: AppTheme.publicLine),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      BrandAssets.logo(context, height: 28),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Create a new password',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Use the secure link from your email to set a new password for this workspace.',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.copyWith(
-                              color: AppTheme.publicMuted,
-                            ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (state._message != null)
-                        _Banner(message: state._message!, error: false),
-                      if (state._error != null)
-                        _Banner(message: state._error!, error: true),
-                      _Field(
-                        controller: state._resetPassword,
-                        label: 'New password',
-                        obscure: state._obscureResetPassword,
-                        suffixIcon: IconButton(
-                          onPressed: () => state.setState(
-                            () => state._obscureResetPassword =
-                                !state._obscureResetPassword,
-                          ),
-                          icon: Icon(
-                            state._obscureResetPassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          FilledButton(
-                            onPressed: state._busy ? null : state.submitReset,
-                            child: Text(
-                              state._busy
-                                  ? 'Updating password...'
-                                  : 'Update password',
-                            ),
-                          ),
-                          OutlinedButton(
-                            onPressed: () =>
-                                context.go(state._route('/auth/login')),
-                            child: const Text('Back to sign in'),
-                          ),
-                        ],
-                      ),
-                    ],
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32),
+          side: const BorderSide(color: AppTheme.publicLine),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              BrandAssets.operatorLockup(
+                context,
+                symbolSize: 28,
+                fontSize: 22,
+                color: AppTheme.publicText,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Create a new password',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Use the secure link from your email to set a new password for this workspace.',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.publicMuted,
+                    ),
+              ),
+              const SizedBox(height: 20),
+              if (state._message != null)
+                _Banner(message: state._message!, error: false),
+              if (state._error != null)
+                _Banner(message: state._error!, error: true),
+              _Field(
+                controller: state._resetPassword,
+                label: 'New password',
+                obscure: state._obscureResetPassword,
+                suffixIcon: IconButton(
+                  onPressed: () => state.setState(
+                    () => state._obscureResetPassword =
+                        !state._obscureResetPassword,
+                  ),
+                  icon: Icon(
+                    state._obscureResetPassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
                   ),
                 ),
               ),
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  FilledButton(
+                    onPressed: state._busy ? null : state.submitReset,
+                    child: Text(
+                      state._busy ? 'Updating password...' : 'Update password',
+                    ),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => context.go(state._route('/auth/login')),
+                    child: const Text('Back to sign in'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
