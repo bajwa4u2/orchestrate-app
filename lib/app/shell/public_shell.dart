@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/features/public/widgets/public_app_acquisition.dart';
 
 class PublicShell extends StatelessWidget {
   const PublicShell(
@@ -39,6 +40,10 @@ class PublicShell extends StatelessWidget {
           child: Column(
             children: [
               _PublicHeader(currentPath: currentPath),
+              PublicAppAcquisition(
+                config: orchestratePublicAppAcquisitionConfig,
+                currentPath: currentPath,
+              ),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
