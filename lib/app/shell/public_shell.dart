@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/public_app_acquisition.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
@@ -129,10 +130,12 @@ class _PublicHeader extends StatelessWidget {
                     height: 34,
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Image.asset(
-                        'assets/branding/logo/orchestrate_logo_dark.png',
-                        height: 26,
-                        fit: BoxFit.contain,
+                      child: BrandAssets.operatorLockup(
+                        context,
+                        symbolSize: 30,
+                        fontSize: 24,
+                        darkSurface: true,
+                        color: AppTheme.publicOnDark,
                       ),
                     ),
                   ),
@@ -666,9 +669,9 @@ class _HeaderLink extends StatelessWidget {
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        foregroundColor: active ? AppTheme.publicOnDark : AppTheme.publicOnDarkMuted,
-        backgroundColor:
-            active ? const Color(0xFF1B4050) : Colors.transparent,
+        foregroundColor:
+            active ? AppTheme.publicOnDark : AppTheme.publicOnDarkMuted,
+        backgroundColor: active ? const Color(0xFF1B4050) : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         minimumSize: const Size(0, 38),
         shape: RoundedRectangleBorder(

@@ -23,7 +23,8 @@ void main() {
     expect(shell, contains('const _CommercialClosingBand()'));
     expect(shell, contains('const _CommercializationSupportBand()'));
     expect(home, isNot(contains('_ClosingSection')));
-    expect(home, isNot(contains('Ready to activate revenue automation infrastructure')));
+    expect(home,
+        isNot(contains('Ready to activate revenue automation infrastructure')));
   });
 
   test('support marks remain governed assets, not text pills', () {
@@ -34,6 +35,15 @@ void main() {
     expect(visuals, contains('microsoft-for-startups-badge.png'));
     expect(visuals, contains('google-for-startups.svg'));
     expect(visuals, contains('aws-activate.svg'));
+  });
+
+  test('public identity uses the canonical transparent lockup', () {
+    final shell = read('lib/app/shell/public_shell.dart');
+    final brand = read('lib/core/brand/brand_assets.dart');
+    expect(shell, contains('BrandAssets.operatorLockup'));
+    expect(shell, contains('darkSurface: true'));
+    expect(shell, isNot(contains('orchestrate_logo_dark.png')));
+    expect(brand, contains('orchestrate_symbol_dark.png'));
   });
 
   test('public content uses the shared visual chapter hook', () {

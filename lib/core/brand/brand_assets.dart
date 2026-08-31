@@ -74,8 +74,11 @@ class BrandAssets {
     double symbolSize = 34,
     double fontSize = 26,
     String label = 'Orchestrate',
+    bool darkSurface = false,
+    Color? color,
   }) {
     final theme = Theme.of(context);
+    final symbol = darkSurface ? _symbolDark : symbolFor(context);
 
     return ExcludeSemantics(
       child: Row(
@@ -83,7 +86,7 @@ class BrandAssets {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Image.asset(
-            symbolFor(context),
+            symbol,
             width: symbolSize,
             height: symbolSize,
             fit: BoxFit.contain,
@@ -102,6 +105,7 @@ class BrandAssets {
                 fontWeight: FontWeight.w600,
                 letterSpacing: -0.6,
                 height: 1,
+                color: color,
               ),
             ),
           ),
