@@ -30,6 +30,43 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- ANDROID APP LINKS - orchestrateops.com public routes.
+                 SCOPED, NOT BLANKET. The host is declared per PATH rather than
+                 as a bare host, because a bare host claims every URL on the
+                 domain including /app/* operator surfaces and anything added
+                 later. The list below is exactly the set the public web
+                 acquisition rail treats as eligible, so what the web offers to
+                 continue in the app and what the app is allowed to claim are
+                 the same set by construction.
+
+                 Verification requires https://orchestrateops.com/.well-known/
+                 assetlinks.json to answer with JSON. It previously answered
+                 with the SPA's index.html at HTTP 200, which cannot verify. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/product" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/how-it-works" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/ai-governed-revenue" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/lead-sourcing" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/trust-compliance" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/pricing" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/about" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/contact" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/terms" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/privacy" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/legal/terms" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/legal/privacy" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/why-orchestrate" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/how-orchestrate-operates" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/trust-architecture" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/for-evaluators" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/security-evaluation" />
+                <data android:scheme="https" android:host="orchestrateops.com" android:path="/faq" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

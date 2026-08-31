@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.orchestrateops.app",
+      "sha256_cert_fingerprints": [
+        "41:1D:20:19:5F:4A:E7:8B:96:79:A4:59:7D:9C:AF:88:AF:D7:E0:BF:59:DE:E5:B0:52:07:5E:8A:59:52:DA:E3",
+        "1E:91:61:8C:5F:CB:A5:55:00:A1:3C:6C:CA:9E:C4:A3:AB:C5:E4:F0:5C:A5:2A:66:CE:D6:70:53:B2:8C:70:C6"
+      ]
+    }
+  }
+]
