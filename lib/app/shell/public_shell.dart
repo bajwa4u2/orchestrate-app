@@ -75,6 +75,10 @@ class _PublicShellState extends State<PublicShell> {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
+                    final viewportWidth = MediaQuery.sizeOf(context).width;
+                    final shellWidth = constraints.hasBoundedWidth
+                        ? constraints.maxWidth
+                        : viewportWidth;
                     return Scrollbar(
                       controller: _publicScrollController,
                       thumbVisibility: true,
@@ -83,8 +87,11 @@ class _PublicShellState extends State<PublicShell> {
                       child: SingleChildScrollView(
                         controller: _publicScrollController,
                         child: ConstrainedBox(
-                          constraints:
-                              BoxConstraints(minHeight: constraints.maxHeight),
+                          constraints: BoxConstraints(
+                            minWidth: shellWidth,
+                            maxWidth: shellWidth,
+                            minHeight: constraints.maxHeight,
+                          ),
                           child: Column(
                             children: [
                               ConstrainedBox(
@@ -100,11 +107,17 @@ class _PublicShellState extends State<PublicShell> {
                                     constraints: const BoxConstraints(
                                       maxWidth: PublicShell._maxFrameWidth,
                                     ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 28,
+                                    child: SizedBox(
+                                      width: shellWidth.clamp(
+                                        0,
+                                        PublicShell._maxFrameWidth,
                                       ),
-                                      child: widget.child,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 28,
+                                        ),
+                                        child: widget.child,
+                                      ),
                                     ),
                                   ),
                                 ),

@@ -73,6 +73,7 @@ void main() {
     expect(shell, contains('controller: _publicScrollController'));
     expect(shell, contains('interactive: true'));
     expect(shell, contains('SingleChildScrollView('));
+    expect(shell, contains('maxWidth: constraints.maxWidth'));
     expect(shell, isNot(contains('Listener(')));
   });
 
@@ -123,6 +124,24 @@ void main() {
     expect(content, contains('visualChapter!'));
     expect(content, contains('color: AppTheme.publicDeepField'));
     expect(content, contains('color: AppTheme.publicOnDarkMuted'));
+  });
+
+  test('Home restores the live lifecycle flagship before the hero', () {
+    final home = read('lib/features/public/screens/public_home_screen.dart');
+    final flagship =
+        read('lib/features/public/widgets/public_overview_widget.dart');
+    final flagshipIndex = home.indexOf('const PublicOverviewWidget()');
+    final heroIndex = home.indexOf('CommercialHero(');
+    expect(flagshipIndex, greaterThan(-1));
+    expect(heroIndex, greaterThan(flagshipIndex));
+    expect(flagship, contains("fetchLifecycle()"));
+    expect(flagship, contains("_payload?['cards']"));
+    expect(flagship, contains("node.kind == 'ASSET'"));
+    expect(flagship, contains('MediaQuery.disableAnimationsOf(context)'));
+    expect(flagship, contains('The public authority could not be reached'));
+    expect(flagship, isNot(contains("'283'")));
+    expect(flagship, isNot(contains("'220'")));
+    expect(flagship, isNot(contains("'78'")));
   });
 
   test('public footer follows the current destination contract', () {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/commercial_execution_surface.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
+import 'package:orchestrate_app/features/public/widgets/public_overview_widget.dart';
 import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
 
 Future<void> _openPublicSupportDrawer(BuildContext context) async {
@@ -65,6 +66,8 @@ class PublicHomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const PublicOverviewWidget(),
+              SizedBox(height: gap),
               CommercialHero(onTalk: () => _openPublicSupportDrawer(context)),
               SizedBox(height: gap),
               const ExecutionObjectStage(),

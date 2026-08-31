@@ -64,7 +64,8 @@ class _PublicAppAcquisitionState extends State<PublicAppAcquisition> {
     final preferences = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _dismissed = preferences.getBool(PublicAppAcquisition._dismissedKey) ?? false;
+      _dismissed =
+          preferences.getBool(PublicAppAcquisition._dismissedKey) ?? false;
       _loaded = true;
     });
   }
@@ -108,7 +109,10 @@ class _PublicAppAcquisitionState extends State<PublicAppAcquisition> {
     if (!canOpen && storeUrl == null) return const SizedBox.shrink();
 
     final destination = canOpen
-        ? Uri(scheme: 'https', host: widget.config.canonicalHost, path: widget.currentPath)
+        ? Uri(
+            scheme: 'https',
+            host: widget.config.canonicalHost,
+            path: widget.currentPath)
         : storeUrl!;
     final actionLabel = canOpen
         ? 'Open in ${widget.config.productName}'
@@ -117,36 +121,74 @@ class _PublicAppAcquisitionState extends State<PublicAppAcquisition> {
     return Semantics(
       container: true,
       label: '${widget.config.productName} app options',
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 8, 28, 0),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1320),
-          child: Material(
-            color: const Color(0xFFE7F0EC),
-            borderRadius: BorderRadius.circular(10),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 9, 8, 9),
-              child: Row(
-                children: [
-                  const Icon(Icons.open_in_new_rounded, size: 18),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'This page can continue in the app.',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+      child: SizedBox(
+        width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 8, 28, 0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1320),
+            child: Material(
+              color: const Color(0xFFE7F0EC),
+              borderRadius: BorderRadius.circular(10),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 520;
+                  final message = Row(
+                    children: [
+                      const Icon(Icons.open_in_new_rounded, size: 18),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'This page can continue in the app.',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (compact)
+                        IconButton(
+                          tooltip: 'Dismiss',
+                          onPressed: _dismiss,
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                        ),
+                    ],
+                  );
+                  if (compact) {
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 7, 4, 7),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          message,
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed:
+                                  _opening ? null : () => _open(destination),
+                              child: Text(actionLabel),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 9, 8, 9),
+                    child: Row(
+                      children: [
+                        Expanded(child: message),
+                        TextButton(
+                          onPressed: _opening ? null : () => _open(destination),
+                          child: Text(actionLabel),
+                        ),
+                        IconButton(
+                          tooltip: 'Dismiss',
+                          onPressed: _dismiss,
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                        ),
+                      ],
                     ),
-                  ),
-                  TextButton(
-                    onPressed: _opening ? null : () => _open(destination),
-                    child: Text(actionLabel),
-                  ),
-                  IconButton(
-                    tooltip: 'Dismiss',
-                    onPressed: _dismiss,
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),
