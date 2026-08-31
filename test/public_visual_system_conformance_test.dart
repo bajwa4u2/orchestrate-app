@@ -46,6 +46,18 @@ void main() {
     expect(brand, contains('orchestrate_symbol_dark.png'));
   });
 
+  test('footer keeps attribution but does not mount the ecosystem nav row', () {
+    final shell = read('lib/app/shell/public_shell.dart');
+    final footer = shell.substring(
+      shell.indexOf('class _PublicFooter extends'),
+      shell.indexOf('class _FooterGroup extends'),
+    );
+    expect(shell, contains('const _PublicFooterAttribution()'));
+    expect(footer, isNot(contains('_PublicFooterBottomRow')));
+    expect(shell, contains('final columnWidth'));
+    expect(shell, contains('spacing: 20'));
+  });
+
   test('public content uses the shared visual chapter hook', () {
     final content =
         read('lib/features/public/screens/public_content_screen.dart');

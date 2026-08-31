@@ -535,14 +535,22 @@ class _PublicFooter extends StatelessWidget {
                           ],
                         ],
                       )
-                    : Wrap(
-                        alignment: WrapAlignment.start,
-                        spacing: 32,
-                        runSpacing: 32,
-                        children: [
-                          for (final g in groups)
-                            SizedBox(width: 208, child: g),
-                        ],
+                    : LayoutBuilder(
+                        builder: (context, gridConstraints) {
+                          final columnWidth =
+                              ((gridConstraints.maxWidth - 20) / 2)
+                                  .clamp(0, double.infinity)
+                                  .toDouble();
+                          return Wrap(
+                            alignment: WrapAlignment.start,
+                            spacing: 20,
+                            runSpacing: 28,
+                            children: [
+                              for (final g in groups)
+                                SizedBox(width: columnWidth, child: g),
+                            ],
+                          );
+                        },
                       );
                 // Reconciled 2026-06-01 — see
                 // docs/ecosystem/FOOTER_RECONCILIATION_2026-06-01.md
@@ -614,7 +622,7 @@ class _PublicFooter extends StatelessWidget {
                     const SizedBox(height: 24),
                     Container(height: 1, color: const Color(0xFF263B4A)),
                     const SizedBox(height: 16),
-                    const _PublicFooterBottomRow(),
+                    const _PublicFooterAttribution(),
                   ],
                 );
               },
@@ -802,6 +810,44 @@ class _PublicMenuButton extends StatelessWidget {
 // substrate framing, not parent-corp framing. The five canonical links
 // appear in doctrine-locked order; the current surface (Orchestrate)
 // is the "you are here" link.
+
+class _PublicFooterAttribution extends StatelessWidget {
+  const _PublicFooterAttribution();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Aura Platform LLC',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                letterSpacing: 0.2,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Part of Aura Platform LLC.',
+              style: TextStyle(
+                color: AppTheme.publicOnDarkMuted,
+                fontSize: 11,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _OrchEcosystemEntry {
   const _OrchEcosystemEntry({
