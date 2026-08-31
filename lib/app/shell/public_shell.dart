@@ -731,18 +731,21 @@ class _FooterLink extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFFB9C8D6),
-                  fontSize: 13,
-                  height: 1.25,
-                ),
+        child: SizedBox(
+          height: 28,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFFB9C8D6),
+                    fontSize: 13,
+                    height: 1.25,
+                  ),
+            ),
           ),
         ),
       ),
