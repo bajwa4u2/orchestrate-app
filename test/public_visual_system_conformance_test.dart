@@ -113,7 +113,7 @@ void main() {
       () {
     final router = read('lib/app/routing/app_router.dart');
     expect(router, contains("if (isSetup || isSubscribe)"));
-    expect(router, contains("_clientRoute('/auth/join'"));
+    expect(router, contains("_clientRoute('/auth/register'"));
   });
 
   test('public content uses the shared visual chapter hook', () {
@@ -131,9 +131,22 @@ void main() {
     expect(shell, contains("label: 'Product'"));
     expect(shell, contains("label: 'Signals and sourcing'"));
     expect(shell, contains("label: 'DNS readiness check'"));
+    expect(shell, contains("focus=dns-readiness"));
     expect(shell, isNot(contains("label: 'Why Orchestrate exists'")));
     expect(shell, isNot(contains("label: 'How Orchestrate operates'")));
     expect(contract, contains('Retired from footer'));
+  });
+
+  test('named footer destinations are addressable and logo resets home', () {
+    final shell = read('lib/app/shell/public_shell.dart');
+    final diagnostics =
+        read('lib/features/public/screens/public_diagnostics_screen.dart');
+    expect(shell, contains('jumpTo(0)'));
+    expect(shell, contains("'/legal/service-agreement'"));
+    expect(shell, contains("'/legal/refunds'"));
+    expect(shell, isNot(contains("label: 'Acceptable use'")));
+    expect(diagnostics, contains("focus == 'dns-readiness'"));
+    expect(diagnostics, contains('Scrollable.ensureVisible'));
   });
 
   test('footer rows and acquisition intent remain directly actionable', () {

@@ -59,7 +59,15 @@ class _PublicShellState extends State<PublicShell> {
           bottom: false,
           child: Column(
             children: [
-              _PublicHeader(currentPath: widget.currentPath),
+              _PublicHeader(
+                currentPath: widget.currentPath,
+                onHome: () {
+                  if (_publicScrollController.hasClients) {
+                    _publicScrollController.jumpTo(0);
+                  }
+                  context.go('/');
+                },
+              ),
               PublicAppAcquisition(
                 config: orchestratePublicAppAcquisitionConfig,
                 currentPath: widget.currentPath,
@@ -124,9 +132,10 @@ class _PublicShellState extends State<PublicShell> {
 }
 
 class _PublicHeader extends StatelessWidget {
-  const _PublicHeader({required this.currentPath});
+  const _PublicHeader({required this.currentPath, required this.onHome});
 
   final String currentPath;
+  final VoidCallback onHome;
 
   bool _isActive(List<String> paths) => paths.contains(currentPath);
 
@@ -151,7 +160,7 @@ class _PublicHeader extends StatelessWidget {
 
                 final brand = InkWell(
                   borderRadius: BorderRadius.circular(AppTheme.radius),
-                  onTap: () => context.go('/'),
+                  onTap: onHome,
                   child: SizedBox(
                     height: 34,
                     child: Align(
@@ -482,7 +491,8 @@ class _PublicFooter extends StatelessWidget {
                           onTap: () => context.go('/how-it-works')),
                       _FooterLink(
                           label: 'DNS readiness check',
-                          onTap: () => context.go('/diagnostics')),
+                          onTap: () =>
+                              context.go('/diagnostics?focus=dns-readiness')),
                     ],
                   ),
                   _FooterGroup(

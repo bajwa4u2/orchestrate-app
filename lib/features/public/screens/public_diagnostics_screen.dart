@@ -20,8 +20,35 @@ import 'package:orchestrate_app/data/repositories/public_repository.dart';
 /// the rest of the public surface. No flashy admin dashboard. No
 /// fake AI diagnosis. The per-record check is rendered verbatim
 /// from the backend's DnsRecordCheck shape.
-class PublicDiagnosticsScreen extends StatelessWidget {
+class PublicDiagnosticsScreen extends StatefulWidget {
   const PublicDiagnosticsScreen({super.key});
+
+  @override
+  State<PublicDiagnosticsScreen> createState() =>
+      _PublicDiagnosticsScreenState();
+}
+
+class _PublicDiagnosticsScreenState extends State<PublicDiagnosticsScreen> {
+  final _dnsReadinessKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final focus = GoRouterState.of(context).uri.queryParameters['focus'];
+      if (focus == 'dns-readiness') {
+        final target = _dnsReadinessKey.currentContext;
+        if (target != null) {
+          Scrollable.ensureVisible(
+            target,
+            alignment: 0.12,
+            duration: const Duration(milliseconds: 1),
+          );
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +62,7 @@ class PublicDiagnosticsScreen extends StatelessWidget {
             children: [
               _Hero(),
               const SizedBox(height: 24),
-              const PublicDnsDiagnosticCard(),
+              PublicDnsDiagnosticCard(key: _dnsReadinessKey),
               const SizedBox(height: 16),
               const SubstrateDoctrine(
                 darkSurface: true,
