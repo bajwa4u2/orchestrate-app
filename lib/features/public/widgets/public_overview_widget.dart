@@ -499,32 +499,16 @@ class _NetworkPainter extends CustomPainter {
         packetPath = connect(point(opportunity), point(dispatch), lift: 22);
       }
     } else {
-      final nodeWidth = 144.0;
-      Offset point(int index) => Offset(
-          (size.width - nodeWidth) * index / math.max(1, stageCount - 1) + 20,
-          141 + (index.isEven ? 0 : 40));
-      final lead = indexFor('lead') ?? 0;
-      final opportunity = indexFor('opportun');
-      final dispatch = indexFor('dispatch');
-      final suppressed = indexFor('suppress');
-      final primaryIndices = [
-        lead,
-        if (opportunity != null) opportunity,
-        if (dispatch != null) dispatch,
-      ];
+      // Keep the approved broad editorial curve on desktop. The mobile
+      // topology is the responsive treatment for the narrow-width antenna.
       primaryPath = Path()
-        ..moveTo(
-            point(primaryIndices.first).dx, point(primaryIndices.first).dy);
-      for (var i = 1; i < primaryIndices.length; i++) {
-        final segment =
-            connect(point(primaryIndices[i - 1]), point(primaryIndices[i]));
-        primaryPath.addPath(segment, Offset.zero);
-      }
-      if (suppressed != null)
-        exceptionPath = connect(point(lead), point(suppressed));
-      if (opportunity != null && dispatch != null) {
-        packetPath = connect(point(opportunity), point(dispatch), lift: 26);
-      }
+        ..moveTo(36, size.height * .62)
+        ..cubicTo(size.width * .27, size.height * .1, size.width * .58,
+            size.height * .88, size.width - 28, size.height * .38);
+      packetPath = Path()
+        ..moveTo(size.width * .59, size.height * .38)
+        ..cubicTo(size.width * .7, size.height * .55, size.width * .76,
+            size.height * .58, size.width * .92, size.height * .62);
     }
     canvas.drawPath(primaryPath, glow);
     canvas.drawPath(primaryPath, pathPaint);
