@@ -147,25 +147,24 @@ class _Heading extends StatelessWidget {
   final bool compact;
   @override
   Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('LIVE OPERATING FIELD',
-            style: TextStyle(
-                color: _teal,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.7)),
-        const SizedBox(height: 10),
-        Text('Orchestrate operating.',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: compact ? 30 : 46,
-                height: 1.02,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1.2)),
-        const SizedBox(height: 10),
-        const Text(
-            'Current operating records, held in one commercial execution system.',
-            style: TextStyle(color: _muted, fontSize: 14, height: 1.5)),
+      Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        Expanded(
+            child: Text('LIVE OPERATING FIELD',
+                style: TextStyle(
+                    color: _teal,
+                    fontSize: compact ? 9 : 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: compact ? 1.25 : 1.7))),
+        const SizedBox(width: 12),
+        Expanded(
+            child: Text('Orchestrate operating.',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: compact ? 24 : 46,
+                    height: 1.02,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: compact ? -.7 : -1.2))),
       ]);
 }
 
