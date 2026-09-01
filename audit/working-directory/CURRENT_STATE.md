@@ -17,7 +17,9 @@ Orchestrate Flutter frontend (single codebase: iOS + Android + Web). Three works
 
 ## Implementation status
 
-- `main` HEAD `aa46ec4` is pushed to `origin/main` (`bajwa4u2/orchestrate-app`).
+- `main` HEAD `7cf8ae7` is pushed to `origin/main`
+  (`bajwa4u2/orchestrate-app`); the latest flagship implementation is
+  `aa46ec4`.
 - The public Home lifecycle flagship is restored before the hero and consumes
   the existing `/v1/public/lifecycle` projection without backend changes.
 - Flagship presentation uses a live broadcast rail, curve-native travelers,
