@@ -122,8 +122,7 @@ class _FlagshipField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Heading(compact: compact),
-        SizedBox(height: compact ? 20 : 26),
+        SizedBox(height: compact ? 4 : 10),
         _BroadcastStrip(nodes: nodes, compact: compact),
         SizedBox(height: compact ? 12 : 20),
         _OperatingNetwork(
@@ -140,18 +139,6 @@ class _FlagshipField extends StatelessWidget {
       ],
     );
   }
-}
-
-class _Heading extends StatelessWidget {
-  const _Heading({required this.compact});
-  final bool compact;
-  @override
-  Widget build(BuildContext context) => Text('LIVE OPERATING FIELD',
-      style: TextStyle(
-          color: _teal,
-          fontSize: compact ? 9 : 11,
-          fontWeight: FontWeight.w800,
-          letterSpacing: compact ? 1.25 : 1.7));
 }
 
 class _BroadcastStrip extends StatefulWidget {
@@ -525,7 +512,8 @@ class _NetworkPainter extends CustomPainter {
       ..color = (packet ? _blue : _teal).withOpacity(.32)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
-    canvas.drawCircle(position, (compact ? 8 : 10) + math.sin(phase * math.pi * 2) * 1.5, halo);
+    canvas.drawCircle(position,
+        (compact ? 8 : 10) + math.sin(phase * math.pi * 2) * 1.5, halo);
     canvas.save();
     canvas.translate(position.dx, position.dy);
     canvas.rotate(tangent.angle);
@@ -553,7 +541,9 @@ class _NetworkPainter extends CustomPainter {
             ..strokeWidth = 1.1);
     } else {
       canvas.drawCircle(Offset.zero, compact ? 4 : 4.5, Paint()..color = _soft);
-      canvas.drawLine(const Offset(-8, 0), const Offset(-13, 0),
+      canvas.drawLine(
+          const Offset(-8, 0),
+          const Offset(-13, 0),
           Paint()
             ..color = _soft.withOpacity(.7)
             ..strokeWidth = 1.4
