@@ -146,26 +146,12 @@ class _Heading extends StatelessWidget {
   const _Heading({required this.compact});
   final bool compact;
   @override
-  Widget build(BuildContext context) =>
-      Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Expanded(
-            child: Text('LIVE OPERATING FIELD',
-                style: TextStyle(
-                    color: _teal,
-                    fontSize: compact ? 9 : 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: compact ? 1.25 : 1.7))),
-        const SizedBox(width: 12),
-        Expanded(
-            child: Text('Orchestrate operating.',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: compact ? 24 : 46,
-                    height: 1.02,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: compact ? -.7 : -1.2))),
-      ]);
+  Widget build(BuildContext context) => Text('LIVE OPERATING FIELD',
+      style: TextStyle(
+          color: _teal,
+          fontSize: compact ? 9 : 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: compact ? 1.25 : 1.7));
 }
 
 class _BroadcastStrip extends StatefulWidget {
