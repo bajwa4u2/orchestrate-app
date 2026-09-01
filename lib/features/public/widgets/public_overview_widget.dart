@@ -277,8 +277,8 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
     final stages = widget.nodes.where((n) => n.kind != 'ASSET').toList();
     final assets = widget.nodes.where((n) => n.kind == 'ASSET').toList();
     final h = widget.compact
-        ? 16 + stages.length * 88.0 + assets.length * 78.0 + 64
-        : 340.0;
+        ? 16 + stages.length * 88.0 + assets.length * 78.0 + 24
+        : 300.0;
     return LayoutBuilder(
         builder: (context, constraints) => AnimatedBuilder(
               animation: _controller,
@@ -303,23 +303,6 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
                         _placeNode(assets[i], widget.nodes.indexOf(assets[i]),
                             i, assets.length, constraints.maxWidth,
                             assets: true, stageCount: stages.length),
-                      Positioned(
-                          left: widget.compact ? 4 : 0,
-                          bottom: 0,
-                          child: Row(children: [
-                            const Icon(Icons.route_rounded,
-                                color: _teal, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                                widget.compact
-                                    ? 'SURFACED EXECUTION PATH'
-                                    : 'SURFACED EXECUTION PATH  /  RETAINED INTELLIGENCE',
-                                style: const TextStyle(
-                                    color: _muted,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: .9))
-                          ])),
                     ]));
               },
             ));
