@@ -7,7 +7,7 @@ ecosystem, footer, and mobile navigation.
 
 | Route family | Purpose / boundary | Class | Primary mechanism | Close / mobile |
 |---|---|---:|---|---|
-| `/` | Product front door / public | A | Commercial objects, lifecycle state graph, recovery, signals, revenue records, bounded AI | Home close + shared support/footer; compact object stack |
+| `/` | Product front door / public | A | Live lifecycle flagship before hero; broadcast rail; curve-native execution topology; commercial objects, recovery, signals, revenue records, bounded AI | Home close + shared support/footer; mobile serpentine flagship |
 | `/product` | Product explanation / public | A | Execution-object chapter | Shared commercial close; responsive |
 | `/how-it-works` | Activation/readiness / public | A | Selectable commercial state machine | Shared commercial close; responsive |
 | `/ai-governed-revenue` | AI role / public | B | AI → policy → business-authority sequence | Shared commercial close; responsive |
@@ -27,6 +27,11 @@ ecosystem, footer, and mobile navigation.
   commercial closing band, support ecosystem, and footer.
 - `execution_visual_chapters.dart`: product-native object, state, recovery,
   revenue, signal, AI-authority, and governed-support visual primitives.
+- `PublicOverviewWidget`: backend-authoritative live lifecycle flagship. The
+  primary desktop curve remains the approved broad editorial composition;
+  compact layouts use an adaptive serpentine path. The packet traveler is
+  isolated to the Opportunities → Dispatch branch and the suppressed state is
+  rendered as a governed side branch.
 - `PublicContentScreen`: canonical public hero and editorial/document section
   framing for route-specific content.
 - `assets/branding/support/`: governed Company-sourced official support marks.
