@@ -311,8 +311,11 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
   Widget _placeNode(
       _LifecycleNode node, int index, int local, int count, double width,
       {required bool assets, required int stageCount}) {
+    final compactNodeWidth = math.min(width * .58, 220.0);
     final left = widget.compact
-        ? 34.0
+        ? (assets
+            ? width * .16
+            : (local.isEven ? 4.0 : width - compactNodeWidth - 4.0))
         : (assets
             ? width * .58 + (local * 148).clamp(0, width * .35)
             : (count <= 1
@@ -326,7 +329,7 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
     return Positioned(
         left: left.toDouble(),
         top: top.toDouble(),
-        width: widget.compact ? width - 68 : 144,
+        width: widget.compact ? (assets ? width * .68 : compactNodeWidth) : 144,
         child: _NetworkNode(
             node: node,
             selected: widget.selected == index,
@@ -446,14 +449,24 @@ class _NetworkPainter extends CustomPainter {
     late final Path primaryPath;
     late final Path? branchPath;
     if (compact) {
-      primaryPath = Path()
-        ..moveTo(39, 16)
-        ..lineTo(39, size.height - 22);
-      final branchY = 16 + stageCount * 88.0 + 20;
+      final nodeWidth = math.min(size.width * .58, 220.0);
+      double stageX(int index) =>
+          (index.isEven ? 4.0 : size.width - nodeWidth - 4.0) + 20.0;
+      double stageY(int index) => 32.0 + index * 88.0;
+      primaryPath = Path()..moveTo(stageX(0), stageY(0));
+      for (var i = 1; i < stageCount; i++) {
+        final previousX = stageX(i - 1);
+        final currentX = stageX(i);
+        final previousY = stageY(i - 1);
+        final currentY = stageY(i);
+        primaryPath.cubicTo(previousX, previousY + 30, currentX, currentY - 30,
+            currentX, currentY);
+      }
+      final branchY = stageY(math.max(0, stageCount - 1)) + 34;
       branchPath = Path()
-        ..moveTo(39, branchY)
-        ..cubicTo(size.width * .2, branchY, size.width * .48, branchY + 44,
-            size.width * .78, branchY + 44);
+        ..moveTo(stageX(math.max(0, stageCount - 1)), branchY)
+        ..cubicTo(size.width * .35, branchY, size.width * .54, branchY + 44,
+            size.width * .76, branchY + 44);
     } else {
       primaryPath = Path()
         ..moveTo(36, size.height * .62)
