@@ -294,7 +294,10 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
                               painter: _NetworkPainter(
                                   compact: widget.compact,
                                   phase: phase,
-                                  stageCount: stages.length))),
+                                  stageCount: stages.length,
+                                  stageKeys: [
+                            for (final stage in stages) stage.key
+                          ]))),
                       for (var i = 0; i < stages.length; i++)
                         _placeNode(stages[i], widget.nodes.indexOf(stages[i]),
                             i, stages.length, constraints.maxWidth,
@@ -424,10 +427,14 @@ class _NetworkNode extends StatelessWidget {
 
 class _NetworkPainter extends CustomPainter {
   const _NetworkPainter(
-      {required this.compact, required this.phase, required this.stageCount});
+      {required this.compact,
+      required this.phase,
+      required this.stageCount,
+      required this.stageKeys});
   final bool compact;
   final double phase;
   final int stageCount;
+  final List<String> stageKeys;
   @override
   void paint(Canvas canvas, Size size) {
     final grid = Paint()
@@ -447,42 +454,87 @@ class _NetworkPainter extends CustomPainter {
       ..strokeWidth = compact ? 8 : 10
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
     late final Path primaryPath;
-    late final Path? branchPath;
+    Path? packetPath;
+    Path? exceptionPath;
+    int? indexFor(String value) {
+      final index = stageKeys
+          .indexWhere((key) => key.toLowerCase().contains(value.toLowerCase()));
+      return index < 0 ? null : index;
+    }
+
+    Path connect(Offset from, Offset to, {double lift = 0}) {
+      final path = Path()..moveTo(from.dx, from.dy + lift);
+      final middle = (from.dy + to.dy) / 2;
+      path.cubicTo(from.dx, middle, to.dx, middle, to.dx, to.dy + lift);
+      return path;
+    }
+
     if (compact) {
       final nodeWidth = math.min(size.width * .58, 220.0);
       double stageX(int index) =>
           (index.isEven ? 4.0 : size.width - nodeWidth - 4.0) + 20.0;
       double stageY(int index) => 32.0 + index * 88.0;
-      primaryPath = Path()..moveTo(stageX(0), stageY(0));
-      for (var i = 1; i < stageCount; i++) {
-        final previousX = stageX(i - 1);
-        final currentX = stageX(i);
-        final previousY = stageY(i - 1);
-        final currentY = stageY(i);
-        primaryPath.cubicTo(previousX, previousY + 30, currentX, currentY - 30,
-            currentX, currentY);
-      }
-      final branchY = stageY(math.max(0, stageCount - 1)) + 34;
-      branchPath = Path()
-        ..moveTo(stageX(math.max(0, stageCount - 1)), branchY)
-        ..cubicTo(size.width * .35, branchY, size.width * .54, branchY + 44,
-            size.width * .76, branchY + 44);
-    } else {
+      Offset point(int index) => Offset(stageX(index), stageY(index));
+      final lead = indexFor('lead') ?? 0;
+      final opportunity = indexFor('opportun');
+      final dispatch = indexFor('dispatch');
+      final suppressed = indexFor('suppress');
+      final primaryIndices = [
+        lead,
+        if (opportunity != null) opportunity,
+        if (dispatch != null) dispatch,
+      ];
       primaryPath = Path()
-        ..moveTo(36, size.height * .62)
-        ..cubicTo(size.width * .27, size.height * .1, size.width * .58,
-            size.height * .88, size.width - 28, size.height * .38);
-      branchPath = Path()
-        ..moveTo(size.width * .59, size.height * .38)
-        ..cubicTo(size.width * .7, size.height * .55, size.width * .76,
-            size.height * .58, size.width * .92, size.height * .62);
+        ..moveTo(
+            point(primaryIndices.first).dx, point(primaryIndices.first).dy);
+      for (var i = 1; i < primaryIndices.length; i++) {
+        final segment =
+            connect(point(primaryIndices[i - 1]), point(primaryIndices[i]));
+        primaryPath.addPath(segment, Offset.zero);
+      }
+      if (suppressed != null) {
+        exceptionPath = connect(point(lead), point(suppressed));
+      }
+      if (opportunity != null && dispatch != null) {
+        packetPath = connect(point(opportunity), point(dispatch), lift: 22);
+      }
+    } else {
+      final nodeWidth = 144.0;
+      Offset point(int index) => Offset(
+          (size.width - nodeWidth) * index / math.max(1, stageCount - 1) + 20,
+          141 + (index.isEven ? 0 : 40));
+      final lead = indexFor('lead') ?? 0;
+      final opportunity = indexFor('opportun');
+      final dispatch = indexFor('dispatch');
+      final suppressed = indexFor('suppress');
+      final primaryIndices = [
+        lead,
+        if (opportunity != null) opportunity,
+        if (dispatch != null) dispatch,
+      ];
+      primaryPath = Path()
+        ..moveTo(
+            point(primaryIndices.first).dx, point(primaryIndices.first).dy);
+      for (var i = 1; i < primaryIndices.length; i++) {
+        final segment =
+            connect(point(primaryIndices[i - 1]), point(primaryIndices[i]));
+        primaryPath.addPath(segment, Offset.zero);
+      }
+      if (suppressed != null)
+        exceptionPath = connect(point(lead), point(suppressed));
+      if (opportunity != null && dispatch != null) {
+        packetPath = connect(point(opportunity), point(dispatch), lift: 26);
+      }
     }
     canvas.drawPath(primaryPath, glow);
     canvas.drawPath(primaryPath, pathPaint);
-    if (branchPath != null) canvas.drawPath(branchPath, pathPaint);
+    if (exceptionPath != null) canvas.drawPath(exceptionPath!, pathPaint);
+    if (packetPath != null) canvas.drawPath(packetPath!, pathPaint);
     _drawTraveler(canvas, primaryPath, phase, compact: compact, packet: false);
-    _drawTraveler(canvas, branchPath!, (phase + .47) % 1,
-        compact: compact, packet: true);
+    if (packetPath != null) {
+      _drawTraveler(canvas, packetPath!, (phase + .47) % 1,
+          compact: compact, packet: true);
+    }
   }
 
   void _drawTraveler(Canvas canvas, Path path, double phase,
