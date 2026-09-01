@@ -73,7 +73,7 @@ void main() {
     expect(shell, contains('controller: _publicScrollController'));
     expect(shell, contains('interactive: true'));
     expect(shell, contains('SingleChildScrollView('));
-    expect(shell, contains('maxWidth: constraints.maxWidth'));
+    expect(shell, contains('maxWidth: shellWidth'));
     expect(shell, isNot(contains('Listener(')));
   });
 
@@ -139,6 +139,9 @@ void main() {
     expect(flagship, contains("node.kind == 'ASSET'"));
     expect(flagship, contains('MediaQuery.disableAnimationsOf(context)'));
     expect(flagship, contains('The public authority could not be reached'));
+    expect(flagship, contains('class _NetworkPainter'));
+    expect(flagship, contains('OPERATING NOW'));
+    expect(flagship, contains('SingleTickerProviderStateMixin'));
     expect(flagship, isNot(contains("'283'")));
     expect(flagship, isNot(contains("'220'")));
     expect(flagship, isNot(contains("'78'")));
