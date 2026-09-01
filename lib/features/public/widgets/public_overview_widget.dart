@@ -223,25 +223,43 @@ class _BroadcastStripState extends State<_BroadcastStrip>
               Expanded(
                   child: ClipRect(
                       child: Row(children: [
-                for (var i = 0; i < widget.nodes.length; i++) ...[
-                  if (i > 0)
-                    const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 9),
-                        child: Text('•', style: TextStyle(color: _line))),
-                  Flexible(
-                      child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 220),
-                          opacity: i == focus ? 1 : .5,
-                          child: Text(
-                              '${widget.nodes[i].label.toUpperCase()} ${widget.nodes[i].valueText}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: i == focus ? _soft : _muted,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: .55)))),
-                ]
+                if (widget.compact)
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: Text(
+                        '${widget.nodes[focus].label.toUpperCase()} ${widget.nodes[focus].valueText}',
+                        key: ValueKey(widget.nodes[focus].key),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: _soft,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: .55),
+                      ),
+                    ),
+                  )
+                else
+                  for (var i = 0; i < widget.nodes.length; i++) ...[
+                    if (i > 0)
+                      const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 9),
+                          child: Text('•', style: TextStyle(color: _line))),
+                    Flexible(
+                        child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 220),
+                            opacity: i == focus ? 1 : .5,
+                            child: Text(
+                                '${widget.nodes[i].label.toUpperCase()} ${widget.nodes[i].valueText}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: i == focus ? _soft : _muted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: .55)))),
+                  ]
               ]))),
             ]),
           );
