@@ -473,44 +473,93 @@ class _NetworkPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = compact ? 8 : 10
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    late final Path primaryPath;
+    late final Path? branchPath;
     if (compact) {
-      final path = Path()
+      primaryPath = Path()
         ..moveTo(39, 16)
         ..lineTo(39, size.height - 22);
-      canvas.drawPath(path, glow);
-      canvas.drawPath(path, pathPaint);
       final branchY = 16 + stageCount * 88.0 + 20;
-      final branch = Path()
+      branchPath = Path()
         ..moveTo(39, branchY)
         ..cubicTo(size.width * .2, branchY, size.width * .48, branchY + 44,
             size.width * .78, branchY + 44);
-      canvas.drawPath(branch, pathPaint);
     } else {
-      final path = Path()
+      primaryPath = Path()
         ..moveTo(36, size.height * .62)
         ..cubicTo(size.width * .27, size.height * .1, size.width * .58,
             size.height * .88, size.width - 28, size.height * .38);
-      canvas.drawPath(path, glow);
-      canvas.drawPath(path, pathPaint);
-      final branch = Path()
+      branchPath = Path()
         ..moveTo(size.width * .59, size.height * .38)
         ..cubicTo(size.width * .7, size.height * .55, size.width * .76,
             size.height * .58, size.width * .92, size.height * .62);
-      canvas.drawPath(branch, pathPaint);
     }
-    final t = phase;
-    final position = compact
-        ? Offset(39, 16 + (size.height - 38) * t)
-        : Offset(36 + (size.width - 64) * t,
-            size.height * (.62 - .24 * math.sin(t * math.pi * 2)));
-    canvas.drawCircle(position, compact ? 4 : 4.5, Paint()..color = _soft);
-    canvas.drawCircle(
-        position,
-        (compact ? 9 : 12) + math.sin(t * math.pi * 2) * 2,
+    canvas.drawPath(primaryPath, glow);
+    canvas.drawPath(primaryPath, pathPaint);
+    if (branchPath != null) canvas.drawPath(branchPath, pathPaint);
+    _drawTraveler(canvas, primaryPath, phase, compact: compact, packet: false);
+    _drawTraveler(canvas, branchPath!, (phase + .47) % 1,
+        compact: compact, packet: true);
+  }
+
+  void _drawTraveler(Canvas canvas, Path path, double phase,
+      {required bool compact, required bool packet}) {
+    final metrics = path.computeMetrics().toList(growable: false);
+    if (metrics.isEmpty) return;
+    final metric = metrics.first;
+    final distance = metric.length * phase.clamp(0.0, 1.0);
+    final tangent = metric.getTangentForOffset(distance);
+    if (tangent == null) return;
+    final position = tangent.position;
+    final trailStart = math.max(0.0, distance - (packet ? 34 : 46));
+    final trail = metric.extractPath(trailStart, distance);
+    canvas.drawPath(
+        trail,
         Paint()
-          ..color = _teal.withOpacity(.28)
+          ..color = (packet ? _blue : _soft).withOpacity(.62)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2);
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = packet ? 2.2 : 2.8
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+    final halo = Paint()
+      ..color = (packet ? _blue : _teal).withOpacity(.32)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    canvas.drawCircle(position, (compact ? 8 : 10) + math.sin(phase * math.pi * 2) * 1.5, halo);
+    canvas.save();
+    canvas.translate(position.dx, position.dy);
+    canvas.rotate(tangent.angle);
+    if (packet) {
+      final envelope = Path()
+        ..moveTo(-8, -5)
+        ..lineTo(8, -5)
+        ..lineTo(8, 5)
+        ..lineTo(-8, 5)
+        ..close();
+      canvas.drawPath(
+          envelope,
+          Paint()
+            ..color = _blue.withOpacity(.94)
+            ..style = PaintingStyle.fill);
+      final fold = Path()
+        ..moveTo(-7, -4)
+        ..lineTo(0, 1)
+        ..lineTo(7, -4);
+      canvas.drawPath(
+          fold,
+          Paint()
+            ..color = _field
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.1);
+    } else {
+      canvas.drawCircle(Offset.zero, compact ? 4 : 4.5, Paint()..color = _soft);
+      canvas.drawLine(const Offset(-8, 0), const Offset(-13, 0),
+          Paint()
+            ..color = _soft.withOpacity(.7)
+            ..strokeWidth = 1.4
+            ..strokeCap = StrokeCap.round);
+    }
+    canvas.restore();
   }
 
   @override
