@@ -286,7 +286,9 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
   Widget build(BuildContext context) {
     final stages = widget.nodes.where((n) => n.kind != 'ASSET').toList();
     final assets = widget.nodes.where((n) => n.kind == 'ASSET').toList();
-    final h = widget.compact ? 450.0 : 340.0;
+    final h = widget.compact
+        ? 16 + stages.length * 88.0 + assets.length * 78.0 + 64
+        : 340.0;
     return LayoutBuilder(
         builder: (context, constraints) => AnimatedBuilder(
               animation: _controller,
@@ -300,15 +302,17 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
                       Positioned.fill(
                           child: CustomPaint(
                               painter: _NetworkPainter(
-                                  compact: widget.compact, phase: phase))),
+                                  compact: widget.compact,
+                                  phase: phase,
+                                  stageCount: stages.length))),
                       for (var i = 0; i < stages.length; i++)
                         _placeNode(stages[i], widget.nodes.indexOf(stages[i]),
                             i, stages.length, constraints.maxWidth,
-                            assets: false),
+                            assets: false, stageCount: stages.length),
                       for (var i = 0; i < assets.length; i++)
                         _placeNode(assets[i], widget.nodes.indexOf(assets[i]),
                             i, assets.length, constraints.maxWidth,
-                            assets: true),
+                            assets: true, stageCount: stages.length),
                       Positioned(
                           left: widget.compact ? 4 : 0,
                           bottom: 0,
@@ -333,7 +337,7 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
 
   Widget _placeNode(
       _LifecycleNode node, int index, int local, int count, double width,
-      {required bool assets}) {
+      {required bool assets, required int stageCount}) {
     final left = widget.compact
         ? 34.0
         : (assets
@@ -342,7 +346,9 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
                 ? width / 2 - 72
                 : (width - 144) * local / (count - 1)));
     final top = widget.compact
-        ? (assets ? 282 + local * 78.0 : 16 + local * 88.0)
+        ? (assets
+            ? 16 + stageCount * 88.0 + 20 + local * 78.0
+            : 16 + local * 88.0)
         : (assets ? 10.0 : 126 + (local.isEven ? 0 : 40));
     return Positioned(
         left: left.toDouble(),
@@ -441,9 +447,11 @@ class _NetworkNode extends StatelessWidget {
 }
 
 class _NetworkPainter extends CustomPainter {
-  const _NetworkPainter({required this.compact, required this.phase});
+  const _NetworkPainter(
+      {required this.compact, required this.phase, required this.stageCount});
   final bool compact;
   final double phase;
+  final int stageCount;
   @override
   void paint(Canvas canvas, Size size) {
     final grid = Paint()
@@ -468,10 +476,11 @@ class _NetworkPainter extends CustomPainter {
         ..lineTo(39, size.height - 22);
       canvas.drawPath(path, glow);
       canvas.drawPath(path, pathPaint);
+      final branchY = 16 + stageCount * 88.0 + 20;
       final branch = Path()
-        ..moveTo(39, 280)
-        ..cubicTo(
-            size.width * .2, 280, size.width * .48, 324, size.width * .78, 324);
+        ..moveTo(39, branchY)
+        ..cubicTo(size.width * .2, branchY, size.width * .48, branchY + 44,
+            size.width * .78, branchY + 44);
       canvas.drawPath(branch, pathPaint);
     } else {
       final path = Path()
