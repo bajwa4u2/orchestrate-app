@@ -60,7 +60,7 @@ class PublicHomeScreen extends StatelessWidget {
         final gap = compact ? 16.0 : 24.0;
         return Padding(
           padding: EdgeInsets.only(
-            top: compact ? 16 : 28,
+            top: compact ? 8 : 10,
             bottom: compact ? 28 : 44,
           ),
           child: Column(

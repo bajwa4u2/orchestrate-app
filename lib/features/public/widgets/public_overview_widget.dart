@@ -83,7 +83,7 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
               decoration: const BoxDecoration(color: _field),
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                    horizontal: compact ? 2 : 10, vertical: compact ? 20 : 28),
+                    horizontal: compact ? 2 : 10, vertical: compact ? 10 : 12),
                 child: _loading
                     ? _LoadingField(compact: compact)
                     : _error != null
@@ -122,7 +122,7 @@ class _FlagshipField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: compact ? 4 : 10),
+        SizedBox(height: compact ? 0 : 2),
         _BroadcastStrip(nodes: nodes, compact: compact),
         SizedBox(height: compact ? 12 : 20),
         _OperatingNetwork(
