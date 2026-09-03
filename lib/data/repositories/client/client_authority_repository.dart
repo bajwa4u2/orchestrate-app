@@ -77,10 +77,90 @@ enum AuthorityArea {
   }
 }
 
+/// Where a person's own designation stands.
+///
+/// Six states, because they are six different situations. "Pending" for all of
+/// them would tell a refused applicant to keep waiting and tell someone we need
+/// something from that everything is fine.
+enum SubmissionState {
+  notSubmitted('NOT_SUBMITTED'),
+  submitted('SUBMITTED'),
+  moreEvidenceRequested('MORE_EVIDENCE_REQUESTED'),
+  admitted('ADMITTED'),
+  refused('REFUSED'),
+  superseded('SUPERSEDED');
+
+  const SubmissionState(this.wire);
+  final String wire;
+
+  static SubmissionState parse(String? value) {
+    for (final s in SubmissionState.values) {
+      if (s.wire == value) return s;
+    }
+    return SubmissionState.notSubmitted;
+  }
+
+  /// Whether this state is waiting on Orchestrate rather than on the person.
+  bool get waitingOnUs => this == SubmissionState.submitted;
+
+  /// Whether the person has something to do about it.
+  bool get needsYou =>
+      this == SubmissionState.moreEvidenceRequested || this == SubmissionState.refused;
+}
+
+class Submission {
+  const Submission({
+    required this.state,
+    required this.since,
+    required this.asserted,
+    required this.operatorAsked,
+    required this.refusedBecause,
+    required this.meaning,
+  });
+
+  final SubmissionState state;
+  final DateTime? since;
+
+  /// What the person said the business authorises them to do.
+  final String? asserted;
+
+  /// The operator's own words when they could not tell.
+  final String? operatorAsked;
+
+  /// The operator's own words when they refused.
+  final String? refusedBecause;
+  final String meaning;
+
+  static Submission fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return const Submission(
+        state: SubmissionState.notSubmitted,
+        since: null, asserted: null, operatorAsked: null,
+        refusedBecause: null, meaning: '',
+      );
+    }
+    return Submission(
+      state: SubmissionState.parse(json['state'] as String?),
+      since: DateTime.tryParse(json['since']?.toString() ?? ''),
+      asserted: (json['asserted'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['asserted'] as String).trim(),
+      operatorAsked: (json['operatorAsked'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['operatorAsked'] as String).trim(),
+      refusedBecause: (json['refusedBecause'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['refusedBecause'] as String).trim(),
+      meaning: (json['meaning'] as String?) ?? '',
+    );
+  }
+}
+
 class AuthorityProjection {
   const AuthorityProjection({
     required this.businessName,
     required this.legalNameOnRecord,
+    required this.submission,
     required this.organizationEstablished,
     required this.recognisedPeople,
     required this.underReview,
@@ -98,6 +178,9 @@ class AuthorityProjection {
 
   final String businessName;
   final bool legalNameOnRecord;
+
+  /// Where this person's own designation stands.
+  final Submission submission;
 
   /// Whether the business has named anyone at all. Distinct from whether *you*
   /// are one of them, because the honest sentence differs.
@@ -144,6 +227,9 @@ class AuthorityProjection {
           ? (business['name'] as String).trim()
           : 'This business',
       legalNameOnRecord: business['legalNameOnRecord'] == true,
+      submission: Submission.fromJson(json['submission'] is Map
+          ? Map<String, dynamic>.from(json['submission'] as Map)
+          : null),
       organizationEstablished: org['established'] == true,
       recognisedPeople: (org['recognisedPeople'] as num?)?.toInt() ?? 0,
       underReview: org['underReview'] == true,

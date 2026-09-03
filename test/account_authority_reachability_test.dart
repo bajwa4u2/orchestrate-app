@@ -23,6 +23,10 @@ void main() {
     ClientAuthority.instance.seed(const AuthorityProjection(
       businessName: 'Google Play Review Account',
       legalNameOnRecord: true,
+      submission: Submission(
+        state: SubmissionState.notSubmitted, since: null, asserted: null,
+        operatorAsked: null, refusedBecause: null, meaning: '',
+      ),
       organizationEstablished: false,
       recognisedPeople: 0,
       underReview: false,

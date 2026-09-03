@@ -33,10 +33,15 @@ void main() {
     bool legacyOnly = false,
     String orchMeaning = '',
     List<MissingStep> missing = const [],
+    Submission submission = const Submission(
+      state: SubmissionState.notSubmitted, since: null, asserted: null,
+      operatorAsked: null, refusedBecause: null, meaning: '',
+    ),
   }) {
     return AuthorityProjection(
       businessName: business,
       legalNameOnRecord: legalName,
+      submission: submission,
       organizationEstablished: established,
       recognisedPeople: recognisedPeople,
       underReview: underReview,
@@ -242,6 +247,62 @@ void main() {
     expect(find.text('Try again'), findsOneWidget);
   });
 
+
+  // ── The six submission states, which used to be two ───────────────────
+  //
+  // Before this, a refusal, an unanswered operator question, and never having
+  // submitted at all produced the same silence. Someone whose designation was
+  // refused would have waited indefinitely for an answer they had already been
+  // given.
+  for (final (state, expectOnScreen) in <(SubmissionState, String)>[
+    (SubmissionState.submitted, 'Your submission is with us'),
+    (SubmissionState.moreEvidenceRequested, 'We need something more from you'),
+    (SubmissionState.admitted, 'Your submission was admitted'),
+    (SubmissionState.refused, 'Your submission was not admitted'),
+    (SubmissionState.superseded, 'Replaced by a later submission'),
+  ]) {
+    testWidgets('submission state ${state.wire} says so', (tester) async {
+      ClientAuthority.instance.seed(make(
+        submission: Submission(
+          state: state,
+          since: DateTime(2026, 9, 1),
+          asserted: 'Agreements on behalf of Northwind Freight LLC',
+          operatorAsked: state == SubmissionState.moreEvidenceRequested
+              ? 'Send the board resolution naming you, or a signed letter on '
+                  'company letterhead.'
+              : null,
+          refusedBecause: state == SubmissionState.refused
+              ? 'The reference you gave points at a document we cannot see.'
+              : null,
+          meaning: 'meaning from the backend',
+        ),
+      ));
+      await render(tester, 'submission ${state.wire}');
+
+      expect(find.text(expectOnScreen), findsOneWidget);
+      // The operator's own words survive, verbatim, in both directions.
+      if (state == SubmissionState.moreEvidenceRequested) {
+        expect(find.textContaining('board resolution naming you'), findsOneWidget);
+      }
+      if (state == SubmissionState.refused) {
+        expect(find.textContaining('points at a document we cannot see'),
+            findsOneWidget);
+        // A refusal that reads as still-pending is the failure this prevents.
+        expect(find.textContaining('with us'), findsNothing);
+      }
+      // What was claimed is shown beside what became of it.
+      expect(find.textContaining('Agreements on behalf of'), findsOneWidget);
+    });
+  }
+
+  testWidgets('never submitted says nothing at all', (tester) async {
+    ClientAuthority.instance.seed(make());
+    await render(tester, 'never submitted');
+    // No submission card, because there is no submission. An empty one would
+    // be a form pretending to be a status.
+    expect(find.textContaining('Your submission'), findsNothing);
+    expect(find.textContaining('Replaced by'), findsNothing);
+  });
 
   testWidgets('every state fits, phone through desktop', (tester) async {
     // The longest sentences in the whole surface, at the narrowest width the

@@ -89,6 +89,14 @@ class _Standing extends StatelessWidget {
             ],
           ),
         ),
+        // Where this person's own submission stands. Placed above the
+        // blockers because a refusal or an unanswered question is the most
+        // actionable thing on the screen, and below the card because it is
+        // about one person rather than about the business.
+        if (authority.submission.state != SubmissionState.notSubmitted) ...[
+          const SizedBox(height: 16),
+          _SubmissionStanding(submission: authority.submission),
+        ],
         if (authority.missing.isNotEmpty) ...[
           const SizedBox(height: 16),
           for (final step in authority.missing)
@@ -233,6 +241,103 @@ class _Mark extends StatelessWidget {
       child: Icon(icon, size: 16, color: color),
     );
   }
+}
+
+/// What became of this person's designation, in its own words.
+///
+/// The six states are shown as six states. An earlier version could only say
+/// "under review" or nothing at all, which made a refusal, an unanswered
+/// question and never having submitted look identical — and the person most
+/// likely to give up is the one who cannot tell which of those happened.
+class _SubmissionStanding extends StatelessWidget {
+  const _SubmissionStanding({required this.submission});
+
+  final Submission submission;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final needsYou = submission.state.needsYou;
+    final accent = needsYou
+        ? AppTheme.amber
+        : submission.state == SubmissionState.admitted
+            ? AppTheme.publicAccent
+            : AppTheme.publicMuted;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: accent.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(_icon, size: 16, color: accent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(_title,
+                    style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(submission.meaning,
+                    style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+                // The operator's own words, verbatim. Paraphrasing either of
+                // these would lose the only part that says what to do next.
+                if (submission.operatorAsked != null) ...[
+                  const SizedBox(height: 10),
+                  Text('What we need', style: text.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(submission.operatorAsked!, style: text.bodySmall),
+                ],
+                if (submission.refusedBecause != null) ...[
+                  const SizedBox(height: 10),
+                  Text('Why', style: text.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(submission.refusedBecause!, style: text.bodySmall),
+                ],
+                if (submission.asserted != null) ...[
+                  const SizedBox(height: 10),
+                  Text('You asked to be recognised for: ${submission.asserted}',
+                      style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String get _title => switch (submission.state) {
+        SubmissionState.submitted => 'Your submission is with us',
+        SubmissionState.moreEvidenceRequested => 'We need something more from you',
+        SubmissionState.admitted => 'Your submission was admitted',
+        SubmissionState.refused => 'Your submission was not admitted',
+        SubmissionState.superseded => 'Replaced by a later submission',
+        SubmissionState.notSubmitted => 'Not submitted',
+      };
+
+  IconData get _icon => switch (submission.state) {
+        SubmissionState.submitted => Icons.schedule,
+        SubmissionState.moreEvidenceRequested => Icons.help_outline,
+        SubmissionState.admitted => Icons.check_circle,
+        SubmissionState.refused => Icons.do_not_disturb_on_outlined,
+        SubmissionState.superseded => Icons.history,
+        SubmissionState.notSubmitted => Icons.circle_outlined,
+      };
 }
 
 /// Something genuinely in the way, with the reason it matters.

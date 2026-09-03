@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/repositories/client/client_authority_repository.dart';
@@ -13,7 +12,9 @@ export '../../data/repositories/client/client_authority_repository.dart'
         AuthorityRefusal,
         Consequence,
         MissingStep,
-        PerformedBy;
+        PerformedBy,
+        Submission,
+        SubmissionState;
 
 /// THE ONE PLACE THE CLIENT APP KNOWS WHAT IT MAY DO.
 ///
