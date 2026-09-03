@@ -344,7 +344,15 @@ GoRouter get router {
           isSetup ||
           isSubscribe ||
           path == '/') {
-        return '/app/home';
+        // WHERE THEY WERE TRYING TO GO, HONOURED HERE.
+        //
+        // This redirect fires the moment a session exists, before the login
+        // screen's own navigation runs — so it, not the screen, is the
+        // authority on where an authenticated person lands. Returning a bare
+        // home discarded the destination sitting in the very URL being
+        // redirected away from, which is why signing in from a deep link
+        // still arrived nowhere in particular.
+        return readReturnTo(state.uri.queryParameters) ?? '/client/today';
       }
       if (isOpsAuth || path.startsWith('/ops/')) return '/app/home';
     }

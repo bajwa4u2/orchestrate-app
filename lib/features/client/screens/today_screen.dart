@@ -94,7 +94,9 @@ class _TodayScreenState extends State<TodayScreen> {
     final s = _state;
     if (s == null) return null;
     final needs = s.needsYou.length;
-    if (needs > 0) return '$needs thing${needs == 1 ? '' : 's'} need you';
+    if (needs > 0) {
+      return needs == 1 ? '1 thing needs you' : '$needs things need you';
+    }
     return null;
   }
 
