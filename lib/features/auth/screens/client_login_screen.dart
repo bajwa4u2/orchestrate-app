@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:orchestrate_app/app/shell/auth_shell.dart';
@@ -421,19 +422,36 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     );
     if (!mounted) return;
 
+    // WHERE THEY WERE TRYING TO GO.
+    //
+    // Signing in is rarely the thing someone came to do. They followed a link
+    // to a specific page and were interrupted by authentication; discarding
+    // that destination here is what made emailed links land nowhere.
+    final returnTo = readReturnTo(GoRouterState.of(context).uri.queryParameters);
+
     if (!session.emailVerified) {
-      context.go(_route('/auth/verify-email', email: session.email));
+      // Carried across the hop, not dropped at it.
+      context.go(withReturnTo(
+          _route('/auth/verify-email', email: session.email), returnTo));
       return;
     }
-    if (!session.hasSetupCompleted) {
-      context.go(_route('/app/setup'));
+
+    // The account layer is deliberately reachable before setup and
+    // subscription are settled — establishing authority is a precondition for
+    // consequential work, not a reward for finishing onboarding.
+    final destinationIsAccountLayer =
+        returnTo != null && returnTo.startsWith('/account');
+
+    if (!session.hasSetupCompleted && !destinationIsAccountLayer) {
+      context.go(withReturnTo(_route('/app/setup'), returnTo));
       return;
     }
-    if (session.normalizedSubscriptionStatus != 'active') {
-      context.go(_route('/app/subscribe'));
+    if (session.normalizedSubscriptionStatus != 'active' &&
+        !destinationIsAccountLayer) {
+      context.go(withReturnTo(_route('/app/subscribe'), returnTo));
       return;
     }
-    context.go('/app/home');
+    context.go(returnTo ?? '/app/home');
   }
 
   Future<void> requestPasswordReset() async {

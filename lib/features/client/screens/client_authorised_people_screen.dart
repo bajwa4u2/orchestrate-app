@@ -23,7 +23,11 @@ import 'package:orchestrate_app/data/repositories/client/client_representative_r
 ///   yourself financial authority" would describe the software doing something
 ///   it does not do.
 class ClientAuthorisedPeopleScreen extends StatefulWidget {
-  const ClientAuthorisedPeopleScreen({super.key});
+  const ClientAuthorisedPeopleScreen({super.key, this.embedded = false});
+
+  /// True when the account layer supplies the heading, so this does not render
+  /// a second one directly beneath it.
+  final bool embedded;
 
   @override
   State<ClientAuthorisedPeopleScreen> createState() =>
@@ -80,18 +84,21 @@ class _ClientAuthorisedPeopleScreenState
     final text = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Authorised people',
-          style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Who your business recognises as able to make decisions on its behalf, '
-          'and what each of them is recognised for.',
-          style: text.bodyMedium?.copyWith(color: AppTheme.publicMuted),
-        ),
-        const SizedBox(height: 24),
+        if (!widget.embedded) ...[
+          Text(
+            'Authorised people',
+            style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Who your business recognises as able to make decisions on its '
+            'behalf, and what each of them is recognised for.',
+            style: text.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+          ),
+          const SizedBox(height: 24),
+        ],
         if (_loading)
           const Center(child: Padding(
             padding: EdgeInsets.symmetric(vertical: 48),
@@ -230,7 +237,8 @@ class _ReadinessCard extends StatelessWidget {
               areas: (r['recognisedAreas'] ?? r['areas']) as List? ?? const [],
               nextStep: r['nextStep'] as String?,
             ),
-            if (r != rows.last) const Divider(height: 28),
+            if (r != rows.last)
+              const Divider(height: 28, color: AppTheme.publicLine, thickness: 1),
           ],
         ],
       ),
@@ -448,7 +456,8 @@ class _PersonCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (a != areas.last) const Divider(height: 24),
+            if (a != areas.last)
+              const Divider(height: 24, color: AppTheme.publicLine, thickness: 1),
           ],
         ],
       ),

@@ -8,6 +8,11 @@ import 'package:orchestrate_app/features/client/screens/client_activity_screen.d
 import 'package:orchestrate_app/features/client/screens/client_artifacts_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_branding_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_evidence_screen.dart';
+import 'package:orchestrate_app/core/auth/return_path.dart';
+import 'package:orchestrate_app/features/client/screens/account_layer_screen.dart';
+import 'package:orchestrate_app/features/client/screens/business_screen.dart';
+import 'package:orchestrate_app/features/client/screens/relationships_workspace_screen.dart';
+import 'package:orchestrate_app/features/client/screens/today_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_authorised_people_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_trust_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_relationships_screen.dart';
@@ -119,10 +124,14 @@ const _clientCanonicalRoutes = <String>{
   '/client/opportunities',
   '/client/infrastructure',
   '/client/representation',
-  // Where a person names themselves as authorised to act for the business.
-  // The invitation email links straight here, so it has to be canonical
-  // rather than a redirect target.
+  // The reconstructed workspace: three destinations plus the account layer.
+  '/client/today',
+  '/client/business',
   '/client/authorised-people',
+  '/account',
+  '/account/people',
+  '/account/plan',
+  '/account/security',
   // Legacy paths kept so deep links keep resolving via redirects.
   '/client/contacts',
   '/client/leads',
@@ -193,8 +202,16 @@ GoRouter get router {
     final isSetup = <String>{'/app/setup', '/client/setup'}.contains(path);
     final isSubscribe =
         <String>{'/app/subscribe', '/client/subscribe'}.contains(path);
+    // The account layer describes the business's relationship with
+    // Orchestrate and governs what the workspace may do. Authenticated like
+    // everything else, and deliberately outside the setup and subscription
+    // gates below — those are workspace conditions, and an invited
+    // representative must be able to establish authority before the workspace
+    // is fully configured.
+    final isAccountLayer = path == '/account' || path.startsWith('/account/');
     final isClientArea = _clientCoreRoutes.contains(path) ||
         _clientCanonicalRoutes.contains(path) ||
+        isAccountLayer ||
         path.startsWith('/app/');
     final isOperatorArea =
         (path.startsWith('/ops/') || path.startsWith('/operator/')) &&
@@ -230,11 +247,17 @@ GoRouter get router {
       // into onboarding.
       if (isSetup || isSubscribe) {
         return _clientRoute('/auth/register',
-            plan: plan, tier: tier, trial: trial);
+            plan: plan, tier: tier, trial: trial, returnTo: path);
       }
       if (isClientArea || isSetup || isSubscribe) {
+        // WHERE THEY WERE TRYING TO GO.
+        //
+        // This carried only plan/tier/trial, so every deep link into the
+        // workspace died here: you signed in and arrived somewhere generic
+        // with no trace of why you had come. An emailed link asking someone
+        // to do a specific thing could never land them on it.
         return _clientRoute('/auth/login',
-            plan: plan, tier: tier, trial: trial);
+            plan: plan, tier: tier, trial: trial, returnTo: path);
       }
       return null;
     }
@@ -251,7 +274,12 @@ GoRouter get router {
       if (!session.emailVerified) {
         if (isVerification || isReset) return null;
         return _clientRoute('/auth/verify-email',
-            plan: plan, tier: tier, trial: trial);
+            plan: plan,
+            tier: tier,
+            trial: trial,
+            // Sign-in is not always one hop. Carried across each one, or the
+            // last hop lands them nowhere in particular.
+            returnTo: readReturnTo(state.uri.queryParameters) ?? path);
       }
 
       final setupAllowed = <String>{
@@ -266,7 +294,7 @@ GoRouter get router {
         '/client/settings',
       };
       if (!session.hasSetupCompleted) {
-        if (setupAllowed.contains(path)) return null;
+        if (setupAllowed.contains(path) || isAccountLayer) return null;
         return _clientRoute('/app/setup', plan: plan, tier: tier, trial: trial);
       }
 
@@ -1104,23 +1132,64 @@ GoRouter get router {
           ClientShell(currentPath: state.uri.path, child: child),
       routes: [
         GoRoute(
-            path: '/client', redirect: (context, state) => '/client/overview'),
+            path: '/client', redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/client/overview',
-            builder: (context, state) =>
-                const ClientHomeScreen(section: ClientSection.home)),
+            redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/client/workspace',
-            redirect: (context, state) => '/client/overview'),
+            redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/client/setup',
             builder: (context, state) => const ClientSetupScreen()),
-        // Named in the authority-invitation email. Anyone arriving here has
-        // been asked to do something specific, so it is its own destination
-        // rather than a tab buried inside settings.
+        // ── THE THREE DESTINATIONS ─────────────────────────────────────
+        // Today, Relationships, Business. Everything else is reached by
+        // entering the work, or lives in the account layer below.
+        GoRoute(
+            path: '/client/today',
+            builder: (context, state) => const TodayScreen()),
+        GoRoute(
+          path: '/client/relationships',
+          builder: (context, state) => RelationshipsWorkspaceScreen(
+            // Pipeline is a view of these records, not a second domain.
+            initialView: state.uri.queryParameters['view'],
+            relationshipId: state.uri.queryParameters['id'],
+          ),
+        ),
+        GoRoute(
+          path: '/client/relationships/:id',
+          builder: (context, state) => RelationshipsWorkspaceScreen(
+            relationshipId: state.pathParameters['id'],
+          ),
+        ),
+        GoRoute(
+            path: '/client/business',
+            builder: (context, state) => const BusinessScreen()),
+
+        // ── THE ACCOUNT LAYER ──────────────────────────────────────────
+        // Deliberately NOT subject to the setup or subscription gates below.
+        // Authority is a property of the business and governs what the
+        // workspace may do, so it cannot live inside the gates it governs —
+        // an invited representative whose business had not finished setup
+        // could not otherwise reach the page they were emailed about.
+        GoRoute(
+            path: '/account', redirect: (context, state) => '/account/people'),
+        GoRoute(
+            path: '/account/people',
+            builder: (context, state) =>
+                const AccountLayerScreen(section: AccountSection.people)),
+        GoRoute(
+            path: '/account/plan',
+            builder: (context, state) =>
+                const AccountLayerScreen(section: AccountSection.plan)),
+        GoRoute(
+            path: '/account/security',
+            builder: (context, state) =>
+                const AccountLayerScreen(section: AccountSection.security)),
+        // The authority screen's first home. It moved; the link still works.
         GoRoute(
             path: '/client/authorised-people',
-            builder: (context, state) => const ClientAuthorisedPeopleScreen()),
+            redirect: (context, state) => '/account/people'),
         // Representation — the canonical client-owned commercial-profile
         // surface. Old /client/business-identity + /client/campaign paths
         // redirect here so the operational IA stays single-source.
@@ -1174,28 +1243,33 @@ GoRouter get router {
             builder: (context, state) => const ClientSubscribeScreen()),
         // Relationships — mailbox-derived relationship intelligence.
         GoRoute(
-            path: '/client/relationships',
+            path: '/client/contacts/inventory',
             builder: (context, state) => const ClientRelationshipsScreen()),
         GoRoute(
             path: '/client/contacts',
             redirect: (context, state) => '/client/relationships'),
         // Opportunities — signal-driven intelligence (was "Leads").
         GoRoute(
+            // Opportunities were a second list of the same durable records.
+            // Pipeline survives as a view; the second universe does not.
             path: '/client/opportunities',
-            builder: (context, state) => const LeadsScreen()),
+            redirect: (context, state) => '/client/relationships?view=pipeline'),
         GoRoute(
             path: '/client/leads',
             redirect: (context, state) => '/client/relationships'),
         // Operations — managed execution runtime (was "Outreach").
         GoRoute(
+            // Outreach in flight shows on Today; per-relationship activity
+            // shows inside the relationship.
             path: '/client/operations',
-            builder: (context, state) => const ClientOutreachScreen()),
+            redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/client/outreach',
             redirect: (context, state) => '/client/operations'),
         GoRoute(
+            // Replies are relationship correspondence, not a destination.
             path: '/client/replies',
-            builder: (context, state) => const ClientRepliesScreen()),
+            redirect: (context, state) => '/client/relationships'),
         // Infrastructure — mailbox + sending identity + provider trust
         // consolidated under one surface (was /client/mailbox).
         GoRoute(
@@ -1207,8 +1281,9 @@ GoRouter get router {
             path: '/client/mailbox',
             redirect: (context, state) => '/client/infrastructure'),
         GoRoute(
+            // Meetings are timeline events inside a relationship.
             path: '/client/meetings',
-            builder: (context, state) => const MeetingsScreen()),
+            redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/client/billing',
             builder: (context, state) => const ClientBillingScreen()),
@@ -1231,8 +1306,9 @@ GoRouter get router {
             path: '/client/reminders',
             redirect: (context, state) => '/client/records'),
         GoRoute(
+            // Notifications became Attention, which lives in Today.
             path: '/client/notifications',
-            builder: (context, state) => const ClientNotificationsScreen()),
+            redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/client/support',
             builder: (context, state) => const ClientSupportScreen()),
@@ -1634,14 +1710,20 @@ String? _normalizedTrial(String? value) {
   return null;
 }
 
-String _clientRoute(String path, {String? plan, String? tier, String? trial}) {
+String _clientRoute(String path,
+    {String? plan, String? tier, String? trial, String? returnTo}) {
   final query = <String, String>{
     if (plan != null && plan.isNotEmpty) 'plan': plan,
     if (tier != null && tier.isNotEmpty) 'tier': tier,
     if (trial != null && trial.isNotEmpty) 'trial': trial,
   };
-  if (query.isEmpty) return path;
-  return Uri(path: path, queryParameters: query).toString();
+  final destination = withReturnTo(path, returnTo);
+  if (query.isEmpty) return destination;
+  final joiner = destination.contains('?') ? '&' : '?';
+  final encoded = query.entries
+      .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+      .join('&');
+  return '$destination$joiner$encoded';
 }
 
 /// The KIND of screen someone came from, never the path.
