@@ -54,8 +54,11 @@ class _ClientShellState extends State<ClientShell> {
     _Destination(
       label: 'Today',
       path: '/client/today',
-      icon: Icons.today_outlined,
-      selectedIcon: Icons.today,
+      // Not Icons.today: it renders blank in the release web build, a
+      // codepoint the tree-shaken icon font does not carry. Inbox is also the
+      // truer metaphor — Today is the queue of what needs you.
+      icon: Icons.inbox_outlined,
+      selectedIcon: Icons.inbox,
       // Legacy paths that were conceptually "the operational home".
       absorbs: {'/client/overview', '/client/workspace', '/client/notifications'},
     ),

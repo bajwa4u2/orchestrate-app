@@ -132,9 +132,14 @@ class _RelationshipsWorkspaceScreenState
         const VerticalDivider(width: 25, color: AppTheme.publicLine),
         Expanded(
           child: _selectedId == null
-              ? const Center(
+              ? Center(
                   child: QuietState(
-                      message: 'Choose a relationship to open it.'))
+                    // Do not invite a choice there is nothing to choose from.
+                    message: _items.isEmpty
+                        ? ''
+                        : 'Choose a relationship to open it.',
+                  ),
+                )
               : _detailPane(),
         ),
       ],

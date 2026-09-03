@@ -299,6 +299,10 @@ class QuietState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    // Nothing to say is said with nothing.
+    if (message.isEmpty && (hint == null || hint!.isEmpty)) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 4),
       child: Column(
