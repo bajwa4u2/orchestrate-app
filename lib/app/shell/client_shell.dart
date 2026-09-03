@@ -62,6 +62,18 @@ class _ClientShellState extends State<ClientShell> {
       // Legacy paths that were conceptually "the operational home".
       absorbs: {'/client/overview', '/client/workspace', '/client/notifications'},
     ),
+    // Market sits before Relationships because that is the order the business
+    // moves in: understand who may be worth pursuing, then hold a relationship
+    // with them. Leads, signals, qualification, intersections and campaigns are
+    // NOT destinations — they are how Market knows what it knows, and each one
+    // promoted to the sidebar would be a database table wearing a nav item.
+    _Destination(
+      label: 'Market',
+      path: '/client/market',
+      icon: Icons.travel_explore_outlined,
+      selectedIcon: Icons.travel_explore,
+      absorbs: {'/client/leads', '/client/campaigns'},
+    ),
     _Destination(
       label: 'Relationships',
       path: '/client/relationships',
@@ -71,7 +83,6 @@ class _ClientShellState extends State<ClientShell> {
       // events inside, a relationship. They stop being destinations.
       absorbs: {
         '/client/opportunities',
-        '/client/leads',
         '/client/contacts',
         '/client/replies',
         '/client/meetings',
