@@ -10,6 +10,7 @@ import 'package:orchestrate_app/features/client/screens/client_branding_screen.d
 import 'package:orchestrate_app/features/client/screens/client_evidence_screen.dart';
 import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/features/client/screens/account_layer_screen.dart';
+import 'package:orchestrate_app/features/client/screens/attention_screen.dart';
 import 'package:orchestrate_app/features/client/screens/business_screen.dart';
 import 'package:orchestrate_app/features/client/screens/relationships_workspace_screen.dart';
 import 'package:orchestrate_app/features/client/screens/today_screen.dart';
@@ -126,6 +127,10 @@ const _clientCanonicalRoutes = <String>{
   '/client/representation',
   // The reconstructed workspace: three destinations plus the account layer.
   '/client/today',
+  // Inbound is an Attention view reached from Today, not a top-level
+  // destination. Quarantine is a system condition, not a product domain a
+  // business should have to learn the name of.
+  '/client/inbound',
   '/client/business',
   '/client/authorised-people',
   '/account',
@@ -1170,6 +1175,9 @@ GoRouter get router {
             relationshipId: state.pathParameters['id'],
           ),
         ),
+        GoRoute(
+            path: '/client/inbound',
+            builder: (context, state) => const AttentionScreen()),
         GoRoute(
             path: '/client/business',
             builder: (context, state) => const BusinessScreen()),

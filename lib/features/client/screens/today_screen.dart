@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
+import 'package:orchestrate_app/core/attention/client_attention.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
@@ -35,10 +36,23 @@ class _TodayScreenState extends State<TodayScreen> {
   bool _loading = true;
   Refusal? _refusal;
 
+  final ClientAttention _attention = ClientAttention.instance;
+
   @override
   void initState() {
     super.initState();
+    _attention.addListener(_onAttentionChanged);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _attention.removeListener(_onAttentionChanged);
+    super.dispose();
+  }
+
+  void _onAttentionChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _load() async {
@@ -48,6 +62,9 @@ class _TodayScreenState extends State<TodayScreen> {
     });
     try {
       final state = await _repo.load();
+      // Attention is asked for here rather than inside the band, so Today does
+      // not fetch it again on every rebuild.
+      await _attention.refresh();
       if (!mounted) return;
       setState(() {
         _state = state;
@@ -104,6 +121,9 @@ class _TodayScreenState extends State<TodayScreen> {
     final s = _state;
     if (s == null) return const SizedBox.shrink();
 
+    // Attention comes from the one owner every surface reads, so Today and
+    // the Inbound list cannot disagree about what is waiting.
+    final inbound = _attention.needsYou;
     final needsYou = s.needsYou;
     final inFlight = s.inFlight;
     final changed = s.changed;
@@ -112,7 +132,11 @@ class _TodayScreenState extends State<TodayScreen> {
     // history, and history does not get permanent space.
     final setupIncomplete = !session.hasSetupCompleted;
 
-    if (needsYou.isEmpty && inFlight.isEmpty && changed.isEmpty && !setupIncomplete) {
+    if (needsYou.isEmpty &&
+        inbound.isEmpty &&
+        inFlight.isEmpty &&
+        changed.isEmpty &&
+        !setupIncomplete) {
       return const QuietState(
         message: 'Nothing needs you right now.',
         hint: 'Work in flight and anything that changes will appear here.',
@@ -147,6 +171,25 @@ class _TodayScreenState extends State<TodayScreen> {
                     ? RowTone.problem
                     : RowTone.attention,
               ),
+            // Mail that reached this business and could not be placed. One
+            // row, leading with what it is and why — never "you have 27".
+            if (inbound.isNotEmpty)
+              WorkspaceRow(
+                title: inbound.length == 1
+                    ? 'A message arrived that we could not place'
+                    : '${inbound.length} messages arrived that we could not place',
+                detail: inbound.length == 1
+                    ? inbound.first.why
+                    : 'They reached your mailbox and matched no message '
+                        'Orchestrate sent, so we cannot say who they belong to.',
+                meta: inbound.first.counterparty,
+                tone: RowTone.attention,
+                onTap: () => context.go('/client/inbound'),
+                action: TextButton(
+                  onPressed: () => context.go('/client/inbound'),
+                  child: const Text('Look'),
+                ),
+              ),
           ],
         ),
         WorkspaceBand(
@@ -176,7 +219,7 @@ class _TodayScreenState extends State<TodayScreen> {
               ),
           ],
         ),
-        if (needsYou.isEmpty && !setupIncomplete)
+        if (needsYou.isEmpty && inbound.isEmpty && !setupIncomplete)
           const Padding(
             padding: EdgeInsets.only(top: 4),
             child: QuietState(message: 'Nothing needs a decision from you.'),

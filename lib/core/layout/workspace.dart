@@ -221,37 +221,66 @@ class WorkspaceRow extends StatelessWidget {
               bottom: BorderSide(color: AppTheme.publicLine.withValues(alpha: 0.6)),
             ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _ToneMark(tone: tone),
-              if (leading != null) ...[const SizedBox(width: 10), leading!],
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: text.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    if (detail != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(detail!,
-                            style: text.bodySmall
-                                ?.copyWith(color: AppTheme.publicMuted)),
-                      ),
+          // Meta sits beside the title where there is room and underneath it
+          // where there is not. It used to be an unconstrained child of this
+          // Row, so a real sender address overflowed a phone by 167px — the
+          // content was simply off the edge of the screen.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final narrow = constraints.maxWidth < Workspace.phone;
+              final metaText = meta == null
+                  ? null
+                  : Text(
+                      meta!,
+                      style: text.bodySmall
+                          ?.copyWith(color: AppTheme.publicMuted),
+                      softWrap: narrow,
+                      overflow:
+                          narrow ? TextOverflow.clip : TextOverflow.ellipsis,
+                    );
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ToneMark(tone: tone),
+                  if (leading != null) ...[const SizedBox(width: 10), leading!],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: text.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        if (detail != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(detail!,
+                                style: text.bodySmall
+                                    ?.copyWith(color: AppTheme.publicMuted)),
+                          ),
+                        if (narrow && metaText != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: metaText,
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (!narrow && metaText != null) ...[
+                    const SizedBox(width: 12),
+                    // Bounded, so a long sender address shortens instead of
+                    // pushing the row off the screen.
+                    ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: constraints.maxWidth * 0.32),
+                      child: metaText,
+                    ),
                   ],
-                ),
-              ),
-              if (meta != null) ...[
-                const SizedBox(width: 12),
-                Text(meta!,
-                    style:
-                        text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
-              ],
-              if (action != null) ...[const SizedBox(width: 12), action!],
-            ],
+                  if (action != null) ...[const SizedBox(width: 12), action!],
+                ],
+              );
+            },
           ),
         ),
       ),
