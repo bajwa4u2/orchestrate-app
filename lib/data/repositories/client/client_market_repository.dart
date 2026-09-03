@@ -194,10 +194,19 @@ class Candidate {
   /// How many times discovery saw this one company.
   final int discoveredRepresentations;
 
+  /// Whether this is waiting on a person's judgement.
+  ///
+  /// The test is a stated commercial reason, not a certainty grade — gating on
+  /// evidence alone empties the surface, because every observation in
+  /// production is either months old or came from the counterparty's own site.
+  /// The certainty travels with it and the row leads with it when weak, so a
+  /// person sees both the reason and how well-founded it is.
   bool get needsReview =>
       disposition == PursuitDisposition.unreviewed &&
       !hasRelationship &&
-      (certainty == Certainty.evidenced || certainty == Certainty.thin);
+      (whyItMatters != null ||
+          certainty == Certainty.evidenced ||
+          certainty == Certainty.thin);
 
   static Candidate fromJson(Map<String, dynamic> json) {
     final judgement = json['judgement'] as Map?;
@@ -350,7 +359,7 @@ class MarketView {
       .where((c) =>
           !c.hasRelationship &&
           c.disposition == PursuitDisposition.unreviewed &&
-          (c.certainty == Certainty.insufficient || c.certainty == Certainty.stale))
+          !c.needsReview)
       .toList(growable: false);
 
   List<Candidate> get alreadyRelated =>

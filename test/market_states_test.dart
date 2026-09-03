@@ -184,10 +184,19 @@ void main() {
     ]));
     await render(tester, 'stale');
 
-    await tester.tap(find.textContaining('Show 1 we know little about'));
-    await tester.pump();
+    // A stale candidate with a stated commercial reason is still the best
+    // thing in this market — every observation in production is months old, so
+    // withholding these would leave the surface empty and useless. It stays in
+    // view, and the row leads with the staleness rather than with a rationale
+    // that would read as a live reason to act today.
+    expect(find.text('WORTH A LOOK'), findsOneWidget);
+    expect(find.text('Last Spring Ltd'), findsOneWidget);
     expect(find.textContaining('has aged'), findsOneWidget);
     expect(find.textContaining('may no longer be true'), findsOneWidget);
+    // The rationale is not shown as the reason on the row.
+    expect(find.textContaining('Insurance Sales Coach'), findsNothing);
+    // And 'aged' is a word, not just a colour.
+    expect(find.textContaining('aged'), findsWidgets);
   });
 
   testWidgets('5. a decided candidate is separated from an undecided one',
