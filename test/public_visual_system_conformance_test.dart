@@ -100,10 +100,14 @@ void main() {
   test('first workspace entry inherits the Orchestrate receiving frame', () {
     final shell = read('lib/app/shell/client_shell.dart');
     final journey = read('docs/ORCHESTRATE_VISIBLE_JOURNEY_REGISTER.md');
-    expect(shell, contains('backgroundColor: AppTheme.publicCanvas'));
-    expect(shell, contains('AppTheme.publicSecondaryField'));
-    expect(shell, contains('AppTheme.publicDeepField'));
-    expect(shell, contains('BrandAssets.operatorLockup'));
+    // The boundary is still converged — identity, sidebar and page chrome are
+    // owned here. The canvas is the light workspace ground rather than the
+    // dark receiving canvas: the workspace reconstruction moved operational
+    // content onto it, and dark-on-dark left the content pane unreadable.
+    expect(shell, contains('backgroundColor: AppTheme.publicBackground'));
+    expect(shell, contains('AppTheme.publicSurface'));
+    expect(shell, contains('AppTheme.publicLine'));
+    expect(shell, contains('BrandAssets.symbol'));
     expect(journey, contains('converged receiving boundary'));
     expect(
         journey, isNot(contains('EXEMPT_WITH_REASON: operational workspace')));

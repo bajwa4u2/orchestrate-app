@@ -32,5 +32,11 @@ than treated as independent visual surfaces.
 
 The first workspace is not treated as an automatic exemption. Its operational
 content remains a separate dense product programme, while `ClientShell` owns a
-converged receiving boundary: dark Orchestrate canvas, identity, sidebar and
-page chrome around the existing operational content and states.
+converged receiving boundary: identity, sidebar and page chrome around the
+existing operational content and states.
+
+The canvas itself changed with the workspace reconstruction. It was the dark
+Orchestrate receiving canvas; it is now the light workspace ground, because the
+reconstruction put dense operational content directly onto it and dark-on-dark
+made the content pane unreadable. The boundary is unchanged — only what is
+painted behind it.

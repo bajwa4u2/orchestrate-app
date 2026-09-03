@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../authority/consequence.dart';
 import '../theme/app_theme.dart';
+
+export '../authority/consequence.dart' show Consequence;
 
 /// CONSEQUENCE AND REFUSAL, AS THE BACKEND ACTUALLY STATES THEM.
 ///
@@ -17,29 +20,12 @@ import '../theme/app_theme.dart';
 ///   does not cover CONTRACTUAL." Throwing that away and substituting a
 ///   generic failure is destroying the most useful thing in the response.
 
-/// What an act does in the world. Mirrors the backend's consequence classes.
-enum Consequence {
-  /// Nothing leaves the system. A draft, a note, a saved view.
-  reversibleInternal,
-
-  /// Someone outside will see this.
-  externallyCommunicated,
-
-  /// This binds, or claims to.
-  contractual,
-
-  /// This concerns money.
-  financial,
-
-  /// This cannot be walked back.
-  terminal,
-}
-
 extension ConsequencePresentation on Consequence {
   /// The short phrase shown beside an action. Absent for internal work,
   /// because saying "this is internal" about everything trains people to stop
   /// reading the ones that are not.
   String? get note => switch (this) {
+        Consequence.informational => null,
         Consequence.reversibleInternal => null,
         Consequence.externallyCommunicated => 'Goes to the counterparty',
         Consequence.contractual => 'Commits the business',
@@ -48,6 +34,7 @@ extension ConsequencePresentation on Consequence {
       };
 
   Color get accent => switch (this) {
+        Consequence.informational => AppTheme.publicMuted,
         Consequence.reversibleInternal => AppTheme.publicMuted,
         Consequence.externallyCommunicated => AppTheme.publicAccent,
         Consequence.contractual => AppTheme.amber,
@@ -55,7 +42,8 @@ extension ConsequencePresentation on Consequence {
         Consequence.terminal => AppTheme.rose,
       };
 
-  bool get leavesTheSystem => this != Consequence.reversibleInternal;
+  bool get leavesTheSystem =>
+      this != Consequence.reversibleInternal && this != Consequence.informational;
 }
 
 /// An action that looks like what it costs.

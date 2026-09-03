@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:orchestrate_app/core/authority/client_authority.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/ui/governed_action.dart';
+import 'package:orchestrate_app/features/client/widgets/standing_authority.dart';
 import 'package:orchestrate_app/data/repositories/client/client_representative_repository.dart';
 
 /// WHERE A PERSON NAMES THEMSELVES AS AUTHORISED TO ACT FOR THE BUSINESS.
@@ -39,7 +42,6 @@ class _ClientAuthorisedPeopleScreenState
   final _repo = ClientRepresentativeRepository();
 
   Map<String, dynamic>? _designation;
-  Map<String, dynamic>? _readiness;
   Map<String, dynamic>? _identity;
   List<Map<String, dynamic>> _people = const [];
   String? _peopleNote;
@@ -61,10 +63,12 @@ class _ClientAuthorisedPeopleScreenState
     try {
       final current = await _repo.fetchCurrent();
       final people = await _repo.fetchPeople();
+      // The one authority owner is refreshed here rather than per-widget, so
+      // every surface changes at the same moment and to the same answer.
+      await ClientAuthority.instance.refresh();
       if (!mounted) return;
       setState(() {
         _designation = Map<String, dynamic>.from(current['designation'] as Map);
-        _readiness = Map<String, dynamic>.from(current['readiness'] as Map);
         // Read from the server, not from a value cached at sign-in. Those are
         // different records, which is how a person with a confirmed address
         // was being told to confirm it.
@@ -120,11 +124,12 @@ class _ClientAuthorisedPeopleScreenState
               repo: _repo,
               onDone: _load,
             ),
-          _ReadinessCard(readiness: _readiness!),
+          StandingAuthority(onResolve: _resolve),
           const SizedBox(height: 20),
           if (_people.isEmpty)
             _NobodyYetCard(
-              readiness: _readiness!,
+              underReview:
+                  ClientAuthority.instance.projection?.underReview ?? false,
               onStart: _openDesignationForm,
               onInvite: _openInviteForm,
             )
@@ -161,6 +166,29 @@ class _ClientAuthorisedPeopleScreenState
         ],
       ],
     );
+  }
+
+  /// A blocker the person chose to act on.
+  ///
+  /// The projection names what is missing; this screen decides what it can
+  /// offer for it, and says so plainly when the answer is "not from here".
+  void _resolve(String missingKey) {
+    switch (missingKey) {
+      case 'ORGANIZATION_AUTHORITY':
+      case 'YOU_NOT_RECOGNISED':
+        _openDesignationForm();
+      case 'BUSINESS_LEGAL_NAME':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Your business's legal name is set in Business. Someone can only "
+              "be recognised as authorised to act for a named business.",
+            ),
+          ),
+        );
+      default:
+        _openDesignationForm();
+    }
   }
 
   Future<void> _openDesignationForm() async {
@@ -236,154 +264,22 @@ class _ClientAuthorisedPeopleScreenState
   }
 }
 
-/// Where the business stands, in its own three parts.
-///
-/// Shown before anything else because the most common question here is not
-/// "how do I do this" but "do I need to". Deliberately not framed as a failure:
-/// a business that has not done this has not done anything wrong.
-class _ReadinessCard extends StatelessWidget {
-  const _ReadinessCard({required this.readiness});
-
-  final Map<String, dynamic> readiness;
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = <Map<String, dynamic>>[
-      {'title': 'Your account', ...?_section('clientAccount')},
-      {'title': 'Authorised people', ...?_section('organizationalAuthority')},
-      {'title': 'What Orchestrate may do', ...?_section('orchestrateDelegation')},
-    ];
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.publicMuted.withValues(alpha: 0.25)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final r in rows) ...[
-            _ReadinessRow(
-              title: r['title'] as String,
-              state: r['state'] as String? ?? 'UNKNOWN',
-              meaning: r['meaning'] as String? ?? '',
-              areas: (r['recognisedAreas'] ?? r['areas']) as List? ?? const [],
-              nextStep: r['nextStep'] as String?,
-            ),
-            if (r != rows.last)
-              const Divider(height: 28, color: AppTheme.publicLine, thickness: 1),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Map<String, dynamic>? _section(String key) {
-    final v = readiness[key];
-    return v is Map ? Map<String, dynamic>.from(v) : null;
-  }
-}
-
-class _ReadinessRow extends StatelessWidget {
-  const _ReadinessRow({
-    required this.title,
-    required this.state,
-    required this.meaning,
-    required this.areas,
-    required this.nextStep,
-  });
-
-  final String title;
-  final String state;
-  final String meaning;
-  final List<dynamic> areas;
-  final String? nextStep;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _StateDot(state: state),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: text.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              Text(meaning,
-                  style:
-                      text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
-              if (areas.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: areas
-                      .map((a) => Chip(
-                            label: Text(a.toString()),
-                            visualDensity: VisualDensity.compact,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ))
-                      .toList(),
-                ),
-              ],
-              if (nextStep != null) ...[
-                const SizedBox(height: 8),
-                Text(nextStep!, style: text.bodySmall),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StateDot extends StatelessWidget {
-  const _StateDot({required this.state});
-
-  final String state;
-
-  @override
-  Widget build(BuildContext context) {
-    // UNDER_REVIEW is deliberately not a warning colour. Waiting on us is not
-    // something the business needs to act on.
-    final color = switch (state) {
-      'READY' || 'ESTABLISHED' => Colors.green,
-      'UNDER_REVIEW' => Colors.blue,
-      _ => AppTheme.publicMuted,
-    };
-    return Container(
-      width: 10,
-      height: 10,
-      margin: const EdgeInsets.only(top: 6),
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-  }
-}
-
 class _NobodyYetCard extends StatelessWidget {
   const _NobodyYetCard({
-    required this.readiness,
+    required this.underReview,
     required this.onStart,
     required this.onInvite,
   });
 
-  final Map<String, dynamic> readiness;
+  /// From the canonical projection, not from a second reading of a different
+  /// model — this card and the standing card must never disagree.
+  final bool underReview;
   final VoidCallback onStart;
   final VoidCallback onInvite;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final org = readiness['organizationalAuthority'];
-    final underReview =
-        org is Map && org['state'] == 'UNDER_REVIEW';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -564,7 +460,7 @@ class _DesignationDialogState extends State<_DesignationDialog> {
   final Map<String, Map<String, bool>> _selected = {};
   bool _acknowledged = false;
   bool _submitting = false;
-  String? _error;
+  Refusal? _refusal;
 
   @override
   void dispose() {
@@ -649,11 +545,35 @@ class _DesignationDialogState extends State<_DesignationDialog> {
                   style: text.bodyMedium,
                 ),
               ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(_error!,
-                    style: text.bodySmall?.copyWith(color: Colors.red)),
-              ],
+              const SizedBox(height: 16),
+              // Submitting is a claim, not an outcome. Said here so nobody
+              // closes this dialog believing they now hold the authority.
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                      color: AppTheme.publicMuted.withValues(alpha: 0.3)),
+                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('What happens after you submit',
+                        style: text.bodySmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'This is reviewed before it takes effect. Until it is, '
+                      'nothing changes about what you may do — submitting a '
+                      'claim and holding the authority are different things, '
+                      'and Orchestrate keeps them apart on purpose.',
+                      style: text.bodySmall
+                          ?.copyWith(color: AppTheme.publicMuted),
+                    ),
+                  ],
+                ),
+              ),
+              if (_refusal != null) RefusalNotice(refusal: _refusal!),
             ],
           ),
         ),
@@ -681,7 +601,7 @@ class _DesignationDialogState extends State<_DesignationDialog> {
   Future<void> _submit() async {
     setState(() {
       _submitting = true;
-      _error = null;
+      _refusal = null;
     });
     final requested = _selected.entries
         .where((e) => e.value.values.any((b) => b))
@@ -703,22 +623,25 @@ class _DesignationDialogState extends State<_DesignationDialog> {
         supportingReference: _reference.text,
       );
       if (!mounted) return;
-      if (result['ok'] == false) {
+      final refusal = Refusal.fromResponse(result);
+      if (refusal != null) {
         // The backend refuses for reasons a person can act on — an unconfirmed
         // email, a missing legal name. Showing its reason is better than
         // inventing a generic one.
         setState(() {
           _submitting = false;
-          _error = result['reason']?.toString() ?? 'This could not be submitted.';
+          _refusal = refusal;
         });
         return;
       }
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
+      // Not a governed refusal. Dressing a transport failure up as one would
+      // mislead the person and whoever debugs it.
       setState(() {
         _submitting = false;
-        _error = e.toString();
+        _refusal = Refusal.unexpected(e);
       });
     }
   }
