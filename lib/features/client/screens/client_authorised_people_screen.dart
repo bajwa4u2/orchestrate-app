@@ -40,6 +40,7 @@ class _ClientAuthorisedPeopleScreenState
 
   Map<String, dynamic>? _designation;
   Map<String, dynamic>? _readiness;
+  Map<String, dynamic>? _identity;
   List<Map<String, dynamic>> _people = const [];
   String? _peopleNote;
 
@@ -64,6 +65,12 @@ class _ClientAuthorisedPeopleScreenState
       setState(() {
         _designation = Map<String, dynamic>.from(current['designation'] as Map);
         _readiness = Map<String, dynamic>.from(current['readiness'] as Map);
+        // Read from the server, not from a value cached at sign-in. Those are
+        // different records, which is how a person with a confirmed address
+        // was being told to confirm it.
+        _identity = current['identity'] is Map
+            ? Map<String, dynamic>.from(current['identity'] as Map)
+            : null;
         _people = (people['people'] as List? ?? const [])
             .map((p) => Map<String, dynamic>.from(p as Map))
             .toList();
@@ -107,12 +114,19 @@ class _ClientAuthorisedPeopleScreenState
         else if (_error != null)
           _ErrorCard(message: _error!, onRetry: _load)
         else ...[
+          if (_identity != null && _identity!['emailConfirmed'] != true)
+            _ConfirmEmailBand(
+              identity: _identity!,
+              repo: _repo,
+              onDone: _load,
+            ),
           _ReadinessCard(readiness: _readiness!),
           const SizedBox(height: 20),
           if (_people.isEmpty)
             _NobodyYetCard(
               readiness: _readiness!,
               onStart: _openDesignationForm,
+              onInvite: _openInviteForm,
             )
           else ...[
             ..._people.map((p) => _PersonCard(
@@ -127,10 +141,21 @@ class _ClientAuthorisedPeopleScreenState
               ),
             ],
             const SizedBox(height: 20),
-            OutlinedButton.icon(
-              onPressed: _openDesignationForm,
-              icon: const Icon(Icons.person_add_alt, size: 18),
-              label: const Text('Name yourself as authorised'),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _openDesignationForm,
+                  icon: const Icon(Icons.badge_outlined, size: 18),
+                  label: const Text('Name yourself as authorised'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _openInviteForm,
+                  icon: const Icon(Icons.person_add_alt, size: 18),
+                  label: const Text('Invite someone'),
+                ),
+              ],
             ),
           ],
         ],
@@ -148,6 +173,14 @@ class _ClientAuthorisedPeopleScreenState
       ),
     );
     if (submitted == true) await _load();
+  }
+
+  Future<void> _openInviteForm() async {
+    final invited = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _InviteDialog(designation: _designation!, repo: _repo),
+    );
+    if (invited == true) await _load();
   }
 
   Future<void> _withdraw(Map<String, dynamic> person, String areaLabel) async {
@@ -335,10 +368,15 @@ class _StateDot extends StatelessWidget {
 }
 
 class _NobodyYetCard extends StatelessWidget {
-  const _NobodyYetCard({required this.readiness, required this.onStart});
+  const _NobodyYetCard({
+    required this.readiness,
+    required this.onStart,
+    required this.onInvite,
+  });
 
   final Map<String, dynamic> readiness;
   final VoidCallback onStart;
+  final VoidCallback onInvite;
 
   @override
   Widget build(BuildContext context) {
@@ -375,9 +413,19 @@ class _NobodyYetCard extends StatelessWidget {
           ),
           if (!underReview) ...[
             const SizedBox(height: 20),
-            FilledButton(
-              onPressed: onStart,
-              child: const Text('Name yourself as authorised'),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton(
+                  onPressed: onStart,
+                  child: const Text('Name yourself as authorised'),
+                ),
+                OutlinedButton(
+                  onPressed: onInvite,
+                  child: const Text('Invite someone'),
+                ),
+              ],
             ),
           ],
         ],
@@ -791,5 +839,282 @@ class _ErrorCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// A confirmed address is a precondition, so this says so where the person is
+/// standing — and gives them the way out of it.
+///
+/// The state comes from the server. The value cached at sign-in and the record
+/// the gate actually checks are different things, and disagreeing about them is
+/// how someone gets told to confirm an address they already confirmed.
+class _ConfirmEmailBand extends StatefulWidget {
+  const _ConfirmEmailBand({
+    required this.identity,
+    required this.repo,
+    required this.onDone,
+  });
+
+  final Map<String, dynamic> identity;
+  final ClientRepresentativeRepository repo;
+  final VoidCallback onDone;
+
+  @override
+  State<_ConfirmEmailBand> createState() => _ConfirmEmailBandState();
+}
+
+class _ConfirmEmailBandState extends State<_ConfirmEmailBand> {
+  bool _sending = false;
+  String? _result;
+
+  Future<void> _send() async {
+    setState(() {
+      _sending = true;
+      _result = null;
+    });
+    try {
+      final r = await widget.repo.resendVerification();
+      if (!mounted) return;
+      setState(() {
+        _sending = false;
+        _result = r['message']?.toString() ?? 'Confirmation sent.';
+      });
+      if (r['alreadyConfirmed'] == true) widget.onDone();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sending = false;
+        _result = 'Could not send it: $e';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final email = widget.identity['email']?.toString();
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppTheme.amber.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Confirm your email first',
+              style: text.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text(
+            widget.identity['meaning']?.toString() ??
+                'Someone stating that they can commit a business needs to be '
+                    'reachable at a confirmed address.',
+            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              OutlinedButton(
+                onPressed: _sending ? null : _send,
+                child: _sending
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(email == null
+                        ? 'Send confirmation'
+                        : 'Send confirmation to $email'),
+              ),
+              if (_result != null)
+                Text(_result!,
+                    style:
+                        text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Invite a colleague, and say what the business believes they can decide.
+///
+/// INVITING IS NOT GRANTING. This proposes a person; they acknowledge the
+/// designation themselves and an operator admits it. The wording says so
+/// plainly, because a form collecting an email and a list of powers looks
+/// exactly like one that hands them over.
+class _InviteDialog extends StatefulWidget {
+  const _InviteDialog({required this.designation, required this.repo});
+
+  final Map<String, dynamic> designation;
+  final ClientRepresentativeRepository repo;
+
+  @override
+  State<_InviteDialog> createState() => _InviteDialogState();
+}
+
+class _InviteDialogState extends State<_InviteDialog> {
+  final _email = TextEditingController();
+  final _name = TextEditingController();
+  final _role = TextEditingController();
+  final Set<String> _areas = {};
+  bool _sending = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _name.dispose();
+    _role.dispose();
+    super.dispose();
+  }
+
+  Map<String, dynamic> get _copy =>
+      Map<String, dynamic>.from(widget.designation['capabilityCopy'] as Map);
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return AlertDialog(
+      title: const Text('Invite someone to be recognised'),
+      content: SizedBox(
+        width: 460,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'You are telling us who your business believes can decide for '
+                'it. They confirm it themselves, and nothing changes until they '
+                'do, so this gives them nothing on its own.',
+                style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(labelText: 'Their work email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _name,
+                decoration:
+                    const InputDecoration(labelText: 'Their name (optional)'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _role,
+                decoration: const InputDecoration(
+                  labelText: 'Their role at the business (optional)',
+                  helperText: 'Recorded as what you call them. It carries no '
+                      'authority by itself.',
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text('What you believe they can decide',
+                  style:
+                      text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              for (final entry in _copy.entries)
+                CheckboxListTile(
+                  value: _areas.contains(entry.key),
+                  onChanged: (v) => setState(() {
+                    if (v == true) {
+                      _areas.add(entry.key);
+                    } else {
+                      _areas.remove(entry.key);
+                    }
+                  }),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(
+                    Map<String, dynamic>.from(entry.value as Map)['label']
+                            ?.toString() ??
+                        entry.key,
+                    style: text.bodySmall,
+                  ),
+                  subtitle: Text(
+                    Map<String, dynamic>.from(entry.value as Map)['meaning']
+                            ?.toString() ??
+                        '',
+                    style:
+                        text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                  ),
+                ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!,
+                    style: text.bodySmall?.copyWith(color: Colors.red)),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _sending ? null : () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: (_sending || _email.text.trim().isEmpty || _areas.isEmpty)
+              ? null
+              : _send,
+          child: _sending
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Send invitation'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _send() async {
+    setState(() {
+      _sending = true;
+      _error = null;
+    });
+    try {
+      final r = await widget.repo.invite(
+        email: _email.text,
+        name: _name.text,
+        roleTitleText: _role.text,
+        suggested: _areas
+            .map((c) => {
+                  'capability': c,
+                  // What the business believes they can approve. Letting
+                  // Orchestrate act stays a separate decision they make later.
+                  'mayExercise': true,
+                  'mayDelegate': false,
+                  'maySubdelegate': false,
+                })
+            .toList(),
+      );
+      if (!mounted) return;
+      if (r['ok'] == false) {
+        setState(() {
+          _sending = false;
+          _error = r['reason']?.toString() ?? 'This could not be sent.';
+        });
+        return;
+      }
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sending = false;
+        _error = e.toString();
+      });
+    }
   }
 }

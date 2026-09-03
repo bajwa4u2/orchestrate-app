@@ -249,20 +249,29 @@ class _Rail extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(collapsed ? 14 : 20, 18, 14, 18),
-              child: Row(
-                children: [
-                  BrandAssets.symbol(context, size: 22),
-                  if (!collapsed) ...[
-                    const SizedBox(width: 10),
-                    Text('Orchestrate',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                  ],
-                ],
+            // The mark returns home. It looked like a logo and behaved like
+            // decoration, which is the one thing a logo in a workspace is
+            // never allowed to be.
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => context.go('/client/today'),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(collapsed ? 14 : 20, 18, 14, 18),
+                  child: Row(
+                    children: [
+                      BrandAssets.symbol(context, size: 22),
+                      if (!collapsed) ...[
+                        const SizedBox(width: 10),
+                        Text('Orchestrate',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700)),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 4),

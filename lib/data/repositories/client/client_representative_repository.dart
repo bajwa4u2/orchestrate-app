@@ -65,6 +65,43 @@ class ClientRepresentativeRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  /// Send the confirmation email again.
+  ///
+  /// Exists because a refusal that says "confirm your email" and offers no way
+  /// to do it is a dead end.
+  Future<Map<String, dynamic>> resendVerification() async {
+    final json = await _apiClient.postJson(
+      '/client/representative/resend-verification',
+      surface: ApiSurface.client,
+      body: const {},
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  /// Invite a colleague to be recognised, and say what for.
+  ///
+  /// Inviting is not granting. The business proposes; the person acknowledges
+  /// the designation themselves; an operator admits it.
+  Future<Map<String, dynamic>> invite({
+    required String email,
+    String? name,
+    String? roleTitleText,
+    List<Map<String, dynamic>> suggested = const [],
+  }) async {
+    final json = await _apiClient.postJson(
+      '/client/representative/invite',
+      surface: ApiSurface.client,
+      body: {
+        'email': email.trim(),
+        if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
+        if (roleTitleText != null && roleTitleText.trim().isNotEmpty)
+          'roleTitleText': roleTitleText.trim(),
+        'suggested': suggested,
+      },
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   /// Withdraw one person's authority in one area.
   ///
   /// This stops that person authorising anything further. It does not unwind
