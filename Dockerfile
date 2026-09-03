@@ -24,11 +24,15 @@ RUN flutter build web --release --no-tree-shake-icons \
 # Stamp the entrypoint URL at image build time so every public deploy requests
 # the bundle belonging to that image while retaining the reproducible source
 # build and nginx route structure.
-RUN STAMP=$(date +%s) &&     sed -i "s/main.dart.js/main.dart.js?v=$STAMP/g" build/web/flutter_bootstrap.js &&     # The icon font has the same problem and no cache-buster of its own: its
-    # URL never changes, so a CDN keeps serving whichever copy it first saw.
-    # Stamping the manifest changes the URL the app asks for, which works
-    # regardless of what any cache in front of us decides to do.
-    sed -i "s#fonts/MaterialIcons-Regular.otf#fonts/MaterialIcons-Regular.otf?v=$STAMP#g"       build/web/assets/FontManifest.json
+#
+# The icon font has the same problem and no cache-buster of its own: its URL
+# never changes, so a CDN keeps serving whichever copy it first saw, and icons
+# added later render as nothing. Stamping the font manifest changes the URL the
+# app asks for, which works regardless of what any cache in front of us decides.
+RUN STAMP=$(date +%s) \
+ && sed -i "s/main.dart.js/main.dart.js?v=$STAMP/g" build/web/flutter_bootstrap.js \
+ && sed -i "s#fonts/MaterialIcons-Regular.otf#fonts/MaterialIcons-Regular.otf?v=$STAMP#g" build/web/assets/FontManifest.json \
+ && cat build/web/assets/FontManifest.json
 
 FROM nginx:alpine
 
