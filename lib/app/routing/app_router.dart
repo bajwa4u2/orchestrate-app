@@ -8,6 +8,7 @@ import 'package:orchestrate_app/features/client/screens/client_activity_screen.d
 import 'package:orchestrate_app/features/client/screens/client_artifacts_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_branding_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_evidence_screen.dart';
+import 'package:orchestrate_app/features/client/screens/client_authorised_people_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_trust_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_relationships_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_mailbox_screen.dart';
@@ -118,6 +119,10 @@ const _clientCanonicalRoutes = <String>{
   '/client/opportunities',
   '/client/infrastructure',
   '/client/representation',
+  // Where a person names themselves as authorised to act for the business.
+  // The invitation email links straight here, so it has to be canonical
+  // rather than a redirect target.
+  '/client/authorised-people',
   // Legacy paths kept so deep links keep resolving via redirects.
   '/client/contacts',
   '/client/leads',
@@ -1110,6 +1115,12 @@ GoRouter get router {
         GoRoute(
             path: '/client/setup',
             builder: (context, state) => const ClientSetupScreen()),
+        // Named in the authority-invitation email. Anyone arriving here has
+        // been asked to do something specific, so it is its own destination
+        // rather than a tab buried inside settings.
+        GoRoute(
+            path: '/client/authorised-people',
+            builder: (context, state) => const ClientAuthorisedPeopleScreen()),
         // Representation — the canonical client-owned commercial-profile
         // surface. Old /client/business-identity + /client/campaign paths
         // redirect here so the operational IA stays single-source.

@@ -894,8 +894,60 @@ class _ReviewCard extends StatelessWidget {
                       .bodySmall
                       ?.copyWith(color: AppTheme.publicMuted)),
             ],
+            const SizedBox(height: 20),
+            const _AuthorisedPeoplePrompt(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Introduced during setup, not enforced by it.
+///
+/// Discovery and outreach work without this, and gating setup on it would stop
+/// a business getting value while it worked out who should be named. What it
+/// gates is agreements and invoices — and someone meeting that limit for the
+/// first time at the moment they need it is the worst possible time to explain
+/// it. So it is mentioned here, once, and can be done later.
+class _AuthorisedPeoplePrompt extends StatelessWidget {
+  const _AuthorisedPeoplePrompt();
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Later: who can agree things for the business',
+              style: text.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            'Discovery and outreach need nothing more from you. Agreements and '
+            'invoices are a different matter: Orchestrate will not act on those '
+            'just because someone is signed in, so a person has to be named as '
+            'authorised first.',
+            style: text.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'It takes a minute, and naming someone does not let Orchestrate do '
+            'anything on its own — that stays a separate choice.',
+            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: () => context.go('/client/authorised-people'),
+            child: const Text('Name an authorised person'),
+          ),
+        ],
       ),
     );
   }

@@ -179,6 +179,8 @@ class _ClientShellState extends State<ClientShell> {
         return 'Home';
       case '/client/setup':
         return 'Setup';
+      case '/client/authorised-people':
+        return 'Authorised people';
       case '/client/representation':
       case '/client/business-identity':
       case '/client/campaign':
@@ -258,6 +260,8 @@ class _ClientShellState extends State<ClientShell> {
         return 'Overview of your operation.';
       case '/client/setup':
         return 'Business profile, market, and authorization.';
+      case '/client/authorised-people':
+        return 'Who your business recognises as able to decide for it.';
       case '/client/representation':
       case '/client/business-identity':
       case '/client/campaign':
