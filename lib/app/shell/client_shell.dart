@@ -153,8 +153,19 @@ class _ClientShellState extends State<ClientShell> {
     // and scroll offsets and half-built state carry from one surface into the
     // next. With it, each destination is unambiguously a new subtree that
     // covers what came before.
-    final content = KeyedSubtree(
-      key: ValueKey(widget.currentPath),
+    // A NEW LAYER PER DESTINATION, NOT JUST A NEW SUBTREE.
+    //
+    // Demonstrated rather than guessed: after navigating, forcing a resize —
+    // which forces a full re-raster — cleared the previous screen instantly.
+    // The widget tree was always correct. The pixels were stale.
+    //
+    // That is also why an opaque background alone did nothing: a region the
+    // engine believes unchanged is never redrawn, so a colour that is never
+    // painted covers nothing. The retained raster is the thing that needs a
+    // new identity, so the boundary is keyed on the route — a new key cannot
+    // inherit the previous destination's layer.
+    final content = RepaintBoundary(
+      key: ValueKey('surface:${widget.currentPath}'),
       child: ColoredBox(
         color: AppTheme.publicBackground,
         child: SelectionArea(
