@@ -23,6 +23,17 @@ dependencies:
   package_info_plus: ^8.0.0
   file_picker: ^8.0.0
   flutter_svg: ^2.2.4
+  # Native store purchase, for iOS and Android only.
+  #
+  # Brings StoreKit 2 on Apple and the Play Billing Library on Google, which is
+  # what both consoles are waiting on: Apple will not ship a subscription except
+  # attached to a new app version, and Play will not let one be created at all
+  # until a build carrying the billing library is uploaded.
+  #
+  # The client initiates a purchase and hands the result to the server. It never
+  # decides entitlement — a receipt on a device is a claim, and only what Apple
+  # or Google confirms to our own backend is evidence.
+  in_app_purchase: ^3.2.0
 
 dev_dependencies:
   # Used only by the product-identity conformance test, which decodes the
