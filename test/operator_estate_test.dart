@@ -122,4 +122,20 @@ void main() {
     expect(File('lib/features/operator/screens/audit_events.dart').existsSync(), isTrue);
     expect(opsRoutes(), contains('/ops/governance/audit'));
   });
+
+  test('a bookmark to a retired surface lands somewhere, not nowhere', () {
+    // Every link to the retired estate that exists in the world is a bookmark
+    // or a pasted address, because nothing in the product ever linked to it.
+    // Falling through to the not-found page strands a person on a bare screen
+    // with no navigation — a deep-link dead end.
+    expect(router.contains('_retiredOperatorSurfaces'), isTrue);
+    for (final path in const [
+      '/ops/adaptation', '/ops/cognition', '/ops/continuity', '/ops/runtime-truth',
+      '/ops/trust-readiness', '/ops/platform-supervision',
+      '/ops/governance/ai-approvals',
+    ]) {
+      expect(router.contains("'$path'"), isTrue,
+          reason: '$path must still resolve to the work queue for old links');
+    }
+  });
 }

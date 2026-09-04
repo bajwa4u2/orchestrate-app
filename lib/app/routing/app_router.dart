@@ -93,6 +93,21 @@ const _clientCoreRoutes = <String>{
   '/app/subscribe',
 };
 
+/// Operator surfaces that no longer exist.
+///
+/// Each was reachable only by typing a URL, so the only links to them are
+/// bookmarks. They resolve to the work queue rather than to a dead end.
+const _retiredOperatorSurfaces = <String>{
+  '/ops/adaptation',
+  '/ops/cognition',
+  '/ops/continuity',
+  '/ops/runtime-truth',
+  '/ops/trust-readiness',
+  '/ops/platform-supervision',
+  '/ops/governance/ai-approvals',
+  '/ops/overview-legacy',
+};
+
 const _clientCanonicalRoutes = <String>{
   '/client',
   '/client/overview',
@@ -160,6 +175,21 @@ GoRouter get router {
     if (!session.isReady) return null;
 
     final path = state.uri.path;
+
+    // A BOOKMARK TO A RETIRED SURFACE STILL LANDS SOMEWHERE USEFUL.
+    //
+    // The hidden operator estate was reachable only by URL, so every link to it
+    // that exists is a bookmark or a pasted address. Letting those fall through
+    // to the not-found page strands a person on a bare screen with no
+    // navigation and no way back — the deep-link dead end this workspace is
+    // being rebuilt to remove.
+    //
+    // One prefix rule rather than twenty-one redirect routes, so retiring the
+    // next thing is a single line here.
+    if (_retiredOperatorSurfaces.any((p) => path == p || path.startsWith('$p/'))) {
+      return '/ops/work';
+    }
+
     final plan = _normalizedPlan(state.uri.queryParameters['plan']) ??
         session.selectedPlan;
     final tier = _normalizedTier(state.uri.queryParameters['tier']) ??
