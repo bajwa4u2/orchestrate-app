@@ -88,13 +88,25 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
   /// Asking only in `initState` was not enough: the session settles after the
   /// screen appears, which invalidates the first answer, and a screen that only
   /// ever asks once then waits forever for a reply that will not come.
+  ///
+  /// Scheduled after the frame rather than run inside it. Anything that can
+  /// notify listeners must not be started mid-build, and this is called from
+  /// `build` by design.
   void _askIfUnanswered() {
     if (_capabilities.hasAnswer ||
         _capabilities.isLoading ||
         _capabilities.error != null) {
       return;
     }
-    _capabilities.load().catchError((Object error) => throw error);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_capabilities.hasAnswer ||
+          _capabilities.isLoading ||
+          _capabilities.error != null) {
+        return;
+      }
+      _capabilities.load().catchError((Object error) => throw error);
+    });
   }
 
   @override

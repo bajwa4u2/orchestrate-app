@@ -62,7 +62,17 @@ class ClientCapabilities extends ChangeNotifier {
 
     _loading = true;
     _error = null;
-    notifyListeners();
+    // Deliberately NOT notified synchronously.
+    //
+    // A surface asks for this while it is building — that is the only moment it
+    // can tell it has no answer. Notifying here would call setState() during
+    // build, which Flutter refuses, and the refusal broke the rebuild chain so
+    // the answer that arrived a moment later was never painted. The screen sat
+    // on a spinner over a request that had already returned 200.
+    //
+    // The completion notification below is what surfaces actually need; a
+    // "started loading" ping is only useful for a spinner that is already
+    // showing.
 
     final future = _repository.fetch().then((projection) {
       _projection = projection;
