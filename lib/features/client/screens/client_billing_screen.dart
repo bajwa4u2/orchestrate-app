@@ -7,6 +7,7 @@ import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/widgets/store_subscribe_panel.dart';
 
 class ClientBillingScreen extends StatefulWidget {
@@ -118,9 +119,9 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
           eyebrow: 'Billing',
           title: 'Billing and service standing',
           subtitle: externalPurchaseAllowed
-              ? 'Confirm whether service is active, trialing, or at risk, '
-                  'then use the portal when billing needs attention.'
-              : 'Confirm whether service is active, trialing, or at risk. '
+              ? 'What your organisation is entitled to, and the billing '
+                  'record behind it.'
+              : 'What your organisation is entitled to. '
                   '$kIosPlanManagementNotice',
           banner: banner,
           actions: [
@@ -138,6 +139,17 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
               ),
           ],
           children: [
+            // WHAT THE ORGANISATION IS ENTITLED TO, FROM THE ONE AUTHORITY
+            // THAT DECIDES IT.
+            //
+            // Everything below this reads a Stripe subscription row. That row
+            // is evidence about one rail: it says nothing about a grant, and
+            // nothing about a purchase made through the App Store or Play. Four
+            // rows in this database still read ACTIVE with periods that ended
+            // in May. Leading with the derivation means the first thing a
+            // person reads is the answer the rest of the product acts on.
+            const EntitlementSummary(),
+            const SizedBox(height: 18),
             if (_portalError != null) ...[
               ClientPanel(
                 title: 'Billing portal unavailable',
@@ -164,7 +176,13 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
             const StoreSubscribePanel(),
             if (inAppPurchaseAllowed) const SizedBox(height: 18),
             ClientPanel(
-              title: 'Subscription',
+              title: 'Subscription record',
+              // Named as a record rather than as the answer. Kept because it is
+              // legitimate administrative history — what the payment rail holds
+              // and when — and demoted because it is not what governs the
+              // workspace.
+              subtitle: 'What the payment provider holds. Entitlement is stated '
+                  'above and is what the product acts on.',
               children: [
                 ClientInfoRow(
                   title: readText(data.subscription, 'displayPlanLabel',

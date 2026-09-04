@@ -181,13 +181,36 @@ class _AccountAndSecurity extends StatelessWidget {
             action: const Icon(Icons.chevron_right,
                 size: 18, color: AppTheme.publicMuted),
           ),
+          // WHO YOU ARE. Nothing more, and it must not imply more.
+          //
+          // This row used to end "…before you can be recognised as authorised
+          // for the business", which reads as a promise that confirming an
+          // address produces authority. It does not, and cannot. The founder
+          // confirmed his address repeatedly and authority stayed absent —
+          // exactly the loop that sentence sets up.
           WorkspaceRow(
             title: 'Email confirmed',
             detail: session.emailVerified
-                ? 'This address has been confirmed.'
-                : 'Not confirmed yet. Confirming it is required before you can '
-                    'be recognised as authorised for the business.',
+                ? 'This address has been confirmed. That establishes who you '
+                    'are, and nothing about what the business permits.'
+                : 'Not confirmed yet. Confirming it establishes who you are.',
             tone: session.emailVerified ? RowTone.good : RowTone.attention,
+          ),
+          // WHAT THE COMPANY PERMITS. A separate question with a separate
+          // answer, and the only place the resolution actually lives.
+          //
+          // Kept deliberately adjacent to the row above. The two were being
+          // confused because only one of them was ever shown, so a person with
+          // a confirmed address and no authority had nothing to read except a
+          // green tick.
+          WorkspaceRow(
+            title: 'Authority to act for the business',
+            detail: 'Being signed in, and confirmed, is not the same as the '
+                'business having authorised you to act in its name. That is '
+                'recorded against the organisation, not against you.',
+            onTap: () => context.go('/account/people'),
+            action: const Icon(Icons.chevron_right,
+                size: 18, color: AppTheme.publicMuted),
           ),
           WorkspaceRow(
             title: 'Workspace settings',
