@@ -85,6 +85,16 @@ class PublicRepository {
     return const <String, dynamic>{};
   }
 
+  /// The commercial model, as the server states it.
+  ///
+  /// Returned raw rather than parsed into plan objects: there are no plans to
+  /// parse. `/public/pricing` used to serve six of them at fixed prices that
+  /// nobody had approved, and it now serves the model instead.
+  Future<Map<String, dynamic>> fetchCommercialModel() async {
+    final json = await _apiClient.getJson('/public/pricing');
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<PricingCatalog> fetchPricing() async {
     final json = await _apiClient.getJson('/public/pricing');
     return PricingConfig.fromApi(Map<String, dynamic>.from(json as Map));

@@ -64,7 +64,7 @@ import 'package:orchestrate_app/features/operator_workspace/runtime_truth/discov
 import 'package:orchestrate_app/features/operator_workspace/runtime_truth/runtime_truth_screen.dart';
 import 'package:orchestrate_app/features/operator_workspace/trust_readiness/trust_readiness_screen.dart';
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
-import 'package:orchestrate_app/features/public/screens/pricing_screen.dart';
+import 'package:orchestrate_app/features/public/screens/commercial_model_screen.dart';
 import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_sequence_author_screen.dart';
 import 'package:orchestrate_app/features/public/screens/activation_preview_screen.dart';
@@ -758,9 +758,13 @@ GoRouter get router {
     ),
     GoRoute(
       path: '/pricing',
+      // Points at the commercial model rather than the six-plan catalog.
+      // Those prices were never approved, disagreed with what was stored
+      // against real organisations, and were purchasable — so the page that
+      // sold them is off the public route rather than edited into honesty.
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
-            currentPath: state.uri.path, child: const PricingScreen()),
+            currentPath: state.uri.path, child: const CommercialModelScreen()),
       ),
     ),
     GoRoute(
