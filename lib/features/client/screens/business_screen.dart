@@ -63,11 +63,12 @@ class BusinessScreen extends StatelessWidget {
               detail: 'Ideal customer, geography, industries.',
               path: '/client/representation/targeting',
             ),
-            _Entry(
-              label: 'Discovery',
-              detail: 'How candidates are sourced and qualified.',
-              path: '/client/representation',
-            ),
+            // "Discovery" was a second row pointing at the same destination as
+            // "Business identity". Two labels for one surface is a navigation
+            // claim the product cannot honour: whichever a person picks, they
+            // arrive somewhere that does not answer the other. Removed rather
+            // than renamed, because the surface it promised does not exist yet.
+
           ],
         ),
         WorkspaceSection(

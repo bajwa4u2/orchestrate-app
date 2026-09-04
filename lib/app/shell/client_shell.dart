@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
+import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/command_palette.dart';
@@ -128,7 +129,30 @@ class _ClientShellState extends State<ClientShell> {
   @override
   Widget build(BuildContext context) {
     final session = AuthSessionController.instance;
-    final content = SelectionArea(child: widget.child);
+    // THE RETURN, RENDERED ONCE FOR THE WHOLE ESTATE.
+    //
+    // The shell already knows the route, so it is the only place that can
+    // answer "what contains this" without every screen being taught to answer
+    // it for itself. Twenty client surfaces had no return of any kind; adding
+    // twenty back buttons would have made twenty more opinions instead of one.
+    //
+    // A landing gets none, because there is nothing above it.
+    final parent = semanticParentOf(widget.currentPath);
+    final content = SelectionArea(
+      child: parent == null
+          ? widget.child
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SurfaceReturn(
+                  title: titleOf(widget.currentPath),
+                  area: areaOf(widget.currentPath),
+                  parent: parent,
+                ),
+                Expanded(child: widget.child),
+              ],
+            ),
+    );
 
     return Theme(
       data: AppTheme.lightTheme,
@@ -568,6 +592,67 @@ class _BottomBar extends StatelessWidget {
             label: d.label,
           ),
       ],
+    );
+  }
+}
+
+/// Where you are, and the way back out.
+///
+/// Deliberately not a browser Back button. It goes to what CONTAINS this
+/// surface, which is an answer that exists even when a person arrived on a
+/// link and has no history to go back through — the case that strands people.
+class _SurfaceReturn extends StatelessWidget {
+  const _SurfaceReturn({
+    required this.title,
+    required this.area,
+    required this.parent,
+  });
+
+  final String? title;
+  final WorkspaceArea? area;
+  final String parent;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final areaLabel = area?.label;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(AppTheme.radius),
+            onTap: () => context.go(parent),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.chevron_left,
+                      size: 18, color: AppTheme.publicMuted),
+                  const SizedBox(width: 2),
+                  Text(
+                    // Named, not "Back". Back is where you came from; this is
+                    // where this surface belongs, and saying which is the
+                    // difference between orientation and a guess.
+                    areaLabel ?? 'Workspace',
+                    style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (title != null) ...[
+            const SizedBox(width: 6),
+            Text('/', style: text.bodySmall?.copyWith(color: AppTheme.publicLine)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(title!,
+                  style: text.bodySmall?.copyWith(color: AppTheme.publicText)),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

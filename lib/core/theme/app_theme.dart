@@ -1,5 +1,43 @@
 import 'package:flutter/material.dart';
 
+/// NAVIGATING A WORKSPACE IS NOT TURNING A PAGE.
+///
+/// Flutter's default page transition cross-fades two full-screen surfaces. In
+/// a rail-based workspace both surfaces are opaque, so for the length of the
+/// animation the screen a person just left is painted ON TOP of the one they
+/// asked for. The rail updates immediately, the content does not, and the
+/// reading is unambiguous: nothing happened.
+///
+/// That is exactly what "clicking the logo does not take me home" was. The
+/// logo always navigated; the destination was simply behind the surface it
+/// replaced, for long enough to look broken.
+///
+/// A workspace destination should arrive the way a rail selection implies:
+/// immediately. Applied here rather than per route so there is one answer for
+/// the whole estate — 139 real routes across four shells — instead of a
+/// transition policy that drifts screen by screen.
+class _ImmediateTransitions extends PageTransitionsBuilder {
+  const _ImmediateTransitions();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) =>
+      child;
+}
+
+const _workspaceTransitions = PageTransitionsTheme(builders: {
+  TargetPlatform.android: _ImmediateTransitions(),
+  TargetPlatform.iOS: _ImmediateTransitions(),
+  TargetPlatform.linux: _ImmediateTransitions(),
+  TargetPlatform.macOS: _ImmediateTransitions(),
+  TargetPlatform.windows: _ImmediateTransitions(),
+});
+
 class AppTheme {
   static const background = Color(0xFF090D14);
   static const sidebar = Color(0xFF0B1018);
@@ -84,6 +122,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      pageTransitionsTheme: _workspaceTransitions,
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
       fontFamily: 'Inter',
@@ -173,6 +212,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      pageTransitionsTheme: _workspaceTransitions,
       colorScheme: scheme,
       scaffoldBackgroundColor: publicBackground,
       fontFamily: 'Inter',
