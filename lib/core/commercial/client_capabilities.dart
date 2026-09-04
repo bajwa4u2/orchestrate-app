@@ -95,6 +95,19 @@ class ClientCapabilities extends ChangeNotifier {
   void _onSessionChanged() {
     final clientId = AuthSessionController.instance.clientId;
     if (clientId == _forClientId) return;
+
+    // The answer belonged to a different business, so it goes.
+    //
+    // Discarding it is right; discarding it and stopping was the defect. The
+    // fetch resolves while the session is still settling, stamps whatever
+    // client id exists at that moment, and is then thrown away when the real
+    // one arrives — leaving a screen waiting forever on a request that had
+    // already succeeded.
+    //
+    // Re-asking is the consumer's job, not this object's. A singleton that
+    // fetches on a session event reaches the network from wherever the session
+    // happens to change, which is how a state holder becomes something nobody
+    // can reason about. Surfaces ask when they build and find no answer.
     _projection = null;
     _error = null;
     _forClientId = null;

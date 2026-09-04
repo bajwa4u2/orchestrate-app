@@ -80,11 +80,21 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
   void initState() {
     super.initState();
     _capabilities.addListener(_onChanged);
-    if (!_capabilities.hasAnswer &&
-        !_capabilities.isLoading &&
-        _capabilities.error == null) {
-      _capabilities.load().catchError((Object e) => throw e);
+    _askIfUnanswered();
+  }
+
+  /// Asked on build as well as on mount.
+  ///
+  /// Asking only in `initState` was not enough: the session settles after the
+  /// screen appears, which invalidates the first answer, and a screen that only
+  /// ever asks once then waits forever for a reply that will not come.
+  void _askIfUnanswered() {
+    if (_capabilities.hasAnswer ||
+        _capabilities.isLoading ||
+        _capabilities.error != null) {
+      return;
     }
+    _capabilities.load().catchError((Object error) => throw error);
   }
 
   @override
@@ -99,6 +109,7 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
 
   @override
   Widget build(BuildContext context) {
+    _askIfUnanswered();
     return _AccountFrame(
       title: 'Plan & billing',
       context_: 'Your commercial relationship with Orchestrate.',
