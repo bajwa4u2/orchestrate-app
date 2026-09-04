@@ -155,6 +155,16 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
           because: depth.conditionBecause,
         ),
 
+        // The channel, on its own line and in its own words. A relationship can
+        // be active while nothing is getting through, and saying only one of
+        // those would mislead in one direction or the other.
+        if (depth.reachability != Reachability.confirmed)
+          _Channel(
+            reachability: depth.reachability,
+            means: depth.reachabilityMeans,
+            because: depth.reachabilityBecause,
+          ),
+
         // ── WHAT IS WAITING ───────────────────────────────────────────────
         //
         // Referenced from Attention, never rebuilt here. Resolving it there
@@ -419,8 +429,80 @@ class _Standing extends StatelessWidget {
         RelationshipCondition.inEngagement => Icons.handshake_outlined,
         RelationshipCondition.inDispute => Icons.gpp_maybe_outlined,
         RelationshipCondition.active => Icons.trending_flat,
-        RelationshipCondition.unreachable => Icons.mark_email_unread_outlined,
         RelationshipCondition.dormant => Icons.schedule,
         RelationshipCondition.closed => Icons.do_not_disturb_on_outlined,
       };
+}
+
+/// Whether messages are getting through.
+///
+/// Deliberately not styled like the condition: this is a fact about a channel,
+/// and dressing it as a lifecycle state is exactly the conflation this view
+/// exists to avoid. A failed channel earns a border; an unknown one is a line.
+class _Channel extends StatelessWidget {
+  const _Channel({
+    required this.reachability,
+    required this.means,
+    required this.because,
+  });
+
+  final Reachability reachability;
+  final String means;
+  final String because;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final failed = reachability.wantsAttention;
+
+    if (!failed) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.mark_email_unread_outlined,
+                size: 15, color: AppTheme.publicMuted),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(because,
+                  style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppTheme.amber.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.mark_email_unread_outlined,
+              size: 16, color: AppTheme.amber),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(reachability.label,
+                    style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(means,
+                    style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+                const SizedBox(height: 6),
+                Text(because, style: text.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

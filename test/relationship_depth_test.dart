@@ -21,6 +21,9 @@ void main() {
     String key = 'dfwcrossdockxpress.com',
     RelationshipCondition condition = RelationshipCondition.active,
     String because = 'One message went out. Nothing has come back either way.',
+    Reachability reachability = Reachability.unknown,
+    String reachabilityBecause =
+        'One message went out and no delivery evidence came back either way.',
     String? openEngagementId,
     int engagementCount = 0,
     int attention = 0,
@@ -32,6 +35,8 @@ void main() {
         condition: condition,
         conditionMeans: 'There has been recent activity between you.',
         conditionBecause: because,
+        reachability: reachability,
+        reachabilityBecause: reachabilityBecause,
         lastEventAt: DateTime.now().subtract(const Duration(days: 2)),
         openEngagementId: openEngagementId,
         engagementCount: engagementCount,
@@ -51,11 +56,13 @@ void main() {
   RelationshipDepth depth({
     String id = 'r1',
     String name = 'DFW Crossdock Xpress',
-    RelationshipCondition condition = RelationshipCondition.unreachable,
-    String means = 'Nothing has ever reached them. Every attempt came back '
-        'undelivered, so there is no relationship here yet — only an address '
-        'that does not work.',
-    String because = 'The one message sent came back undelivered.',
+    RelationshipCondition condition = RelationshipCondition.active,
+    String means = 'There has been recent activity on this relationship.',
+    String because = 'A message was attempted recently and came back undelivered.',
+    Reachability reachability = Reachability.failed,
+    String reachabilityMeans = 'No confirmed reachability — the latest delivery '
+        'attempt came back undelivered. Nothing has been shown to arrive.',
+    String reachabilityBecause = 'The latest delivery attempt hard-bounced.',
     List<EngagementSummary> engagements = const [],
     String? currentEngagementId,
     List<RelationshipAttention> attention = const [],
@@ -70,6 +77,9 @@ void main() {
         condition: condition,
         conditionMeans: means,
         conditionBecause: because,
+        reachability: reachability,
+        reachabilityMeans: reachabilityMeans,
+        reachabilityBecause: reachabilityBecause,
         origin: RelationshipOrigin(
           says: 'It began when your business first wrote to them.',
           at: DateTime.now().subtract(const Duration(days: 70)),
@@ -155,20 +165,28 @@ void main() {
     expect(find.textContaining('stage'), findsNothing);
   });
 
-  testWidgets('2. a counterparty never reached is not shown as live',
+  testWidgets('2. bounce-only shows both axes and conflates neither',
       (tester) async {
     ClientRelationships.instance.seed(list([
       summary(
-        condition: RelationshipCondition.unreachable,
-        because: 'The one message sent came back undelivered.',
+        condition: RelationshipCondition.active,
+        because: 'A message was attempted recently and came back undelivered.',
+        reachability: Reachability.failed,
+        reachabilityBecause: 'The latest delivery attempt hard-bounced.',
       ),
     ]));
-    await render(tester, 'unreachable in list');
+    await render(tester, 'bounce-only in list');
 
-    // It earns the top band, because a person can change this outcome.
+    // A failed channel earns the top band — a person can change that outcome.
     expect(find.text('NEEDS A LOOK'), findsOneWidget);
-    expect(find.textContaining('never reached'), findsOneWidget);
+    // Condition stays canonical. Reachability is its own word beside it, and
+    // neither is allowed to stand in for the other.
+    expect(find.textContaining('active'), findsOneWidget);
+    expect(find.textContaining('no confirmed reachability'), findsOneWidget);
     expect(find.textContaining('came back undelivered'), findsOneWidget);
+    // Nothing claims they responded.
+    expect(find.textContaining('in touch'), findsNothing);
+    expect(find.textContaining('replied'), findsNothing);
   });
 
   testWidgets('3. a healthy list has no attention band at all', (tester) async {
@@ -185,19 +203,23 @@ void main() {
     expect(find.textContaining('All good'), findsNothing);
   });
 
-  testWidgets('4. depth explains where this stands and why', (tester) async {
+  testWidgets('4. depth shows condition and channel as two separate facts',
+      (tester) async {
     ClientRelationships.instance.seed(
       list([summary()]),
       depth: {'r1': depth(timeline: [entry(occurrences: 1, says: 'A message came back undelivered.')])},
     );
-    await render(tester, 'depth — unreachable', relationshipId: 'r1');
+    await render(tester, 'depth — active, channel failed', relationshipId: 'r1');
 
-    expect(find.text('Never reached'), findsOneWidget);
-    expect(find.textContaining('only an address that does not work'), findsOneWidget);
+    // Condition is canonical and stays out of the channel's business.
     expect(find.textContaining('came back undelivered'), findsWidgets);
+    // The channel gets its own heading and its own sentence.
+    expect(find.text('No confirmed reachability'), findsOneWidget);
+    expect(find.textContaining('Nothing has been shown to arrive'), findsOneWidget);
+    // And nothing anywhere claims the recipient responded.
+    expect(find.textContaining('written back'), findsNothing);
     // The first viewport is not counts.
     expect(find.textContaining('409'), findsNothing);
-    expect(find.textContaining('events'), findsNothing);
   });
 
   testWidgets('5. a healthy relationship stays quiet in depth', (tester) async {
@@ -206,17 +228,25 @@ void main() {
       depth: {
         'r1': depth(
           condition: RelationshipCondition.active,
-          means: 'There has been recent activity between you.',
           because: 'One message went out. Nothing has come back either way.',
+          reachability: Reachability.unknown,
+          reachabilityMeans: 'No confirmed reachability. Something was sent and '
+              'no delivery evidence came back either way, so we cannot say '
+              'whether it arrived.',
+          reachabilityBecause:
+              'One message went out and no delivery evidence came back either way.',
           timeline: [entry(kind: 'SENT', says: 'A message went out.', occurrences: 1)],
         ),
       },
     );
     await render(tester, 'depth — healthy', relationshipId: 'r1');
 
-    expect(find.textContaining('Nothing has come back either way'), findsOneWidget);
+    expect(find.textContaining('Nothing has come back either way'), findsWidgets);
     // A calm condition is one line, not a card demanding the top of the page.
-    expect(find.text('There has been recent activity between you.'), findsNothing);
+    expect(find.text('There has been recent activity on this relationship.'),
+        findsNothing);
+    // An unknown channel is stated plainly and does not alarm anyone.
+    expect(find.text('No confirmed reachability'), findsNothing);
   });
 
   testWidgets('6. a relationship with no undertaking is still meaningful',
@@ -310,6 +340,9 @@ void main() {
       depth: {
         'r1': depth(
           condition: RelationshipCondition.active,
+          reachability: Reachability.confirmed,
+          reachabilityMeans: 'Messages are getting through to them.',
+          reachabilityBecause: 'Delivery was confirmed.',
           timeline: [
             entry(kind: 'REACHED', says: 'A message reached them.', occurrences: 1),
             entry(
@@ -399,7 +432,7 @@ void main() {
   testWidgets('15. every state fits, phone through desktop', (tester) async {
     ClientRelationships.instance.seed(
       list([
-        summary(condition: RelationshipCondition.unreachable),
+        summary(reachability: Reachability.failed),
         summary(id: 'r2', name: 'Acme Manufacturing Group Limited', key: 'acme.test'),
         summary(id: 'r3', name: 'BrightFarms', key: 'brightfarms.com', attention: 2),
       ]),

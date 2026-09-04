@@ -42,10 +42,6 @@ enum RelationshipCondition {
   inEngagement('IN_ENGAGEMENT', 'In an undertaking'),
   inDispute('IN_DISPUTE', 'Disputed'),
   active('ACTIVE', 'Active'),
-
-  /// Every attempt to reach them failed. Four production relationships are in
-  /// this state and were previously reported as active.
-  unreachable('UNREACHABLE', 'Never reached'),
   dormant('DORMANT', 'Quiet'),
   closed('CLOSED', 'Closed');
 
@@ -62,9 +58,39 @@ enum RelationshipCondition {
 
   /// Whether this condition should draw the eye. Problems and decisions earn
   /// prime space; a healthy relationship stays quiet.
-  bool get wantsAttention =>
-      this == RelationshipCondition.inDispute ||
-      this == RelationshipCondition.unreachable;
+  bool get wantsAttention => this == RelationshipCondition.inDispute;
+}
+
+/// WHETHER A MESSAGE CAN PRESENTLY REACH THEM.
+///
+/// A separate axis from condition, and never a substitute for it. A
+/// relationship can be active with reachability failed — the first describes
+/// durable commercial continuity, the second describes a channel.
+///
+/// This distinction has to be legible on screen. Collapsing them is how a
+/// business either believes it has a live relationship with an address that
+/// does not work, or believes a real relationship is over because one message
+/// bounced.
+enum Reachability {
+  confirmed('CONFIRMED', 'Reaching them'),
+  failed('FAILED', 'No confirmed reachability'),
+  unknown('UNKNOWN', 'No confirmed reachability'),
+  notAttempted('NOT_ATTEMPTED', 'Nothing sent');
+
+  const Reachability(this.wire, this.label);
+  final String wire;
+  final String label;
+
+  static Reachability parse(String? value) {
+    for (final r in Reachability.values) {
+      if (r.wire == value) return r;
+    }
+    return Reachability.notAttempted;
+  }
+
+  /// A failed channel is worth a person's attention. An unknown one is worth
+  /// saying plainly and not worth alarming anyone about.
+  bool get wantsAttention => this == Reachability.failed;
 }
 
 class RelationshipSummary {
@@ -75,6 +101,8 @@ class RelationshipSummary {
     required this.condition,
     required this.conditionMeans,
     required this.conditionBecause,
+    required this.reachability,
+    required this.reachabilityBecause,
     required this.lastEventAt,
     required this.openEngagementId,
     required this.engagementCount,
@@ -89,6 +117,10 @@ class RelationshipSummary {
 
   /// What was true that made this the answer. Never a bare label.
   final String conditionBecause;
+
+  /// Whether a message can presently reach them. A separate question.
+  final Reachability reachability;
+  final String reachabilityBecause;
   final DateTime? lastEventAt;
   final String? openEngagementId;
   final int engagementCount;
@@ -103,6 +135,8 @@ class RelationshipSummary {
         condition: RelationshipCondition.parse(j['condition'] as String?),
         conditionMeans: (j['conditionMeans'] as String?) ?? '',
         conditionBecause: (j['conditionBecause'] as String?) ?? '',
+        reachability: Reachability.parse(j['reachability'] as String?),
+        reachabilityBecause: (j['reachabilityBecause'] as String?) ?? '',
         lastEventAt: DateTime.tryParse(j['lastEventAt']?.toString() ?? ''),
         openEngagementId: _text(j['openEngagementId']),
         engagementCount: (j['engagementCount'] as num?)?.toInt() ?? 0,
@@ -266,6 +300,9 @@ class RelationshipDepth {
     required this.condition,
     required this.conditionMeans,
     required this.conditionBecause,
+    required this.reachability,
+    required this.reachabilityMeans,
+    required this.reachabilityBecause,
     required this.origin,
     required this.engagements,
     required this.currentEngagementId,
@@ -281,6 +318,12 @@ class RelationshipDepth {
   final RelationshipCondition condition;
   final String conditionMeans;
   final String conditionBecause;
+
+  /// The channel, not the relationship. Shown beside the condition and never
+  /// folded into it.
+  final Reachability reachability;
+  final String reachabilityMeans;
+  final String reachabilityBecause;
   final RelationshipOrigin origin;
   final List<EngagementSummary> engagements;
   final String? currentEngagementId;
@@ -305,6 +348,8 @@ class RelationshipDepth {
         id: '', counterparty: '', counterpartyKey: '',
         condition: RelationshipCondition.dormant,
         conditionMeans: '', conditionBecause: '',
+        reachability: Reachability.notAttempted,
+        reachabilityMeans: '', reachabilityBecause: '',
         origin: RelationshipOrigin.fromJson(null),
         engagements: const [], currentEngagementId: null,
         attention: const [], timeline: const [], eventCount: 0,
@@ -322,6 +367,9 @@ class RelationshipDepth {
       condition: RelationshipCondition.parse(j['condition'] as String?),
       conditionMeans: (j['conditionMeans'] as String?) ?? '',
       conditionBecause: (j['conditionBecause'] as String?) ?? '',
+      reachability: Reachability.parse(j['reachability'] as String?),
+      reachabilityMeans: (j['reachabilityMeans'] as String?) ?? '',
+      reachabilityBecause: (j['reachabilityBecause'] as String?) ?? '',
       origin: RelationshipOrigin.fromJson(
           j['origin'] is Map ? Map<String, dynamic>.from(j['origin'] as Map) : null),
       engagements: ((j['engagements'] as List?) ?? const [])

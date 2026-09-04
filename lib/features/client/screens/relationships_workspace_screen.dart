@@ -113,8 +113,10 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
 
     // Anything contested or never reached comes first, because those are the
     // ones where a person can change the outcome.
-    final wanting = list.relationships.where((r) => r.condition.wantsAttention || r.attention > 0);
-    final rest = list.relationships.where((r) => !(r.condition.wantsAttention || r.attention > 0));
+    bool needsALook(RelationshipSummary r) =>
+        r.condition.wantsAttention || r.reachability.wantsAttention || r.attention > 0;
+    final wanting = list.relationships.where(needsALook);
+    final rest = list.relationships.where((r) => !needsALook(r));
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -173,22 +175,27 @@ class _Row extends StatelessWidget {
       // "one message went out, nothing has come back either way" does.
       detail: summary.conditionBecause,
       meta: _meta,
-      tone: switch (summary.condition) {
-        RelationshipCondition.inDispute => RowTone.problem,
-        RelationshipCondition.unreachable => RowTone.problem,
-        RelationshipCondition.inEngagement => RowTone.good,
-        RelationshipCondition.active => RowTone.neutral,
-        RelationshipCondition.dormant => RowTone.waiting,
-        RelationshipCondition.closed => RowTone.neutral,
-      },
+      tone: summary.reachability.wantsAttention
+          ? RowTone.problem
+          : switch (summary.condition) {
+              RelationshipCondition.inDispute => RowTone.problem,
+              RelationshipCondition.inEngagement => RowTone.good,
+              RelationshipCondition.active => RowTone.neutral,
+              RelationshipCondition.dormant => RowTone.waiting,
+              RelationshipCondition.closed => RowTone.neutral,
+            },
       onTap: () => onOpen(summary),
       action: const Icon(Icons.chevron_right, size: 18, color: AppTheme.publicMuted),
     );
   }
 
-  /// Condition is a word, never a colour alone.
+  /// Two axes, two words, both spelled out — never a colour alone. A
+  /// relationship can be active and still not reachable, and a row that showed
+  /// only one of those would mislead in one direction or the other.
   String get _meta => [
         summary.condition.label.toLowerCase(),
+        if (summary.reachability != Reachability.confirmed)
+          summary.reachability.label.toLowerCase(),
         if (summary.openEngagementId != null) 'in an undertaking',
         if (summary.attention > 0)
           summary.attention == 1 ? '1 waiting' : '${summary.attention} waiting',

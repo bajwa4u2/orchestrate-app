@@ -7,6 +7,7 @@ import '../auth/auth_session.dart';
 export '../../data/repositories/client/client_relationship_workspace_repository.dart'
     show
         EngagementSummary,
+        Reachability,
         RelationshipAttention,
         RelationshipCondition,
         RelationshipDepth,
