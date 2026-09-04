@@ -402,6 +402,11 @@ class _CaseCardState extends State<_CaseCard> {
     final caseType = c['caseType'] as String? ?? '';
     final state = c['state'] as Map? ?? {};
     final stateLabel = state['label'] as String? ?? state['value'] as String? ?? '—';
+    // How long this has been waiting. A queue that shows severity but not age
+    // cannot distinguish a case raised a minute ago from one nobody has looked
+    // at for a fortnight, and those need different responses.
+    final since = DateTime.tryParse('${state['since'] ?? ''}');
+    final waited = since == null ? null : _howLong(DateTime.now().difference(since));
     final actions = c['actions'] as List? ?? [];
     final isWorking = widget.action?.isWorking ?? false;
 
@@ -480,11 +485,14 @@ class _CaseCardState extends State<_CaseCard> {
                               .titleLarge
                               ?.copyWith(fontSize: 14),
                         ),
-                        if (clientName != null || campaignName != null)
+                        if (clientName != null || campaignName != null || waited != null)
                           Text(
-                            [clientName, if (campaignName != null && campaignName != entityLabel) campaignName]
-                                .whereType<String>()
-                                .join(' · '),
+                            [
+                              clientName,
+                              if (campaignName != null && campaignName != entityLabel)
+                                campaignName,
+                              if (waited != null) waited,
+                            ].whereType<String>().join(' · '),
                             style: const TextStyle(
                                 fontSize: 11, color: AppTheme.subdued),
                           ),
@@ -512,10 +520,24 @@ class _CaseCardState extends State<_CaseCard> {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Icon(
-                        _expanded ? Icons.expand_less : Icons.expand_more,
-                        size: 16,
-                        color: AppTheme.subdued,
+                      // Named, because a bare chevron does not tell an operator
+                      // that this is where the decision is made. The list states
+                      // what happened; review is where it is acted on.
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _expanded ? 'Close' : 'Review',
+                            style: const TextStyle(
+                                fontSize: 11, color: AppTheme.subdued),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            _expanded ? Icons.expand_less : Icons.expand_more,
+                            size: 16,
+                            color: AppTheme.subdued,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -720,6 +742,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final outcome = action['outcome'] as String?;
+    final records = action['records'] as String?;
     final color = _outcomeColor(outcome);
     return OutlinedButton(
       onPressed: onTap,
@@ -730,12 +753,29 @@ class _ActionButton extends StatelessWidget {
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: Column(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(action['label'] as String? ?? '—',
               style: const TextStyle(fontSize: 12)),
-          if (outcome != null)
+          // What pressing this writes, in the server's words. An operator
+          // choosing between five dispositions is deciding what is true about
+          // a message, and each answer leaves a different permanent record.
+          // A row of buttons that says only what it is called asks someone to
+          // guess at the consequence of the one they press.
+          if (records != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text(
+                records,
+                style: const TextStyle(
+                    fontSize: 10, color: AppTheme.subdued, height: 1.3),
+              ),
+            )
+          else if (outcome != null)
             Text(
               outcome,
               style: TextStyle(
@@ -744,6 +784,7 @@ class _ActionButton extends StatelessWidget {
                   letterSpacing: 0.4),
             ),
         ],
+        ),
       ),
     );
   }
@@ -974,3 +1015,10 @@ class _CaseAction {
 }
 
 enum _CAKind { working, done, error }
+
+/// Age in words an operator reads at a glance.
+String _howLong(Duration d) {
+  if (d.inMinutes < 60) return 'just now';
+  if (d.inHours < 24) return '${d.inHours}h waiting';
+  return '${d.inDays}d waiting';
+}
