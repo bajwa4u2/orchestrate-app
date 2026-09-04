@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:orchestrate_app/core/relationships/client_relationships.dart';
+import 'package:orchestrate_app/data/repositories/client/client_engagement_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/engagement_panel.dart';
 import 'package:orchestrate_app/features/client/screens/relationships_workspace_screen.dart';
 
 /// THE RELATIONSHIP STATES, RENDERED AND READ.
@@ -125,6 +127,14 @@ void main() {
         completedAt: state == 'COMPLETED' ? DateTime.now() : null,
         abandonedAt: state == 'ABANDONED' ? DateTime.now() : null,
       );
+
+  setUp(() {
+    // Every relationship renders the containment, so the default is a
+    // relationship that holds nothing — which is also what production is.
+    EngagementPanel.testRepository = _Undertakings(const []);
+  });
+
+  tearDown(() => EngagementPanel.testRepository = null);
 
   Future<void> render(
     WidgetTester tester,
@@ -280,12 +290,20 @@ void main() {
         ),
       },
     );
+    EngagementPanel.testRepository = _Undertakings([
+      _row(id: 'e1', purpose: 'Q4 pilot', state: 'OPEN'),
+    ]);
     await render(tester, 'depth — one engagement', relationshipId: 'r1');
+    await tester.pumpAndSettle();
 
-    expect(find.text('CURRENT UNDERTAKING'), findsOneWidget);
+    // Inside the relationship, under its own heading, and reached without
+    // leaving the relationship. No route, no top-level list.
+    expect(find.text('UNDERTAKINGS'), findsOneWidget);
     expect(find.text('Q4 pilot'), findsOneWidget);
-    // Honest about what is not built rather than implying a lifecycle exists.
-    expect(find.textContaining('not built yet'), findsOneWidget);
+    // It used to say the lifecycle was not built. It is built: the acts that
+    // end an undertaking are here, on the undertaking, inside the relationship.
+    expect(find.textContaining('not built yet'), findsNothing);
+    expect(find.text('Open an undertaking'), findsOneWidget);
   });
 
   testWidgets('8. several undertakings, and only the open one is current',
@@ -305,15 +323,22 @@ void main() {
         ),
       },
     );
+    EngagementPanel.testRepository = _Undertakings([
+      _row(id: 'e1', purpose: 'Q4 pilot', state: 'OPEN'),
+      _row(id: 'e2', purpose: 'Pilot', state: 'COMPLETED'),
+      _row(id: 'e3', purpose: 'Trial', state: 'ABANDONED'),
+    ]);
     await render(tester, 'depth — multiple engagements', relationshipId: 'r1');
+    await tester.pumpAndSettle();
 
     expect(find.text('Q4 pilot'), findsOneWidget);
-    // Earlier ones are history, behind a fold — never dressed up as current.
+    // Ended ones are behind a fold — never dressed up as current.
     expect(find.text('Pilot'), findsNothing);
-    expect(find.textContaining('Show 2 earlier undertakings'), findsOneWidget);
+    expect(find.textContaining('Show 2 undertakings that have ended'),
+        findsOneWidget);
 
-    await tester.tap(find.textContaining('Show 2 earlier undertakings'));
-    await tester.pump();
+    await tester.tap(find.textContaining('Show 2 undertakings that have ended'));
+    await tester.pumpAndSettle();
     expect(find.text('Pilot'), findsOneWidget);
     expect(find.text('Trial'), findsOneWidget);
     expect(find.textContaining('does not end because an undertaking does'),
@@ -458,4 +483,51 @@ void main() {
       debugPrint('  ok  ${size.width.toInt()}x${size.height.toInt()} — no overflow');
     }
   });
+}
+
+Map<String, dynamic> _row({
+  required String id,
+  required String purpose,
+  required String state,
+}) =>
+    {
+      'id': id,
+      'purpose': purpose,
+      'state': state,
+      'stateMeans': state == 'OPEN'
+          ? 'This undertaking is under way.'
+          : state == 'COMPLETED'
+              ? 'This undertaking reached its conclusion.'
+              : 'This undertaking stopped without reaching its conclusion.',
+      'origin': 'CLIENT_DECISION',
+      'originMeans': 'Your business decided this undertaking exists.',
+      'openedAt': DateTime.now().toIso8601String(),
+      'blocker': null,
+      'needsAHuman': false,
+    };
+
+/// Stands in for the engagement authority so a relationship test asserts
+/// containment rather than the behaviour of a failed network read.
+class _Undertakings implements ClientEngagementRepository {
+  _Undertakings(this.rows);
+
+  final List<Map<String, dynamic>> rows;
+
+  @override
+  Future<RelationshipEngagements> forRelationship(String relationshipId) async =>
+      RelationshipEngagements.fromJson({
+        'relationshipId': relationshipId,
+        'counterparty': 'DFW Crossdock Xpress',
+        'says': rows.isEmpty
+            ? 'No bounded undertaking has been established here yet.'
+            : '${rows.where((r) => r['state'] == 'OPEN').length} of '
+                '${rows.length} under way.',
+        'engagements': rows,
+      });
+
+  @override
+  Future<EngagementDetail?> detail(String engagementId) async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

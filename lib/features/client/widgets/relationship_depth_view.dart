@@ -9,6 +9,7 @@ import 'package:orchestrate_app/core/ui/governed_action.dart';
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
+import 'package:orchestrate_app/features/client/widgets/engagement_panel.dart';
 
 /// ONE DURABLE RELATIONSHIP.
 ///
@@ -43,10 +44,11 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
   Object? _error;
 
   // Local state, and only ever this: what is expanded. Condition, timeline and
-  // engagement containment are server truth and are never held here.
+  // engagement containment are server truth and are never held here — the
+  // undertakings expander lives inside EngagementPanel with the data it
+  // expands, rather than being a flag up here about somebody else's list.
   bool _showHistory = false;
   bool _showProvenance = false;
-  bool _showPastEngagements = false;
 
   @override
   void initState() {
@@ -142,8 +144,6 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
     }
 
     final text = Theme.of(context).textTheme;
-    final current = depth.currentEngagement;
-    final past = depth.pastEngagements;
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -192,51 +192,25 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
             ],
           ),
 
-        // ── THE CURRENT UNDERTAKING ───────────────────────────────────────
+        // ── WHAT HAS BEEN TAKEN ON ────────────────────────────────────────
         //
-        // Contained inside the relationship, never a competing domain. Its
-        // absence is not a void: durable context legitimately exists before any
-        // undertaking begins, and most production relationships are there.
-        if (current != null)
-          WorkspaceBand(
-            title: 'CURRENT UNDERTAKING',
-            children: [
-              WorkspaceRow(
-                title: current.reference ?? 'Open undertaking',
-                detail: 'Opened ${current.openedAt != null ? _when(current.openedAt!) : 'recently'}. '
-                    'The commercial detail of an undertaking is not built yet.',
-                meta: current.label.toLowerCase(),
-                tone: RowTone.good,
-              ),
-            ],
-          ),
-
-        if (past.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: () => setState(() => _showPastEngagements = !_showPastEngagements),
-            icon: Icon(_showPastEngagements ? Icons.expand_less : Icons.expand_more,
-                size: 18),
-            label: Text(_showPastEngagements
-                ? 'Hide earlier undertakings'
-                : past.length == 1
-                    ? 'Show 1 earlier undertaking'
-                    : 'Show ${past.length} earlier undertakings'),
-          ),
-          if (_showPastEngagements)
-            WorkspaceBand(
-              title: 'EARLIER UNDERTAKINGS',
-              children: [
-                for (final e in past)
-                  WorkspaceRow(
-                    title: e.reference ?? 'Undertaking',
-                    detail: 'A relationship does not end because an undertaking does.',
-                    meta: e.label.toLowerCase(),
-                    tone: RowTone.neutral,
-                  ),
-              ],
-            ),
-        ],
+        // Contained inside the relationship, never a competing domain, and
+        // never a route of its own. Absence is not a void: durable context
+        // legitimately exists before any undertaking begins, and most
+        // production relationships are exactly there.
+        //
+        // The list, the provenance and the lifecycle come from the engagement
+        // authority rather than being rebuilt from the depth payload. Two
+        // surfaces assembling engagement semantics from rows is how they come
+        // to disagree about whether something is finished — which is also why
+        // this replaces a summary that could only say "the commercial detail
+        // of an undertaking is not built yet".
+        EngagementPanel(
+          relationshipId: widget.relationshipId,
+          // Condition above is derived partly from containment, so a lifecycle
+          // change is re-read from the server rather than guessed at here.
+          onChanged: _load,
+        ),
 
         // ── HISTORY ───────────────────────────────────────────────────────
         const SizedBox(height: 8),
