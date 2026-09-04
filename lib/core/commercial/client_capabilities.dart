@@ -1,0 +1,129 @@
+import 'package:flutter/material.dart';
+
+import '../../data/repositories/client/client_capability_repository.dart';
+import '../auth/auth_session.dart';
+
+export '../../data/repositories/client/client_capability_repository.dart'
+    show
+        CapabilityProjection,
+        CapabilityVerdict,
+        Entitlement,
+        EntitlementSource,
+        EntitlementState;
+
+/// THE ONE PLACE THE CLIENT APP KNOWS WHAT IT MAY OPERATE.
+///
+/// Market, Relationship, Engagement and Plan & Billing all need the same
+/// answer. Left alone each would decide for itself what a plan permits, and
+/// the product would carry a second commercial doctrine that drifts from the
+/// server's — with the customer looking at whichever copy is wrong.
+///
+/// So this holds the server's projection and interprets none of it. Every
+/// sentence a person reads about a commercial boundary was written by the
+/// authority that made the decision.
+class ClientCapabilities extends ChangeNotifier {
+  ClientCapabilities._() {
+    // Entitlement belongs to an organisation. When the session changes hands
+    // the previous answer is not stale, it is about somebody else's business.
+    AuthSessionController.instance.addListener(_onSessionChanged);
+  }
+
+  static final ClientCapabilities instance = ClientCapabilities._();
+
+  final ClientCapabilityRepository _repository = ClientCapabilityRepository();
+
+  CapabilityProjection? _projection;
+  Object? _error;
+  bool _loading = false;
+  String? _forClientId;
+  Future<CapabilityProjection>? _inFlight;
+
+  CapabilityProjection? get projection => _projection;
+  Object? get error => _error;
+  bool get isLoading => _loading;
+  bool get hasAnswer => _projection != null;
+
+  Entitlement? get entitlement => _projection?.entitlement;
+
+  /// Whether a capability is permitted. Unknown is never permitted — a client
+  /// that has not been told cannot invent a yes.
+  bool may(String capability) => _projection?.may(capability) ?? false;
+
+  /// Why not, in the server's own words. Null when it is permitted, or when we
+  /// have not been told yet.
+  CapabilityVerdict? refusalFor(String capability) {
+    final verdict = _projection?.forCapability(capability);
+    return verdict == null || verdict.permitted ? null : verdict;
+  }
+
+  Future<CapabilityProjection> load() {
+    final existing = _inFlight;
+    if (existing != null) return existing;
+
+    _loading = true;
+    _error = null;
+    notifyListeners();
+
+    final future = _repository.fetch().then((projection) {
+      _projection = projection;
+      _forClientId = AuthSessionController.instance.clientId;
+      _error = null;
+      return projection;
+    }).catchError((Object error) {
+      _error = error;
+      throw error;
+    }).whenComplete(() {
+      _loading = false;
+      _inFlight = null;
+      notifyListeners();
+    });
+
+    _inFlight = future;
+    return future;
+  }
+
+  Future<void> refresh() async {
+    _projection = null;
+    try {
+      await load();
+    } catch (_) {
+      // The error is held and rendered. Rethrowing here would take down
+      // whichever screen happened to trigger the refresh.
+    }
+  }
+
+  void _onSessionChanged() {
+    final clientId = AuthSessionController.instance.clientId;
+    if (clientId == _forClientId) return;
+    _projection = null;
+    _error = null;
+    _forClientId = null;
+    notifyListeners();
+  }
+
+  /// A test seam, so every commercial state can be rendered and read as a
+  /// person would see it. Nothing in the app calls it.
+  @visibleForTesting
+  void seed(CapabilityProjection? projection, {Object? error}) {
+    _projection = projection;
+    _error = error;
+    _loading = false;
+    _inFlight = null;
+    _forClientId = AuthSessionController.instance.clientId;
+    notifyListeners();
+  }
+}
+
+/// The capability names the server uses. Strings, not a client-side enum of
+/// permissions — the list is the server's to grow.
+class Capabilities {
+  const Capabilities._();
+
+  static const readOwnRecords = 'READ_OWN_RECORDS';
+  static const configureBusiness = 'CONFIGURE_BUSINESS';
+  static const manageAccount = 'MANAGE_ACCOUNT';
+  static const export = 'EXPORT';
+  static const operateCommercially = 'OPERATE_COMMERCIALLY';
+  static const researchCounterparties = 'RESEARCH_COUNTERPARTIES';
+  static const governedExecution = 'GOVERNED_EXECUTION';
+}

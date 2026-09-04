@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
+import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/screens/client_authorised_people_screen.dart';
 
 /// THE ACCOUNT LAYER — OUTSIDE THE OPERATIONAL WORKSPACE.
@@ -64,27 +66,53 @@ class _PeopleAndAuthority extends StatelessWidget {
   }
 }
 
-class _PlanAndBilling extends StatelessWidget {
+class _PlanAndBilling extends StatefulWidget {
   const _PlanAndBilling();
 
   @override
-  Widget build(BuildContext context) {
-    final session = AuthSessionController.instance;
-    final plan = session.commercialPlan ?? 'Not set';
-    final tier = session.commercialTier;
+  State<_PlanAndBilling> createState() => _PlanAndBillingState();
+}
 
+class _PlanAndBillingState extends State<_PlanAndBilling> {
+  final ClientCapabilities _capabilities = ClientCapabilities.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _capabilities.addListener(_onChanged);
+    if (!_capabilities.hasAnswer &&
+        !_capabilities.isLoading &&
+        _capabilities.error == null) {
+      _capabilities.load().catchError((Object e) => throw e);
+    }
+  }
+
+  @override
+  void dispose() {
+    _capabilities.removeListener(_onChanged);
+    super.dispose();
+  }
+
+  void _onChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return _AccountFrame(
       title: 'Plan & billing',
-      context_: 'Your subscription to Orchestrate.',
+      context_: 'Your commercial relationship with Orchestrate.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Facts that used to be pills on every workspace surface. They are
-          // true, and this is where they are useful.
-          WorkspaceRow(
-            title: 'Plan',
-            detail: tier != null ? '$plan · $tier' : plan,
-          ),
+          // The entitlement, derived by the server, with the reason it came
+          // out that way. This replaced a "Plan" row reading a plan name off
+          // the session — a stored word that could not tell an expired
+          // subscription from a live one, and had no idea a grant was not a
+          // purchase.
+          const EntitlementSummary(),
+
+          const SizedBox(height: 24),
           WorkspaceRow(
             title: 'Subscription and payment',
             detail: 'Manage the subscription, payment method and receipts.',

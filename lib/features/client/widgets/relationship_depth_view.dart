@@ -6,6 +6,8 @@ import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/ui/authority_gate.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
+import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
+import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
 
 /// ONE DURABLE RELATIONSHIP.
@@ -325,6 +327,11 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
           counterpartyName: depth.counterparty,
           onChanged: () => _relationships.invalidate(relationshipId: depth.id),
         ),
+        // A separate axis again. Contact readiness says whether anyone can be
+        // reached; this says whether the business has activated the service
+        // that would do the reaching. Neither is the other, and neither is
+        // authority.
+        const CommercialBoundary(capability: Capabilities.operateCommercially),
         const SizedBox(height: 12),
         // Market makes an opportunity visible; the relationship makes the next
         // act visible. Neither may act on it — the authority contract answers,

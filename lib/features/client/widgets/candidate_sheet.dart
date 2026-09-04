@@ -5,6 +5,8 @@ import 'package:orchestrate_app/core/market/client_market.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/ui/authority_gate.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
+import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
+import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
 
 /// ONE COUNTERPARTY, IN DEPTH.
@@ -172,6 +174,12 @@ class _CandidateSheetState extends State<CandidateSheet> {
             ),
           const SizedBox(height: 12),
           _dispositions(c),
+          // Where the commercial boundary belongs: at the act, not above the
+          // screen. A business with no plan can still read what Orchestrate
+          // found and why — it just cannot put the company's name to a
+          // decision to pursue.
+          const CommercialBoundary(
+              capability: Capabilities.operateCommercially, compact: true),
 
           if (_refusal != null) RefusalNotice(refusal: _refusal!),
 

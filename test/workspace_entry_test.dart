@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:orchestrate_app/app/routing/app_router.dart';
 import 'package:orchestrate_app/core/attention/client_attention.dart';
+import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/market/client_market.dart';
 import 'package:orchestrate_app/core/relationships/client_relationships.dart';
@@ -58,6 +59,7 @@ void main() {
     ClientMarket.instance.seed(null, error: 'not asked in this test');
     ClientRelationships.instance.seed(null, error: 'not asked in this test');
     ClientAttention.instance.seed(null, error: 'not asked in this test');
+    ClientCapabilities.instance.seed(null, error: 'not asked in this test');
   }
 
   /// Mounts the router only. Screens fetch from the network as soon as they
