@@ -129,7 +129,23 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
 
     try {
       if (method == 'POST') {
-        await _repo.rawPost(endpoint, body: reason != null ? {'reason': reason} : {});
+        // The server decides what an action means; the console posts what it
+        // was handed. `body` carries fields already determined server-side —
+        // which of five quarantine dispositions this button records, for
+        // instance — and `reasonField` names where the operator's own account
+        // of the decision belongs. Quarantine calls it `evidence`, because what
+        // is recorded is what the operator determined rather than why they
+        // pressed a button.
+        //
+        // Nothing here interprets a case type. A console that grew a switch on
+        // caseType would become a second copy of the domain, and the two would
+        // disagree the first time one of them changed.
+        final serverBody = action['body'];
+        final reasonField = action['reasonField'] as String? ?? 'reason';
+        await _repo.rawPost(endpoint, body: {
+          if (serverBody is Map) ...Map<String, dynamic>.from(serverBody),
+          if (reason != null) reasonField: reason,
+        });
       } else {
         await _repo.rawGet(endpoint);
       }
