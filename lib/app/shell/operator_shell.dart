@@ -76,50 +76,102 @@ class _OperatorShellState extends State<OperatorShell> {
   }
 
   List<_NavGroup> get groups => [
+        // ORGANISED BY WHAT AN OPERATOR IS RESPONSIBLE FOR.
+        //
+        // The old grouping — Operations, Support, System, Developer — described
+        // where code lived rather than what work is owed. Seven items sat under
+        // "Operations" with nothing in common except that they were not the
+        // other three.
+        //
+        // Two of the target domains have no surface yet and are deliberately
+        // absent rather than present and empty. AUTHORITY & GOVERNANCE has real
+        // work — two designations are waiting on a decision right now — but that
+        // work surfaces as Work Queue cases, and a nav item leading to a page
+        // that only says "see the work queue" is a worse answer than no nav
+        // item. COMMERCIAL OPERATIONS has eight live endpoints (agreements,
+        // invoices, obligations, acceptances, standing) and no screen at all;
+        // it appears when it has one.
         _NavGroup(
-          label: 'Operations',
+          label: 'Work',
           attentionKey: 'ops',
           items: const [
+            // Everything a human owes a decision on, whatever produced it.
             _NavItem('Work queue', '/ops/work', Icons.inbox_outlined),
-            _NavItem('Clients', '/ops/clients', Icons.people_outline),
-            _NavItem('Campaigns', '/ops/campaigns', Icons.campaign_outlined),
-            _NavItem(
-                'Inventory & imports', '/ops/inventory', Icons.inventory_2_outlined),
-            _NavItem('Transport', '/ops/transport', Icons.send_outlined),
-            _NavItem(
-                'Dispatch', '/ops/dispatch', Icons.policy_outlined),
-            _NavItem('Jobs', '/ops/jobs', Icons.work_outline),
           ],
         ),
         _NavGroup(
-          label: 'Support',
+          label: 'Clients & businesses',
+          attentionKey: null,
+          items: const [
+            _NavItem('Clients', '/ops/clients', Icons.people_outline),
+            // Counterparty records and how they arrived. It is the same
+            // subject as Clients seen from the data side, not a separate one.
+            _NavItem('Contacts & imports', '/ops/inventory',
+                Icons.inventory_2_outlined),
+          ],
+        ),
+        _NavGroup(
+          label: 'Communication & delivery',
+          attentionKey: null,
+          items: const [
+            // The mailbox and sending identity a business communicates through.
+            _NavItem('Transport', '/ops/transport', Icons.send_outlined),
+            // Whether a specific message may go, and what happened when it did.
+            _NavItem('Dispatch', '/ops/dispatch', Icons.policy_outlined),
+            _NavItem('Campaigns', '/ops/campaigns', Icons.campaign_outlined),
+          ],
+        ),
+        _NavGroup(
+          label: 'Trust & integrity',
+          attentionKey: null,
+          items: const [
+            // Provenance of what was sent: template lineage, attribution,
+            // recovery. Reached only from System & tools before now.
+            _NavItem('Message provenance', '/ops/governance',
+                Icons.verified_outlined),
+            // What was done, by whom, to what, and when.
+            _NavItem('Audit history', '/ops/history', Icons.history_outlined),
+          ],
+        ),
+        _NavGroup(
+          label: 'System operations',
+          attentionKey: null,
+          items: const [
+            _NavItem('Jobs', '/ops/jobs', Icons.work_outline),
+            _NavItem('System & tools', '/ops/system', Icons.settings_outlined),
+          ],
+        ),
+        // A DEVIATION FROM THE SEVEN, STATED RATHER THAN HIDDEN.
+        //
+        // Inquiries and Feedback are both somebody outside asking for a person.
+        // That is not communication infrastructure, not a client record, and
+        // not system health, so forcing either into one of those would misname
+        // it. They keep their own heading because the work is genuinely a
+        // different shape: listening rather than operating.
+        _NavGroup(
+          label: 'Listening',
           attentionKey: null,
           items: const [
             _NavItem('Inquiries', '/ops/inquiries', Icons.support_agent_outlined),
-            // Same job as Inquiries — listening — so it lives here rather
-            // than becoming a second console of its own.
             _NavItem('Feedback', '/ops/feedback', Icons.rate_review_outlined),
           ],
         ),
+        // NOT PART OF THE OPERATOR PRODUCT.
+        //
+        // Logs, raw runtime and debugging are developer observability, and the
+        // frozen distinction says they must not be mixed with operational
+        // control. They stay reachable — deleting them would strand the
+        // surfaces and removing them from navigation would make them URL-only,
+        // which is the thing this reconstruction exists to end — but they sit
+        // last, under their own name, and nothing above them links here.
         _NavGroup(
-          label: 'System',
+          label: 'Engineering',
           attentionKey: null,
           items: const [
-            _NavItem('Audit history', '/ops/history', Icons.history_outlined),
-            _NavItem(
-                'System & tools', '/ops/system', Icons.settings_outlined),
-          ],
-        ),
-        _NavGroup(
-          label: 'Developer',
-          attentionKey: null,
-          items: const [
-            _NavItem('System Doctor', '/operator/system-doctor',
+            _NavItem('System doctor', '/operator/system-doctor',
                 Icons.health_and_safety_outlined),
-            _NavItem(
-                'Backend surfaces', '/operator/system', Icons.code_outlined),
-            _NavItem(
-                'Debug / system checks', '/ops/debug', Icons.tune_outlined),
+            _NavItem('Backend surfaces', '/operator/system', Icons.code_outlined),
+            _NavItem('Debug checks', '/ops/debug', Icons.tune_outlined),
           ],
         ),
       ];
@@ -278,15 +330,19 @@ class _TopBar extends StatelessWidget {
         if (item.path == currentPath) return '${group.label} · ${item.label}';
       }
     }
-    if (currentPath.startsWith('/ops/inquiries/')) return 'Support · Inquiry detail';
-    if (currentPath.startsWith('/ops/dispatch')) return 'Operations · Dispatch';
-    if (currentPath.startsWith('/ops/transport')) return 'Operations · Transport';
-    if (currentPath.startsWith('/ops/campaigns')) return 'Operations · Campaigns';
-    if (currentPath.startsWith('/ops/clients')) return 'Operations · Clients';
-    if (currentPath.startsWith('/ops/inventory')) return 'Operations · Inventory & imports';
-    if (currentPath.startsWith('/ops/jobs')) return 'Operations · Jobs';
-    if (currentPath.startsWith('/ops/history')) return 'System · Audit history';
-    if (currentPath.startsWith('/ops/system')) return 'System · Tools';
+    // Sub-routes inherit the heading of whatever contains them. The exact
+    // matches above handle destinations; these are the paths beneath one.
+    //
+    // These used to name groups — Operations, Support, System — that the
+    // navigation no longer has, so a person deeper in the product was told they
+    // were somewhere that does not exist.
+    for (final group in groups) {
+      for (final item in group.items) {
+        if (currentPath.startsWith('${item.path}/')) {
+          return '${group.label} · ${item.label}';
+        }
+      }
+    }
     return 'Operator';
   }
 
