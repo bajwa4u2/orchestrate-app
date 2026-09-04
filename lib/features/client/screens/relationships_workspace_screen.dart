@@ -1,312 +1,224 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
+import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
-import 'package:orchestrate_app/core/ui/governed_action.dart';
-import 'package:orchestrate_app/data/repositories/client/client_relationship_workspace_repository.dart';
-import 'package:orchestrate_app/features/client/widgets/engagement_lifecycle.dart';
-import 'package:orchestrate_app/features/client/widgets/relationship_timeline.dart';
+import 'package:orchestrate_app/features/client/widgets/relationship_depth_view.dart';
 
-/// THE WORKSPACE CENTRE.
+/// RELATIONSHIPS — THE DURABLE UNIT OF ACCOUNT.
 ///
-/// Relationship is the durable unit of account, so it is where the work
-/// happens — not a list you visit and leave. Opportunities, replies, meetings
-/// and outreach are gone as destinations: they were views of, or events
-/// inside, this.
+/// The list is a way in, not a second Market table. It carries only what makes
+/// a row worth opening: who, where it stands, why that is the answer, and
+/// whether anything is waiting.
 ///
-/// Pipeline survives as a first-class view rather than a second universe.
-/// Clients who work a funnel still get a board; what they no longer get is two
-/// lists of the same records disagreeing about which is authoritative.
-///
-/// One hierarchy: list → work → inspector. Panes when there is width, pushes
-/// when there is not. Never two conceptual models.
+/// A healthy relationship is quiet here. Problems and decisions earn prime
+/// space; nothing gets a green banner for being fine.
 class RelationshipsWorkspaceScreen extends StatefulWidget {
-  const RelationshipsWorkspaceScreen({super.key, this.initialView, this.relationshipId});
+  const RelationshipsWorkspaceScreen({
+    super.key,
+    this.relationshipId,
+    this.initialView,
+    this.returnTo,
+  });
 
-  final String? initialView;
+  /// When set, the workspace opens straight into this relationship.
   final String? relationshipId;
+  final String? initialView;
+
+  /// Where the person came from — Today, Market, or a deep link. Back goes
+  /// there rather than always dumping them on the list.
+  final String? returnTo;
 
   @override
   State<RelationshipsWorkspaceScreen> createState() =>
       _RelationshipsWorkspaceScreenState();
 }
 
-const _views = <String, String>{
-  'all': 'All',
-  'pipeline': 'Pipeline',
-  'engaged': 'Engaged',
-  'waiting': 'Waiting',
-  'recent': 'Recent',
-};
-
-class _RelationshipsWorkspaceScreenState
-    extends State<RelationshipsWorkspaceScreen> {
-  final _repo = ClientRelationshipWorkspaceRepository();
-
-  late String _view = widget.initialView ?? 'all';
-  List<RelationshipSummary> _items = const [];
-  String? _selectedId;
-  RelationshipWorkspace? _detail;
-
-  bool _loadingList = true;
-  bool _loadingDetail = false;
-  Refusal? _refusal;
+class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScreen> {
+  final ClientRelationships _relationships = ClientRelationships.instance;
 
   @override
   void initState() {
     super.initState();
-    _selectedId = widget.relationshipId;
-    _loadList();
-  }
-
-  Future<void> _loadList() async {
-    setState(() {
-      _loadingList = true;
-      _refusal = null;
-    });
-    try {
-      final items = await _repo.list(view: _view);
-      if (!mounted) return;
-      setState(() {
-        _items = items;
-        _loadingList = false;
-      });
-      // On a wide layout the work pane is most of the screen. Leaving it as
-      // one centred sentence wastes it, so the first relationship opens and
-      // the workspace arrives ready to work.
-      final target = _selectedId ??
-          (Workspace.sizeOf(context).canShowList && items.isNotEmpty
-              ? items.first.id
-              : null);
-      if (target != null) _loadDetail(target);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _refusal = Refusal.unexpected(e);
-        _loadingList = false;
-      });
-    }
-  }
-
-  Future<void> _loadDetail(String id) async {
-    setState(() {
-      _loadingDetail = true;
-      _selectedId = id;
-    });
-    try {
-      final detail = await _repo.detail(id);
-      if (!mounted) return;
-      setState(() {
-        _detail = detail;
-        _loadingDetail = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _refusal = Refusal.unexpected(e);
-        _loadingDetail = false;
-      });
+    _relationships.addListener(_onChanged);
+    if (!_relationships.hasAnswer &&
+        !_relationships.isLoading &&
+        _relationships.error == null) {
+      _relationships.load().catchError((Object e) => throw e);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final size = Workspace.sizeOf(context);
-
-    // Narrow: one pane at a time, detail pushed over the list. Wide: side by
-    // side. Same hierarchy either way.
-    if (!size.canShowList) {
-      if (_selectedId != null && _detail != null) {
-        return _detailPane(onBack: () => setState(() {
-              _selectedId = null;
-              _detail = null;
-            }));
-      }
-      return _listPane();
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(width: 340, child: _listPane()),
-        const VerticalDivider(width: 25, color: AppTheme.publicLine),
-        Expanded(
-          child: _selectedId == null
-              ? Center(
-                  child: QuietState(
-                    // Do not invite a choice there is nothing to choose from.
-                    message: _items.isEmpty
-                        ? ''
-                        : 'Choose a relationship to open it.',
-                  ),
-                )
-              : _detailPane(),
-        ),
-      ],
-    );
+  void dispose() {
+    _relationships.removeListener(_onChanged);
+    super.dispose();
   }
 
-  Widget _listPane() {
+  void _onChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Depth is the whole screen when one is addressed, so the durable
+    // relationship gets the room rather than sharing it with a list.
+    if (widget.relationshipId != null) {
+      return RelationshipDepthView(
+        relationshipId: widget.relationshipId!,
+        onBack: _back,
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        WorkspaceHeader(
+        const WorkspaceHeader(
           title: 'Relationships',
-          context_: _loadingList ? null : '${_items.length} in this view',
+          context_: 'The businesses you have durable commercial context with.',
         ),
-        _ViewSwitcher(
-          current: _view,
-          onChanged: (v) {
-            setState(() => _view = v);
-            _loadList();
-          },
-        ),
-        const SizedBox(height: 12),
-        if (_refusal != null)
-          RefusalNotice(refusal: _refusal!, onRetry: _loadList),
-        Expanded(
-          child: _loadingList
-              ? const Center(child: CircularProgressIndicator())
-              : _items.isEmpty
-                  ? QuietState(
-                      message: _view == 'all'
-                          ? 'No relationships yet.'
-                          : 'Nothing in this view.',
-                      hint: _view == 'all'
-                          ? 'They appear as discovery and communication '
-                              'establish them.'
-                          : null,
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.zero,
-                      itemCount: _items.length,
-                      itemBuilder: (context, i) {
-                        final r = _items[i];
-                        return WorkspaceRow(
-                          title: r.counterparty,
-                          detail: r.openEngagementRef ?? r.stageLabel,
-                          meta: _ago(r.lastEventAt),
-                          tone: r.closed
-                              ? RowTone.neutral
-                              : (r.hasHeardBack ? RowTone.good : RowTone.waiting),
-                          onTap: () => _loadDetail(r.id),
-                        );
-                      },
-                    ),
-        ),
+        Expanded(child: _body()),
       ],
     );
   }
 
-  Widget _detailPane({VoidCallback? onBack}) {
-    if (_loadingDetail) {
-      return const Center(child: CircularProgressIndicator());
+  /// Back respects where they came from, and always has somewhere to go.
+  void _back() {
+    final to = readReturnTo({kReturnToParam: widget.returnTo ?? ''});
+    context.go(to ?? '/client/relationships');
+  }
+
+  Widget _body() {
+    if (_relationships.error != null) {
+      return _Unavailable(onRetry: () => _relationships.refresh());
     }
-    final d = _detail;
-    if (d == null) return const SizedBox.shrink();
+    final list = _relationships.list;
+    if (list == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: SizedBox(
+            width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      );
+    }
+    if (list.relationships.isEmpty) {
+      return const QuietState(
+        message: 'No relationships yet.',
+        hint: 'One begins when something durable passes between your business '
+            'and a counterparty.',
+      );
+    }
+
+    // Anything contested or never reached comes first, because those are the
+    // ones where a person can change the outcome.
+    final wanting = list.relationships.where((r) => r.condition.wantsAttention || r.attention > 0);
+    final rest = list.relationships.where((r) => !(r.condition.wantsAttention || r.attention > 0));
 
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        WorkspaceHeader(
-          title: d.counterparty,
-          onBack: onBack,
-          // Only what changes what to do next. The engagement names itself
-          // directly below, so repeating it here is chrome, not orientation.
-          context_: d.closed
-              ? 'Closed${d.closedReason != null ? ' — ${d.closedReason}' : ''}'
-              : (d.current == null && d.timeline.isNotEmpty
-                  ? 'No engagement open'
-                  : null),
-        ),
-        if (d.current != null) ...[
-          EngagementLifecycle(
-            engagement: d.current!,
-            timeline: d.timeline,
+        if (wanting.isNotEmpty)
+          WorkspaceBand(
+            title: 'NEEDS A LOOK',
+            children: [for (final r in wanting) _Row(summary: r, onOpen: _open)],
           ),
-          const SizedBox(height: 24),
-        ] else
-          const QuietState(
-            message: 'No engagement opened yet.',
-            hint: 'An engagement is where agreements, obligations and '
-                'invoices for this relationship live.',
+        if (rest.isNotEmpty)
+          WorkspaceBand(
+            // Named only when something above it needed the eye. With nothing
+            // wanting attention this is simply the list, and a heading over it
+            // would be furniture.
+            title: wanting.isEmpty ? 'RELATIONSHIPS' : 'EVERYTHING ELSE',
+            children: [for (final r in rest) _Row(summary: r, onOpen: _open)],
           ),
-        RelationshipTimeline(
-          events: d.timeline,
-          correspondence: d.correspondence,
-        ),
-        const SizedBox(height: 32),
+        if (list.note.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              list.note,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppTheme.publicMuted),
+            ),
+          ),
+        ],
+        const SizedBox(height: 24),
       ],
     );
   }
 
-  static String? _ago(DateTime? at) {
-    if (at == null) return null;
-    final d = DateTime.now().difference(at);
-    if (d.inHours < 24) return '${d.inHours}h';
-    if (d.inDays < 30) return '${d.inDays}d';
-    return '${at.day}/${at.month}/${at.year % 100}';
+  void _open(RelationshipSummary summary) {
+    // Carries where we are so depth can return here rather than guessing.
+    context.go(withReturnTo(
+      '/client/relationships/${summary.id}',
+      '/client/relationships',
+    ));
   }
 }
 
-/// Saved views of one set of records. Not separate domains.
-class _ViewSwitcher extends StatelessWidget {
-  const _ViewSwitcher({required this.current, required this.onChanged});
+class _Row extends StatelessWidget {
+  const _Row({required this.summary, required this.onOpen});
 
-  final String current;
-  final ValueChanged<String> onChanged;
+  final RelationshipSummary summary;
+  final void Function(RelationshipSummary) onOpen;
 
   @override
   Widget build(BuildContext context) {
-    // Wrapped, not scrolled. In a 340px list pane a horizontal scroller
-    // clips the last view at the edge, which reads as a rendering fault
-    // rather than as more content.
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: [
-        for (final entry in _views.entries)
-          _ViewChip(
-            label: entry.value,
-            selected: entry.key == current,
-            onTap: () => onChanged(entry.key),
-          ),
-      ],
+    return WorkspaceRow(
+      title: summary.counterparty,
+      // The reason, not the label. "Active" alone tells a business nothing;
+      // "one message went out, nothing has come back either way" does.
+      detail: summary.conditionBecause,
+      meta: _meta,
+      tone: switch (summary.condition) {
+        RelationshipCondition.inDispute => RowTone.problem,
+        RelationshipCondition.unreachable => RowTone.problem,
+        RelationshipCondition.inEngagement => RowTone.good,
+        RelationshipCondition.active => RowTone.neutral,
+        RelationshipCondition.dormant => RowTone.waiting,
+        RelationshipCondition.closed => RowTone.neutral,
+      },
+      onTap: () => onOpen(summary),
+      action: const Icon(Icons.chevron_right, size: 18, color: AppTheme.publicMuted),
     );
   }
+
+  /// Condition is a word, never a colour alone.
+  String get _meta => [
+        summary.condition.label.toLowerCase(),
+        if (summary.openEngagementId != null) 'in an undertaking',
+        if (summary.attention > 0)
+          summary.attention == 1 ? '1 waiting' : '${summary.attention} waiting',
+      ].join(' · ');
 }
 
-class _ViewChip extends StatelessWidget {
-  const _ViewChip(
-      {required this.label, required this.selected, required this.onTap});
+class _Unavailable extends StatelessWidget {
+  const _Unavailable({required this.onRetry});
 
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? AppTheme.publicAccentSoft : Colors.transparent,
-            border: Border.all(
-                color: selected ? AppTheme.publicAccent : AppTheme.publicLine),
-            borderRadius: BorderRadius.circular(20),
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('We could not load your relationships.',
+              style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Text(
+            'Nothing has changed and nothing was lost. We just could not read '
+            'them right now.',
+            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
           ),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: selected ? AppTheme.publicAccent : AppTheme.publicMuted,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-          ),
-        ),
+          const SizedBox(height: 12),
+          OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+        ],
       ),
     );
   }

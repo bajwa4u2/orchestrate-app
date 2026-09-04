@@ -1169,12 +1169,16 @@ GoRouter get router {
             // Pipeline is a view of these records, not a second domain.
             initialView: state.uri.queryParameters['view'],
             relationshipId: state.uri.queryParameters['id'],
+            returnTo: state.uri.queryParameters[kReturnToParam],
           ),
         ),
         GoRoute(
           path: '/client/relationships/:id',
           builder: (context, state) => RelationshipsWorkspaceScreen(
             relationshipId: state.pathParameters['id'],
+            // Where they came from — Today, Market, the list, or a deep link.
+            // Back goes there instead of always dumping them on the list.
+            returnTo: state.uri.queryParameters[kReturnToParam],
           ),
         ),
         GoRoute(

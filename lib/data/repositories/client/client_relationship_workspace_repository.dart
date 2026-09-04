@@ -1,257 +1,349 @@
 import '../../../core/network/api_client.dart';
 
-/// The durable unit, read for the workspace.
+/// THE DURABLE BUSINESS RELATIONSHIP.
 ///
-/// One repository for relationships, their engagements and their timeline —
-/// because they are one thing. Splitting them into three would rebuild in the
-/// data layer exactly the module separation the workspace exists to remove.
+/// The relationship — not the transaction, campaign, message or invoice — is
+/// the unit of account. It is durable commercial context between identifiable
+/// parties; it may hold zero, one or many undertakings, and it does not end
+/// because one of them completes.
+///
+/// Every judgement here comes from the server. This once carried its own
+/// `stage` vocabulary (IDENTIFIED / CONTACTED / IN_CONVERSATION / ENGAGED)
+/// computed alongside the backend's condition, so the same relationship could
+/// read one word in the list and another in the detail. There is one answer now
+/// and this types it.
 class ClientRelationshipWorkspaceRepository {
   ClientRelationshipWorkspaceRepository({ApiClient? apiClient})
       : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
-  /// [view] is a saved view of the same records — never another domain.
-  Future<List<RelationshipSummary>> list({String view = 'all'}) async {
+  Future<RelationshipList> fetchList({String? view}) async {
     final json = await _apiClient.getJson(
-      '/client/relationships?view=$view',
+      '/client/relationships',
       surface: ApiSurface.client,
+      query: {if (view != null && view.isNotEmpty) 'view': view},
     );
-    final items = (json is Map ? json['items'] : null);
-    if (items is! List) return const [];
-    return items
-        .whereType<Map>()
-        .map((e) => RelationshipSummary.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
+    return RelationshipList.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
-  Future<RelationshipWorkspace> detail(String id) async {
+  Future<RelationshipDepth> fetchDepth(String id) async {
     final json = await _apiClient.getJson(
       '/client/relationships/$id',
       surface: ApiSurface.client,
     );
-    return RelationshipWorkspace.fromJson(Map<String, dynamic>.from(json as Map));
+    return RelationshipDepth.fromJson(Map<String, dynamic>.from(json as Map));
   }
+}
+
+/// Where a relationship actually stands. Derived from admitted truth, never a
+/// stage anybody edits.
+enum RelationshipCondition {
+  inEngagement('IN_ENGAGEMENT', 'In an undertaking'),
+  inDispute('IN_DISPUTE', 'Disputed'),
+  active('ACTIVE', 'Active'),
+
+  /// Every attempt to reach them failed. Four production relationships are in
+  /// this state and were previously reported as active.
+  unreachable('UNREACHABLE', 'Never reached'),
+  dormant('DORMANT', 'Quiet'),
+  closed('CLOSED', 'Closed');
+
+  const RelationshipCondition(this.wire, this.label);
+  final String wire;
+  final String label;
+
+  static RelationshipCondition parse(String? value) {
+    for (final c in RelationshipCondition.values) {
+      if (c.wire == value) return c;
+    }
+    return RelationshipCondition.dormant;
+  }
+
+  /// Whether this condition should draw the eye. Problems and decisions earn
+  /// prime space; a healthy relationship stays quiet.
+  bool get wantsAttention =>
+      this == RelationshipCondition.inDispute ||
+      this == RelationshipCondition.unreachable;
 }
 
 class RelationshipSummary {
   const RelationshipSummary({
     required this.id,
     required this.counterparty,
-    required this.stage,
-    required this.closed,
-    this.lastEventAt,
-    this.engagementCount = 0,
-    this.openEngagementRef,
-    this.hasHeardBack = false,
+    required this.counterpartyKey,
+    required this.condition,
+    required this.conditionMeans,
+    required this.conditionBecause,
+    required this.lastEventAt,
+    required this.openEngagementId,
+    required this.engagementCount,
+    required this.attention,
   });
 
   final String id;
   final String counterparty;
-  final String stage;
-  final bool closed;
+  final String counterpartyKey;
+  final RelationshipCondition condition;
+  final String conditionMeans;
+
+  /// What was true that made this the answer. Never a bare label.
+  final String conditionBecause;
   final DateTime? lastEventAt;
+  final String? openEngagementId;
   final int engagementCount;
-  final String? openEngagementRef;
-  final bool hasHeardBack;
+  final int attention;
 
-  factory RelationshipSummary.fromJson(Map<String, dynamic> j) {
-    final open = j['openEngagement'];
-    return RelationshipSummary(
-      id: j['id']?.toString() ?? '',
-      counterparty: j['counterparty']?.toString() ?? 'Unnamed',
-      stage: j['stage']?.toString() ?? 'IDENTIFIED',
-      closed: j['closed'] == true,
-      lastEventAt: DateTime.tryParse(j['lastEventAt']?.toString() ?? ''),
-      engagementCount: (j['engagementCount'] as num?)?.toInt() ?? 0,
-      openEngagementRef:
-          open is Map ? (open['reference']?.toString() ?? 'Engagement') : null,
-      hasHeardBack: j['hasHeardBack'] == true,
-    );
-  }
-
-  /// Words a person uses, not enum names.
-  String get stageLabel => switch (stage) {
-        'IDENTIFIED' => 'Identified',
-        'CONTACTED' => 'Contacted',
-        'IN_CONVERSATION' => 'In conversation',
-        'ENGAGED' => 'Engaged',
-        'CLOSED' => 'Closed',
-        _ => stage,
-      };
+  static RelationshipSummary fromJson(Map<String, dynamic> j) => RelationshipSummary(
+        id: (j['id'] as String?) ?? '',
+        counterparty: (j['counterparty'] as String?)?.trim().isEmpty ?? true
+            ? '(unnamed)'
+            : (j['counterparty'] as String).trim(),
+        counterpartyKey: (j['counterpartyKey'] as String?) ?? '',
+        condition: RelationshipCondition.parse(j['condition'] as String?),
+        conditionMeans: (j['conditionMeans'] as String?) ?? '',
+        conditionBecause: (j['conditionBecause'] as String?) ?? '',
+        lastEventAt: DateTime.tryParse(j['lastEventAt']?.toString() ?? ''),
+        openEngagementId: _text(j['openEngagementId']),
+        engagementCount: (j['engagementCount'] as num?)?.toInt() ?? 0,
+        attention: (j['attention'] as num?)?.toInt() ?? 0,
+      );
 }
 
-class RelationshipWorkspace {
-  const RelationshipWorkspace({
-    required this.id,
-    required this.counterparty,
-    required this.closed,
-    required this.engagements,
-    required this.timeline,
-    required this.correspondence,
-    this.closedReason,
-    this.lastEventAt,
+class RelationshipList {
+  const RelationshipList({
+    required this.relationships,
+    required this.counts,
+    required this.note,
   });
 
-  final String id;
-  final String counterparty;
-  final bool closed;
-  final String? closedReason;
-  final DateTime? lastEventAt;
-  final List<EngagementSummary> engagements;
-  final List<TimelineEvent> timeline;
-  final List<Correspondence> correspondence;
+  final List<RelationshipSummary> relationships;
+  final Map<RelationshipCondition, int> counts;
+  final String note;
 
-  factory RelationshipWorkspace.fromJson(Map<String, dynamic> j) {
-    final r = Map<String, dynamic>.from(j['relationship'] as Map? ?? {});
-    return RelationshipWorkspace(
-      id: r['id']?.toString() ?? '',
-      counterparty: r['counterparty']?.toString() ?? 'Unnamed',
-      closed: r['closed'] == true,
-      closedReason: r['closedReason']?.toString(),
-      lastEventAt: DateTime.tryParse(r['lastEventAt']?.toString() ?? ''),
-      engagements: (j['engagements'] as List? ?? const [])
+  static RelationshipList fromJson(Map<String, dynamic> j) {
+    final raw = Map<String, dynamic>.from(j['counts'] as Map? ?? {});
+    return RelationshipList(
+      relationships: ((j['relationships'] as List?) ?? const [])
           .whereType<Map>()
-          .map((e) => EngagementSummary.fromJson(Map<String, dynamic>.from(e)))
-          .toList(),
-      timeline: (j['timeline'] as List? ?? const [])
-          .whereType<Map>()
-          .map((e) => TimelineEvent.fromJson(Map<String, dynamic>.from(e)))
-          .toList(),
-      correspondence: (j['correspondence'] as List? ?? const [])
-          .whereType<Map>()
-          .map((e) => Correspondence.fromJson(Map<String, dynamic>.from(e)))
-          .toList(),
+          .map((r) => RelationshipSummary.fromJson(Map<String, dynamic>.from(r)))
+          .toList(growable: false),
+      counts: {
+        for (final c in RelationshipCondition.values)
+          c: (raw[c.wire] as num?)?.toInt() ?? 0,
+      },
+      note: (j['note'] as String?) ?? '',
     );
-  }
-
-  EngagementSummary? get current {
-    for (final e in engagements) {
-      if (e.state == 'OPEN') return e;
-    }
-    return engagements.isNotEmpty ? engagements.first : null;
   }
 }
 
+/// Why this relationship exists at all.
+class RelationshipOrigin {
+  const RelationshipOrigin({
+    required this.says,
+    required this.at,
+    required this.provenanceIsWeak,
+  });
+
+  final String says;
+  final DateTime? at;
+
+  /// True when the record was created after the fact it describes — every
+  /// production row is in this state, one by more than two months.
+  final bool provenanceIsWeak;
+
+  static RelationshipOrigin fromJson(Map<String, dynamic>? j) => RelationshipOrigin(
+        says: (j?['says'] as String?) ?? '',
+        at: DateTime.tryParse(j?['at']?.toString() ?? ''),
+        provenanceIsWeak: j?['provenanceIsWeak'] == true,
+      );
+}
+
+/// One commercial undertaking, contained inside the relationship.
 class EngagementSummary {
   const EngagementSummary({
     required this.id,
+    required this.reference,
     required this.state,
-    this.reference,
-    this.openedAt,
-    this.completedAt,
+    required this.openedAt,
+    required this.completedAt,
+    required this.abandonedAt,
   });
 
   final String id;
-  final String state;
   final String? reference;
+  final String state;
   final DateTime? openedAt;
   final DateTime? completedAt;
+  final DateTime? abandonedAt;
 
-  factory EngagementSummary.fromJson(Map<String, dynamic> j) => EngagementSummary(
-        id: j['id']?.toString() ?? '',
-        state: j['state']?.toString() ?? 'OPEN',
-        reference: j['reference']?.toString(),
+  bool get isOpen => state == 'OPEN';
+
+  String get label => switch (state) {
+        'OPEN' => 'Open',
+        'COMPLETED' => 'Completed',
+        'ABANDONED' => 'Abandoned',
+        _ => state,
+      };
+
+  static EngagementSummary fromJson(Map<String, dynamic> j) => EngagementSummary(
+        id: (j['id'] as String?) ?? '',
+        reference: _text(j['reference']),
+        state: (j['state'] as String?) ?? 'OPEN',
         openedAt: DateTime.tryParse(j['openedAt']?.toString() ?? ''),
         completedAt: DateTime.tryParse(j['completedAt']?.toString() ?? ''),
+        abandonedAt: DateTime.tryParse(j['abandonedAt']?.toString() ?? ''),
       );
-
-  String get title => reference?.isNotEmpty == true ? reference! : 'Engagement';
 }
 
-class TimelineEvent {
-  const TimelineEvent({
-    required this.id,
-    required this.type,
-    required this.occurredAt,
-    this.consequence,
-    this.evidenceKind,
-    this.engagementId,
+/// One thing that happened, in commercial terms.
+class TimelineEntry {
+  const TimelineEntry({
+    required this.kind,
+    required this.says,
+    required this.at,
+    required this.until,
+    required this.occurrences,
+    required this.consequence,
+    required this.isCurrent,
+    required this.engagementId,
   });
 
-  final String id;
-  final String type;
-  final DateTime occurredAt;
-  final String? consequence;
-  final String? evidenceKind;
+  final String kind;
+
+  /// Written by the server, verbatim.
+  final String says;
+  final DateTime at;
+
+  /// Set when a run of the same outcome was told as one.
+  final DateTime? until;
+  final int occurrences;
+  final String consequence;
+
+  /// False when a later fact replaced this one. History, not the answer.
+  final bool isCurrent;
   final String? engagementId;
 
-  factory TimelineEvent.fromJson(Map<String, dynamic> j) => TimelineEvent(
-        id: j['id']?.toString() ?? '',
-        type: j['type']?.toString() ?? 'event',
-        occurredAt:
-            DateTime.tryParse(j['occurredAt']?.toString() ?? '') ?? DateTime.now(),
-        consequence: j['consequence']?.toString(),
-        evidenceKind: j['evidenceKind']?.toString(),
-        engagementId: j['engagementId']?.toString(),
+  static TimelineEntry fromJson(Map<String, dynamic> j) => TimelineEntry(
+        kind: (j['kind'] as String?) ?? 'OTHER',
+        says: (j['says'] as String?) ?? '',
+        at: DateTime.tryParse(j['at']?.toString() ?? '') ?? DateTime(1970),
+        until: DateTime.tryParse(j['until']?.toString() ?? ''),
+        occurrences: (j['occurrences'] as num?)?.toInt() ?? 1,
+        consequence: (j['consequence'] as String?) ?? '',
+        isCurrent: j['isCurrent'] != false,
+        engagementId: _text(j['engagementId']),
       );
-
-  /// Backend event types are snake_case machine names. Say them in English.
-  String get label {
-    final words = type.replaceAll('_', ' ').replaceAll('.', ' ').trim();
-    if (words.isEmpty) return 'Event';
-    return words[0].toUpperCase() + words.substring(1);
-  }
 }
 
-class Correspondence {
-  const Correspondence({
+/// Inbound the relationship is holding, referenced from Chapter B's Attention.
+class RelationshipAttention {
+  const RelationshipAttention({
     required this.id,
-    required this.status,
-    required this.deliveryKnown,
-    this.subject,
-    this.sentAt,
-    this.deliveryEvidence,
-    this.direction,
+    required this.subject,
+    required this.from,
+    required this.receivedAt,
   });
 
   final String id;
-  final String status;
-  final bool deliveryKnown;
-  final String? subject;
-  final DateTime? sentAt;
-  final String? deliveryEvidence;
-  final String? direction;
+  final String subject;
+  final String? from;
+  final DateTime? receivedAt;
 
-  factory Correspondence.fromJson(Map<String, dynamic> j) => Correspondence(
-        id: j['id']?.toString() ?? '',
-        status: j['status']?.toString() ?? 'UNKNOWN',
-        deliveryKnown: j['deliveryKnown'] == true,
-        subject: j['subjectLine']?.toString(),
-        sentAt: DateTime.tryParse(j['sentAt']?.toString() ?? ''),
-        deliveryEvidence: j['deliveryEvidence']?.toString(),
-        direction: j['direction']?.toString(),
+  static RelationshipAttention fromJson(Map<String, dynamic> j) => RelationshipAttention(
+        id: (j['id'] as String?) ?? '',
+        subject: (j['subject'] as String?) ?? '(no subject)',
+        from: _text(j['from']),
+        receivedAt: DateTime.tryParse(j['receivedAt']?.toString() ?? ''),
       );
+}
 
-  /// WHAT ACTUALLY HAPPENED TO THIS MESSAGE.
-  ///
-  /// Three answers, never two. The client used to have `sent` in 68 files and
-  /// `delivered` in 4, which meant sent was silently read as delivered. Having
-  /// left is not the same as having arrived, and not knowing is its own state
-  /// that deserves saying out loud.
-  DeliveryTruth get delivery {
-    if (status == 'BOUNCED' || deliveryEvidence?.contains('bounce') == true) {
-      return DeliveryTruth.bounced;
+class RelationshipDepth {
+  const RelationshipDepth({
+    required this.id,
+    required this.counterparty,
+    required this.counterpartyKey,
+    required this.condition,
+    required this.conditionMeans,
+    required this.conditionBecause,
+    required this.origin,
+    required this.engagements,
+    required this.currentEngagementId,
+    required this.attention,
+    required this.timeline,
+    required this.eventCount,
+    required this.refusalReason,
+  });
+
+  final String id;
+  final String counterparty;
+  final String counterpartyKey;
+  final RelationshipCondition condition;
+  final String conditionMeans;
+  final String conditionBecause;
+  final RelationshipOrigin origin;
+  final List<EngagementSummary> engagements;
+  final String? currentEngagementId;
+  final List<RelationshipAttention> attention;
+  final List<TimelineEntry> timeline;
+  final int eventCount;
+  final String? refusalReason;
+
+  EngagementSummary? get currentEngagement {
+    for (final e in engagements) {
+      if (e.id == currentEngagementId) return e;
     }
-    if (status == 'FAILED') return DeliveryTruth.failed;
-    if (deliveryKnown) return DeliveryTruth.delivered;
-    if (status == 'SENT' || sentAt != null) return DeliveryTruth.noEvidenceYet;
-    return DeliveryTruth.notSent;
+    return null;
+  }
+
+  List<EngagementSummary> get pastEngagements =>
+      engagements.where((e) => e.id != currentEngagementId).toList(growable: false);
+
+  static RelationshipDepth fromJson(Map<String, dynamic> j) {
+    if (j['ok'] == false) {
+      return RelationshipDepth(
+        id: '', counterparty: '', counterpartyKey: '',
+        condition: RelationshipCondition.dormant,
+        conditionMeans: '', conditionBecause: '',
+        origin: RelationshipOrigin.fromJson(null),
+        engagements: const [], currentEngagementId: null,
+        attention: const [], timeline: const [], eventCount: 0,
+        refusalReason: (j['reason'] as String?) ??
+            'Your business has no relationship on record with that counterparty.',
+      );
+    }
+    final counts = Map<String, dynamic>.from(j['counts'] as Map? ?? {});
+    return RelationshipDepth(
+      id: (j['id'] as String?) ?? '',
+      counterparty: (j['counterparty'] as String?)?.trim().isEmpty ?? true
+          ? '(unnamed)'
+          : (j['counterparty'] as String).trim(),
+      counterpartyKey: (j['counterpartyKey'] as String?) ?? '',
+      condition: RelationshipCondition.parse(j['condition'] as String?),
+      conditionMeans: (j['conditionMeans'] as String?) ?? '',
+      conditionBecause: (j['conditionBecause'] as String?) ?? '',
+      origin: RelationshipOrigin.fromJson(
+          j['origin'] is Map ? Map<String, dynamic>.from(j['origin'] as Map) : null),
+      engagements: ((j['engagements'] as List?) ?? const [])
+          .whereType<Map>()
+          .map((e) => EngagementSummary.fromJson(Map<String, dynamic>.from(e)))
+          .toList(growable: false),
+      currentEngagementId: _text(j['currentEngagementId']),
+      attention: ((j['attention'] as List?) ?? const [])
+          .whereType<Map>()
+          .map((a) => RelationshipAttention.fromJson(Map<String, dynamic>.from(a)))
+          .toList(growable: false),
+      timeline: ((j['timeline'] as List?) ?? const [])
+          .whereType<Map>()
+          .map((t) => TimelineEntry.fromJson(Map<String, dynamic>.from(t)))
+          .toList(growable: false),
+      eventCount: (counts['events'] as num?)?.toInt() ?? 0,
+      refusalReason: null,
+    );
   }
 }
 
-enum DeliveryTruth {
-  notSent,
-  noEvidenceYet,
-  delivered,
-  bounced,
-  failed;
-
-  String get label => switch (this) {
-        DeliveryTruth.notSent => 'Not sent',
-        DeliveryTruth.noEvidenceYet => 'Sent — no delivery evidence yet',
-        DeliveryTruth.delivered => 'Delivered',
-        DeliveryTruth.bounced => 'Bounced',
-        DeliveryTruth.failed => 'Failed',
-      };
+String? _text(Object? value) {
+  final s = value?.toString().trim();
+  return s == null || s.isEmpty || s == 'null' ? null : s;
 }
