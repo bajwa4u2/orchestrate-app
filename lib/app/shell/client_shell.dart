@@ -138,20 +138,41 @@ class _ClientShellState extends State<ClientShell> {
     //
     // A landing gets none, because there is nothing above it.
     final parent = semanticParentOf(widget.currentPath);
-    final content = SelectionArea(
-      child: parent == null
-          ? widget.child
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SurfaceReturn(
-                  title: titleOf(widget.currentPath),
-                  area: areaOf(widget.currentPath),
-                  parent: parent,
+
+    // AN OPAQUE FLOOR UNDER THE ROUTED SURFACE.
+    //
+    // This is what "clicking the logo does nothing" actually was. Workspace
+    // surfaces are lists and panels; almost none of them paints a background.
+    // When the route changed, the incoming surface painted only its own
+    // content and the outgoing one's pixels stayed on the canvas underneath —
+    // so the rail moved, the URL moved, and the screen still showed the page
+    // the person had just left.
+    //
+    // Keying it on the path matters as much as the colour: without a key
+    // Flutter reuses the element for the whole content region across routes,
+    // and scroll offsets and half-built state carry from one surface into the
+    // next. With it, each destination is unambiguously a new subtree that
+    // covers what came before.
+    final content = KeyedSubtree(
+      key: ValueKey(widget.currentPath),
+      child: ColoredBox(
+        color: AppTheme.publicBackground,
+        child: SelectionArea(
+          child: parent == null
+              ? widget.child
+                  : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SurfaceReturn(
+                      title: titleOf(widget.currentPath),
+                      area: areaOf(widget.currentPath),
+                      parent: parent,
+                    ),
+                    Expanded(child: widget.child),
+                  ],
                 ),
-                Expanded(child: widget.child),
-              ],
-            ),
+        ),
+      ),
     );
 
     return Theme(
