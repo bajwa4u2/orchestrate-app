@@ -7,6 +7,7 @@ import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/store_subscribe_panel.dart';
 
 class ClientBillingScreen extends StatefulWidget {
   const ClientBillingScreen({super.key});
@@ -158,6 +159,10 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
                       currency)),
             ]),
             const SizedBox(height: 18),
+            // In a store build this is where service is actually bought. It
+            // renders nothing on web and desktop, which are billed directly.
+            const StoreSubscribePanel(),
+            if (inAppPurchaseAllowed) const SizedBox(height: 18),
             ClientPanel(
               title: 'Subscription',
               children: [

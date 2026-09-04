@@ -26,7 +26,27 @@ import '../platform/billing_gate.dart';
 /// store account and neither store knows which company that person works for —
 /// so if the token is not attached before the payment, there is no honest way
 /// to work out afterwards who paid.
-class StorePurchase {
+/// What a purchase surface needs from a store, and nothing else.
+///
+/// Exists so the orchestration above a store — intent before payment, delivery
+/// after it, refusal in between — can be tested without a device. That ordering
+/// is the part that decides whether a payment can be placed at all, and it is
+/// not something to find out about for the first time on someone's phone.
+abstract class StoreRail {
+  /// Set by the surface that started a purchase, so completion can be reported
+  /// where the person is looking rather than into a void.
+  abstract void Function(StorePurchaseOutcome outcome)? onOutcome;
+
+  void listen({required Future<void> Function(PurchaseDetails) deliver});
+
+  Future<List<ProductDetails>> productsFor(Set<String> identifiers);
+
+  Future<bool> buy({required ProductDetails product, required String intentKey});
+
+  Future<void> restore();
+}
+
+class StorePurchase implements StoreRail {
   StorePurchase._();
 
   static final StorePurchase instance = StorePurchase._();
@@ -34,8 +54,7 @@ class StorePurchase {
   final InAppPurchase _store = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
-  /// Set by the surface that started a purchase, so completion can be reported
-  /// where the person is looking rather than into a void.
+  @override
   void Function(StorePurchaseOutcome outcome)? onOutcome;
 
   /// Whether this build can take a payment at all.
@@ -55,6 +74,7 @@ class StorePurchase {
   /// purchases that completed while the app was closed and restores triggered
   /// from the store itself, which is why it is a subscription rather than a
   /// return value from `buy`.
+  @override
   void listen({required Future<void> Function(PurchaseDetails) deliver}) {
     if (!availableOnThisPlatform || _subscription != null) return;
     _subscription = _store.purchaseStream.listen(
@@ -119,6 +139,7 @@ class StorePurchase {
   /// The identifiers come from the server, not from a constant here. A client
   /// that carries its own product list is a second commercial doctrine, and it
   /// will be the one that is out of date.
+  @override
   Future<List<ProductDetails>> productsFor(Set<String> identifiers) async {
     if (!availableOnThisPlatform || identifiers.isEmpty) return const [];
     final response = await _store.queryProductDetails(identifiers);
@@ -133,6 +154,7 @@ class StorePurchase {
   /// called. Both stores carry it through unchanged and hand it back on the
   /// transaction, which is the only deterministic way a store purchase can
   /// name a company.
+  @override
   Future<bool> buy({
     required ProductDetails product,
     required String intentKey,
@@ -154,6 +176,7 @@ class StorePurchase {
   /// any other purchase, and are reconciled there. A restore that the server
   /// cannot tie to an organisation is refused rather than attached to whichever
   /// workspace happens to be open.
+  @override
   Future<void> restore() async {
     if (!availableOnThisPlatform) return;
     await _store.restorePurchases();

@@ -25,12 +25,21 @@ import 'package:flutter/foundation.dart';
 ///   no "buy plan" language. Existing operational access after
 ///   login is fine; selling subscriptions on iOS is not.
 ///
-/// Future IAP
-/// ----------
-///   When StoreKit / Google Play Billing is introduced, the gate
-///   inverts (purchase allowed in-app on iOS) without forcing every
-///   call site to change shape. Until that work lands, this file is
-///   the single source of truth.
+/// Native purchase — LANDED
+/// ------------------------
+///   StoreKit and Google Play Billing are now wired, so the gate has
+///   inverted exactly where it said it would: in a store build the app
+///   MAY take a payment, through the store, in app. What stays
+///   forbidden is unchanged — no link out to Stripe, no browser
+///   redirect to a checkout, no "manage billing on our website".
+///
+///   Two questions, deliberately kept apart, because conflating them
+///   is what produced a build that could sell nothing at all:
+///     externalPurchaseAllowed — may we send someone OUT to pay?
+///     inAppPurchaseAllowed    — may we take a payment HERE?
+///   On web and desktop the first is true and the second is false. In
+///   a store build it is the other way round. Neither platform has
+///   both, and no platform has neither.
 
 /// True when the running app is the iOS native binary (not the web
 /// build served from iOS Safari). Uses `kIsWeb` first so an iPad
@@ -80,8 +89,31 @@ bool get isAppStorePlatform => isIosAppStorePlatform || isPlayStorePlatform;
 /// either store's payments policy.
 bool get externalPurchaseAllowed => !isAppStorePlatform;
 
-/// Neutral copy shown in place of any external purchase or
-/// subscription-management CTA in a store build. Intentionally passive
+/// True when a payment may be taken inside the app, through the store
+/// that shipped it.
+///
+/// This is the permitted half of both policies rather than an
+/// exemption from them: Apple requires digital subscriptions to be
+/// sold through in-app purchase, and Google requires the same through
+/// Play Billing. Selling here is not tolerated, it is the rule.
+///
+/// False on web and desktop — not for policy reasons but because
+/// there is no store underneath them. Those rails are billed
+/// directly, and an organisation that bought on one is recognised on
+/// all of them, because entitlement belongs to the organisation and
+/// not to the device that paid.
+bool get inAppPurchaseAllowed => isAppStorePlatform;
+
+/// Neutral copy shown where an EXTERNAL purchase or management CTA
+/// would otherwise sit in a store build.
+///
+/// Still correct, and still needed: the store sells the subscription,
+/// but it does not sell everything, and a person looking for an
+/// invoice or a contract change is asking about something no store
+/// handles. This is what they are told instead of a link.
+///
+/// It is no longer the answer to "how do I subscribe?" — in a store
+/// build that question now has a button. Intentionally passive
 /// — it informs, and it does not link, instruct, or funnel. That is the
 /// narrow thing both policies allow: Apple forbids "calls to action for
 /// purchase outside of the app", and Google permits informing "without
