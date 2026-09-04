@@ -105,7 +105,11 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
           _capabilities.error != null) {
         return;
       }
-      _capabilities.load().catchError((Object error) => throw error);
+      // Swallowed deliberately. The failure is already held on the state
+      // holder and rendered as "we could not read your plan"; rethrowing it
+      // here only throws into a frame callback, where nothing can catch it and
+      // the person still learns nothing.
+      _capabilities.load().then((_) {}, onError: (Object _) {});
     });
   }
 

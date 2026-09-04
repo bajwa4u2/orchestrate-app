@@ -34,6 +34,25 @@ class CommercialBoundary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Listens for itself rather than relying on a parent's setState.
+    //
+    // Both of these are placed as `const` at their call sites, which is the
+    // idiomatic thing to write and was the defect: Flutter canonicalises a
+    // const widget and skips the subtree when the parent rebuilds, so the
+    // answer arrived, the parent rebuilt, and this never ran again. The screen
+    // held a spinner over a request that had already returned 200 — through
+    // three wrong diagnoses, because every test seeded the state directly and
+    // never crossed the gap between a fetch and a frame.
+    //
+    // Subscribing here makes the widget correct wherever it is placed, const
+    // or not, which is the property that was actually missing.
+    return ListenableBuilder(
+      listenable: ClientCapabilities.instance,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
     final refusal = ClientCapabilities.instance.refusalFor(capability);
     if (refusal == null) return const SizedBox.shrink();
 
@@ -127,6 +146,13 @@ class EntitlementSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: ClientCapabilities.instance,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
     final capabilities = ClientCapabilities.instance;
     final entitlement = capabilities.entitlement;
     final text = Theme.of(context).textTheme;

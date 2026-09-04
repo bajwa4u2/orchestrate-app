@@ -30,7 +30,16 @@ class ClientCapabilities extends ChangeNotifier {
 
   static final ClientCapabilities instance = ClientCapabilities._();
 
-  final ClientCapabilityRepository _repository = ClientCapabilityRepository();
+  ClientCapabilityRepository _repository = ClientCapabilityRepository();
+
+  /// So the LOAD path can be exercised, not only the seeded one. The spinner
+  /// defect lived between a successful fetch and a painted frame, which a
+  /// seeded test cannot reach.
+  @visibleForTesting
+  // ignore: use_setters_to_change_properties
+  void useRepository(ClientCapabilityRepository repository) {
+    _repository = repository;
+  }
 
   CapabilityProjection? _projection;
   Object? _error;
