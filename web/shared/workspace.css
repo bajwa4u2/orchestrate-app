@@ -1,0 +1,146 @@
+/* Orchestrate client workspace, rendered for presentation.
+
+   Tokens and grammar taken from the shipped client, not invented:
+     lib/core/theme/app_theme.dart        — the public/light palette
+     lib/core/layout/workspace.dart       — Header, Band, Row, ToneMark, QuietState
+     lib/features/client/widgets/relationship_depth_view.dart — surface composition
+
+   The product's own rule, kept: "A list row rather than a card. Cards are for
+   containment, and a queue of eight cards is a wall, not a queue." */
+
+:root {
+  --bg:        #F7F8FA;   /* publicBackground */
+  --surface:   #FFFFFF;   /* publicSurface */
+  --soft:      #F1F4F7;   /* publicSurfaceSoft */
+  --line:      #DDE3EA;   /* publicLine */
+  --ink:       #10151F;   /* publicText */
+  --muted:     #5F6B7A;   /* publicMuted */
+  --accent:    #176B5D;   /* publicAccent */
+  --accentSoft:#E6F4F1;   /* publicAccentSoft */
+  --amber:     #E5B454;
+  --rose:      #E06F72;
+  --emerald:   #51C38E;
+  --amberSoft: #FFF4D8;
+  --roseSoft:  #FFECEC;
+  --radius: 8px;
+  --f: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ws, .ws * { box-sizing: border-box; }
+.ws {
+  background: var(--bg); color: var(--ink); font-family: var(--f);
+  border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  font-size: 14px; line-height: 1.5;
+}
+
+/* chrome: enough to read as an application, not enough to become the subject */
+.ws__chrome {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; background: var(--surface); border-bottom: 1px solid var(--line);
+  font-size: 12px; color: var(--muted);
+}
+.ws__dots { display: flex; gap: 5px; }
+.ws__dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.ws__path { color: var(--muted); }
+.ws__path b { color: var(--ink); font-weight: 600; }
+.ws__spacer { flex: 1; }
+
+.ws__body { display: grid; grid-template-columns: 176px 1fr; min-height: 380px; }
+
+/* the four territories, exactly as the client has them */
+.ws__nav { background: var(--soft); border-right: 1px solid var(--line); padding: 12px 0; }
+.ws__navItem {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 14px; font-size: 13px; color: var(--muted); cursor: default;
+}
+.ws__navItem b { font-weight: 500; }
+.ws__navItem[data-on] { color: var(--ink); background: var(--surface); box-shadow: inset 2px 0 0 var(--accent); }
+.ws__navItem[data-on] b { font-weight: 600; }
+.ws__navCount { margin-left: auto; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ws__navGroup { font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); padding: 14px 14px 6px; }
+
+.ws__main { padding: 20px 22px 24px; background: var(--bg); overflow: hidden; }
+
+/* WorkspaceHeader */
+.wsH { padding: 4px 0 18px; }
+.wsH__t { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+.wsH__c { padding-top: 2px; font-size: 12px; color: var(--muted); }
+
+/* condition + channel, each with label / means / because */
+.wsCond { display: grid; gap: 10px; padding-bottom: 22px; }
+.wsCond__l { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.wsCond__tag {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 4px;
+  background: var(--accentSoft); color: var(--accent); border: 1px solid #C9E4DE;
+}
+.wsCond__tag[data-t="warn"] { background: var(--amberSoft); color: #8A6516; border-color: #EBD9A8; }
+.wsCond__means { font-size: 13px; color: var(--ink); }
+.wsCond__because { font-size: 12px; color: var(--muted); }
+
+/* WorkspaceBand */
+.wsB { padding-bottom: 26px; }
+.wsB__h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.wsB__t { font-size: 12px; font-weight: 700; letter-spacing: .2px; }
+.wsB__s { font-size: 12px; color: var(--muted); }
+
+/* WorkspaceRow — a list row, never a card */
+.wsR {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px; border-bottom: 1px solid rgba(221,227,234,.6);
+  border-radius: var(--radius);
+}
+.wsR:last-child { border-bottom: 0; }
+.wsR__mark { width: 3px; height: 30px; border-radius: 2px; background: transparent; flex: none; }
+.wsR[data-tone="attention"] .wsR__mark { background: var(--amber); }
+.wsR[data-tone="problem"]   .wsR__mark { background: var(--rose); }
+.wsR[data-tone="good"]      .wsR__mark { background: var(--emerald); }
+.wsR[data-tone="waiting"]   .wsR__mark { background: rgba(95,107,122,.5); }
+.wsR__b { min-width: 0; flex: 1; }
+/* title, detail and meta are stacked lines in the client, not an inline run */
+.wsR__t { display: block; font-size: 13px; font-weight: 600; }
+.wsR__d { display: block; padding-top: 2px; font-size: 12.5px; color: var(--muted); }
+.wsR__m { display: block; padding-top: 4px; font-size: 11.5px; color: var(--muted); }
+.wsR__a { flex: none; color: var(--muted); font-size: 16px; align-self: center; }
+
+/* disclosure, the way the client does it: collapsed by default */
+.wsDis {
+  display: flex; align-items: center; gap: 6px; margin: 2px 0 18px;
+  font-size: 12.5px; color: var(--accent); font-weight: 500;
+  background: none; border: 0; padding: 4px 0; cursor: pointer; font-family: var(--f);
+  margin: 0 0 4px; text-align: left;
+}
+.wsDis:hover { text-decoration: underline; }
+.wsDis::before { content: "▸"; font-size: 10px; }
+.wsDis[aria-expanded="true"]::before { content: "▾"; }
+
+.wsQuiet { padding: 22px 4px; }
+.wsQuiet__m { font-size: 13px; font-weight: 500; }
+.wsQuiet__h { padding-top: 4px; font-size: 12px; color: var(--muted); }
+
+/* an authority prompt, at the point of consequence */
+.wsGate {
+  border: 1px solid #EBD9A8; background: var(--amberSoft);
+  border-radius: var(--radius); padding: 12px 13px; margin-bottom: 18px;
+}
+.wsGate__t { font-size: 12.5px; font-weight: 600; color: #7A5A12; }
+.wsGate__d { padding-top: 3px; font-size: 12.5px; color: #7A5A12; }
+.wsGate__a { margin-top: 9px; display: flex; gap: 8px; }
+.wsBtn {
+  font-family: var(--f); font-size: 12.5px; font-weight: 600; border-radius: 6px;
+  padding: 6px 11px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: default;
+}
+.wsBtn--ghost { background: transparent; color: var(--accent); }
+
+.wsMeta { font-size: 11.5px; color: var(--muted); }
+.wsMeta b { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 46rem) {
+  .ws__body { grid-template-columns: 1fr; }
+  .ws__nav { display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 6px; gap: 2px; }
+  .ws__navGroup { display: none; }
+  .ws__navItem { padding: 6px 10px; white-space: nowrap; }
+  .ws__navItem[data-on] { box-shadow: inset 0 -2px 0 var(--accent); border-radius: 4px; }
+  .ws__navCount { display: none; }
+  .ws__main { padding: 16px 14px 20px; }
+}

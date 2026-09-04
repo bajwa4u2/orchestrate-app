@@ -319,3 +319,120 @@ tr.is-us td:first-child { color: var(--accent); }
   .cell, .ui, .layer, .callout { background: #fff; border-color: #ccc; }
   a { color: #111; }
 }
+
+
+/* ─── investor figures ─────────────────────────────────────────────── */
+:root { --ease: cubic-bezier(.22,.61,.36,1); --slow: 900ms; --mid: 520ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Turning transitions off is not enough. Every animated element here starts in a
+     hidden or partial state and is completed by a scroll observer, so switching the
+     transition off alone would leave content permanently invisible to anyone who has
+     asked for less motion. The end state is therefore declared unconditionally, and
+     the observer becomes a no-op rather than a gate on the content. */
+  .frag__seg, .span__bar, .accum__item, .stage__dot, .reveal,
+  .gate__row, .gate__bar::after, .accum__rail::before, .accum__band,
+  .frag__gap, .frag__spineLabel, .frag__label, .close__arc {
+    transition: none !important;
+    animation: none !important;
+  }
+  .reveal, .gate__row { opacity: 1 !important; transform: none !important; }
+  .frag__seg { transform: none !important; }
+  .frag__gap { opacity: 0 !important; }
+  .frag__spineLabel { opacity: 1 !important; }
+  .span__bar { transform: scaleX(1) !important; }
+  .accum__item { opacity: 1 !important; transform: none !important; }
+  .accum__rail::before { height: 100% !important; }
+  .accum__band { opacity: 1 !important; }
+  .close__arc { stroke-dashoffset: 0 !important; }
+  .stage__eng span, .stage__fwd, .stage__fwdLabel, .stage__mark { transition: none !important; }
+  .stage__eng[data-done="1"] .stage__fwd { width: 84px !important; }
+  .stage__eng[data-done="1"] .stage__fwdLabel { opacity: 1 !important; }
+  .gate__bar::after { transform: scaleX(1) !important; background: var(--emerald) !important; }
+  /* the hero figure has no "before" state to hold: it is simply shown resolved */
+  .frag__caption .is-before { display: none !important; }
+  .frag__caption .is-after  { display: inline !important; }
+}
+
+
+/* ═══════════ DECK 1 — the fragmentation figure ═══════════════════════════ */
+
+.frag { margin-top: 2.5rem; }
+.frag__stage { position: relative; }
+.frag svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.frag__seg {
+  transition: transform var(--slow) var(--ease), opacity var(--mid) var(--ease);
+  transform: translateY(var(--dy, 0));
+}
+[data-state="joined"] .frag__seg { transform: translateY(0); }
+
+.frag__gap { transition: opacity var(--mid) var(--ease); opacity: 1; }
+[data-state="joined"] .frag__gap { opacity: 0; }
+
+.frag__label {
+  font-size: 11px; fill: var(--subdued); letter-spacing: .04em;
+  transition: opacity var(--mid) var(--ease);
+}
+[data-state="joined"] .frag__label { opacity: .25; }
+
+.frag__spineLabel { opacity: 0; transition: opacity var(--slow) var(--ease) 300ms; }
+[data-state="joined"] .frag__spineLabel { opacity: 1; }
+
+.frag__caption {
+  margin-top: 1.25rem; font-size: .875rem; color: var(--subdued);
+  min-height: 2.6em;
+}
+.frag__caption b { color: var(--muted); font-weight: 500; }
+.frag__caption .is-after { display: none; }
+[data-state="joined"] .frag__caption .is-before { display: none; }
+[data-state="joined"] .frag__caption .is-after { display: inline; }
+
+
+/* ═══════════ DECK 3 — competitive span diagram ═══════════════════════════ */
+
+.spanfig { margin-top: 2rem; }
+.spanfig__legend { font-size: .75rem; color: var(--subdued); margin: 0 0 .9rem; }
+.spanfig__axis {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 0;
+  font-size: .6875rem; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--subdued); border-bottom: 1px solid var(--line);
+  padding-bottom: .5rem; margin-bottom: .75rem;
+}
+.spanfig__axis span { text-align: center; }
+.spanfig__row {
+  display: grid; grid-template-columns: minmax(0,11rem) 1fr; gap: 1rem;
+  align-items: center; padding: .4rem 0;
+}
+.spanfig__who { font-size: .8125rem; color: var(--muted); }
+.spanfig__track {
+  position: relative; height: 26px; border-radius: 4px;
+  background: repeating-linear-gradient(90deg, var(--panel) 0 calc(16.666% - 1px), var(--line) calc(16.666% - 1px) 16.666%);
+}
+.span__bar {
+  position: absolute; top: 3px; bottom: 3px; border-radius: 3px;
+  background: var(--panel-raised); border: 1px solid var(--line-soft);
+  left: var(--from); width: var(--w);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform var(--mid) var(--ease);
+}
+[data-state="on"] .span__bar { transform: scaleX(1); }
+.spanfig__row:nth-child(3) .span__bar { transition-delay: 60ms; }
+.spanfig__row:nth-child(4) .span__bar { transition-delay: 120ms; }
+.spanfig__row:nth-child(5) .span__bar { transition-delay: 180ms; }
+.spanfig__row:nth-child(6) .span__bar { transition-delay: 240ms; }
+.spanfig__row:nth-child(7) .span__bar { transition-delay: 300ms; }
+.spanfig__row--us .span__bar {
+  background: var(--accent-soft); border-color: var(--accent-deep);
+  transition-delay: 420ms;
+}
+.spanfig__row--us .spanfig__who { color: var(--accent); font-weight: 600; }
+.spanfig__note { margin-top: 1.25rem; font-size: .8125rem; color: var(--subdued); max-width: 60ch; }
+
+@media (max-width: 46rem) {
+  .spanfig__row { grid-template-columns: 1fr; gap: .3rem; }
+  .spanfig__axis { grid-template-columns: repeat(3, 1fr); font-size: .625rem; }
+  .spanfig__axis span:nth-child(even) { display: none; }
+  .spanfig__track { background: repeating-linear-gradient(90deg, var(--panel) 0 calc(33.33% - 1px), var(--line) calc(33.33% - 1px) 33.33%); }
+}
+

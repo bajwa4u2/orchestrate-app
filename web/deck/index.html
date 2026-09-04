@@ -36,13 +36,90 @@
 <main id="main">
 
   <!-- 1 -->
-  <section class="section hero">
+  <section class="section hero js-obs" data-anim="frag">
     <div class="wrap">
       <p class="section__eyebrow">Investor overview</p>
       <h1>The commercial relationship is continuous. The software running it is not.</h1>
       <p class="hero__line">Orchestrate runs B2B relationships from market opportunity through
         agreement, delivery, and payment, in one governed operating environment.</p>
       <p class="hero__pos"><b>CRM records the relationship. Orchestrate operates it.</b></p>
+
+    <div class="frag">
+      <div class="frag__stage">
+        <svg viewBox="0 0 900 190" role="img"
+             aria-label="A single commercial line, from market through agreement, delivery, acceptance, invoice and payment. In its fragmented state each stage sits at a different level in a different system, with gaps between them. Reunified, the stages sit on one continuous line held by the relationship.">
+          <!-- gaps between systems, visible only while fragmented -->
+          <!-- Fragmentation is carried by four independent signals so it survives
+               greyscale, colour-vision differences, reduced motion and print:
+               vertical displacement, the physical gap, a break glyph, and a word. -->
+          <g class="frag__gap">
+            <g stroke="var(--rose)" stroke-width="1" stroke-dasharray="3 3" opacity=".5">
+              <line x1="150" y1="46" x2="150" y2="118"/>
+              <line x1="300" y1="118" x2="300" y2="62"/>
+              <line x1="450" y1="62" x2="450" y2="134"/>
+              <line x1="600" y1="134" x2="600" y2="78"/>
+              <line x1="750" y1="78" x2="750" y2="102"/>
+            </g>
+            <g stroke="var(--subdued)" stroke-width="1.5" stroke-linecap="round" fill="none">
+              <path d="M144 78 l6 -7 M150 71 l6 7"/>
+              <path d="M294 84 l6 -7 M300 77 l6 7"/>
+              <path d="M444 92 l6 -7 M450 85 l6 7"/>
+              <path d="M594 100 l6 -7 M600 93 l6 7"/>
+              <path d="M744 84 l6 -7 M750 77 l6 7"/>
+            </g>
+            <g text-anchor="middle" font-size="9" fill="var(--subdued)" letter-spacing=".08em">
+              <text x="150" y="64">HANDOFF</text><text x="300" y="70">HANDOFF</text>
+              <text x="450" y="78">HANDOFF</text><text x="600" y="86">HANDOFF</text>
+              <text x="750" y="70">HANDOFF</text>
+            </g>
+          </g>
+
+          <!-- the six spans of one commercial line -->
+          <g stroke-width="3" stroke-linecap="round" fill="none">
+            <line class="frag__seg" style="--dy:-44px" x1="20"  y1="90" x2="148" y2="90" stroke="var(--accent)"/>
+            <line class="frag__seg" style="--dy:28px"  x1="152" y1="90" x2="298" y2="90" stroke="var(--accent)"/>
+            <line class="frag__seg" style="--dy:-28px" x1="302" y1="90" x2="448" y2="90" stroke="var(--accent)"/>
+            <line class="frag__seg" style="--dy:44px"  x1="452" y1="90" x2="598" y2="90" stroke="var(--accent)"/>
+            <line class="frag__seg" style="--dy:-12px" x1="602" y1="90" x2="748" y2="90" stroke="var(--accent)"/>
+            <line class="frag__seg" style="--dy:12px"  x1="752" y1="90" x2="880" y2="90" stroke="var(--accent)"/>
+          </g>
+
+          <!-- what each span is, and which system usually owns it -->
+          <g class="frag__label" text-anchor="middle">
+            <text class="frag__seg" style="--dy:-44px" x="84"  y="76">market</text>
+            <text class="frag__seg" style="--dy:28px"  x="225" y="76">engagement</text>
+            <text class="frag__seg" style="--dy:-28px" x="375" y="76">agreement</text>
+            <text class="frag__seg" style="--dy:44px"  x="525" y="76">delivery</text>
+            <text class="frag__seg" style="--dy:-12px" x="675" y="76">acceptance</text>
+            <text class="frag__seg" style="--dy:12px"  x="816" y="76">payment</text>
+          </g>
+          <g class="frag__label" text-anchor="middle" opacity=".55">
+            <text class="frag__seg" style="--dy:-44px" x="84"  y="112">data tools</text>
+            <text class="frag__seg" style="--dy:28px"  x="225" y="112">CRM, email</text>
+            <text class="frag__seg" style="--dy:-28px" x="375" y="112">documents</text>
+            <text class="frag__seg" style="--dy:44px"  x="525" y="112">project tools</text>
+            <text class="frag__seg" style="--dy:-12px" x="675" y="112">email again</text>
+            <text class="frag__seg" style="--dy:12px"  x="816" y="112">accounting</text>
+          </g>
+
+          <!-- the spine that holds it once reunified -->
+          <g class="frag__spineLabel">
+            <line x1="20" y1="150" x2="880" y2="150" stroke="var(--accent-deep)" stroke-width="1"/>
+            <rect x="368" y="138" width="164" height="24" rx="12" fill="var(--accent-soft)" stroke="var(--accent-deep)"/>
+            <text x="450" y="154" text-anchor="middle" font-size="11" fill="var(--accent)"
+                  letter-spacing="1.2" font-weight="600">ONE RELATIONSHIP</text>
+          </g>
+        </svg>
+      </div>
+      <p class="frag__caption">
+        <span class="is-before"><b>Six stages of one commercial line.</b> Each one lives in a
+          different system, and the record restarts at every boundary.</span>
+        <span class="is-after"><b>The same six stages, held by one relationship.</b> The underlying
+          tools do not disappear. What changes is that the commercial record stops being handed
+          across them, and the relationship carries the whole line.</span>
+      </p>
+    </div>
+  </div>
     </div>
   </section>
 
@@ -335,10 +412,36 @@
   </section>
 
   <!-- 11 -->
-  <section class="section">
+  <section class="section js-obs" data-anim="span">
     <div class="wrap">
       <p class="section__eyebrow">Competition</p>
       <h2>Where the commercial relationship gets handed on.</h2>
+    <div class="spanfig">
+      <p class="spanfig__legend">Primary organizing scope, not a claim about what any product can
+        be made to do. Overlap is expected.</p>
+      <div class="spanfig__axis" aria-hidden="true">
+        <span>Market</span><span>Engage</span><span>Agree</span><span>Deliver</span><span>Accept</span><span>Pay</span>
+      </div>
+      <div class="spanfig__row"><div class="spanfig__who">Sales engagement</div>
+        <div class="spanfig__track"><div class="span__bar" style="--from:0%;--w:33.3%"></div></div></div>
+      <div class="spanfig__row"><div class="spanfig__who">CRM</div>
+        <div class="spanfig__track"><div class="span__bar" style="--from:16.6%;--w:33.3%"></div></div></div>
+      <div class="spanfig__row"><div class="spanfig__who">Contract lifecycle</div>
+        <div class="spanfig__track"><div class="span__bar" style="--from:33.3%;--w:16.6%"></div></div></div>
+      <div class="spanfig__row"><div class="spanfig__who">Service execution</div>
+        <div class="spanfig__track"><div class="span__bar" style="--from:33.3%;--w:66.6%"></div></div></div>
+      <div class="spanfig__row"><div class="spanfig__who">Accounting</div>
+        <div class="spanfig__track"><div class="span__bar" style="--from:83.3%;--w:16.6%"></div></div></div>
+      <div class="spanfig__row spanfig__row--us"><div class="spanfig__who">Orchestrate</div>
+        <div class="spanfig__track"><div class="span__bar" style="--from:0%;--w:100%"></div></div></div>
+      <p class="spanfig__note">Each bar is where that category's centre of gravity sits, which is a
+        statement about how a product is organized rather than about its feature list. Several of
+        these do their own span better than a newcomer will, and several can be extended beyond it.
+        The structural bet is that the relationship stays the unit of account across all six, so
+        authority, reasoning and provenance belong to every step rather than to one of them.</p>
+    </div>
+  </div>
+
       <div class="tblwrap">
         <table>
           <thead><tr><th scope="col">Category</th><th scope="col">Representative</th><th scope="col">Owns</th><th scope="col">Where it stops</th></tr></thead>
@@ -475,5 +578,20 @@
 <style>
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 </style>
+
+<script>
+(function () {
+  var els = document.querySelectorAll('.js-obs');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function settle(el) { el.setAttribute('data-state', el.dataset.anim === 'frag' ? 'joined' : 'on'); }
+  if (!('IntersectionObserver' in window) || reduce) { els.forEach(settle); return; }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) { settle(en.target); io.unobserve(en.target); } });
+  }, { threshold: 0.25 });
+  els.forEach(function (e) { if (e.dataset.anim !== 'frag') io.observe(e); });
+  var hero = document.querySelector('[data-anim="frag"]');
+  if (hero) setTimeout(function () { settle(hero); }, 1400);
+})();
+</script>
 </body>
 </html>
