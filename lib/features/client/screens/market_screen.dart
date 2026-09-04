@@ -22,7 +22,12 @@ import 'package:orchestrate_app/features/client/widgets/candidate_sheet.dart';
 /// commercial opinion, and one of the two would be wrong in front of a real
 /// business.
 class MarketScreen extends StatefulWidget {
-  const MarketScreen({super.key});
+  const MarketScreen({super.key, this.focusCounterpartyKey});
+
+  /// Open straight onto one counterparty. Used when a person arrives from work
+  /// that is about a specific company, so they land on the thing rather than
+  /// on a list they then have to search.
+  final String? focusCounterpartyKey;
 
   @override
   State<MarketScreen> createState() => _MarketScreenState();
@@ -39,6 +44,7 @@ class _MarketScreenState extends State<MarketScreen> {
     if (!_market.hasAnswer && !_market.isLoading && _market.error == null) {
       _market.load().catchError((Object e) => throw e);
     }
+    _focusIfAsked();
   }
 
   @override
@@ -49,6 +55,27 @@ class _MarketScreenState extends State<MarketScreen> {
 
   void _onChanged() {
     if (mounted) setState(() {});
+    _focusIfAsked();
+  }
+
+  bool _focused = false;
+
+  /// Opens the requested counterparty once the answer is in, and only once.
+  /// A key we do not hold is left alone — arriving on the list is a fair
+  /// outcome, and inventing a sheet for a company Market cannot see is not.
+  void _focusIfAsked() {
+    final key = widget.focusCounterpartyKey;
+    if (_focused || key == null || !mounted || !_market.hasAnswer) return;
+    Candidate? match;
+    for (final c in _market.view!.candidates) {
+      if (c.key == key) match = c;
+    }
+    if (match == null) return;
+    _focused = true;
+    final found = match;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _open(found);
+    });
   }
 
   @override

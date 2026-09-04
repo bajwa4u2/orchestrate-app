@@ -6,6 +6,7 @@ import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/ui/authority_gate.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
+import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
 
 /// ONE DURABLE RELATIONSHIP.
 ///
@@ -316,6 +317,15 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
         Text('Reaching out',
             style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
+        // Contact readiness is its own axis, beside condition and reachability.
+        // A relationship can be active, the channel unknown, and still have no
+        // address anyone may responsibly use.
+        ContactReadinessPanel(
+          counterpartyKey: depth.counterpartyKey,
+          counterpartyName: depth.counterparty,
+          onChanged: () => _relationships.invalidate(relationshipId: depth.id),
+        ),
+        const SizedBox(height: 12),
         // Market makes an opportunity visible; the relationship makes the next
         // act visible. Neither may act on it — the authority contract answers,
         // and today it refuses for every client in production.

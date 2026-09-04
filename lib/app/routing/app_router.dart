@@ -1182,8 +1182,11 @@ GoRouter get router {
           ),
         ),
         GoRoute(
-            path: '/client/market',
-            builder: (context, state) => const MarketScreen()),
+          path: '/client/market',
+          builder: (context, state) => MarketScreen(
+            focusCounterpartyKey: state.uri.queryParameters['focus'],
+          ),
+        ),
         GoRoute(
             path: '/client/inbound',
             builder: (context, state) => const AttentionScreen()),

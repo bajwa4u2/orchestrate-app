@@ -123,7 +123,9 @@ class _TodayScreenState extends State<TodayScreen> {
 
     // Attention comes from the one owner every surface reads, so Today and
     // the Inbound list cannot disagree about what is waiting.
-    final inbound = _attention.needsYou;
+    final owed = _attention.needsYou;
+    final inbound = owed.where((i) => !i.isAboutContact).toList(growable: false);
+    final contactWork = owed.where((i) => i.isAboutContact).toList(growable: false);
     final needsYou = s.needsYou;
     final inFlight = s.inFlight;
     final changed = s.changed;
@@ -134,6 +136,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
     if (needsYou.isEmpty &&
         inbound.isEmpty &&
+        contactWork.isEmpty &&
         inFlight.isEmpty &&
         changed.isEmpty &&
         !setupIncomplete) {
@@ -173,6 +176,27 @@ class _TodayScreenState extends State<TodayScreen> {
               ),
             // Mail that reached this business and could not be placed. One
             // row, leading with what it is and why — never "you have 27".
+            // A counterparty the business decided to pursue and cannot reach.
+            // Said as the decision they already made, because that is what
+            // makes it worth their time rather than another system complaint.
+            if (contactWork.isNotEmpty)
+              WorkspaceRow(
+                title: contactWork.length == 1
+                    ? contactWork.first.title
+                    : '${contactWork.length} companies you chose to pursue '
+                        'cannot be reached yet',
+                detail: contactWork.length == 1
+                    ? contactWork.first.why
+                    : 'Orchestrate does not yet have a contact it can '
+                        'responsibly use for them.',
+                meta: contactWork.first.counterparty,
+                tone: RowTone.attention,
+                onTap: () => context.go('/client/inbound'),
+                action: TextButton(
+                  onPressed: () => context.go('/client/inbound'),
+                  child: const Text('Look'),
+                ),
+              ),
             if (inbound.isNotEmpty)
               WorkspaceRow(
                 title: inbound.length == 1

@@ -110,7 +110,12 @@ enum AttentionAction {
   associateWithRelationship('ASSOCIATE_WITH_RELATIONSHIP', 'Place on a relationship'),
   openRelationship('OPEN_RELATIONSHIP', 'Open the relationship'),
   reviewMessage('REVIEW_MESSAGE', 'Read the message'),
-  viewProvenance('VIEW_PROVENANCE', 'How we know this');
+  viewProvenance('VIEW_PROVENANCE', 'How we know this'),
+
+  /// Go to the counterparty, where the work can actually be done. Contact
+  /// identity lives beside the commercial judgement that needs it — a task
+  /// list that edits contacts is the first half of a CRM.
+  openCounterparty('OPEN_COUNTERPARTY', 'Open the counterparty');
 
   const AttentionAction(this.wire, this.label);
   final String wire;
@@ -192,6 +197,7 @@ class AttentionItem {
     required this.counterparty,
     required this.relationshipId,
     required this.actions,
+    required this.counterpartyKey,
     required this.resolvedBy,
   });
 
@@ -214,9 +220,22 @@ class AttentionItem {
 
   /// Only the legitimate next acts, decided by the backend.
   final List<AttentionAction> actions;
+
+  /// The company this is about, when it is about a company. Null for mail,
+  /// where deciding who the sender is would be the work itself.
+  final String? counterpartyKey;
   final String? resolvedBy;
 
   bool get isMine => owner == AttentionOwner.client;
+
+  /// Whether this is about reaching a company rather than about a message.
+  ///
+  /// The two read completely differently and must never be counted together:
+  /// "three messages arrived we could not place" and "you chose to pursue
+  /// three companies you cannot reach" are different sentences about different
+  /// work, and one line covering both is true of neither.
+  bool get isAboutContact =>
+      counterpartyKey != null && actions.contains(AttentionAction.openCounterparty);
 
   static AttentionItem fromJson(Map<String, dynamic> json) => AttentionItem(
         id: (json['id'] as String?) ?? '',
@@ -240,6 +259,9 @@ class AttentionItem {
             .map(AttentionAction.parse)
             .whereType<AttentionAction>()
             .toList(growable: false),
+        counterpartyKey: (json['counterpartyKey'] as String?)?.trim().isEmpty ?? true
+            ? null
+            : (json['counterpartyKey'] as String).trim(),
         resolvedBy: json['resolvedBy'] as String?,
       );
 }

@@ -31,6 +31,7 @@ void main() {
       AttentionAction.dismiss,
       AttentionAction.viewProvenance,
     ],
+    String? counterpartyKey,
     String? resolvedBy,
   }) =>
       AttentionItem(
@@ -45,6 +46,7 @@ void main() {
         counterparty: counterparty,
         relationshipId: relationshipId,
         actions: actions,
+        counterpartyKey: counterpartyKey,
         resolvedBy: resolvedBy,
       );
 
@@ -81,8 +83,7 @@ void main() {
     ClientAttention.instance.seed(view(const []));
     await render(tester, 'healthy');
 
-    expect(find.textContaining('Nothing arrived that we could not place'),
-        findsOneWidget);
+    expect(find.textContaining('Nothing is waiting on you'), findsOneWidget);
     // A healthy state says so. An empty list a person has to interpret is not
     // an answer.
     expect(find.text('NEEDS YOU'), findsNothing);
@@ -219,6 +220,62 @@ void main() {
       expect(find.text('NEEDS YOU'), findsOneWidget);
       debugPrint('  ok  ${size.width.toInt()}x${size.height.toInt()} — no overflow');
     }
+  });
+
+  // ── D3: WORK THAT IS NOT MAIL ────────────────────────────────────────────
+  //
+  // Attention stopped being an inbound-only list when a counterparty a business
+  // chose to pursue, and cannot reach, became a real thing waiting on them.
+
+  AttentionItem contactWork({
+    String counterparty = 'trainwell',
+    String counterpartyKey = 'trainwell.com',
+    String? relationshipId,
+  }) =>
+      AttentionItem(
+        id: 'pursuit-1',
+        kind: 'COMMERCIAL_ACTION',
+        owner: AttentionOwner.client,
+        severity: 'WARNING',
+        state: AttentionState.open,
+        title: 'You chose to pursue $counterparty',
+        why: 'Nobody here has an address for them. A counterparty can be worth '
+            'pursuing before anyone knows how to reach them. That is an honest '
+            'gap, not a defect.',
+        occurredAt: DateTime.now(),
+        counterparty: counterparty,
+        relationshipId: relationshipId,
+        actions: relationshipId != null
+            ? const [AttentionAction.openRelationship, AttentionAction.openCounterparty]
+            : const [AttentionAction.openCounterparty],
+        counterpartyKey: counterpartyKey,
+        resolvedBy: null,
+      );
+
+  testWidgets('10. a pursued counterparty with no contact is work owed',
+      (tester) async {
+    ClientAttention.instance.seed(view([contactWork()]));
+    await render(tester, 'contact work owed');
+
+    expect(find.text('NEEDS YOU'), findsOneWidget);
+    // Said as the decision the business already made, not as a system error.
+    expect(find.text('You chose to pursue trainwell'), findsOneWidget);
+    expect(find.textContaining('honest gap'), findsOneWidget);
+    // The readiness projection's own sentence, quoted rather than restated.
+    expect(find.textContaining('Nobody here has an address for them'),
+        findsOneWidget);
+  });
+
+  testWidgets('11. contact work carries no message actions', (tester) async {
+    final work = contactWork();
+    // It is not mail: there is nothing to read, nothing to place on a
+    // relationship, and nothing to escalate. Offering any of those would be a
+    // button that means something else.
+    expect(work.actions.contains(AttentionAction.reviewMessage), isFalse);
+    expect(work.actions.contains(AttentionAction.associateWithRelationship), isFalse);
+    expect(work.actions.contains(AttentionAction.markReviewed), isFalse);
+    expect(work.actions, contains(AttentionAction.openCounterparty));
+    debugPrint('  ok  contact work offers only the way to the counterparty');
   });
 
   testWidgets('9. summaries are semantically readable', (tester) async {

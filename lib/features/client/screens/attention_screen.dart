@@ -57,8 +57,12 @@ class _AttentionScreenState extends State<AttentionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         WorkspaceHeader(
-          title: 'Inbound',
-          context_: 'Mail that reached your business and has not been placed.',
+          // Renamed in D3. The screen described itself as mail until a
+          // counterparty a business chose to pursue, and cannot reach, started
+          // appearing in it — and a heading that is wrong about half its
+          // contents teaches people to distrust the other half.
+          title: 'Waiting on you',
+          context_: 'Work your business has not settled yet.',
           onBack: () => context.go('/client/today'),
         ),
         Expanded(child: _body(view)),
@@ -91,8 +95,9 @@ class _AttentionScreenState extends State<AttentionScreen> {
     // empty list a person has to interpret.
     if (mine.isEmpty && ours.isEmpty && noted.isEmpty && settled.isEmpty) {
       return const QuietState(
-        message: 'Nothing arrived that we could not place.',
-        hint: 'Mail Orchestrate cannot match to a relationship shows up here.',
+        message: 'Nothing is waiting on you.',
+        hint: 'Mail we cannot place, and counterparties you decided to pursue '
+            'but cannot yet reach, show up here.',
       );
     }
 
@@ -197,6 +202,18 @@ class _Row extends StatelessWidget {
   }
 
   void _open(BuildContext context) {
+    // Contact work is not mail. It has no message to render, and putting it in
+    // a sheet whose whole vocabulary is "the message" would describe it wrong
+    // — the person needs to be where the contact can be recorded.
+    if (item.actions.contains(AttentionAction.openCounterparty) &&
+        !item.actions.contains(AttentionAction.reviewMessage)) {
+      if (item.relationshipId != null) {
+        context.go('/client/relationships/${item.relationshipId}');
+      } else {
+        context.go('/client/market?focus=${Uri.encodeComponent(item.counterpartyKey ?? '')}');
+      }
+      return;
+    }
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

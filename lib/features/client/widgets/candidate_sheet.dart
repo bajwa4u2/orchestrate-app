@@ -5,6 +5,7 @@ import 'package:orchestrate_app/core/market/client_market.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/ui/authority_gate.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
+import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
 
 /// ONE COUNTERPARTY, IN DEPTH.
 ///
@@ -199,6 +200,15 @@ class _CandidateSheetState extends State<CandidateSheet> {
             Text('Reaching out',
                 style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
+            // Whether we have a way to reach them at all, before whether we
+            // are allowed to. Two separate questions, and a business can be
+            // blocked on either — most are currently blocked on both.
+            ContactReadinessPanel(
+              counterpartyKey: c.key,
+              counterpartyName: c.name,
+              onChanged: () => ClientMarket.instance.refresh(),
+            ),
+            const SizedBox(height: 12),
             // Market may make the opportunity visible. It may not act on it —
             // the authority contract answers, and today it refuses for every
             // client in production.
