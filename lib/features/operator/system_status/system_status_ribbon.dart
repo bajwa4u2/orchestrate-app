@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
-import '../models/cognition_models.dart';
+import 'system_status.dart';
 
-/// Always-on trust ribbon at the top of every operator screen.
-/// Reads vault adapter, provider health rollup, DNS verified count,
-/// and OAuth re-auth required count from the cognition composition
-/// endpoint. Never claims state it cannot prove —
-/// OPERATOR_WORKSPACE_SPECIFICATION.md §5.1.
-class OperatorTrustRibbon extends StatelessWidget {
-  const OperatorTrustRibbon({super.key, this.ribbon, this.loading = false});
+/// THE STRIP ACROSS THE TOP OF EVERY OPERATOR SCREEN.
+///
+/// Four facts about the things Orchestrate runs on, each one actionable: where
+/// credentials live, how many mailboxes are healthy, how many sending domains
+/// are verified, and how many mailboxes are waiting to be re-authorised.
+///
+/// It states nothing it cannot prove. Where a count is zero out of zero it says
+/// so plainly rather than showing a reassuring green — nothing configured is
+/// not the same as everything healthy.
+class SystemStatusRibbon extends StatelessWidget {
+  const SystemStatusRibbon({super.key, this.status, this.loading = false});
 
-  final TrustRibbon? ribbon;
+  final SystemStatus? status;
   final bool loading;
 
   @override
@@ -36,22 +40,20 @@ class OperatorTrustRibbon extends StatelessWidget {
           runSpacing: 6,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _TrustPill(
-              label: 'Trust',
-              valueWidget: const _Dot(color: AppTheme.subdued),
-              caption: 'always-on posture',
-            ),
+            // No decorative "Trust ●" pill. It asserted a posture without
+            // measuring anything, which is the decoration this workspace is
+            // being rebuilt to remove.
             if (loading)
               const _TrustPill(
-                  label: 'Loading', value: '…', caption: 'reading services'),
-            if (ribbon != null) ..._ribbonChildren(ribbon!),
+                  label: 'Reading', value: '…', caption: 'checking services'),
+            if (status != null) ..._pills(status!),
           ],
         ),
       ),
     );
   }
 
-  List<Widget> _ribbonChildren(TrustRibbon r) {
+  List<Widget> _pills(SystemStatus r) {
     return [
       _TrustPill(
         label: 'Vault',
@@ -62,30 +64,30 @@ class OperatorTrustRibbon extends StatelessWidget {
         tone: r.vaultWarning ? _Tone.warning : _Tone.neutral,
       ),
       _TrustPill(
-        label: 'Providers',
-        value: '${r.providersHealthy} / ${r.providersTotal}',
+        label: 'Mailboxes',
+        value: '${r.mailboxesHealthy} / ${r.mailboxesTotal}',
         caption: 'healthy mailboxes',
-        tone: r.providersTotal == 0
+        tone: r.mailboxesTotal == 0
             ? _Tone.neutral
-            : r.providersHealthy == r.providersTotal
+            : r.mailboxesHealthy == r.mailboxesTotal
                 ? _Tone.ok
                 : _Tone.warning,
       ),
       _TrustPill(
-        label: 'DNS',
-        value: '${r.dnsVerified} / ${r.dnsTotal}',
+        label: 'Domains',
+        value: '${r.domainsVerified} / ${r.domainsTotal}',
         caption: 'sending domains verified',
-        tone: r.dnsTotal == 0
+        tone: r.domainsTotal == 0
             ? _Tone.neutral
-            : r.dnsVerified == r.dnsTotal
+            : r.domainsVerified == r.domainsTotal
                 ? _Tone.ok
                 : _Tone.warning,
       ),
       _TrustPill(
-        label: 'OAuth',
-        value: '${r.oauthReauthRequired} reauth',
-        caption: 'mailboxes awaiting re-authorization',
-        tone: r.oauthReauthRequired == 0 ? _Tone.ok : _Tone.warning,
+        label: 'Re-auth',
+        value: '${r.mailboxesAwaitingReauth}',
+        caption: 'mailboxes awaiting re-authorisation',
+        tone: r.mailboxesAwaitingReauth == 0 ? _Tone.ok : _Tone.warning,
       ),
     ];
   }
@@ -97,14 +99,12 @@ class _TrustPill extends StatelessWidget {
   const _TrustPill({
     required this.label,
     this.value,
-    this.valueWidget,
     required this.caption,
     this.tone = _Tone.neutral,
   });
 
   final String label;
   final String? value;
-  final Widget? valueWidget;
   final String caption;
   final _Tone tone;
 
@@ -141,13 +141,10 @@ class _TrustPill extends StatelessWidget {
                 ?.copyWith(color: AppTheme.subdued),
           ),
           const SizedBox(width: 6),
-          if (valueWidget != null)
-            valueWidget!
-          else
-            Text(
-              value ?? '',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+          Text(
+            value ?? '',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
         ],
       ),
     );

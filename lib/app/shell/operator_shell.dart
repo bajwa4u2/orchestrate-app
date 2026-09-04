@@ -6,9 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
-import 'package:orchestrate_app/features/operator_workspace/models/cognition_models.dart';
-import 'package:orchestrate_app/features/operator_workspace/repositories/operator_cognition_repository.dart';
-import 'package:orchestrate_app/features/operator_workspace/widgets/operator_trust_ribbon.dart';
+import 'package:orchestrate_app/features/operator/system_status/system_status.dart';
+import 'package:orchestrate_app/features/operator/system_status/system_status_ribbon.dart';
 
 /// Operations console shell. Ten operational surfaces replacing the
 /// legacy seven-faculty observation model.
@@ -33,8 +32,8 @@ class OperatorShell extends StatefulWidget {
 }
 
 class _OperatorShellState extends State<OperatorShell> {
-  final _repo = OperatorCognitionRepository();
-  CognitionHome? _home;
+  final _repo = SystemStatusRepository();
+  SystemStatus? _status;
   bool _loading = true;
   bool _disposed = false;
 
@@ -58,10 +57,10 @@ class _OperatorShellState extends State<OperatorShell> {
 
   Future<void> _poll() async {
     try {
-      final home = await _repo.fetchHome();
+      final status = await _repo.fetch();
       if (_disposed) return;
       setState(() {
-        _home = home;
+        _status = status;
         _loading = false;
       });
     } catch (_) {
@@ -74,11 +73,6 @@ class _OperatorShellState extends State<OperatorShell> {
   void dispose() {
     _disposed = true;
     super.dispose();
-  }
-
-  int get _totalAttention {
-    if (_home == null) return 0;
-    return _home!.attentionByFaculty.values.fold(0, (s, v) => s + v);
   }
 
   List<_NavGroup> get groups => [
@@ -130,7 +124,10 @@ class _OperatorShellState extends State<OperatorShell> {
         ),
       ];
 
-  Map<String, int> get _attentionMap => {'ops': _totalAttention};
+  // The retired estate carried a per-faculty attention rollup that no
+  // surviving surface consumed. Real attention lives in the Work Queue, which
+  // counts cases a human owes a decision on rather than a sum of module badges.
+  Map<String, int> get _attentionMap => const {};
 
   @override
   Widget build(BuildContext context) {
@@ -148,8 +145,7 @@ class _OperatorShellState extends State<OperatorShell> {
               child: Column(
                 children: [
                   _TopBar(currentPath: widget.currentPath, groups: groups),
-                  OperatorTrustRibbon(
-                      ribbon: _home?.trustRibbon, loading: _loading),
+                  SystemStatusRibbon(status: _status, loading: _loading),
                   Expanded(
                     child: Container(
                       color: AppTheme.background,

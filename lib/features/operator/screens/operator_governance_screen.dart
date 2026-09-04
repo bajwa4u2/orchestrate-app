@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/operator_repository.dart';
-import 'package:orchestrate_app/features/operator_workspace/widgets/ai_custody_fingerprint_card.dart';
-import 'package:orchestrate_app/features/operator_workspace/widgets/dispatch_decision_strip.dart';
-import 'package:orchestrate_app/features/operator_workspace/widgets/enforcement_cascade_lane.dart';
+import 'package:orchestrate_app/features/operator/widgets/ai_custody_fingerprint_card.dart';
+import 'package:orchestrate_app/features/operator/widgets/dispatch_decision_strip.dart';
+import 'package:orchestrate_app/features/operator/widgets/enforcement_cascade_lane.dart';
 import 'package:orchestrate_app/features/system/widgets/governance_primitives.dart';
 
 /// Operator governance workspace.

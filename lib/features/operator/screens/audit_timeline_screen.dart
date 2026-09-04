@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
-import '../models/cognition_models.dart';
-import '../repositories/operator_cognition_repository.dart';
+import 'audit_events.dart';
 import '../widgets/operator_panel.dart';
 
 /// Queryable AuditLog timeline. Closes the long-standing operator
@@ -15,7 +14,7 @@ class AuditTimelineScreen extends StatefulWidget {
 }
 
 class _AuditTimelineScreenState extends State<AuditTimelineScreen> {
-  final OperatorCognitionRepository _repo = OperatorCognitionRepository();
+  final AuditEventsRepository _repo = AuditEventsRepository();
   Future<List<AuditEvent>>? _future;
   String _action = '';
   String _entityType = '';
@@ -27,7 +26,7 @@ class _AuditTimelineScreenState extends State<AuditTimelineScreen> {
   }
 
   void _refresh() {
-    setState(() => _future = _repo.fetchAuditEvents(
+    setState(() => _future = _repo.fetch(
           action: _action.isEmpty ? null : _action,
           entityType: _entityType.isEmpty ? null : _entityType,
           limit: 200,

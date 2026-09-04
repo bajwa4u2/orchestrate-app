@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:orchestrate_app/features/operator_workspace/governance/audit_timeline_screen.dart';
+import 'package:orchestrate_app/features/operator/screens/audit_timeline_screen.dart';
 
 /// Audit History — wraps the existing AuditTimelineScreen.
 ///

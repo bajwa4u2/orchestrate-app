@@ -34,6 +34,7 @@ import 'package:orchestrate_app/features/client/screens/client_replies_screen.da
 import 'package:orchestrate_app/features/client/screens/client_settings_screen.dart';
 import 'package:orchestrate_app/features/client/screens/leads_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/inquiry_detail_screen.dart';
+import 'package:orchestrate_app/features/operator/screens/audit_timeline_screen.dart';
 import 'package:orchestrate_app/features/client/screens/meetings_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_support_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_backend_surface_screen.dart';
@@ -41,28 +42,6 @@ import 'package:orchestrate_app/features/operator/screens/operator_debug_screen.
 import 'package:orchestrate_app/features/operator/screens/operator_governance_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_system_doctor_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_workspace_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/adaptation_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/ai_economy_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/convergence_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/escalations_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/green_path_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/guardrails_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/healing_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/learning_feed_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/operational_memory_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/patterns_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/playbooks_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/reasoning_cache_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/adaptation/suggestions_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/cognition/cognition_home_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/continuity/continuity_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/governance/ai_approvals_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/governance/audit_timeline_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/platform_supervision/platform_supervision_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/runtime_truth/campaign_lifecycle_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/runtime_truth/discovery_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/runtime_truth/runtime_truth_screen.dart';
-import 'package:orchestrate_app/features/operator_workspace/trust_readiness/trust_readiness_screen.dart';
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
 import 'package:orchestrate_app/features/public/screens/commercial_model_screen.dart';
 import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart';
@@ -1419,12 +1398,12 @@ GoRouter get router {
       builder: (context, state, child) =>
           OperatorShell(currentPath: state.uri.path, child: child),
       routes: [
-        // Legacy /operator/overview lands on Cognition Home so deep
-        // links resolve into the new IA. Original metric-wall view is
-        // available at /ops/overview-legacy during transition.
+        // Legacy /operator/overview lands on the work queue, which is where
+        // an operator's day actually starts. It used to open a composed
+        // "cognition home" that no navigation reached and that is now retired.
         GoRoute(
             path: '/operator/overview',
-            builder: (context, state) => const CognitionHomeScreen()),
+            redirect: (context, state) => '/ops/work'),
         GoRoute(
             path: '/operator/system',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
@@ -1469,10 +1448,10 @@ GoRouter get router {
             builder: (context, state) => const OperatorBackendSurfaceScreen(
                 surface: OperatorBackendSurface.aiGovernance)),
         // Legacy operator Providers panel removed — superseded by the
-        // runtime-backed Runtime Truth surface.
+        // Runtime Truth surface that replaced it. Transport owns provider health.
         GoRoute(
             path: '/operator/providers',
-            redirect: (context, state) => '/ops/runtime-truth'),
+            redirect: (context, state) => '/ops/transport'),
         GoRoute(
             path: '/operator/sources',
             builder: (context, state) => const OperatorBackendSurfaceScreen(
@@ -1553,88 +1532,12 @@ GoRouter get router {
         // /ops/overview retained for inbound links but redirected to system hub
         GoRoute(
             path: '/ops/overview', redirect: (context, state) => '/ops/system'),
-        GoRoute(
-            path: '/ops/overview-legacy',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.command)),
-        // Faculty: Trust & Readiness
-        GoRoute(
-            path: '/ops/trust-readiness',
-            builder: (context, state) => const TrustReadinessScreen()),
-        // Faculty: Continuity
-        GoRoute(
-            path: '/ops/continuity',
-            builder: (context, state) => ContinuityScreen(
-                  initialCategory: state.uri.queryParameters['category'],
-                  initialDrill: state.uri.queryParameters['drill'],
-                )),
-        // Runtime-backed campaign-lifecycle surface — replaces the
-        // legacy operator Campaigns / Clients panels.
-        GoRoute(
-            path: '/ops/continuity/campaigns',
-            builder: (context, state) => const CampaignLifecycleScreen()),
-        // Faculty: Runtime Truth
-        GoRoute(
-            path: '/ops/runtime-truth',
-            builder: (context, state) => const RuntimeTruthScreen()),
-        GoRoute(
-            path: '/ops/runtime-truth/discovery',
-            builder: (context, state) => const DiscoveryScreen()),
-        // Faculty: Adaptation hub + seven subsurfaces
-        GoRoute(
-            path: '/ops/adaptation',
-            builder: (context, state) => const AdaptationHubScreen()),
-        GoRoute(
-            path: '/ops/adaptation/suggestions',
-            builder: (context, state) => const SuggestionsScreen()),
-        GoRoute(
-            path: '/ops/adaptation/playbooks',
-            builder: (context, state) => const PlaybooksScreen()),
-        GoRoute(
-            path: '/ops/adaptation/healing',
-            builder: (context, state) => const HealingScreen()),
-        GoRoute(
-            path: '/ops/adaptation/guardrails',
-            builder: (context, state) => const GuardrailsScreen()),
-        GoRoute(
-            path: '/ops/adaptation/patterns',
-            builder: (context, state) => const PatternsScreen()),
-        GoRoute(
-            path: '/ops/adaptation/learning-feed',
-            builder: (context, state) => const LearningFeedScreen()),
-        GoRoute(
-            path: '/ops/adaptation/memory',
-            builder: (context, state) => const OperationalMemoryScreen()),
-        // Convergence layer routes
-        GoRoute(
-            path: '/ops/adaptation/convergence',
-            builder: (context, state) => const ConvergenceScreen()),
-        GoRoute(
-            path: '/ops/adaptation/green-path',
-            builder: (context, state) => const GreenPathScreen()),
-        GoRoute(
-            path: '/ops/adaptation/ai-economy',
-            builder: (context, state) => const AiEconomyScreen()),
-        GoRoute(
-            path: '/ops/adaptation/escalations',
-            builder: (context, state) => const EscalationsScreen()),
-        GoRoute(
-            path: '/ops/adaptation/reasoning-cache',
-            builder: (context, state) => const ReasoningCacheScreen()),
-        // Faculty: Governance (extends existing /ops/governance)
-        GoRoute(
-            path: '/ops/governance/ai-approvals',
-            builder: (context, state) => const AiApprovalsScreen()),
+        // What was done, by whom, to what, and when. The evidence behind
+        // every operator decision, and the one surface of the retired estate
+        // that was genuinely load-bearing — extracted rather than deleted.
         GoRoute(
             path: '/ops/governance/audit',
             builder: (context, state) => const AuditTimelineScreen()),
-        // Faculty: Platform Supervision (honest empty state today)
-        GoRoute(
-            path: '/ops/platform-supervision',
-            builder: (context, state) => const PlatformSupervisionScreen()),
-        // Legacy queue/worker/job paths — redirect to Continuity drill
-        // (OPERATOR_WORKSPACE_SPECIFICATION.md §4.3). The drill view
-        // is engineering-altitude detail under supervision, not nav.
         GoRoute(
             path: '/operator/jobs-legacy',
             redirect: (context, state) => '/ops/continuity?drill=jobs'),
@@ -1648,23 +1551,24 @@ GoRouter get router {
             path: '/ops/clients',
             builder: (context, state) => const OpsClientsScreen()),
         GoRoute(
+            // Inventory & imports owns contact records. This was a second,
+            // unlinked view of the same thing in the legacy sectioned screen.
             path: '/ops/contacts',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.pipeline)),
+            redirect: (context, state) => '/ops/inventory'),
         GoRoute(
             path: '/ops/campaigns',
             builder: (context, state) => const OpsCampaignsScreen()),
         GoRoute(
+            // Transport owns mailboxes and sending identity.
             path: '/ops/mailboxes',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.deliverability)),
+            redirect: (context, state) => '/ops/transport'),
         GoRoute(
             path: '/ops/providers',
-            redirect: (context, state) => '/ops/runtime-truth'),
+            redirect: (context, state) => '/ops/transport'),
         GoRoute(
+            // Audit history owns what happened and when.
             path: '/ops/activity',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.activity)),
+            redirect: (context, state) => '/ops/history'),
         GoRoute(
             path: '/ops/inquiries',
             builder: (context, state) => const OperatorWorkspaceScreen(
