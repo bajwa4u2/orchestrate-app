@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'support/sibling_backend.dart';
 
 /// A SAVED PROFILE HAS TO SURFACE, AND YOU HAVE TO BE ABLE TO EDIT YOUR NAME.
 ///
@@ -20,7 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// called the old name everywhere else.
 void main() {
   String app(String p) => File(p).readAsStringSync();
-  String backend(String p) => File('../orchestrate_backend/$p').readAsStringSync();
+  String backend(String p) => backendSource(p);
 
   test('a person can change their own name', () {
     final service = backend('src/auth/auth.service.ts');
@@ -29,7 +30,7 @@ void main() {
     // Refused rather than stored blank, and answered in the person's words.
     expect(service.contains('Enter the name you want to be known by.'), isTrue);
     expect(backend('src/auth/auth.controller.ts').contains('updateMe('), isTrue);
-  });
+  }, skip: backendSkipReason);
 
   test('the form offers it, and it is about the person', () {
     final screen =
@@ -56,7 +57,7 @@ void main() {
       isTrue,
       reason: 'the count decides whether the organisation may be renamed',
     );
-  });
+  }, skip: backendSkipReason);
 
   test('the session is refreshed from the server after a save', () {
     final screen =

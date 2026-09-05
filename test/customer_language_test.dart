@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'support/sibling_backend.dart';
 
 /// THE WORDS THE PLATFORM USES ABOUT ITSELF ARE NOT THE WORDS A CUSTOMER READS.
 ///
@@ -12,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// None of it was wrong internally. All of it was written for us.
 void main() {
-  String backend(String path) => File('../orchestrate_backend/$path').readAsStringSync();
+  String backend(String path) => backendSource(path);
 
   /// Quoted strings only. Comments may keep the internal vocabulary — that is
   /// where it belongs, and a test that forbade it there would push accurate
@@ -50,7 +51,7 @@ void main() {
           .toList();
       expect(offending, isEmpty,
           reason: 'these strings reach the customer:\n${offending.join('\n')}');
-    });
+    }, skip: backendSkipReason);
   }
 
   test('a provider code is rendered as a name', () {

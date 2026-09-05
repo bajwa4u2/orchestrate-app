@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'support/sibling_backend.dart';
 import 'package:orchestrate_app/data/repositories/client/store_purchase_repository.dart';
 
 /// A PURCHASE PATH THAT CANNOT COMPLETE MUST NOT BE OFFERED.
@@ -47,9 +48,8 @@ void main() {
   test('the server refuses too, not only the screen', () {
     // A client build from last month does not know a rail went down, and the
     // money moves at the store before it reaches us.
-    final controller = File(
-      '../orchestrate_backend/src/commercial-policy/store-purchase.controller.ts',
-    ).readAsStringSync();
+    final controller =
+        backendSource('src/commercial-policy/store-purchase.controller.ts');
     expect(controller.contains("code: 'RAIL_NOT_AVAILABLE'"), isTrue);
     final purchase = controller.substring(controller.indexOf('async purchase('));
     expect(
@@ -57,5 +57,5 @@ void main() {
       isTrue,
       reason: 'refuse before verifying, so nothing is accepted on a dead rail',
     );
-  });
+  }, skip: backendSkipReason);
 }

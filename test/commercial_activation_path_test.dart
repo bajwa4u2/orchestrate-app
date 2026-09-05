@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'support/sibling_backend.dart';
 import 'package:orchestrate_app/core/config/pricing_config.dart';
 
 /// A CUSTOMER MUST BE ABLE TO REACH THE CAPABILITY THEY ARE BEING SOLD.
@@ -109,9 +110,8 @@ void main() {
     // Stripe honoured the freeze at the service boundary; the store rails did
     // not, because rail readiness was a purely technical question. The App
     // Store rail is the one about to be submitted for review.
-    final readiness = File(
-      '../orchestrate_backend/src/commerce-evidence/store-readiness.service.ts',
-    ).readAsStringSync();
+    final readiness =
+        backendSource('src/commerce-evidence/store-readiness.service.ts');
     expect(readiness.contains('COMMERCIAL_ACTIVATION_OPEN'), isTrue);
     final availability = readiness.substring(readiness.indexOf('async availability('));
     expect(
@@ -121,7 +121,7 @@ void main() {
       reason: 'a closed policy needs no provider call and is not a provider '
           'problem',
     );
-  });
+  }, skip: backendSkipReason);
 
   test('a single chrome, wherever the screen is reached from', () {
     // Reached from Billing by a signed-in customer, the screen wrapped itself
