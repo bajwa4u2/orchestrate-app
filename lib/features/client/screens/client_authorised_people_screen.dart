@@ -134,7 +134,17 @@ class _ClientAuthorisedPeopleScreenState
           // asks for more, this is the screen they are already on.
           AuthorityEvidencePanel(onChanged: _load),
           const SizedBox(height: 20),
-          if (_people.isEmpty)
+          // ONLY WHEN THERE IS NOTHING ELSE SAYING IT.
+          //
+          // This card exists for a business that has not started. When this
+          // person's own submission is already under review, the standing above
+          // has said so and the submission card beneath it has said so again —
+          // and this made three. Where a submission exists, the card that
+          // explains the submission is the one that stays.
+          if (_people.isEmpty &&
+              (ClientAuthority.instance.projection?.submission.state ??
+                      SubmissionState.notSubmitted) ==
+                  SubmissionState.notSubmitted)
             _NobodyYetCard(
               underReview:
                   ClientAuthority.instance.projection?.underReview ?? false,

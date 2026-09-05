@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../data/repositories/product_feedback_repository.dart';
+import 'package:orchestrate_app/features/ops_console/ops_empty_state.dart';
+import 'package:orchestrate_app/core/theme/app_theme.dart';
 
 /// THE OPERATOR'S SIDE OF THE LOOP.
 ///
@@ -47,12 +49,22 @@ class _FeedbackQueueScreenState extends State<FeedbackQueueScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Product feedback')),
-      body: Column(
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
+          // A heading like every other operator surface, rather than an AppBar
+          // band. This was the one screen still wearing a Scaffold, which is
+          // why it looked like a different product.
+          Text('Feedback', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 5),
+          const Text(
+            'What people using Orchestrate have told us, and what was done '
+            'about it.',
+            style: TextStyle(fontSize: 13, color: AppTheme.muted, height: 1.5),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
             child: Wrap(
               spacing: 8,
               children: [
@@ -85,10 +97,14 @@ class _FeedbackQueueScreenState extends State<FeedbackQueueScreen> {
                 }
                 final items = snapshot.data ?? const [];
                 if (items.isEmpty) {
-                  return const Center(child: Text('Nothing in this state.'));
+                  return OpsEmptyState(
+                    headline: 'Nothing ${_states[_state]?.toLowerCase() ?? 'here'}.',
+                    detail: 'Feedback arrives from people using the product. '
+                        'Nothing is waiting in this state right now.',
+                  );
                 }
                 return ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.zero,
                   itemCount: items.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (_, i) => _QueueRow(
@@ -100,8 +116,7 @@ class _FeedbackQueueScreenState extends State<FeedbackQueueScreen> {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
   Future<void> _openTriage(Map<String, dynamic> row) async {

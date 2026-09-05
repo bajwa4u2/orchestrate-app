@@ -62,11 +62,20 @@ class _Standing extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // The three parts describe the BUSINESS, the PERSON and
+              // ORCHESTRATE. Where a submission is under review, the business
+              // row used to borrow the submission's sentence — "we are
+              // reviewing what your business sent" — which is the submission
+              // card's job and left the business row saying nothing about the
+              // business.
               _Part(
                 title: authority.businessName,
                 settled: authority.organizationEstablished,
                 pending: authority.underReview,
-                meaning: authority.organizationMeaning,
+                meaning: authority.underReview && !authority.organizationEstablished
+                    ? 'This business has not yet recognised anyone as able to '
+                        'decide for it.'
+                    : authority.organizationMeaning,
               ),
               const Divider(height: 28, color: AppTheme.publicLine, thickness: 1),
               _Part(

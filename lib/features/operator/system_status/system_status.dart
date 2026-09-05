@@ -70,17 +70,47 @@ class SystemStatusRepository {
 
   final ApiClient _api;
 
-  /// Reads the operator composition endpoint and keeps only the four facts the
-  /// strip states. The response carries a great deal more; none of the rest
-  /// corresponded to an operator responsibility, which is why the surfaces
-  /// built on it were retired.
+  /// THE STRIP HAS TO BE ABOUT THE PLATFORM, BECAUSE IT SITS ON EVERY SCREEN.
+  ///
+  /// It read the organisation of the session, which for a platform operator
+  /// holds nothing — so it said "Mailboxes 0 / 0 · Domains 0 / 0 · Re-auth 0"
+  /// above a Transport page listing three mailboxes, every one of which needed
+  /// reconnecting. A permanent strip that quietly describes a different scope
+  /// from the page under it is worse than no strip: it is read as the headline
+  /// and it was wrong on every screen.
+  ///
+  /// Now read from the platform transport projection, under the capability that
+  /// already governs exactly this state. The vault fact still comes from the
+  /// organisation composition — where credentials are held is a property of the
+  /// deployment, not of a tenant.
   Future<SystemStatus> fetch() async {
-    final json = await _api.getJson(
-      '/operator/cognition/home',
-      surface: ApiSurface.operator,
+    final results = await Future.wait([
+      _api.getJson('/operator/cognition/home', surface: ApiSurface.operator),
+      _api.getJson('/operator/platform/transport', surface: ApiSurface.operator),
+    ]);
+    final vault = _map(_map(_map(results[0])['trustRibbon'])['vault']);
+    final transport = _map(results[1]);
+
+    final mailboxes = (transport['mailboxes'] as List? ?? const [])
+        .whereType<Map>()
+        .map((m) => Map<String, dynamic>.from(m))
+        .toList();
+    final domains = (transport['domains'] as List? ?? const [])
+        .whereType<Map>()
+        .map((m) => Map<String, dynamic>.from(m))
+        .toList();
+
+    return SystemStatus(
+      vaultAdapter: (vault['adapter'] ?? 'unknown').toString(),
+      vaultWarning: vault['warning'] == true,
+      mailboxesHealthy:
+          mailboxes.where((m) => m['connection'] == 'AUTHORIZED').length,
+      mailboxesTotal: mailboxes.length,
+      domainsVerified: domains.where((d) => d['status'] == 'ACTIVE').length,
+      domainsTotal: domains.length,
+      mailboxesAwaitingReauth:
+          mailboxes.where((m) => m['needsReconnect'] == true).length,
     );
-    final map = _map(json);
-    return SystemStatus.fromJson(_map(map['trustRibbon']));
   }
 }
 

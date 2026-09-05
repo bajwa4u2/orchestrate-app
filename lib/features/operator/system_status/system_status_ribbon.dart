@@ -55,18 +55,23 @@ class SystemStatusRibbon extends StatelessWidget {
 
   List<Widget> _pills(SystemStatus r) {
     return [
+      // NOT the adapter's name. "Vault: encrypted-db" told an operator the
+      // class name of an implementation; what the fact is FOR is whether a
+      // client's stored credentials survive a restart, and that is what it now
+      // says. The adapter name stays in the tooltip, where an engineer can
+      // still reach it.
       _TrustPill(
-        label: 'Vault',
-        value: r.vaultAdapter,
+        label: 'Credentials',
+        value: r.vaultWarning ? 'at risk' : 'stored',
         caption: r.vaultWarning
-            ? 'memory adapter in production — investigate'
-            : 'credential vault adapter',
+            ? 'held in memory — one restart from gone (${r.vaultAdapter})'
+            : 'held in the credential store (${r.vaultAdapter})',
         tone: r.vaultWarning ? _Tone.warning : _Tone.neutral,
       ),
       _TrustPill(
         label: 'Mailboxes',
         value: '${r.mailboxesHealthy} / ${r.mailboxesTotal}',
-        caption: 'healthy mailboxes',
+        caption: 'client mailboxes connected, across every business',
         tone: r.mailboxesTotal == 0
             ? _Tone.neutral
             : r.mailboxesHealthy == r.mailboxesTotal
@@ -76,7 +81,7 @@ class SystemStatusRibbon extends StatelessWidget {
       _TrustPill(
         label: 'Domains',
         value: '${r.domainsVerified} / ${r.domainsTotal}',
-        caption: 'sending domains verified',
+        caption: 'sending domains active, across every business',
         tone: r.domainsTotal == 0
             ? _Tone.neutral
             : r.domainsVerified == r.domainsTotal
@@ -86,7 +91,7 @@ class SystemStatusRibbon extends StatelessWidget {
       _TrustPill(
         label: 'Re-auth',
         value: '${r.mailboxesAwaitingReauth}',
-        caption: 'mailboxes awaiting re-authorisation',
+        caption: 'client mailboxes waiting to be reconnected',
         tone: r.mailboxesAwaitingReauth == 0 ? _Tone.ok : _Tone.warning,
       ),
     ];

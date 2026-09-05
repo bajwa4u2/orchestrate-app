@@ -234,7 +234,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
               secondary: '${alerts.critical} critical',
             ),
           ],
-          secondaryEmpty: 'No system posture is available.',
+          secondaryEmpty: 'No system posture in this organisation.',
         );
 
       case OperatorSection.pipeline:
@@ -257,7 +257,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          primaryEmpty: 'No leads are available.',
+          primaryEmpty: 'No leads in this organisation.',
           secondaryTitle: 'Campaign intake',
           secondaryRows: campaigns
               .take(8)
@@ -270,7 +270,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          secondaryEmpty: 'No campaigns are available.',
+          secondaryEmpty: 'No campaigns in this organisation.',
         );
 
       case OperatorSection.inquiries:
@@ -294,7 +294,8 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          primaryEmpty: 'No inquiries are available.',
+          primaryEmpty: 'No inquiries in this organisation. Inquiries reach the '
+              'business they were sent to, and are read there.',
           secondaryTitle: 'Recent contact',
           secondaryRows: items
               .take(6)
@@ -307,7 +308,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          secondaryEmpty: 'No recent contact is available.',
+          secondaryEmpty: 'No recent contact in this organisation.',
         );
 
       case OperatorSection.replies:
@@ -330,7 +331,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          primaryEmpty: 'No replies are available.',
+          primaryEmpty: 'No replies in this organisation.',
           secondaryTitle: 'Meeting cues',
           secondaryRows: meetings
               .take(6)
@@ -343,7 +344,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          secondaryEmpty: 'No meeting cues are available.',
+          secondaryEmpty: 'No meeting cues in this organisation.',
         );
 
       case OperatorSection.meetings:
@@ -366,7 +367,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          primaryEmpty: 'No meetings are available.',
+          primaryEmpty: 'No meetings in this organisation.',
           secondaryTitle: 'Client standing',
           secondaryRows: clients
               .take(6)
@@ -379,7 +380,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          secondaryEmpty: 'No client standing is available.',
+          secondaryEmpty: 'No client standing in this organisation.',
         );
 
       case OperatorSection.revenue:
@@ -405,7 +406,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          primaryEmpty: 'No invoices are available.',
+          primaryEmpty: 'No invoices in this organisation.',
           secondaryTitle: 'Subscriptions',
           secondaryRows: subscriptions
               .take(8)
@@ -418,7 +419,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          secondaryEmpty: 'No subscriptions are available.',
+          secondaryEmpty: 'No subscriptions in this organisation.',
         );
 
       case OperatorSection.deliverability:
@@ -451,7 +452,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                     secondaryKeys: const ['provider', 'updatedAt'],
                   ))
               .toList(),
-          primaryEmpty: 'No deliverability data is available.',
+          primaryEmpty: 'No delivery history in this organisation.',
           secondaryTitle: 'Sending posture',
           secondaryRows: [
             _Row(
@@ -464,7 +465,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
               primary: 'Refresh health or reconnect mailboxes from Ops Debug.',
             ),
           ],
-          secondaryEmpty: 'No posture note is available.',
+          secondaryEmpty: 'No posture note in this organisation.',
         );
 
       case OperatorSection.communications:
@@ -489,7 +490,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          primaryEmpty: 'No dispatches are available.',
+          primaryEmpty: 'No dispatches in this organisation.',
           secondaryTitle: 'Recent inquiries',
           secondaryRows: inquiryItems
               .take(8)
@@ -502,7 +503,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                 ),
               )
               .toList(),
-          secondaryEmpty: 'No inquiries are available.',
+          secondaryEmpty: 'No inquiries in this organisation.',
         );
 
       case OperatorSection.records:
@@ -524,7 +525,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                   fallback: 'Record overview available'),
             ),
           ],
-          primaryEmpty: 'No record summary is available.',
+          primaryEmpty: 'No record summary in this organisation.',
           secondaryTitle: 'Recent artifacts',
           secondaryRows: [
             ...agreements.take(4).map(
@@ -544,7 +545,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                   ),
                 ),
           ],
-          secondaryEmpty: 'No artifacts are available.',
+          secondaryEmpty: 'No artifacts in this organisation.',
         );
 
       case OperatorSection.activity:
@@ -572,7 +573,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                     ],
                   ))
               .toList(),
-          primaryEmpty: 'No activity events are available.',
+          primaryEmpty: 'No activity events in this organisation.',
           secondaryTitle: 'Activity mix',
           secondaryRows: byKind.entries
               .take(10)
@@ -658,7 +659,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
               primary: _money(_asMap(revenue['totals'])['outstandingCents']),
             ),
           ],
-          primaryEmpty: 'No analytics signals are available.',
+          primaryEmpty: 'No analytics signals in this organisation.',
           secondaryTitle: 'Active campaigns',
           secondaryRows: campaigns
               .take(10)
@@ -669,7 +670,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                     secondaryKeys: const ['updatedAt', 'createdAt'],
                   ))
               .toList(),
-          secondaryEmpty: 'No campaign analytics are available.',
+          secondaryEmpty: 'No campaign analytics in this organisation.',
         );
 
       case OperatorSection.settings:
@@ -686,7 +687,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
             ),
             _Row(title: 'Organization', primary: _read(auth, 'organizationId')),
           ],
-          primaryEmpty: 'No access context is available.',
+          primaryEmpty: 'No access context in this organisation.',
           secondaryTitle: 'Posture',
           secondaryRows: const [
             _Row(
@@ -695,7 +696,7 @@ class _OperatorWorkspaceScreenState extends State<OperatorWorkspaceScreen> {
                   'Keep operator changes controlled, visible, and tied to the live system.',
             ),
           ],
-          secondaryEmpty: 'No notes are available.',
+          secondaryEmpty: 'No notes in this organisation.',
         );
     }
   }

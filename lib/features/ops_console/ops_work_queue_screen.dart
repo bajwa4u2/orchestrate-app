@@ -743,7 +743,13 @@ class _QueueRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
+                    // Urgency in words as well as colour. A three-pixel stripe
+                    // is the whole difference between "somebody is waiting" and
+                    // "this has been waiting four days", and a header saying
+                    // "1 critical" above rows that all look alike does not tell
+                    // an operator which one.
                     [
+                      if (severity != 'info') _urgency(severity),
                       if (client != null && client.isNotEmpty) client,
                       '${(state['label'] ?? state['value'] ?? '—')}',
                       if (waited != null) waited,
@@ -857,15 +863,19 @@ class _CaseDetail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // THE WAY OUT NEEDS A REAL TARGET.
+        //
+        // At shrinkWrap with four pixels of padding this was about eighteen
+        // pixels tall, and a click aimed at the middle of the text landed
+        // outside it. The only way back from a case is not the place to save
+        // vertical space.
         TextButton.icon(
           onPressed: onBack,
           icon: const Icon(Icons.arrow_back, size: 15),
           label: const Text('Back to the queue', style: TextStyle(fontSize: 12)),
           style: TextButton.styleFrom(
             foregroundColor: AppTheme.muted,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           ),
         ),
         const SizedBox(height: 10),
@@ -1448,6 +1458,11 @@ class _CaseAction {
 }
 
 enum _CAKind { working, done, error }
+
+/// Urgency in a word. Colour alone cannot be read aloud, cannot be searched,
+/// and is invisible to anyone who does not see it.
+String _urgency(String severity) =>
+    severity == 'critical' ? 'Critical' : 'Needs attention';
 
 /// Age in words an operator reads at a glance.
 String _howLong(Duration d) {

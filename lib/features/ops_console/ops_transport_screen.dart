@@ -89,7 +89,10 @@ class _DomainRow extends StatelessWidget {
     return PlatformRow(
       title: '${domain['domain'] ?? '—'}',
       subtitle: [
-        '${domain['organizationSlug'] ?? ''}',
+        // The business, as the mailbox rows do. The organisation slug is an
+        // internal handle and reads as one beside a row that says "Northgate
+        // Mechanical".
+        '${domain['clientName'] ?? domain['organizationSlug'] ?? ''}',
         _words('${domain['status'] ?? ''}'),
         if (failed != null && failed.isNotEmpty) failed,
       ].where((s) => s.isNotEmpty).join(' · '),

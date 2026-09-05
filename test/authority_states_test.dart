@@ -125,7 +125,22 @@ void main() {
     ));
     await render(tester, 'under review');
 
-    expect(find.textContaining('We are reviewing'), findsOneWidget);
+    // The business row describes the BUSINESS. It used to borrow the
+    // submission's sentence — "we are reviewing what your business sent" —
+    // which was also said by the submission card and again by a third card
+    // below it. The same sentence three times on one screen teaches a person
+    // that the screen is not really telling them anything.
+    expect(
+      find.textContaining('has not yet recognised anyone'),
+      findsOneWidget,
+      reason: 'the business row says where the business stands',
+    );
+    expect(
+      find.textContaining('We are reviewing'),
+      findsNothing,
+      reason: 'that sentence belongs to the submission, which has its own card',
+    );
+    // And somebody already waiting on us is asked for nothing.
     expect(find.text('Sort this out'), findsNothing);
   });
 

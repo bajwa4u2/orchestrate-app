@@ -94,10 +94,13 @@ class _ClientRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
+                      // The slug is how we address the organisation internally.
+                      // It is not what the business is called, and leading a
+                      // row with it makes a directory read like a database.
                       [
-                        '${client['organizationSlug'] ?? ''}',
                         '${client['status'] ?? ''}'.toLowerCase(),
                         if (client['setupComplete'] != true) 'still in setup',
+                        if (client['legalNameOnRecord'] != true) 'no legal name',
                       ].where((s) => s.isNotEmpty).join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

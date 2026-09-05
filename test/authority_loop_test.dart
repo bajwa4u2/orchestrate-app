@@ -30,7 +30,12 @@ void main() {
   });
 
   test('and a way to supply more when we ask', () {
-    expect(repository.contains("'/client/designation/evidence'"), isTrue);
+    // The path the controller actually serves. It was written as
+    // /client/designation/evidence, which is not a route: the controller is
+    // @Controller('client/representative'). The panel 404'd on every load and
+    // rendered "We could not read what this claim rests on just now" — found by
+    // looking at it, not by any test that only checked the panel existed.
+    expect(repository.contains("'/client/representative/evidence'"), isTrue);
     expect(repository.contains('addSupport'), isTrue);
     expect(panel.contains('mayAddSupport'), isTrue);
     // Never a document requirement we do not actually have.

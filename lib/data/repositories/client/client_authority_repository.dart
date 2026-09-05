@@ -37,7 +37,7 @@ class ClientAuthorityRepository {
   /// up being the whole of what a business could learn.
   Future<EvidenceStanding> evidence() async {
     final json = await _apiClient.getJson(
-      '/client/designation/evidence',
+      '/client/representative/evidence',
       surface: ApiSurface.client,
     );
     return EvidenceStanding.fromJson(Map<String, dynamic>.from(json as Map));
@@ -46,7 +46,7 @@ class ClientAuthorityRepository {
   /// Add something supporting to a submission still under review.
   Future<({bool ok, String? reason})> addSupport(String reference) async {
     final json = await _apiClient.postJson(
-      '/client/designation/evidence',
+      '/client/representative/evidence',
       body: {'reference': reference},
       surface: ApiSurface.client,
     );

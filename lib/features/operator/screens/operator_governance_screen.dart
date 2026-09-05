@@ -167,6 +167,14 @@ class _OperatorGovernanceScreenState extends State<OperatorGovernanceScreen> {
             )
           else if (_listError != null)
             _Error(message: _listError!, onRetry: _loadList)
+          // NOTHING SENT MEANS NOTHING TO SHOW, ONCE.
+          //
+          // The hero already says it. Rendering the list and the detail panel
+          // anyway produced the same sentence a second time in its own card and
+          // an orphan "Select a dispatch to inspect" beneath it — two more
+          // cards than there was anything to say.
+          else if (_messages.isEmpty)
+            const SizedBox.shrink()
           else
             LayoutBuilder(
               builder: (context, constraints) {
