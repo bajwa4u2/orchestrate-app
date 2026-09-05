@@ -775,7 +775,7 @@ class _CampaignsScreenState extends State<CampaignsScreen> {
                           label: const Text('Open execution'),
                         ),
                         TextButton.icon(
-                          onPressed: () => context.go('/app/home'),
+                          onPressed: () => context.go('/client/today'),
                           icon: const Icon(Icons.arrow_back),
                           label: const Text('Back to workspace'),
                         ),

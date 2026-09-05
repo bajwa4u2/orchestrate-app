@@ -42,6 +42,36 @@ void main() {
     }
   });
 
+  /// A DIAGNOSTIC IS NOT A DESTINATION.
+  ///
+  /// The Business hub offered "Credentials — certifications, licences,
+  /// insurance" and the route answered with "Client-safe AI activity and trust
+  /// summary": a generic screen that listed the endpoints it had called and
+  /// printed whatever came back, including a record whose only visible field
+  /// read "campaign: null".
+  test('no customer route renders the backend-surface screen', () {
+    expect(
+      router.contains('ClientBackendSurfaceScreen('),
+      isFalse,
+      reason: 'that screen shows endpoint names and raw records to customers',
+    );
+  });
+
+  /// AND THE HUB MUST OPEN THE CAPABILITY IT NAMES.
+  ///
+  /// "Credentials — certifications, licences, insurance" opened a diagnostic,
+  /// while the real Credentials screen sat unlinked at /app/trust. The entry
+  /// was not wrong about the capability; it was wrong about the address, and
+  /// deleting it would have retired a screen the product actually has.
+  test('the business hub opens the real credentials screen', () {
+    final hub = File('lib/features/client/screens/business_screen.dart')
+        .readAsStringSync();
+    final start = hub.indexOf("label: 'Credentials'");
+    final entry = hub.substring(start, hub.indexOf("label: 'Evidence'", start));
+    expect(entry.contains("path: '/app/trust'"), isTrue);
+    expect(router.contains("path: '/app/trust'"), isTrue);
+  });
+
   test('every palette destination is a route the app defines', () {
     final commands = RegExp(r"_Command\('[^']+', '([^']+)'")
         .allMatches(palette)

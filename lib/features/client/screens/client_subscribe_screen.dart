@@ -243,12 +243,12 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                               activating: _subscribing,
                               onActivate: _subscribing ? null : _activate,
                               onReviewAccount: () => context.go('/app/account'),
-                              onReviewWorkspace: () => context.go('/app/home'),
+                              onReviewWorkspace: () => context.go('/client/today'),
                             )
                           : _IosPlanNoticeCard(
                               selection: selection,
                               onReviewAccount: () => context.go('/app/account'),
-                              onReviewWorkspace: () => context.go('/app/home'),
+                              onReviewWorkspace: () => context.go('/client/today'),
                             );
 
                       if (stacked) {

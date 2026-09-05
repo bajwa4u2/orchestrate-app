@@ -59,7 +59,9 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
             tone: ClientBannerTone.info,
             title: 'Records are read-only',
             message:
-                'Use this page to understand what exists. If nothing changes, records remain available here as backend documents are created.',
+                'Everything issued to your business collects here — agreements, '
+                'invoices, receipts and statements. Nothing on this page can be '
+                'changed from it.',
           ),
           children: [
             ClientMetricStrip(metrics: [
@@ -175,8 +177,12 @@ class _RecordCountRow extends StatelessWidget {
       title: label,
       primary:
           items.isEmpty ? 'No records visible.' : '${items.length} records',
+      // Nothing to say under an empty category. The note here explained the
+      // absence of a View button by naming the endpoint that would have
+      // provided it — three times down the page, under three headings that
+      // had already said "No records visible."
       secondary: latest.isEmpty
-          ? 'View/download actions are hidden because no client document render endpoint is exposed for this category.'
+          ? ''
           : [
               readText(latest, 'invoiceNumber',
                   fallback: readText(latest, 'receiptNumber',

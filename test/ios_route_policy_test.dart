@@ -85,7 +85,7 @@ void main() {
 
   // Operational workspace routes a subscribed customer uses.
   const operationalRoutes = <String>[
-    '/app/home',
+    '/client/today',
     '/client/overview',
     '/client/opportunities',
     '/client/operations',
@@ -148,7 +148,7 @@ void main() {
     test('acquisition routes resolve to the operational home (no funnel)',
         () {
       for (final r in acquisitionRoutes) {
-        expect(resolve(r, isAuthenticated: true), '/app/home',
+        expect(resolve(r, isAuthenticated: true), '/client/today',
             reason: '$r must not start an acquisition funnel on iOS');
       }
     });
@@ -159,9 +159,13 @@ void main() {
       // checkout and are not linked from the authenticated workspace UI,
       // so they are allowed-but-UI-unreachable (kept minimal per the
       // review-path-separation scope).
-      expect(resolve('/', isAuthenticated: true), '/app/home');
+      // Home is Today. /app/home was the pre-reconstruction home and is
+      // retired: it rendered inside the new shell with none of its four
+      // destinations selected, so an iOS reviewer sent there landed on a page
+      // that could not say where it was.
+      expect(resolve('/', isAuthenticated: true), '/client/today');
       for (final r in acquisitionRoutes) {
-        expect(resolve(r, isAuthenticated: true), '/app/home');
+        expect(resolve(r, isAuthenticated: true), '/client/today');
       }
     });
 
@@ -185,7 +189,7 @@ void main() {
 
     test('acquisition surfaces still resolve away (not needed in-app)', () {
       for (final r in acquisitionRoutes) {
-        expect(resolve(r, isAuthenticated: true), '/app/home');
+        expect(resolve(r, isAuthenticated: true), '/client/today');
       }
     });
   });

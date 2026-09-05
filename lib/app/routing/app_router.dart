@@ -25,7 +25,6 @@ import 'package:orchestrate_app/features/client/screens/client_billing_screen.da
 import 'package:orchestrate_app/features/client/screens/client_business_identity_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_setup_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_subscribe_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_workspace_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_backend_surface_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_notifications_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_outreach_screen.dart';
@@ -1363,14 +1362,32 @@ GoRouter get router {
         GoRoute(
             path: '/client/help',
             redirect: (context, state) => '/client/support'),
+        // CREDENTIALS WAS A DIAGNOSTIC WEARING A PRODUCT LABEL.
+        //
+        // The Business hub offered "Credentials — certifications, licences,
+        // insurance" and this route answered with "Client-safe AI activity and
+        // trust summary": a generic backend-surface screen that listed the
+        // endpoints it had called and printed whatever came back, including a
+        // record whose only visible field read "campaign: null".
+        //
+        // The product has no certifications capability, so the honest move is
+        // to stop offering one. It redirects rather than 404s because the link
+        // has existed, and Evidence is the real surface for what a business can
+        // show about itself.
         GoRoute(
             path: '/client/trust',
-            builder: (context, state) => const ClientBackendSurfaceScreen(
-                surface: ClientBackendSurface.trust)),
+            redirect: (context, state) => '/app/trust'),
+        // THE LEGACY HOME IS RETIRED, NOT LEFT LYING AROUND.
+        //
+        // It predates the reconstructed workspace and was never one of its
+        // four destinations, so it rendered inside the new shell with nothing
+        // selected — a page that could not say where it was. Sign-in sent
+        // every client here, which is why it kept being the last place a lot
+        // of people saw. It redirects rather than 404s: the path is in old
+        // links, and Today is where it was always meant to lead.
         GoRoute(
             path: '/app/home',
-            builder: (context, state) =>
-                const ClientHomeScreen(section: ClientSection.home)),
+            redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/app/contacts',
             redirect: (context, state) => '/client/relationships'),
@@ -1428,10 +1445,13 @@ GoRouter get router {
         GoRoute(
             path: '/app/artifacts',
             builder: (context, state) => const ClientArtifactsScreen()),
+        // Retired with the home it belonged to. It carried no title, no
+        // breadcrumb, buttons in a colour the design system does not use, and
+        // "ICP" as a word shown to a customer — while /client/billing is the
+        // billing surface the product actually maintains.
         GoRoute(
             path: '/app/billing',
-            builder: (context, state) =>
-                const ClientHomeScreen(section: ClientSection.billing)),
+            redirect: (context, state) => '/client/billing'),
         GoRoute(
             path: '/app/account',
             builder: (context, state) => const ClientAccountScreen()),

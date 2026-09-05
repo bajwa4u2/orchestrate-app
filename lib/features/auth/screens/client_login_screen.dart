@@ -446,12 +446,21 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       context.go(withReturnTo(_route('/app/setup'), returnTo));
       return;
     }
-    if (session.normalizedSubscriptionStatus != 'active' &&
-        !destinationIsAccountLayer) {
-      context.go(withReturnTo(_route('/app/subscribe'), returnTo));
-      return;
-    }
-    context.go(returnTo ?? '/app/home');
+    // NOT A SUBSCRIPTION GATE, AND NOT THE LEGACY HOME.
+    //
+    // The router's own gate was corrected so that a business without a plan
+    // reaches its workspace — and this branch, in the screen, kept overruling
+    // it at the one moment that matters. Everybody who signed in without an
+    // active subscription was sent to checkout; a workspace that requires
+    // payment to enter was never theirs to begin with. Setup still gates
+    // above, because Orchestrate genuinely cannot present a coherent workspace
+    // before it knows what the business is. Money is a different authority.
+    //
+    // And the landing is Today. /app/home is the pre-reconstruction home: it
+    // renders inside the new shell with none of the four destinations
+    // selected, so a person lands somewhere that cannot say where it is, and
+    // the only way onward is to notice the rail.
+    context.go(returnTo ?? '/client/today');
   }
 
   Future<void> requestPasswordReset() async {
@@ -756,23 +765,33 @@ class _AuthIntro extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // WHAT IS BEHIND THE DOOR, NOT HOW THE DOOR WORKS.
+                //
+                // These three described our own sign-in design to the person
+                // signing in — "email confirmation stays in the main flow",
+                // "plan and tier choices can carry directly into setup and
+                // subscription flow". The second was also stale: plan and tier
+                // are not a thing a business chooses any more.
                 const _IntroPoint(
-                  title: 'Verification',
+                  title: 'What needs you',
                   body:
-                      'Email confirmation stays in the main flow so setup does not get lost.',
+                      'Anything waiting on a decision is on the first screen. '
+                      'A quiet day looks quiet.',
                 ),
                 const SizedBox(height: 12),
                 const _IntroPoint(
-                  title: 'Setup continuity',
+                  title: 'Your relationships',
                   body:
-                      'Plan and tier choices can carry directly into setup and subscription flow.',
+                      'Every business you have durable commercial context with, '
+                      'and where each one stands.',
                 ),
                 const SizedBox(height: 12),
                 _IntroPoint(
                   title: 'Access choices',
                   body: _ClientLoginScreenState._googleSignInAvailable
-                      ? 'Email and Google sign-in can sit side by side without disrupting your existing sign-in path.'
-                      : 'Email sign-in keeps your setup path simple and uninterrupted.',
+                      ? 'Sign in with your email or with Google — either one '
+                          'reaches the same workspace.'
+                      : 'Sign in with your work email.',
                 ),
               ],
             ),

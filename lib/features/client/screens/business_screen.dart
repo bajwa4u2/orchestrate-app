@@ -93,7 +93,11 @@ class BusinessScreen extends StatelessWidget {
             _Entry(
               label: 'Credentials',
               detail: 'Certifications, licences, insurance.',
-              path: '/client/trust',
+              // /app/trust, not /client/trust. The real Credentials screen has
+              // always been here; /client/trust answered with a generic
+              // backend-surface diagnostic titled "Client-safe AI activity and
+              // trust summary", and that is what this entry was opening.
+              path: '/app/trust',
             ),
             _Entry(
               label: 'Evidence',

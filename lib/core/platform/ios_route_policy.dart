@@ -136,7 +136,7 @@ String? iosRouteRedirect({
         isOpsAuth ||
         path == '/' ||
         path.startsWith('/ops/')) {
-      return '/app/home';
+      return '/client/today';
     }
     return null;
   }
