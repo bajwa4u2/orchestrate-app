@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -125,6 +126,11 @@ class _ClientShellState extends State<ClientShell> {
       // Signing out locally must succeed even when the server call does not.
     } finally {
       await AuthSessionController.instance.clear();
+      // Nothing one business was shown is held while nobody is signed in.
+      // ScreenMemory also drops everything on the next read once the client
+      // id changes; this is the same rule applied at the boundary, so the
+      // answers do not sit in memory waiting for that to happen.
+      ScreenMemory.forget();
       if (context.mounted) context.go('/auth/login');
     }
   }

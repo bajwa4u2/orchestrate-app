@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -29,7 +30,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _future = ScreenMemory.keep('settings', _load());
   }
 
   Future<_SettingsData> _load() async {
@@ -52,7 +53,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   }
 
   void _retry() {
-    setState(() => _future = _load());
+    setState(() => _future = ScreenMemory.keep('settings', _load()));
   }
 
   Future<void> _signOut() async {
@@ -84,11 +85,15 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   Widget build(BuildContext context) {
     return FutureBuilder<_SettingsData>(
       future: _future,
+      // What this screen was last told. Returning to it paints that
+      // immediately rather than blanking; the request still goes out,
+      // and its answer replaces this one underneath.
+      initialData: ScreenMemory.recall<_SettingsData>('settings'),
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (!snapshot.hasData && !snapshot.hasError) {
           return const ClientLoadingView(label: 'Loading settings');
         }
-        if (snapshot.hasError) {
+        if (snapshot.hasError && !snapshot.hasData) {
           return ClientErrorView.fromError(
             snapshot.error,
             title: 'Settings are temporarily unavailable',

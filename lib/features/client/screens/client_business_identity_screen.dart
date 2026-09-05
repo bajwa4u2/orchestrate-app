@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:orchestrate_app/core/ui/screen_memory.dart';
+import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_business_identity_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
@@ -28,7 +29,7 @@ class _ClientBusinessIdentityScreenState
   final ClientBusinessIdentityRepository _repository =
       ClientBusinessIdentityRepository();
 
-  late Future<_IdentityViewModel> _future = _load();
+  late Future<_IdentityViewModel> _future = ScreenMemory.keep('representation', _load());
 
   // Section editors keep their own controllers so partial saves work
   // without re-typing everything on each load.
@@ -180,18 +181,23 @@ class _ClientBusinessIdentityScreenState
   Widget build(BuildContext context) {
     return FutureBuilder<_IdentityViewModel>(
       future: _future,
+      // What this screen was last told. Returning to it paints that
+      // immediately rather than blanking; the request still goes out,
+      // and its answer replaces this one underneath.
+      initialData: ScreenMemory.recall<_IdentityViewModel>('representation'),
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (!snapshot.hasData && !snapshot.hasError) {
           return const ClientLoadingView(
             eyebrow: 'Representation',
             label: 'Loading representation infrastructure',
           );
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if ((snapshot.hasError || snapshot.data == null)
+            && !snapshot.hasData) {
           return ClientErrorView.fromError(
             snapshot.error,
             title: 'Representation is temporarily unavailable',
-            onRetry: () => setState(() => _future = _load()),
+            onRetry: () => setState(() => _future = ScreenMemory.keep('representation', _load())),
           );
         }
         final data = snapshot.data!;
@@ -441,7 +447,7 @@ class _ClientBusinessIdentityScreenState
             _RepresentationAuthPanel(
               authorized: data.profile['representationAuthorized'] == true,
               loading: readiness.isEmpty,
-              onAuthorized: () => setState(() => _future = _load()),
+              onAuthorized: () => setState(() => _future = ScreenMemory.keep('representation', _load())),
             ),
             const SizedBox(height: 16),
             ClientPanel(

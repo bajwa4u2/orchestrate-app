@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -38,7 +39,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   final ClientOutreachRepository _outreachRepository =
       ClientOutreachRepository();
   final ClientAccountRepository _accountRepository = ClientAccountRepository();
-  late Future<_MailboxViewData> _future = _load();
+  late Future<_MailboxViewData> _future = ScreenMemory.keep('mailbox', _load());
   final GlobalKey _sendingDomainAnchor = GlobalKey();
   final TextEditingController _domainAttachController = TextEditingController();
   String? _oauthInflightProvider;
@@ -66,7 +67,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       setState(() {
         _resultMessage =
             'Sending domain $trimmed attached. Publish SPF and DMARC at your registrar, then check verification.';
-        _future = _load();
+        _future = ScreenMemory.keep('mailbox', _load());
       });
     } catch (error) {
       if (!mounted) return;
@@ -117,12 +118,12 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       setState(() {
         _resultMessage = 'Opened ${_providerLabel(provider)} consent in your '
             'browser. Approve the request. Orchestrate will finish the connection.';
-        _future = _load();
+        _future = ScreenMemory.keep('mailbox', _load());
       });
     } catch (error) {
       setState(() {
         _resultMessage = ClientErrorView.classifyError(error);
-        _future = _load();
+        _future = ScreenMemory.keep('mailbox', _load());
       });
     } finally {
       if (mounted) setState(() => _oauthInflightProvider = null);
@@ -143,7 +144,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   void _refresh() {
     setState(() {
       _resultMessage = null;
-      _future = _load();
+      _future = ScreenMemory.keep('mailbox', _load());
     });
   }
 
@@ -156,12 +157,12 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         _resultMessage = ready
             ? 'Sending domain verified. Orchestrate can send on your behalf.'
             : 'Verification did not pass. DNS can take time to propagate. Publish each record and try again.';
-        _future = _load();
+        _future = ScreenMemory.keep('mailbox', _load());
       });
     } catch (error) {
       setState(() {
         _resultMessage = ClientErrorView.classifyError(error);
-        _future = _load();
+        _future = ScreenMemory.keep('mailbox', _load());
       });
     } finally {
       if (mounted) setState(() => _verifyingDomain = false);
@@ -172,14 +173,19 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
   Widget build(BuildContext context) {
     return FutureBuilder<_MailboxViewData>(
       future: _future,
+      // What this screen was last told. Returning to it paints that
+      // immediately rather than blanking; the request still goes out,
+      // and its answer replaces this one underneath.
+      initialData: ScreenMemory.recall<_MailboxViewData>('mailbox'),
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (!snapshot.hasData && !snapshot.hasError) {
           return const ClientLoadingView(
             eyebrow: 'Infrastructure',
             label: 'Loading mailbox + sending-identity infrastructure',
           );
         }
-        if (snapshot.hasError || snapshot.data == null) {
+        if ((snapshot.hasError || snapshot.data == null)
+            && !snapshot.hasData) {
           return ClientErrorView.fromError(
             snapshot.error,
             title: 'Infrastructure is temporarily unavailable',
@@ -414,7 +420,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
         // the source of the live setup loop: when DNS was
         // already verified, this message contradicted reality.
         _resultMessage = 'SMTP credentials saved';
-        _future = _load();
+        _future = ScreenMemory.keep('mailbox', _load());
       });
     }
   }
@@ -429,7 +435,7 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       setState(() {
         _resultMessage =
             'IMAP inbound monitoring attached. The poll worker will ingest new replies on the next sweep and suppress pending follow-ups against the same lead.';
-        _future = _load();
+        _future = ScreenMemory.keep('mailbox', _load());
       });
     }
   }

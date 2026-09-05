@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,7 +31,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _future = ScreenMemory.keep('account', _load());
   }
 
   Future<_AccountViewData> _load() async {
@@ -58,7 +59,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   }
 
   Future<void> _refresh() async {
-    final next = _load();
+    final next = ScreenMemory.keep('account', _load());
     setState(() => _future = next);
     await next;
   }
@@ -124,15 +125,20 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
   Widget build(BuildContext context) {
     return FutureBuilder<_AccountViewData>(
       future: _future,
+      // What this screen was last told. Returning to it paints that
+      // immediately rather than blanking; the request still goes out,
+      // and its answer replaces this one underneath.
+      initialData: ScreenMemory.recall<_AccountViewData>('account'),
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (!snapshot.hasData && !snapshot.hasError) {
           return const ClientLoadingView(
             eyebrow: 'Account',
             label: 'Loading your account',
           );
         }
 
-        if (snapshot.hasError || snapshot.data == null) {
+        if ((snapshot.hasError || snapshot.data == null)
+            && !snapshot.hasData) {
           return ClientErrorView.fromError(
             snapshot.error,
             title: 'Account is temporarily unavailable',

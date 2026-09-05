@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_trust_repository.dart';
@@ -11,8 +12,10 @@ class ClientTrustScreen extends StatefulWidget {
 
 class _ClientTrustScreenState extends State<ClientTrustScreen> {
   final _repo = ClientTrustRepository();
-  List<Map<String, dynamic>>? _records;
-  bool _loading = true;
+  /// Seeded from the last answer this screen was given, so returning
+  /// to it paints immediately instead of blanking behind a spinner.
+  List<Map<String, dynamic>>? _records = ScreenMemory.recall<List<Map<String, dynamic>>>('credentials');
+  late bool _loading = _records == null;
   String? _error;
 
   @override
@@ -22,10 +25,11 @@ class _ClientTrustScreenState extends State<ClientTrustScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = _records == null; _error = null; });
     try {
       final data = await _repo.list();
       if (!mounted) return;
+      ScreenMemory.remember('credentials', data);
       setState(() { _records = data; _loading = false; });
     } catch (e) {
       if (!mounted) return;

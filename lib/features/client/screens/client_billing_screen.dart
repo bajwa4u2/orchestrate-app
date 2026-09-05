@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,7 +32,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _future = ScreenMemory.keep('billing', _load());
   }
 
   Future<_BillingData> _load() async {
@@ -62,7 +63,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
   void _retry() {
     setState(() {
       _portalError = null;
-      _future = _load();
+      _future = ScreenMemory.keep('billing', _load());
     });
   }
 
@@ -110,11 +111,15 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
   Widget build(BuildContext context) {
     return FutureBuilder<_BillingData>(
       future: _future,
+      // What this screen was last told. Returning to it paints that
+      // immediately rather than blanking; the request still goes out,
+      // and its answer replaces this one underneath.
+      initialData: ScreenMemory.recall<_BillingData>('billing'),
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (!snapshot.hasData && !snapshot.hasError) {
           return const ClientLoadingView(label: 'Loading billing');
         }
-        if (snapshot.hasError) {
+        if (snapshot.hasError && !snapshot.hasData) {
           return ClientErrorView.fromError(
             snapshot.error,
             title: 'Billing is temporarily unavailable',

@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_artifacts_repository.dart';
@@ -11,8 +12,10 @@ class ClientArtifactsScreen extends StatefulWidget {
 
 class _ClientArtifactsScreenState extends State<ClientArtifactsScreen> {
   final _repo = ClientArtifactsRepository();
-  List<Map<String, dynamic>>? _artifacts;
-  bool _loading = true;
+  /// Seeded from the last answer this screen was given, so returning
+  /// to it paints immediately instead of blanking behind a spinner.
+  List<Map<String, dynamic>>? _artifacts = ScreenMemory.recall<List<Map<String, dynamic>>>('artifacts');
+  late bool _loading = _artifacts == null;
   String? _error;
   bool _generating = false;
 
@@ -23,10 +26,11 @@ class _ClientArtifactsScreenState extends State<ClientArtifactsScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = _artifacts == null; _error = null; });
     try {
       final data = await _repo.list();
       if (!mounted) return;
+      ScreenMemory.remember('artifacts', data);
       setState(() { _artifacts = data; _loading = false; });
     } catch (e) {
       if (!mounted) return;

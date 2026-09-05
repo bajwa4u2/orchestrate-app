@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,8 +18,10 @@ class ClientBrandingScreen extends StatefulWidget {
 class _ClientBrandingScreenState extends State<ClientBrandingScreen> {
   final _repo = ClientBrandingRepository();
 
-  Map<String, dynamic>? _branding;
-  bool _loading = true;
+  /// Seeded from the last answer this screen was given, so returning
+  /// to it paints immediately instead of blanking behind a spinner.
+  Map<String, dynamic>? _branding = ScreenMemory.recall<Map<String, dynamic>>('branding');
+  late bool _loading = _branding == null;
   String? _error;
 
   final _primaryColorCtrl = TextEditingController();
@@ -46,12 +49,13 @@ class _ClientBrandingScreenState extends State<ClientBrandingScreen> {
 
   Future<void> _load() async {
     setState(() {
-      _loading = true;
+      _loading = _branding == null;
       _error = null;
     });
     try {
       final data = await _repo.fetchBranding();
       if (!mounted) return;
+      ScreenMemory.remember('branding', data);
       setState(() {
         _branding = data;
         _loading = false;
