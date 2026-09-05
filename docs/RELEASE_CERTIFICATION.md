@@ -186,7 +186,17 @@ Everything here is a founder action. None of it can be done from this machine.
    declares, and the age rating was 17+ on an `Unrestricted Web Access`
    answer that no code in this repository supports. Both corrected; the
    rating is now 4+.
-6. **Optional, and currently moot:** link the Play service account, if Android
+6. ~~Google Play and Microsoft Store metadata.~~ **Done, 2026-09-05.** Both
+   were staler than the App Store and both were showing a closed commercial
+   offer: Play's screenshots advertised a "15-day start period", and the
+   Microsoft ones carried a "Plan: revenue-precision . Billing: ACTIVE"
+   header over the retired operator shell. Play's Data safety declared two
+   data types and called both ephemeral; it now declares five, none ephemeral.
+   Field-by-field record in `store_assets/release_notes/0.2.3.md`.
+7. **Owed on the Microsoft rail:** Partner Center's Credentials section is
+   empty, so the reviewer sign-in is not recorded where a certification tester
+   can read it. Submission 7 passed without it; do not rely on that.
+8. **Optional, and currently moot:** link the Play service account, if Android
    commerce is ever to open.
 
 ---
