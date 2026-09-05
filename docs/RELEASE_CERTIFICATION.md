@@ -167,19 +167,25 @@ Everything here is a founder action. None of it can be done from this machine.
    key carries `ON UPDATE CASCADE`, `POST /auth/me` answers, and the live web
    bundle contains this session's work and none of the copy it replaced.
 
-2. **Confirm the App Store Connect record exists** for
-   `com.orchestrateops.app`, and that the Codemagic integration named
-   `Aura Platform LLC` is connected to it.
-3. **Decide the build number.** `12` must not already exist in TestFlight.
-   Either bump `pubspec.yaml`, or set `APP_STORE_APPLE_ID` in the Codemagic
-   `appstore` group and let it increment.
-4. **Trigger the Codemagic `ios-testflight` workflow.** It now analyses,
-   unit-tests, and certifies the app on an iOS simulator *before* building the
-   IPA, so a failure costs a CI minute rather than a cycle.
-5. **App Store Connect metadata** — description, keywords, support and privacy
-   URLs, screenshots, and the App Privacy questionnaire. The privacy manifest
-   in the binary declares no tracking and four collected data types; the
-   questionnaire must say the same thing.
+2. ~~Confirm the App Store Connect record exists~~ **Done.** The record and
+   the Codemagic integration named `Aura Platform LLC` are connected. Two
+   signing failures were spent proving it: the App ID was missing Associated
+   Domains, and then Codemagic reused its own stale stored profile, which had
+   to be re-fetched and the old copy deleted.
+3. ~~Decide the build number.~~ **Done.** `12` was consumed by an upload Apple
+   rejected in processing (ITMS-90683), so `pubspec.yaml` carries `0.2.3+13`.
+   A build number is spent even when the build fails.
+4. ~~Trigger the Codemagic `ios-testflight` workflow.~~ **Done, 2026-09-05.**
+   Build 13 passed analysis, unit tests, simulator certification and signing,
+   and is attached to the 0.2.3 version record in App Store Connect.
+5. ~~App Store Connect metadata.~~ **Done, 2026-09-05**, and it was further
+   out of date than the release notes were. See
+   `store_assets/release_notes/0.2.3.md` for the field-by-field record. Two
+   items were not merely stale but wrong: the App Privacy questionnaire
+   declared two of the four data types the shipped `PrivacyInfo.xcprivacy`
+   declares, and the age rating was 17+ on an `Unrestricted Web Access`
+   answer that no code in this repository supports. Both corrected; the
+   rating is now 4+.
 6. **Optional, and currently moot:** link the Play service account, if Android
    commerce is ever to open.
 
@@ -187,15 +193,17 @@ Everything here is a founder action. None of it can be done from this machine.
 
 ## Prepared for iOS without macOS
 
-- **Permissions with no feature behind them, removed.** Camera and location
-  usage descriptions were declared and never used — a reviewer looks for the
-  capability and asks why the app wants it. The photo-library reason stays,
-  because `file_picker`'s image mode reaches the library, and now says what it
-  is for.
+- **All three purpose strings present, and each says what it is for.** They
+  were removed once, on the reasoning that the product uses none of them.
+  Apple rejected the upload (ITMS-90683) because it analyses the *binary*, and
+  `file_picker` links the camera and location frameworks whether or not our
+  code calls them. Photo library, camera and location descriptions are all
+  restored, and pinned by `test/ios_purpose_strings_test.dart`.
 - **`PrivacyInfo.xcprivacy` added and registered in the Xcode project**, so it
   is copied into the bundle rather than sitting in the folder. No tracking, no
   tracking domains; email, name, account id and the business's own records,
-  all linked, all for app functionality.
+  all linked, all for app functionality. The App Store Connect questionnaire
+  now declares the same four types, in the same terms.
 - **`ITSAppUsesNonExemptEncryption`** already declared, so export compliance is
   not asked at upload.
 - **iOS route policy** keeps the entire acquisition funnel unreachable in the
