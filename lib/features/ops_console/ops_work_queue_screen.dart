@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'ops_console_repository.dart';
+import 'ops_empty_state.dart';
 
 class OpsWorkQueueScreen extends StatefulWidget {
   const OpsWorkQueueScreen({super.key});
@@ -84,7 +85,16 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
       return _ErrorPanel(message: _error!, onRetry: _load);
     }
     if (_cases.isEmpty) {
-      return const _EmptyState();
+      return const OpsEmptyState(
+        icon: Icons.check_circle_outline,
+        headline: 'Nothing is waiting for a decision.',
+        // The queue reaches held messages and authority submissions across
+        // every business, and everything else only inside this organisation.
+        // "All subsystems normal" was a claim it could not make.
+        detail: 'Held messages and authority submissions are checked across '
+            'every business. Everything else is checked in the organisation '
+            'you are signed in as.',
+      );
     }
     return ListView.separated(
       padding: EdgeInsets.zero,
@@ -1025,41 +1035,7 @@ class _HistoryRow extends StatelessWidget {
   static String _p(int n) => n.toString().padLeft(2, '0');
 }
 
-// ── Empty / error states ──────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.check_circle_outline,
-              size: 40, color: AppTheme.emerald),
-          const SizedBox(height: 12),
-          Text(
-            'No open cases',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(color: AppTheme.muted),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'All subsystems are within normal operating parameters.',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: AppTheme.subdued, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
+// ── Error state ──────────────────────────────────────────────────────────────
 
 class _ErrorPanel extends StatelessWidget {
   const _ErrorPanel({required this.message, required this.onRetry});

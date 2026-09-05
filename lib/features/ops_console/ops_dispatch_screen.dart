@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'ops_console_repository.dart';
+import 'ops_empty_state.dart';
 
 /// Dispatch & Governance — per-campaign custody of outreach messages.
 ///
@@ -171,7 +172,10 @@ class _OpsDispatchScreenState extends State<OpsDispatchScreen> {
   Widget _body() {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
     if (_error != null) return _ErrorPanel(message: _error!, onRetry: _load);
-    if (_groups.isEmpty) return const _EmptyState(label: 'No failed or retryable dispatches.');
+    if (_groups.isEmpty) {
+      return const OpsEmptyState(
+          headline: 'Nothing failed in this organisation.');
+    }
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: _groups.length,
@@ -541,14 +545,6 @@ class _ActFeedback extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.label}); final String label;
-  @override Widget build(BuildContext context) => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-    const Icon(Icons.check_circle_outline, size: 40, color: AppTheme.emerald),
-    const SizedBox(height: 12),
-    Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted)),
-  ]));
-}
 
 class _ErrorPanel extends StatelessWidget {
   const _ErrorPanel({required this.message, required this.onRetry});

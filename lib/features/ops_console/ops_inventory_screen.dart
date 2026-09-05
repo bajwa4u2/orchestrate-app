@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'ops_console_repository.dart';
+import 'ops_empty_state.dart';
 
 class OpsInventoryScreen extends StatefulWidget {
   const OpsInventoryScreen({super.key});
@@ -109,7 +110,7 @@ class _OpsInventoryScreenState extends State<OpsInventoryScreen> {
   Widget _body() {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
     if (_error != null) return _ErrorPanel(message: _error!, onRetry: _load);
-    if (_batches.isEmpty) return const _EmptyState(label: 'No import batches found.');
+    if (_batches.isEmpty) return const OpsEmptyState(headline: 'No imports in this organisation.');
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: _batches.length,
@@ -413,10 +414,6 @@ class _ActFeedback extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.label}); final String label;
-  @override Widget build(BuildContext context) => Center(child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted)));
-}
 
 class _ErrorPanel extends StatelessWidget {
   const _ErrorPanel({required this.message, required this.onRetry});

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'ops_console_repository.dart';
+import 'ops_empty_state.dart';
 
 class OpsClientsScreen extends StatefulWidget {
   const OpsClientsScreen({super.key});
@@ -86,7 +87,7 @@ class _OpsClientsScreenState extends State<OpsClientsScreen> {
       children: [
         _ScreenHeader(
           title: 'Clients',
-          subtitle: '${_clients.length} client${_clients.length == 1 ? '' : 's'} — custody view',
+          subtitle: '${_clients.length} client${_clients.length == 1 ? '' : 's'} in this organisation',
           loading: _loading,
           onRefresh: _loading ? null : _load,
         ),
@@ -99,7 +100,16 @@ class _OpsClientsScreenState extends State<OpsClientsScreen> {
   Widget _body() {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
     if (_error != null) return _ErrorPanel(message: _error!, onRetry: _load);
-    if (_clients.isEmpty) return const _EmptyState(label: 'No clients found.');
+    if (_clients.isEmpty) {
+      // "No clients found" reads as an absence of clients. It is not one.
+      // This list is scoped to the organisation the session belongs to, and a
+      // platform operator's organisation holds no client businesses of its
+      // own — the client businesses on the platform each belong to their own.
+      // Saying so is the difference between a quiet dead end and a stated
+      // boundary somebody can decide about.
+      return const OpsEmptyState(
+          headline: 'No clients in this organisation.');
+    }
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: _clients.length,
@@ -507,13 +517,6 @@ class _ActFeedback extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.label});
-  final String label;
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.muted)));
-}
 
 class _ErrorPanel extends StatelessWidget {
   const _ErrorPanel({required this.message, required this.onRetry});
