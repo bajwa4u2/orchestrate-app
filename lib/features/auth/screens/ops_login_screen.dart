@@ -86,6 +86,12 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                               controller: _code,
                               decoration: const InputDecoration(
                                   labelText: 'Email code'),
+                              // Enter finishes the form here too. The client
+                              // side had the same gap: a person typed, pressed
+                              // Enter, and nothing happened at all.
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted:
+                                  _busy ? null : (_) => _verifyCode(),
                               validator: _required),
                           CheckboxListTile(
                             contentPadding: EdgeInsets.zero,
@@ -135,6 +141,10 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                               decoration:
                                   const InputDecoration(labelText: 'Password'),
                               obscureText: true,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: _busy
+                                  ? null
+                                  : (_) => createMode ? _bootstrap() : _login(),
                               validator: _required),
                           const SizedBox(height: 20),
                           FilledButton(

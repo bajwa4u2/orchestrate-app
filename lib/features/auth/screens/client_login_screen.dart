@@ -944,6 +944,7 @@ class _AuthCard extends StatelessWidget {
                   controller: state._confirmPassword,
                   label: 'Confirm password',
                   obscure: state._obscureConfirmPassword,
+                  onSubmitted: state._busy ? null : state.register,
                   suffixIcon: IconButton(
                     onPressed: () => state.setState(
                       () => state._obscureConfirmPassword =
@@ -1008,6 +1009,7 @@ class _AuthCard extends StatelessWidget {
                   controller: state._password,
                   label: 'Password',
                   obscure: state._obscurePassword,
+                  onSubmitted: state._busy ? null : state.login,
                   suffixIcon: IconButton(
                     onPressed: () => state.setState(
                       () => state._obscurePassword = !state._obscurePassword,
@@ -1141,6 +1143,7 @@ class _EmailCodeView extends StatelessWidget {
                 controller: state._loginCode,
                 label: 'Email code',
                 keyboardType: TextInputType.number,
+                onSubmitted: state._busy ? null : state.verifyLoginCode,
               ),
               const SizedBox(height: 10),
               CheckboxListTile(
@@ -1329,6 +1332,7 @@ class _ResetView extends StatelessWidget {
                 controller: state._resetPassword,
                 label: 'New password',
                 obscure: state._obscureResetPassword,
+                onSubmitted: state._busy ? null : state.submitReset,
                 suffixIcon: IconButton(
                   onPressed: () => state.setState(
                     () => state._obscureResetPassword =
@@ -1375,6 +1379,7 @@ class _Field extends StatelessWidget {
     this.hintText,
     this.obscure = false,
     this.suffixIcon,
+    this.onSubmitted,
   });
 
   final TextEditingController controller;
@@ -1385,12 +1390,24 @@ class _Field extends StatelessWidget {
   final bool obscure;
   final Widget? suffixIcon;
 
+  /// What Enter does. Absent on a field that is not the last one in its form.
+  final VoidCallback? onSubmitted;
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscure,
+      // ENTER SUBMITS.
+      //
+      // Nothing in this form handled it, on any screen: sign in, create a
+      // workspace, or reset a password. A person typed their password, pressed
+      // Enter, and the page sat there — no request, no error, nothing to
+      // explain it. Signing in with the keyboard is how most people sign in.
+      textInputAction:
+          onSubmitted != null ? TextInputAction.done : TextInputAction.next,
+      onFieldSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
       validator: required
           ? (value) {
               if (value == null || value.trim().isEmpty) {

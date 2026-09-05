@@ -63,6 +63,24 @@ void main() {
     expect(screen.contains('split(RegExp('), isTrue);
   });
 
+  /// A REMEMBERED CHOICE IS NOT A PLAN.
+  ///
+  /// The plan fields fell back to the plan the session remembers someone
+  /// looking at in the signed-out funnel. Billing therefore read
+  /// "Plan: Focused" beside "Status: None" and "No active subscription
+  /// record" — three cards disagreeing about one fact, and the wrong one was
+  /// the one a person reads first.
+  test('no surface states a plan from a remembered selection', () {
+    for (final path in <String>[
+      'lib/features/client/screens/client_billing_screen.dart',
+      'lib/features/client/screens/client_settings_screen.dart',
+    ]) {
+      expect(File(path).readAsStringSync().contains('selectedPlanDisplay'),
+          isFalse,
+          reason: '$path states a subscription from browsing history');
+    }
+  });
+
   test('a readiness section is rendered as a place', () {
     final screen =
         File('lib/features/client/screens/client_business_identity_screen.dart')

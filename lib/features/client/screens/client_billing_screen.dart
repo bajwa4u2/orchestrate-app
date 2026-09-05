@@ -209,10 +209,17 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
             ],
             ClientMetricStrip(metrics: [
               ClientMetric('Status', titleCase(status)),
+              // A REMEMBERED CHOICE IS NOT A PLAN.
+              //
+              // The fallback was the plan the session remembers someone
+              // looking at in the funnel. So Billing read "Plan: Focused"
+              // directly beside "Status: None" and "No active subscription
+              // record" — three cards disagreeing about the same fact, and the
+              // only wrong one was the one a person reads first.
               ClientMetric(
                   'Plan',
                   readText(data.subscription, 'displayPlanLabel',
-                      fallback: session.selectedPlanDisplay ?? 'Not set')),
+                      fallback: 'Not set')),
               ClientMetric('Invoices', '${data.invoices.length}'),
               ClientMetric(
                   'Open balance',

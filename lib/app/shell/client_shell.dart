@@ -379,43 +379,47 @@ class _Rail extends StatelessWidget {
                           currentPath: currentPath,
                           signingOut: signingOut,
                           onSignOut: onSignOut))
-                  : Row(
-                      children: [
-                        _AccountButton(
-                            session: session,
-                            currentPath: currentPath,
-                            signingOut: signingOut,
-                            onSignOut: onSignOut),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                session.workspaceName.trim().isNotEmpty
-                                    ? session.workspaceName.trim()
-                                    : 'Workspace',
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              Text(
-                                session.email,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                        color: AppTheme.publicMuted,
-                                        fontSize: 11),
-                              ),
-                            ],
-                          ),
+                  // THE WHOLE ROW OPENS THE MENU, NOT THE CIRCLE.
+                  //
+                  // The avatar was the only tap target: a 30px circle at the
+                  // left of a row that reads as one control the full width of
+                  // the rail. Clicking the business name or the email — the
+                  // obvious place to click — did nothing at all, and this menu
+                  // is the only way to People & authority, Plan & billing,
+                  // Account & security, feedback, and signing out.
+                  : _AccountButton(
+                      session: session,
+                      currentPath: currentPath,
+                      signingOut: signingOut,
+                      onSignOut: onSignOut,
+                      identity: Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              session.workspaceName.trim().isNotEmpty
+                                  ? session.workspaceName.trim()
+                                  : 'Workspace',
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              session.email,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                      color: AppTheme.publicMuted,
+                                      fontSize: 11),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
             ),
           ],
@@ -546,11 +550,17 @@ class _AccountButton extends StatefulWidget {
     required this.signingOut,
     required this.onSignOut,
     this.currentPath = '',
+    this.identity,
   });
 
   final AuthSessionController session;
   final bool signingOut;
   final VoidCallback onSignOut;
+
+  /// The business name and email shown beside the avatar in the expanded rail.
+  /// Inside the button, so the whole row opens the menu — it reads as one
+  /// control and it now behaves as one.
+  final Widget? identity;
 
   /// Where the person is, sent with feedback so a report about a page does not
   /// have to describe which page.
@@ -659,15 +669,28 @@ class _AccountButtonState extends State<_AccountButton> {
           child: Text(signingOut ? 'Signing out…' : 'Sign out'),
         ),
       ],
-      child: CircleAvatar(
-        radius: 15,
-        backgroundColor: AppTheme.publicAccentSoft,
-        child: Text(
-          initials.toUpperCase(),
-          style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.publicAccent),
+      // Padded so the row has real height to hit, and the identity beside the
+      // avatar is inside the button rather than next to it.
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 15,
+              backgroundColor: AppTheme.publicAccentSoft,
+              child: Text(
+                initials.toUpperCase(),
+                style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.publicAccent),
+              ),
+            ),
+            if (widget.identity != null) ...[
+              const SizedBox(width: 8),
+              widget.identity!,
+            ],
+          ],
         ),
       ),
     );

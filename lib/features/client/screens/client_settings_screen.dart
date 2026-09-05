@@ -222,8 +222,12 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
               children: [
                 ClientInfoRow(
                   title: 'Subscription',
+                  // Not the plan the session remembers someone looking at in
+                  // the funnel — that is a browsing history, not a
+                  // subscription, and it read as one directly above the status
+                  // that contradicted it.
                   primary: readText(data.subscription, 'displayPlanLabel',
-                      fallback: session.selectedPlanDisplay ?? 'Not set'),
+                      fallback: 'Not set'),
                   secondary:
                       'Status: ${titleCase(readText(data.subscription, 'status', fallback: session.subscriptionStatus))}',
                 ),
