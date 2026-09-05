@@ -755,7 +755,9 @@ class _ActionButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: color,
         side: BorderSide(color: color.withOpacity(0.4)),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        // A two-line consequence needs room under it; at vertical 8 the last
+        // line sat on the border.
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
         minimumSize: Size.zero,
         alignment: Alignment.centerLeft,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
