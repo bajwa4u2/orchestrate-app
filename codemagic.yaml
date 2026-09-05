@@ -5,12 +5,12 @@
 # ── One-time Codemagic UI setup (before the first run) ───────────────────
 #  1. Codemagic > Teams > Integrations > App Store Connect: add your
 #     App Store Connect API key (.p8 file + Issuer ID + Key ID).
-#     Name the integration EXACTLY:  Orchestrate ASC API Key
+#     The key is registered under Developer Portal and named
+#     "Aura Platform LLC", which is what `integrations` below refers to.
 #  2. Add this repository as a Codemagic application.
-#  3. (After the app record exists in App Store Connect) add an environment
-#     variable APP_STORE_APPLE_ID = the numeric Apple ID of the app, in a
-#     group named "appstore". Without it the build still works and uses
-#     build number 2; with it the build number auto-increments.
+#  3. Nothing else. The app record exists (Orchestrate Operations, Apple ID
+#     6772025079) and the version and build number come from pubspec.yaml, so
+#     no environment variable group is needed or referenced.
 #
 # Codemagic uses the ASC API key to AUTOMATICALLY create the iOS
 # distribution certificate and the App Store provisioning profile for
@@ -30,8 +30,14 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      groups:
-        - appstore            # provides APP_STORE_APPLE_ID (optional)
+      # NO VARIABLE GROUP.
+      #
+      # This declared a group named "appstore", for an APP_STORE_APPLE_ID that
+      # nothing in the build reads — the version and build number come from
+      # pubspec.yaml through $(FLUTTER_BUILD_NAME) and $(FLUTTER_BUILD_NUMBER).
+      # The group was never created, and Codemagic fails a build that asks for
+      # a group it cannot find, so this would have stopped the run before the
+      # first script.
     scripts:
       - name: Flutter pub get
         script: flutter pub get
@@ -83,8 +89,8 @@ workflows:
           # $(FLUTTER_BUILD_NUMBER). Nothing hardcodes a visible version.
           #
           # Bump pubspec for each release so TestFlight build numbers never
-          # collide -- or set APP_STORE_APPLE_ID in the appstore group and let
-          # Codemagic increment the build number itself.
+          # collide. TestFlight currently holds up to 0.2.1 (10), so 0.2.3 (12)
+          # is clear.
           flutter build ipa --release \
             --export-options-plist=/Users/builder/export_options.plist
           # API base URL defaults to https://api.orchestrateops.com/v1 at
