@@ -710,24 +710,29 @@ class _Metrics extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 880;
-        if (compact) {
-          return Column(
-            children: [
-              for (int i = 0; i < metrics.length; i++) ...[
-                _MetricCard(metric: metrics[i]),
-                if (i != metrics.length - 1) const SizedBox(height: 12),
-              ],
-            ],
-          );
-        }
+        // A ROW OF THREE THAT BECAME A COLUMN OF THREE NARROW BOXES.
+        //
+        // The old rule was all-in-a-row above 880 and stacked below it, and the
+        // stacked branch never stretched — so at the console's own width the
+        // counts rendered as a ragged left-hand column of small tiles with the
+        // rest of the surface empty beside them. Wrapping into as many even
+        // columns as the width holds fits every width, including the one the
+        // shell actually has.
+        const gap = 12.0;
+        final width = constraints.maxWidth;
+        final columns = width >= 780
+            ? metrics.length
+            : width >= 520
+                ? 2
+                : 1;
+        final cell = (width - gap * (columns - 1)) / columns;
 
-        return Row(
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
           children: [
-            for (int i = 0; i < metrics.length; i++) ...[
-              Expanded(child: _MetricCard(metric: metrics[i])),
-              if (i != metrics.length - 1) const SizedBox(width: 12),
-            ],
+            for (final metric in metrics)
+              SizedBox(width: cell, child: _MetricCard(metric: metric)),
           ],
         );
       },
@@ -772,8 +777,10 @@ class _ActionPanel extends StatelessWidget {
               Text(
                 message ??
                     (commandMode
-                        ? 'Run supported recovery controls from the command center. Actions use live system capabilities and report cleanly when setup is missing.'
-                        : 'Refresh this operational view to confirm the latest backend state. Actions stay available from command and debug surfaces when supported.'),
+                        ? 'Recovery controls. Each one says what it did, and '
+                            'says so plainly when it could not do it.'
+                        : 'Counts are read fresh each time this is refreshed. '
+                            'Nothing here changes anything on its own.'),
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
