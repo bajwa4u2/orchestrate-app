@@ -8,6 +8,34 @@ class ClientAccountRepository {
 
   final ApiClient _apiClient;
 
+  /// CHANGE YOUR OWN NAME.
+  ///
+  /// Its own call, not a field on the client profile: who you are and what the
+  /// business is called are different facts with different owners. A workspace
+  /// can have several people, and one of them renaming themselves must not
+  /// rename the company.
+  ///
+  /// Answers with the same shape as sign-in, so the session is refreshed from
+  /// the server's answer rather than patched by hand here.
+  Future<Map<String, dynamic>> updateOwnName(String fullName) async {
+    final json = await _apiClient.postJson(
+      '/auth/me',
+      surface: ApiSurface.client,
+      body: {'fullName': fullName.trim()},
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  /// Who the server says is signed in, and to what. Read after a save so the
+  /// session is refreshed from the server's answer rather than patched here.
+  Future<Map<String, dynamic>> fetchMe() async {
+    final json = await _apiClient.getJson(
+      '/auth/me',
+      surface: ApiSurface.client,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   Future<Map<String, dynamic>> fetchClientProfile() async {
     final json = await _apiClient.getJson(
       '/clients/me/profile',

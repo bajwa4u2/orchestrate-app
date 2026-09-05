@@ -398,34 +398,11 @@ class _Rail extends StatelessWidget {
                       currentPath: currentPath,
                       signingOut: signingOut,
                       onSignOut: onSignOut,
-                      identity: Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              session.workspaceName.trim().isNotEmpty
-                                  ? session.workspaceName.trim()
-                                  : 'Workspace',
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            Text(
-                              session.email,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                      color: AppTheme.publicMuted,
-                                      fontSize: 11),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // The button builds the name and email itself, from the
+                      // live session. Built here they were read once, when the
+                      // shell built, and the shell does not rebuild when a
+                      // profile is saved — so the rail kept the old name.
+                      showIdentity: true,
                     ),
             ),
           ],
@@ -556,17 +533,18 @@ class _AccountButton extends StatefulWidget {
     required this.signingOut,
     required this.onSignOut,
     this.currentPath = '',
-    this.identity,
+    this.showIdentity = false,
   });
 
   final AuthSessionController session;
   final bool signingOut;
   final VoidCallback onSignOut;
 
-  /// The business name and email shown beside the avatar in the expanded rail.
-  /// Inside the button, so the whole row opens the menu — it reads as one
-  /// control and it now behaves as one.
-  final Widget? identity;
+  /// Whether to show the business name and email beside the avatar. They are
+  /// built inside this button so they follow the session, and they are inside
+  /// the button rather than next to it so the whole row opens the menu — it
+  /// reads as one control and it behaves as one.
+  final bool showIdentity;
 
   /// Where the person is, sent with feedback so a report about a page does not
   /// have to describe which page.
@@ -595,6 +573,24 @@ class _AccountButtonState extends State<_AccountButton> {
 
   @override
   Widget build(BuildContext context) {
+    // THE ROW READS THE SESSION, SO IT HAS TO HEAR WHEN THE SESSION CHANGES.
+    //
+    // The name, the email and the initials all come from the session, which is
+    // written at sign-in and again whenever a profile is saved. Nothing
+    // rebuilt this, so a saved name appeared on the account screen while the
+    // rail two inches away went on showing the old one until the next
+    // sign-in — which is what "saved but not surfacing" looked like.
+    //
+    // Scoped to this row rather than the whole shell: the shell contains
+    // layout builders, and rebuilding it from a notification that arrives
+    // mid-layout mutates a render object while an ancestor is laying out.
+    return ListenableBuilder(
+      listenable: session,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
     final name = session.fullName.trim();
     final initials = name.isNotEmpty
         ? name.trim().split(RegExp(r'\s+')).take(2).map((p) => p[0]).join()
@@ -692,9 +688,32 @@ class _AccountButtonState extends State<_AccountButton> {
                     color: AppTheme.publicAccent),
               ),
             ),
-            if (widget.identity != null) ...[
+            if (widget.showIdentity) ...[
               const SizedBox(width: 8),
-              widget.identity!,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      session.workspaceName.trim().isNotEmpty
+                          ? session.workspaceName.trim()
+                          : 'Workspace',
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      session.email,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.publicMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ],
         ),

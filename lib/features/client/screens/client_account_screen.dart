@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -375,6 +376,13 @@ class _ProfileEditorDialog extends StatefulWidget {
 }
 
 class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
+  /// WHO YOU ARE, WHICH NOTHING COULD EDIT BEFORE.
+  ///
+  /// The name on the account screen was whatever was typed at registration,
+  /// shown back forever, with an "Edit profile" form beside it that edits the
+  /// BUSINESS. So the name a person read was always the onboarding value and
+  /// nothing they saved ever replaced it.
+  late final TextEditingController _ownName;
   late final TextEditingController _displayName;
   late final TextEditingController _legalName;
   late final TextEditingController _brandName;
@@ -397,6 +405,8 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
     // brandName and welcomeHeadline live under branding.* in the
     // backend response — read from there with profile.* as a fallback.
     final branding = _asMap(p['branding']);
+    _ownName = TextEditingController(
+        text: AuthSessionController.instance.fullName);
     _displayName = TextEditingController(text: _read(p, 'displayName'));
     _legalName = TextEditingController(text: _read(p, 'legalName'));
     _brandName = TextEditingController(
@@ -415,6 +425,7 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
   void dispose() {
     _displayName.dispose();
     _legalName.dispose();
+    _ownName.dispose();
     _brandName.dispose();
     _websiteUrl.dispose();
     _bookingUrl.dispose();
@@ -422,6 +433,20 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
     _currency.dispose();
     _headline.dispose();
     super.dispose();
+  }
+
+  /// The server's own refusal, where it gave one worth reading.
+  ///
+  /// A 4xx here is a sentence written for the person — "Enter the name you
+  /// want to be known by" — and replacing it with "could not be updated at the
+  /// moment" is how someone retries the same thing and fails the same way. A
+  /// 5xx or a network failure has nothing to say, so the general wording
+  /// stands for those.
+  String? _refusalText(Object error) {
+    if (error is! ApiException) return null;
+    if (error.statusCode < 400 || error.statusCode >= 500) return null;
+    final message = error.message.trim();
+    return message.isEmpty ? null : message;
   }
 
   Future<void> _save() async {
@@ -438,6 +463,10 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
     });
 
     try {
+      final ownName = _ownName.text.trim();
+      if (ownName != AuthSessionController.instance.fullName) {
+        await widget.repository.updateOwnName(ownName);
+      }
       await widget.repository.updateClientProfile(
         displayName: displayName,
         legalName: legalName,
@@ -448,13 +477,28 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
         currencyCode: _currency.text.trim(),
         welcomeHeadline: _headline.text.trim(),
       );
+      // THE SESSION CARRIES WHAT EVERY OTHER SURFACE READS.
+      //
+      // The rail, the account menu and the name a person sees after signing in
+      // all come from the session, which is written at login and never again.
+      // So a saved name took on this screen and nowhere else — which is what
+      // "saved but not surfacing" looked like. Re-read from the server after
+      // saving rather than patching the session by hand, so one answer decides
+      // it.
+      await AuthSessionController.instance
+          .applyAuthResponse(await widget.repository.fetchMe());
+
       if (!mounted) return;
       Navigator.of(context).pop(true);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'Profile could not be updated at the moment.';
+        // The server's own words where it gave any. "Could not be updated at
+        // the moment" over a refusal that said exactly what was wrong is how a
+        // person retries the same thing and fails the same way.
+        _error = _refusalText(error) ??
+            'Profile could not be updated at the moment.';
       });
     }
   }
@@ -484,6 +528,14 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
                       ?.copyWith(color: AppTheme.publicMuted),
                 ),
                 const SizedBox(height: 20),
+                // WHO YOU ARE, ABOVE WHAT THE BUSINESS IS CALLED.
+                //
+                // On its own line and first, because it is the one field on
+                // this form that is about the person filling it in — and
+                // because until now there was nowhere in the product to
+                // change it at all.
+                _Field(controller: _ownName, label: 'Your name'),
+                const SizedBox(height: 14),
                 _FormRow(
                   left: _Field(controller: _legalName, label: 'Business name'),
                   right: _Field(
@@ -1123,11 +1175,16 @@ String _resolvedPlanLabel(
   );
   if (livePlan.isNotEmpty) return livePlan;
 
-  final sessionPlan = _composePlanLabel(
-    plan: session.commercialPlan ?? session.selectedPlan,
-    tier: session.commercialTier ?? session.selectedTier,
+  // NOT THE SELECTION. The third place this fell back to the plan the session
+  // remembers someone looking at in the funnel — so a business with no
+  // subscription read "Plan: Focused" beside "Subscription standing: None".
+  // What the payment provider holds is a fact; what somebody once clicked is
+  // not, and only one of them may be shown as a plan.
+  final commercial = _composePlanLabel(
+    plan: session.commercialPlan,
+    tier: session.commercialTier,
   );
-  if (sessionPlan.isNotEmpty) return sessionPlan;
+  if (commercial.isNotEmpty) return commercial;
 
   return 'Not set';
 }

@@ -16,8 +16,8 @@ void main() {
   final shell = File('lib/app/shell/client_shell.dart').readAsStringSync();
 
   test('the identity is inside the button, not beside it', () {
-    expect(shell.contains('this.identity,'), isTrue);
-    expect(shell.contains('widget.identity!'), isTrue);
+    expect(shell.contains('this.showIdentity = false,'), isTrue);
+    expect(shell.contains('if (widget.showIdentity)'), isTrue);
     // The expanded rail must not build a Row that puts the button and the
     // identity side by side again — that is exactly what made the text inert.
     final rail = shell.substring(
@@ -25,10 +25,22 @@ void main() {
       shell.indexOf('class _RailItem'),
     );
     expect(
-      rail.contains('identity: Expanded('),
+      rail.contains('showIdentity: true'),
       isTrue,
-      reason: 'the name and email must be passed into the button',
+      reason: 'the name and email must be built inside the button',
     );
+    expect(
+      rail.contains('session.workspaceName'),
+      isFalse,
+      reason: 'the shell must not read the name once and hand it over — it '
+          'does not rebuild when a profile is saved',
+    );
+  });
+
+  test('the row follows the session', () {
+    final button = shell.substring(shell.indexOf('class _AccountButtonState'));
+    expect(button.contains('ListenableBuilder('), isTrue);
+    expect(button.contains('listenable: session,'), isTrue);
   });
 
   test('the row has height to hit', () {
