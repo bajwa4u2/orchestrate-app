@@ -261,6 +261,26 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
       );
     }
 
+    // A RAIL THAT CANNOT VERIFY MUST NOT BE OFFERED.
+    //
+    // Google is currently refusing our service account, so a purchase on
+    // Android would be taken by the store and then refused here — a charge
+    // followed by a no, and a refund conversation. The server says which rails
+    // can complete; where one cannot, this states it plainly rather than
+    // rendering a Subscribe button that leads somewhere bad.
+    final availability = _offerings?.rails[_rail];
+    if (availability != null && !availability.live) {
+      return ClientPanel(
+        title: 'Subscription',
+        children: [
+          ClientEmptyState(
+            message: availability.says ??
+                'Subscribing is not available on this device yet.',
+          ),
+        ],
+      );
+    }
+
     if (_products.isEmpty) {
       return const ClientPanel(
         title: 'Subscription',

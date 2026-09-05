@@ -63,9 +63,33 @@ class StorePurchaseRepository {
   }
 }
 
+/// Whether one payment rail can actually complete a purchase right now.
+///
+/// Asked of the server, which asks the provider. A rail that cannot verify a
+/// receipt must not be offered: the money moves at the store and the refusal
+/// happens on our side, which is a charge followed by a no.
+class RailAvailability {
+  const RailAvailability({required this.live, required this.says});
+
+  final bool live;
+
+  /// What to tell a person when it is not. Written by the server, because the
+  /// server is the side that knows why.
+  final String? says;
+
+  static RailAvailability fromJson(Map<String, dynamic>? json) =>
+      RailAvailability(
+        // Absent means an older server that does not answer this yet. Treated
+        // as live so an existing client is not broken by a deploy order.
+        live: json == null || json['live'] != false,
+        says: json?['says'] as String?,
+      );
+}
+
 class StoreOfferings {
   const StoreOfferings({
     required this.alreadyActive,
+    this.rails = const {},
     required this.entitlement,
     required this.offerings,
   });
@@ -73,11 +97,22 @@ class StoreOfferings {
   /// True when this organisation already operates. Selling to it again is a
   /// refund conversation, so the surface refuses before the store opens.
   final bool alreadyActive;
+
+  /// Keyed by rail: APPLE_APP_STORE, GOOGLE_PLAY.
+  final Map<String, RailAvailability> rails;
   final Entitlement? entitlement;
   final List<StoreOffering> offerings;
 
   static StoreOfferings fromJson(Map<String, dynamic> j) => StoreOfferings(
         alreadyActive: j['alreadyActive'] == true,
+        rails: {
+          for (final entry in (j['rails'] as Map? ?? const {}).entries)
+            '${entry.key}': RailAvailability.fromJson(
+              entry.value is Map
+                  ? Map<String, dynamic>.from(entry.value as Map)
+                  : null,
+            ),
+        },
         entitlement: j['entitlement'] is Map
             ? Entitlement.fromJson(
                 Map<String, dynamic>.from(j['entitlement'] as Map))
