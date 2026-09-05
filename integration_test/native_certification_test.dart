@@ -131,6 +131,12 @@ void main() {
   ///
   /// So everything that touches the router happens once, here. Splitting it
   /// into readable tests is what broke it.
+  /// Without a token the authenticated half cannot run — the first
+  /// authenticated call is answered 401 and the app correctly signs itself
+  /// out. CI runs the platform half regardless, because "does it boot on iOS"
+  /// is the question worth gating an upload on.
+  final authenticated = certToken.isNotEmpty;
+
   testWidgets('the app boots, the workspace navigates, retired paths land',
       (tester) async {
     await signedIn();
@@ -149,6 +155,12 @@ void main() {
     // whole question a browser could not answer.
     expect(find.byType(MaterialApp), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    if (!authenticated) {
+      debugPrint('[certification] no CERT_TOKEN — boot certified, '
+          'authenticated navigation skipped');
+      return;
+    }
 
     for (final destination in <String>[
       '/client/today',

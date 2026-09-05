@@ -35,10 +35,43 @@ workflows:
     scripts:
       - name: Flutter pub get
         script: flutter pub get
+      # Both of these gate the upload. `flutter analyze` exits non-zero on
+      # ANY issue, info included — which once meant this workflow would have
+      # failed here, and the failure would have read like a signing or
+      # toolchain problem rather than a dozen lint infos.
       - name: Static analysis
         script: flutter analyze
       - name: Unit tests
         script: flutter test
+      # DOES IT ACTUALLY RUN ON iOS.
+      #
+      # The only place the shipped iOS binary is exercised before a tester
+      # sees it. It runs before the IPA is built, so a failure costs a CI
+      # minute rather than a TestFlight cycle.
+      #
+      # It skips rather than fails when no simulator is available: a step that
+      # cannot run should say so, not invent a verdict. With CERT_TOKEN in the
+      # environment it also walks the authenticated workspace; without one the
+      # first authenticated call is answered 401 and the app correctly signs
+      # itself out, so only the platform half runs.
+      - name: iOS certification on a simulator
+        script: |
+          set -e
+          UDID=$(xcrun simctl list devices available \
+            | grep -m1 -E 'iPhone [0-9]' \
+            | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')
+          if [ -z "$UDID" ]; then
+            echo "No iPhone simulator available - iOS certification SKIPPED."
+            exit 0
+          fi
+          echo "Certifying on simulator $UDID"
+          xcrun simctl boot "$UDID" || true
+          if [ -n "$CERT_TOKEN" ]; then
+            flutter test integration_test -d "$UDID" \
+              --dart-define=CERT_TOKEN="$CERT_TOKEN"
+          else
+            flutter test integration_test -d "$UDID"
+          fi
       - name: Install CocoaPods dependencies
         script: find . -name "Podfile" -execdir pod install \;
       - name: Apply signing profiles
@@ -46,9 +79,12 @@ workflows:
       - name: Build signed IPA
         script: |
           # Version + build number come from pubspec.yaml (currently
-          # 0.2.0+8 -> CFBundleShortVersionString 0.2.0, CFBundleVersion
-          # 8). Bump pubspec for each release so TestFlight build numbers
-          # never collide.
+          # 0.2.3+12) and reach Info.plist through $(FLUTTER_BUILD_NAME) and
+          # $(FLUTTER_BUILD_NUMBER). Nothing hardcodes a visible version.
+          #
+          # Bump pubspec for each release so TestFlight build numbers never
+          # collide -- or set APP_STORE_APPLE_ID in the appstore group and let
+          # Codemagic increment the build number itself.
           flutter build ipa --release \
             --export-options-plist=/Users/builder/export_options.plist
           # API base URL defaults to https://api.orchestrateops.com/v1 at

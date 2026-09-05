@@ -469,7 +469,7 @@ class _PublicFooter extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         color: AppTheme.publicFooterField,
-        border: const Border(top: BorderSide(color: Color(0xFF263B4A))),
+        border: Border(top: BorderSide(color: Color(0xFF263B4A))),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
@@ -986,7 +986,7 @@ class _PublicFooterBottomRow extends StatelessWidget {
             Text(
               'Part of Aura Platform LLC.',
               style: TextStyle(
-                color: const Color(0xFFB9C8D6),
+                color: Color(0xFFB9C8D6),
                 fontSize: 11,
                 height: 1.4,
               ),

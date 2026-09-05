@@ -667,10 +667,12 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (text.contains('timeout') || text.contains('timed out')) {
       return 'The request timed out. Check your connection and try again.';
     }
-    if (text.contains('expired'))
+    if (text.contains('expired')) {
       return 'That code expired. Request a fresh code and try again.';
-    if (text.contains('invalid'))
+    }
+    if (text.contains('invalid')) {
       return 'That code did not work. Check it and try again.';
+    }
     if (text.contains('too many') ||
         text.contains('wait') ||
         api?.statusCode == 429) {

@@ -52,10 +52,6 @@
 	<false/>
 	<!-- iOS privacy purpose strings required by App Store review. -->
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Orchestrate may let you choose files or images from your library when attaching documents, importing relationship assets, or updating workspace materials.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Orchestrate may let you use the camera to capture documents, workspace materials, or related business assets when attaching or importing files.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Orchestrate may use your location only when you choose location-related business context, such as identifying nearby organizations or service areas.</string>
+	<string>Orchestrate asks for your photo library only when you choose a logo image for your business.</string>
 </dict>
 </plist>

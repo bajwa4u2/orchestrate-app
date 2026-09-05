@@ -440,10 +440,12 @@ class _NetworkPainter extends CustomPainter {
     final grid = Paint()
       ..color = const Color(0x1837616B)
       ..strokeWidth = .7;
-    for (var x = 0.0; x < size.width; x += compact ? 48 : 72)
+    for (var x = 0.0; x < size.width; x += compact ? 48 : 72) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
-    for (var y = 0.0; y < size.height; y += compact ? 48 : 54)
+    }
+    for (var y = 0.0; y < size.height; y += compact ? 48 : 54) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
+    }
     final pathPaint = Paint()
       ..color = const Color(0xB02D6971)
       ..style = PaintingStyle.stroke
@@ -512,11 +514,11 @@ class _NetworkPainter extends CustomPainter {
     }
     canvas.drawPath(primaryPath, glow);
     canvas.drawPath(primaryPath, pathPaint);
-    if (exceptionPath != null) canvas.drawPath(exceptionPath!, pathPaint);
-    if (packetPath != null) canvas.drawPath(packetPath!, pathPaint);
+    if (exceptionPath != null) canvas.drawPath(exceptionPath, pathPaint);
+    if (packetPath != null) canvas.drawPath(packetPath, pathPaint);
     _drawTraveler(canvas, primaryPath, phase, compact: compact, packet: false);
     if (packetPath != null) {
-      _drawTraveler(canvas, packetPath!, (phase + .47) % 1,
+      _drawTraveler(canvas, packetPath, (phase + .47) % 1,
           compact: compact, packet: true);
     }
   }

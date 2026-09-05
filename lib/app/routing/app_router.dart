@@ -473,7 +473,7 @@ GoRouter get router {
           child: const PublicContentScreen(
             eyebrow: 'Product',
             title: 'Commercial intelligence + execution infrastructure',
-            visualChapter: const ExecutionObjectStage(),
+            visualChapter: ExecutionObjectStage(),
             subtitle:
                 'Orchestrate is commercial execution infrastructure for B2B firms in regulated and reputation-sensitive sectors. It runs governed outbound for you under your own verified identity, turns market signals into qualified opportunity, and refuses the sends that would burn your reputation — refusal is a first-class outcome, not an error. You connect identity; Orchestrate runs the rest.',
             sideNote:
@@ -527,7 +527,7 @@ GoRouter get router {
           child: const PublicContentScreen(
             eyebrow: 'Activation journey',
             title: 'From business identity to managed revenue execution.',
-            visualChapter: const ExecutionGraphChapter(),
+            visualChapter: ExecutionGraphChapter(),
             subtitle:
                 'A short, verifiable handoff. You verify business identity, mailbox, and sending domain. Orchestrate verifies readiness, then activates managed execution and keeps it running.',
             sideNote:
@@ -604,7 +604,7 @@ GoRouter get router {
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'AI governance',
-            visualChapter: const ResponsibleAiVisualChapter(),
+            visualChapter: ResponsibleAiVisualChapter(),
             title: 'AI runs inside the governance layer — never around it.',
             subtitle:
                 'AI assists with strategy, message drafting, follow-up cadence, and revenue-document generation. Every action is reviewable, auditable, and gated by readiness checks before it affects live execution.',
@@ -644,7 +644,7 @@ GoRouter get router {
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Commercial intelligence',
-            visualChapter: const SignalsVisualChapter(),
+            visualChapter: SignalsVisualChapter(),
             title:
                 'Signal-driven opportunity detection, not a rented contact list.',
             subtitle:
@@ -690,7 +690,7 @@ GoRouter get router {
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'Trust and compliance',
-            visualChapter: const RecoveryVisualChapter(),
+            visualChapter: RecoveryVisualChapter(),
             title:
                 'Operation-scoped mailbox access, vaulted credentials, governed dispatch, audited execution.',
             subtitle:
@@ -796,7 +796,7 @@ GoRouter get router {
           currentPath: state.uri.path,
           child: const PublicContentScreen(
             eyebrow: 'About',
-            visualChapter: const RevenueRecordsVisual(),
+            visualChapter: RevenueRecordsVisual(),
             title: 'Commercial intelligence + execution infrastructure',
             subtitle:
                 'Orchestrate exists because, for firms in regulated and reputation-sensitive sectors, outbound is either outsourced — burning the sending identity — or left undone. Revenue execution deserves to be governed infrastructure you activate, not another tool you operate. Connect your verified identity; Orchestrate runs governed outbound end to end, and refuses what would burn you.',
