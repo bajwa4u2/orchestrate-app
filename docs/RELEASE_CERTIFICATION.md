@@ -1,6 +1,7 @@
 # Orchestrate — Release Certification Record
 
 **App:** Orchestrate · **Version:** `0.2.3 (12)` · **Certified:** 2026-09-05
+**Deployed:** backend and web client, 2026-09-05, verified live.
 
 One record for the whole release. It exists because "it builds" and "it works
 on that platform" are different claims, and because the difference between
@@ -160,11 +161,12 @@ a test that fails if it returns.
 
 Everything here is a founder action. None of it can be done from this machine.
 
-1. **Deploy the backend.** Three commits are unpushed. Production currently
-   runs `ab9a1ef`. The unpushed work includes the one-commercial-policy rail
-   gate, the drift reconciliation migration (guarded — every statement is a
-   no-op where the object already exists), and the member sign-in fix, which
-   is a live 500 for any member whose email is not on the client record.
+1. ~~Deploy the backend and the web client.~~ **Done, 2026-09-05.** Both are
+   live and verified: the drift reconciliation migration applied cleanly (every
+   statement a no-op where the object already existed), the reconciled foreign
+   key carries `ON UPDATE CASCADE`, `POST /auth/me` answers, and the live web
+   bundle contains this session's work and none of the copy it replaced.
+
 2. **Confirm the App Store Connect record exists** for
    `com.orchestrateops.app`, and that the Codemagic integration named
    `Aura Platform LLC` is connected to it.
