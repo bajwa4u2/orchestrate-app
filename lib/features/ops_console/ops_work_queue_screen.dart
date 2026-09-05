@@ -589,16 +589,12 @@ class _CaseCardState extends State<_CaseCard> {
                         ],
                       )
                     else
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: actions
+                      _ActionSet(
+                        actions: actions
                             .whereType<Map>()
-                            .map((a) => _ActionButton(
-                                  action: Map<String, dynamic>.from(a),
-                                  onTap: () => widget.onAction(Map<String, dynamic>.from(a)),
-                                ))
+                            .map((a) => Map<String, dynamic>.from(a))
                             .toList(),
+                        onAction: widget.onAction,
                       ),
                     if (widget.action != null && !isWorking) ...[
                       const SizedBox(height: 8),
@@ -608,15 +604,15 @@ class _CaseCardState extends State<_CaseCard> {
                   ],
 
                   // Verification source
-                  _SectionLabel('Verification source'),
+                  _SectionLabel('How you will know'),
                   const SizedBox(height: 6),
                   _VerificationSourceRow(
                     source: c['verificationSource'] as Map? ?? {},
                   ),
                   const SizedBox(height: 14),
 
-                  // Audit history
-                  _SectionLabel('Local history'),
+                  // What has already been decided about this case.
+                  _SectionLabel('What has been done'),
                   const SizedBox(height: 6),
                   _HistoryList(
                     rows: c['history'] as List? ?? [],
@@ -749,12 +745,13 @@ class _ActionButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: color,
         side: BorderSide(color: color.withOpacity(0.4)),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         minimumSize: Size.zero,
+        alignment: Alignment.centerLeft,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 320),
+      child: SizedBox(
+        width: double.infinity,
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -790,6 +787,87 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
+/// AN INSPECTION IS NOT A DISPOSITION, AND MUST NOT LOOK LIKE ONE.
+///
+/// Opening a held message and deciding where it belongs are different acts with
+/// different consequences: one is a read, the other writes a permanent record
+/// against a client's business. Laid out in a single wrap they read as six
+/// equivalent buttons, and the first row comes out ragged because the odd one
+/// is narrower than the rest. The inspection sits on its own line above, in a
+/// quieter treatment; the decisions form an even grid beneath it.
+class _ActionSet extends StatelessWidget {
+  const _ActionSet({required this.actions, required this.onAction});
+
+  final List<Map<String, dynamic>> actions;
+  final void Function(Map<String, dynamic>) onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final inspect =
+        actions.where((a) => a['outcome'] == 'INSPECT').toList();
+    final decisions =
+        actions.where((a) => a['outcome'] != 'INSPECT').toList();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 8.0;
+        // Two up where each column still holds a sentence; one up below that,
+        // rather than two columns of four-word wraps.
+        final twoUp = constraints.maxWidth >= 620;
+        final width =
+            twoUp ? (constraints.maxWidth - gap) / 2 : constraints.maxWidth;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final a in inspect) ...[
+              _InspectButton(action: a, onTap: () => onAction(a)),
+              const SizedBox(height: 10),
+            ],
+            if (decisions.isNotEmpty)
+              Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final a in decisions)
+                    SizedBox(
+                      width: width,
+                      child: _ActionButton(
+                        action: a,
+                        onTap: () => onAction(a),
+                      ),
+                    ),
+                ],
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _InspectButton extends StatelessWidget {
+  const _InspectButton({required this.action, required this.onTap});
+
+  final Map<String, dynamic> action;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.visibility_outlined, size: 14),
+      label: Text(action['label'] as String? ?? 'Open',
+          style: const TextStyle(fontSize: 12)),
+      style: TextButton.styleFrom(
+        foregroundColor: AppTheme.muted,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+}
+
 class _VerificationRow extends StatelessWidget {
   const _VerificationRow({required this.action});
   final _CaseAction action;
@@ -819,9 +897,24 @@ class _VerificationSourceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final endpoint = source['endpoint'] as String? ?? '—';
+    // What a person will SEE if this worked. An operator deciding where a
+    // client's held message belongs should not have to read an HTTP method to
+    // find out whether the decision took; the endpoint is the right answer on
+    // an engineering surface and the wrong one here.
+    final confirm = (source['confirm'] as String?)?.trim();
+    final endpoint = source['endpoint'] as String?;
     final expectField = source['expectField'] as String? ?? '';
     final expectValue = source['expectValue'] as String?;
+
+    // Older cases predate the sentence. Rather than print nothing, fall back to
+    // the exact check — unhelpful phrasing beats an empty promise of proof.
+    final text = (confirm != null && confirm.isNotEmpty)
+        ? confirm
+        : (endpoint == null
+            ? 'No stated way to confirm this.'
+            : 'Check $endpoint for '
+                '$expectField${expectValue != null ? ' = $expectValue' : ''}.');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -830,14 +923,19 @@ class _VerificationSourceRow extends StatelessWidget {
         border: Border.all(color: AppTheme.line),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.verified_outlined, size: 13, color: AppTheme.accent),
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child:
+                Icon(Icons.verified_outlined, size: 13, color: AppTheme.accent),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'GET /operator/$endpoint — check $expectField${expectValue != null ? ' = $expectValue' : ''}',
+              text,
               style: const TextStyle(
-                  fontSize: 11, color: AppTheme.subdued, fontFamily: 'monospace'),
+                  fontSize: 11, color: AppTheme.subdued, height: 1.4),
             ),
           ),
         ],
@@ -853,7 +951,7 @@ class _HistoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
-      return const Text('No audit history.',
+      return const Text('Nothing has been decided about this yet.',
           style: TextStyle(fontSize: 11, color: AppTheme.subdued));
     }
     return Column(
