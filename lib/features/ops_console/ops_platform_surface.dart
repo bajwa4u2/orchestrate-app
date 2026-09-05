@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'ops_empty_state.dart';
+import 'ops_failure.dart';
 
 /// ONE SHAPE FOR EVERY CROSS-ORGANISATION VIEW.
 ///
@@ -54,7 +55,7 @@ class _PlatformSurfaceState<T> extends State<PlatformSurface<T>> {
   List<T> _rows = const [];
   String? _note;
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -78,7 +79,11 @@ class _PlatformSurfaceState<T> extends State<PlatformSurface<T>> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        // The error itself, not a string of it. Stringifying here is what put
+        // "ApiException(statusCode: 403, message: …)" on screen — a Dart class
+        // name and an HTTP code shown to a person, wrapped around a sentence
+        // somebody had already written properly.
+        _error = e;
         _loading = false;
       });
     }
@@ -146,28 +151,7 @@ class _PlatformSurfaceState<T> extends State<PlatformSurface<T>> {
       return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
     }
     if (_error != null) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.warning_amber_outlined, size: 34, color: AppTheme.amber),
-              const SizedBox(height: 12),
-              Text(_error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: AppTheme.muted)),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _load,
-                style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
-                child: const Text('Try again',
-                    style: TextStyle(color: AppTheme.background)),
-              ),
-            ],
-          ),
-        ),
-      );
+      return OpsFailure(error: _error!, onRetry: _load);
     }
     if (_rows.isEmpty) {
       return OpsEmptyState(

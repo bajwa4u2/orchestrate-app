@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'ops_empty_state.dart';
 import 'ops_platform_repository.dart';
+import 'ops_failure.dart';
 
 /// WHAT AUTHORITY EXISTS, AND WHY.
 ///
@@ -25,7 +26,7 @@ class _OpsAuthorityScreenState extends State<OpsAuthorityScreen> {
 
   List<Map<String, dynamic>> _businesses = const [];
   bool _loading = true;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -51,7 +52,7 @@ class _OpsAuthorityScreenState extends State<OpsAuthorityScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = e;
         _loading = false;
       });
     }
@@ -102,28 +103,7 @@ class _OpsAuthorityScreenState extends State<OpsAuthorityScreen> {
       return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
     }
     if (_error != null) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.warning_amber_outlined, size: 34, color: AppTheme.amber),
-              const SizedBox(height: 12),
-              Text(_error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: AppTheme.muted)),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _load,
-                style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
-                child: const Text('Try again',
-                    style: TextStyle(color: AppTheme.background)),
-              ),
-            ],
-          ),
-        ),
-      );
+      return OpsFailure(error: _error!, onRetry: _load);
     }
     if (_businesses.isEmpty) {
       return const OpsEmptyState(

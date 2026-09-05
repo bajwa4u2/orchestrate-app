@@ -484,7 +484,11 @@ class _Hero extends StatelessWidget {
               SizedBox(
                 width: 420,
                 child: Text(
-                  'Live operations control center',
+                  // NOT a control center. This is a diagnostics page under
+                  // Engineering; the operator's control plane is the work
+                  // queue. A second surface claiming that role is how the old
+                  // dev console came to be mistaken for the product.
+                  'Diagnostics',
                   style: Theme.of(context)
                       .textTheme
                       .headlineSmall
@@ -522,7 +526,9 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Actions, drilldowns, alerts, queues, mailbox recovery, suppression controls, campaign recovery, and reporting in one operator surface.',
+            'Raw operational state for engineering. Operator decisions belong '
+            'in the work queue, where each one says what it writes and is '
+            'recorded.',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 8),
