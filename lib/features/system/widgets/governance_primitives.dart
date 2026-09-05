@@ -449,7 +449,7 @@ class GovernanceCoverageMeter extends StatelessWidget {
         governedCount + fallbackCount + legacyCount + aiFreeformCount;
     if (total == 0) {
       return Text(
-        'No dispatches in sample.',
+        'No messages have been sent from this organisation yet.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: _gMuted(context),
             ),

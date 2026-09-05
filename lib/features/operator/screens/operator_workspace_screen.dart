@@ -1373,8 +1373,41 @@ String _read(
 }) {
   final value = map[key];
   if (value == null) return fallback;
-  if (value is String) return value.trim().isEmpty ? fallback : value.trim();
+  if (value is String) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? fallback : humaniseEnum(trimmed);
+  }
   return '$value';
+}
+
+/// Acronyms that are already how a person would write them.
+const _acronyms = {
+  'DNS', 'SPF', 'DKIM', 'DMARC', 'API', 'URL', 'ID', 'AI', 'MX', 'TLS',
+  'SMTP', 'IMAP', 'CSV', 'PDF', 'UTC', 'SLA', 'VAT', 'ETA', 'HTML',
+};
+
+/// ACKNOWLEDGED reaches the screen as ACKNOWLEDGED.
+///
+/// These are database values, and a person reading an inquiry queue is not
+/// reading a database. Shouting a status at them in a font size chosen for
+/// calm text is the smallest kind of drift and the most visible: every list
+/// in the console carries one. Names, sentences and numbers pass through
+/// untouched — only a value that is entirely upper case is a value that came
+/// from an enum.
+String humaniseEnum(String value) {
+  if (!RegExp(r'^[A-Z][A-Z0-9_]*$').hasMatch(value)) return value;
+  if (_acronyms.contains(value)) return value;
+  final words = value.split('_').where((w) => w.isNotEmpty).toList();
+  if (words.isEmpty) return value;
+  return [
+    for (int i = 0; i < words.length; i++)
+      if (i == 0 || _acronyms.contains(words[i]))
+        (_acronyms.contains(words[i])
+            ? words[i]
+            : words[i][0] + words[i].substring(1).toLowerCase())
+      else
+        words[i].toLowerCase(),
+  ].join(' ');
 }
 
 _AlertSummary _alertsFrom(dynamic raw) {

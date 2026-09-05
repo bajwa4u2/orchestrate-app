@@ -312,7 +312,9 @@ class _RecentList extends StatelessWidget {
           border: Border.all(color: AppTheme.line),
         ),
         child: Text(
-          'No governed dispatches recorded yet.',
+          'No messages have been sent from this organisation yet. Messages '
+          'sent by the businesses on the platform are recorded in their own '
+          'organisation and are not read from here.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.muted,
               ),
@@ -791,7 +793,9 @@ class _ReviewQueueCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Dispatches the runtime could not complete. Each row carries the persisted error and governance metadata so retry, convert, or escalate decisions are made against truth, not guesswork.',
+            'Messages that did not get out. Each one keeps the reason it '
+            'failed and who authorised it, so retrying, converting or '
+            'escalating is a decision about what happened rather than a guess.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.muted,
                   height: 1.45,
@@ -819,7 +823,7 @@ class _ReviewQueueCard extends StatelessWidget {
             )
           else if (rows.isEmpty)
             Text(
-              'No dispatches require review. Every recent outbound completed or is in flight.',
+              'Nothing failed. Every recent message either got out or is on its way.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.muted,
                   ),
