@@ -9,6 +9,9 @@ import 'package:orchestrate_app/data/repositories/client/client_workspace_reposi
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/widgets/store_subscribe_panel.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/config/pricing_config.dart';
 
 class ClientBillingScreen extends StatefulWidget {
   const ClientBillingScreen({super.key});
@@ -39,6 +42,11 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
       _billingRepository.fetchAgreements(),
       _billingRepository.fetchStatements(),
       _billingRepository.fetchReminders(),
+      // Whether anything can be activated at all, from the one commercial
+      // authority every rail reads. Asked rather than assumed: this page used
+      // to offer activation on the strength of "no subscription exists",
+      // which is a different fact from "activation is open".
+      _billingRepository.fetchPricingCatalog(),
     ]);
     return _BillingData(
       overview: asMap(results[0]),
@@ -47,6 +55,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
       agreements: asList(results[3]),
       statements: asList(results[4]),
       reminders: asList(results[5]),
+      activation: (results[6] as PricingCatalog).activation,
     );
   }
 
@@ -85,6 +94,18 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
     }
   }
 
+  /// Whether the payment provider holds anything for this organisation.
+  ///
+  /// Activation and management are different actions and only one of them is
+  /// available at a time. Showing a management portal to a business with no
+  /// subscription is offering to manage nothing.
+  bool _hasSubscription(dynamic data) {
+    final record = data.subscription;
+    if (record is! Map) return false;
+    final status = '${record['status'] ?? ''}'.toUpperCase();
+    return status.isNotEmpty && status != 'NONE' && status != 'CANCELED';
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_BillingData>(
@@ -113,6 +134,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
           periodEnd: data.subscription['currentPeriodEnd'],
           portalError: _portalError,
           purchaseAllowed: externalPurchaseAllowed,
+          activation: data.activation,
         );
 
         return ClientPage(
@@ -125,7 +147,35 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
                   '$kIosPlanManagementNotice',
           banner: banner,
           actions: [
-            if (externalPurchaseAllowed)
+            // ACTIVATION AND MANAGEMENT ARE DIFFERENT ACTIONS.
+            //
+            // A business with no subscription was shown "Open billing portal"
+            // and nothing else — a portal for managing a subscription that
+            // does not exist, on a page that had just told them managed
+            // execution starts once a plan is activated. There was no way to
+            // activate anywhere in the product.
+            //
+            // And activation is only offered when it is genuinely open. It is
+            // frozen closed today, so the honest action is the conversation
+            // that actually sets terms — not a button whose only destination
+            // is a refusal.
+            if (externalPurchaseAllowed &&
+                !_hasSubscription(data) &&
+                data.activation.open)
+              FilledButton.icon(
+                onPressed: () => context.go('/client/subscribe'),
+                icon: const Icon(Icons.play_circle_outline, size: 18),
+                label: const Text('Activate a plan'),
+              ),
+            if (externalPurchaseAllowed &&
+                !_hasSubscription(data) &&
+                !data.activation.open)
+              OutlinedButton.icon(
+                onPressed: () => context.go('/client/support'),
+                icon: const Icon(Icons.forum_outlined, size: 18),
+                label: const Text('Talk to us about commercial terms'),
+              ),
+            if (externalPurchaseAllowed && _hasSubscription(data))
               FilledButton.icon(
                 onPressed: _openingPortal ? null : _openPortal,
                 icon: _openingPortal
@@ -244,6 +294,7 @@ ClientStatusBanner _billingBanner({
   required dynamic periodEnd,
   required String? portalError,
   required bool purchaseAllowed,
+  required CommercialActivation activation,
 }) {
   // Apple §3.1.1 — strip portal/checkout call-outs on iOS. Banner
   // copy must report state without instructing the user to act
@@ -329,6 +380,19 @@ ClientStatusBanner _billingBanner({
       );
     case 'none':
     case '':
+      // "Once a plan is activated" reads as a step the business can take. It
+      // is not one today, and saying so is better than letting them look for
+      // the button. The reason is the server's own words, so the workspace,
+      // the funnel and both stores say the same thing.
+      if (!activation.open) {
+        return ClientStatusBanner(
+          tone: ClientBannerTone.info,
+          title: 'Commercial terms are set directly, not published',
+          message: '${activation.says} ${activation.resolution} '
+              'Identity, sending domain and mailbox transport can be prepared '
+              'in the meantime.',
+        );
+      }
       return const ClientStatusBanner(
         tone: ClientBannerTone.info,
         title: 'Subscription not yet activated',
@@ -376,6 +440,7 @@ class _BillingData {
     required this.agreements,
     required this.statements,
     required this.reminders,
+    required this.activation,
   });
 
   final Map<String, dynamic> overview;
@@ -384,4 +449,5 @@ class _BillingData {
   final List<dynamic> agreements;
   final List<dynamic> statements;
   final List<dynamic> reminders;
+  final CommercialActivation activation;
 }

@@ -10,7 +10,11 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
 
 class ClientSubscribeScreen extends StatefulWidget {
-  const ClientSubscribeScreen({super.key});
+  const ClientSubscribeScreen({super.key, this.insideWorkspace = false});
+
+  /// True when the client shell is already providing the chrome. The signed-out
+  /// funnel still brings its own.
+  final bool insideWorkspace;
 
   @override
   State<ClientSubscribeScreen> createState() => _ClientSubscribeScreenState();
@@ -156,13 +160,39 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
         catalog == null ? null : catalog.find(_planCode, _tierCode);
     final setupDraft = AuthSessionController.instance.setupDraft;
 
-    return AuthShell(
-      maxContentWidth: 1120,
-      setupFlow: true,
-      child: _loading
+    // TWO CHROMES, WHEN REACHED FROM INSIDE THE WORKSPACE.
+    //
+    // This screen was built for the signed-out funnel, so it wraps itself in
+    // AuthShell — its own header, its own "Back to site", its own footer.
+    // Reached from Billing by a signed-in customer the client shell is already
+    // around it, and the result is a page inside a page with two Orchestrate
+    // headers and a marketing exit.
+    //
+    // Inside the workspace it renders bare and lets the shell do the framing.
+    // COMMERCIAL ACTIVATION IS CLOSED, AND THAT IS NOT A LOADING FAILURE.
+    //
+    // No price is published and no rail may sell, by founder decision. The
+    // catalog therefore comes back legitimately empty — and this screen read
+    // that as breakage and offered "Pricing details are temporarily
+    // unavailable / Retry", a button that can only ever fail again.
+    //
+    // Nothing about the plan selector below is deleted. It is the right screen
+    // for the day activation reopens; it is the wrong screen for today.
+    final activation = catalog?.activation;
+    final content = _loading
           ? const Padding(
               padding: EdgeInsets.all(40),
               child: CircularProgressIndicator(),
+            )
+          : (activation != null && !activation.open)
+          ? _ActivationClosedCard(
+              says: activation.says,
+              resolution: activation.resolution,
+              onTalkToUs: () => context.go(
+                  widget.insideWorkspace ? '/client/support' : '/contact'),
+              onBack: () => context.go(
+                  widget.insideWorkspace ? '/client/billing' : '/'),
+              insideWorkspace: widget.insideWorkspace,
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,7 +269,18 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                     },
                   ),
               ],
-            ),
+            );
+
+    if (widget.insideWorkspace) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+        child: content,
+      );
+    }
+    return AuthShell(
+      maxContentWidth: 1120,
+      setupFlow: true,
+      child: content,
     );
   }
 }
@@ -760,4 +801,74 @@ String? _normalizedTier(String? value) {
   }
   if (text == 'precision') return 'precision';
   return null;
+}
+
+
+/// WHAT A BUSINESS IS TOLD WHEN NOTHING IS FOR SALE YET.
+///
+/// The words are the server's, not this screen's. One commercial policy
+/// governs Stripe, the App Store and Google Play, and it states its own
+/// refusal — so a customer gets the same answer wherever they meet it, and
+/// changing the answer is a change in one place rather than four.
+class _ActivationClosedCard extends StatelessWidget {
+  const _ActivationClosedCard({
+    required this.says,
+    required this.resolution,
+    required this.onTalkToUs,
+    required this.onBack,
+    required this.insideWorkspace,
+  });
+
+  final String says;
+  final String resolution;
+  final VoidCallback onTalkToUs;
+  final VoidCallback onBack;
+  final bool insideWorkspace;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Commercial terms',
+              style: theme.textTheme.labelLarge
+                  ?.copyWith(color: theme.colorScheme.primary)),
+          const SizedBox(height: 8),
+          Text('Set with you, not published',
+              style: theme.textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 14),
+          if (says.isNotEmpty)
+            Text(says,
+                style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
+          if (resolution.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(resolution,
+                style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
+          ],
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              FilledButton(
+                  onPressed: onTalkToUs, child: const Text('Talk to us')),
+              OutlinedButton(
+                onPressed: onBack,
+                child: Text(insideWorkspace ? 'Back to billing' : 'Back'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

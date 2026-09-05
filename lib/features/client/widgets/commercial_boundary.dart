@@ -141,14 +141,60 @@ class CommercialBoundary extends StatelessWidget {
 /// Used in Plan & billing. Deliberately NOT used across the workspace: a banner
 /// on every page is how a product becomes a paywall with software attached, and
 /// the boundary belongs at the action, not above it.
-class EntitlementSummary extends StatelessWidget {
+class EntitlementSummary extends StatefulWidget {
   const EntitlementSummary({super.key});
+
+  @override
+  State<EntitlementSummary> createState() => _EntitlementSummaryState();
+}
+
+class _EntitlementSummaryState extends State<EntitlementSummary> {
+  @override
+  void initState() {
+    super.initState();
+    // ASK, RATHER THAN WAIT TO BE TOLD.
+    //
+    // The holder's contract is that a surface asks when it builds and finds no
+    // answer — it deliberately does not fetch on a session event, so that
+    // nothing reaches the network from wherever the session happens to change.
+    // This surface never held up its end: it rendered the spinner for the
+    // no-answer case and asked nobody, so Billing sat on it forever unless the
+    // person had already opened the account screen, which is the only place
+    // that called load().
+    //
+    // load() de-duplicates in flight, so arriving alongside another surface
+    // costs one request, not two.
+    _ask(afterFailure: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant EntitlementSummary oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A session change clears the answer without re-fetching, by design.
+    _ask(afterFailure: true);
+  }
+
+  /// [afterFailure] is true only where a fresh mount justifies another try.
+  /// The rebuild path must never retry: a failure notifies listeners, which
+  /// rebuilds this, which would ask again — a request loop behind a panel that
+  /// looks calm.
+  void _ask({bool afterFailure = false}) {
+    final capabilities = ClientCapabilities.instance;
+    if (capabilities.entitlement != null || capabilities.isLoading) return;
+    if (!afterFailure && capabilities.error != null) return;
+    capabilities.load().then((_) {}, onError: (Object _) {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: ClientCapabilities.instance,
-      builder: (context, _) => _build(context),
+      builder: (context, _) {
+        // Also covers the case where the holder cleared its answer while this
+        // surface stayed mounted.
+        _ask();
+        return _build(context);
+      },
     );
   }
 

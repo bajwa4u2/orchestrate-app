@@ -356,7 +356,11 @@ GoRouter get router {
           isVerification ||
           isReset ||
           isSetup ||
-          isSubscribe ||
+          // NOT isSubscribe. Being signed in is the precondition for
+          // activating, not a reason to be sent away from it — and this
+          // redirect made the activation screen unreachable by everyone who
+          // could use it. Nothing routes anyone here; it is chosen from
+          // Billing, and iOS still refuses the route through its own policy.
           path == '/') {
         // WHERE THEY WERE TRYING TO GO, HONOURED HERE.
         //
@@ -1279,7 +1283,8 @@ GoRouter get router {
                 )),
         GoRoute(
             path: '/client/subscribe',
-            builder: (context, state) => const ClientSubscribeScreen()),
+            builder: (context, state) =>
+                const ClientSubscribeScreen(insideWorkspace: true)),
         // Relationships — mailbox-derived relationship intelligence.
         GoRoute(
             path: '/client/contacts/inventory',

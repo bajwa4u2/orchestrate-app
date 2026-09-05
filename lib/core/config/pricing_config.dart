@@ -71,6 +71,42 @@ class PricingPlanOption {
   }
 }
 
+/// WHETHER ANYTHING CAN BE BOUGHT RIGHT NOW, AND WHAT TO SAY IF NOT.
+///
+/// Served by the same commercial projection every rail reads, so no screen
+/// decides this for itself. The workspace previously did, and offered
+/// "Activate a plan" leading to a checkout the server had already frozen shut.
+class CommercialActivation {
+  const CommercialActivation({
+    required this.open,
+    required this.says,
+    required this.resolution,
+  });
+
+  final bool open;
+
+  /// Why, in the customer's terms. Never a code, never a provider status.
+  final String says;
+
+  /// What they can do instead. A refusal with no path is a dead end.
+  final String resolution;
+
+  /// A server that predates the field is assumed to be selling — the same
+  /// direction the store rails take, so an older deployment does not silently
+  /// shut commerce off for everyone.
+  static CommercialActivation fromMap(dynamic raw) {
+    final map = raw is Map ? Map<String, dynamic>.from(raw) : const {};
+    if (map.isEmpty) {
+      return const CommercialActivation(open: true, says: '', resolution: '');
+    }
+    return CommercialActivation(
+      open: map['open'] != false,
+      says: (map['says'] ?? '').toString().trim(),
+      resolution: (map['resolution'] ?? '').toString().trim(),
+    );
+  }
+}
+
 class PricingCatalog {
   const PricingCatalog({
     required this.trialDays,
@@ -78,6 +114,8 @@ class PricingCatalog {
     required this.revenue,
     required this.plans,
     this.sequence = const [],
+    this.activation =
+        const CommercialActivation(open: true, says: '', resolution: ''),
   });
 
   final int trialDays;
@@ -91,6 +129,11 @@ class PricingCatalog {
   /// The pricing surface renders this verbatim instead of inventing its own
   /// post-choice flow so the catalog remains the single source of truth.
   final List<String> sequence;
+
+  /// Whether activation is open at all. Checked before a plan is offered,
+  /// because an empty catalog and a closed business are different facts and a
+  /// customer deserves to be told which one they have hit.
+  final CommercialActivation activation;
 
   List<PricingPlanOption> plansForLane(String lane) {
     final normalized = lane.trim().toLowerCase();
@@ -140,6 +183,7 @@ class PricingCatalog {
       plans:
           _sortByLaneAndTier(mergedPlans.isNotEmpty ? mergedPlans : flatPlans),
       sequence: sequence,
+      activation: CommercialActivation.fromMap(json['activation']),
     );
   }
 
