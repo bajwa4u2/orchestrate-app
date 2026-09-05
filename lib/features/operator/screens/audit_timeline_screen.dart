@@ -43,17 +43,15 @@ class _AuditTimelineScreenState extends State<AuditTimelineScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Governance',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(color: AppTheme.subdued)),
-                  const SizedBox(height: 4),
-                  Text('Audit timeline',
+                  // The eyebrow named a nav group that no longer exists, and
+                  // the description named a database table. What a person
+                  // needs to know is what is in here and what is not.
+                  Text('Audit history',
                       style: Theme.of(context).textTheme.headlineMedium),
                   const SizedBox(height: 4),
                   Text(
-                      'Queryable AuditLog. Metadata only — never credentials, never message bodies (doctrine).',
+                      'What was done, by whom, to what, and when. Never '
+                      'credentials and never the contents of a message.',
                       style: Theme.of(context)
                           .textTheme
                           .bodyMedium

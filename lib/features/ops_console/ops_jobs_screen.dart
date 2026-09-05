@@ -127,7 +127,7 @@ class _OpsJobsScreenState extends State<OpsJobsScreen> {
           subtitle: '${_jobs.length} job${_jobs.length == 1 ? '' : 's'}'
               '${_failedCount > 0 ? ' · $_failedCount failed' : ''}'
               '${_runningCount > 0 ? ' · $_runningCount active' : ''}'
-              ' — custody view',
+              ' in this organisation',
           loading: _loading,
           dispatchResult: _dispatchResult,
           isDispatching: _dispatchingDue,

@@ -123,6 +123,43 @@ void main() {
     expect(opsRoutes(), contains('/ops/governance/audit'));
   });
 
+  test('nothing in the console offers a retired surface', () {
+    // "System & tools" was a grid of twelve cards, eight of them pointing at
+    // routes retired with the rest of the estate. Each silently redirected to
+    // the work queue, so pressing "Runtime Truth" moved you somewhere else with
+    // no explanation. The redirect worked exactly as designed and the surface
+    // was still broken: a dead end reached by a link nobody removed is worse
+    // than one reached by an old bookmark, because we are the ones offering it.
+    final retired = RegExp(r"^  '(/ops/[^']*)',", multiLine: true)
+        .allMatches(
+          router.substring(
+            router.indexOf('_retiredOperatorSurfaces'),
+            router.indexOf('_clientCanonicalRoutes'),
+          ),
+        )
+        .map((m) => m.group(1)!)
+        .toSet();
+    expect(retired, isNotEmpty);
+
+    final offenders = <String>[];
+    for (final file in Directory('lib/features').listSync(recursive: true)) {
+      if (file is! File || !file.path.endsWith('.dart')) continue;
+      final source = file.readAsStringSync();
+      for (final path in retired) {
+        // A link is a quoted path used for navigation, not a mention in prose.
+        if (RegExp("'\${RegExp.escape(path)}(/[^']*)?'").hasMatch(source)) {
+          offenders.add('${file.uri.pathSegments.last} -> $path');
+        }
+      }
+    }
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'these send a person to a surface that no longer exists: '
+          '${offenders.join(', ')}',
+    );
+  });
+
   test('a bookmark to a retired surface lands somewhere, not nowhere', () {
     // Every link to the retired estate that exists in the world is a bookmark
     // or a pasted address, because nothing in the product ever linked to it.

@@ -180,7 +180,7 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
         password: _password.text,
         workspaceName: _workspace.text.trim(),
       );
-      if (mounted) context.go('/ops/overview');
+      if (mounted) context.go('/ops/work');
     } catch (error) {
       setState(() => _error = 'We could not create operator access.');
     } finally {
@@ -204,7 +204,7 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
         });
         return;
       }
-      if (mounted) context.go('/ops/overview');
+      if (mounted) context.go('/ops/work');
     } catch (error) {
       setState(() => _error = 'That operator login did not work.');
     } finally {
@@ -226,7 +226,7 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
         code: _code.text.trim(),
         trustDevice: _trustDevice,
       );
-      if (mounted) context.go('/ops/overview');
+      if (mounted) context.go('/ops/work');
     } catch (error) {
       setState(() => _error = 'That code did not work.');
     } finally {

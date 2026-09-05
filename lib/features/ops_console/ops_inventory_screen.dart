@@ -93,11 +93,11 @@ class _OpsInventoryScreenState extends State<OpsInventoryScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _ScreenHeader(
-          title: 'Inventory & Imports',
+          title: 'Contacts & imports',
           subtitle: '${_batches.length} batch${_batches.length == 1 ? '' : 'es'}'
               '${_failedCount > 0 ? ' · $_failedCount failed' : ''}'
               '${_canceledCount > 0 ? ' · $_canceledCount canceled' : ''}'
-              ' — custody view',
+              ' in this organisation',
           loading: _loading,
           onRefresh: _loading ? null : _load,
         ),

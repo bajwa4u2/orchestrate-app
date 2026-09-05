@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/operator_repository.dart';
-import 'package:orchestrate_app/features/operator/widgets/ai_custody_fingerprint_card.dart';
-import 'package:orchestrate_app/features/operator/widgets/dispatch_decision_strip.dart';
-import 'package:orchestrate_app/features/operator/widgets/enforcement_cascade_lane.dart';
 import 'package:orchestrate_app/features/system/widgets/governance_primitives.dart';
 
 /// Operator governance workspace.
@@ -139,13 +136,16 @@ class _OperatorGovernanceScreenState extends State<OperatorGovernanceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // THREE POSTERS USED TO SIT HERE.
+          //
+          // A strip naming seven dispatch decisions, a lane numbering ten
+          // enforcement gates, and a five-stage diagram of how an AI call is
+          // custodied. Twenty-two SCREAMING_SNAKE chips, no data behind any of
+          // them, and prose about substrates, seams and canon. They taught a
+          // reader our vocabulary; they told an operator nothing about any
+          // message and offered nothing to do. This surface is for looking at
+          // what was actually sent and deciding about what failed.
           _Hero(coverage: _coverage()),
-          const SizedBox(height: 18),
-          const DispatchDecisionStrip(),
-          const SizedBox(height: 18),
-          const EnforcementCascadeLane(),
-          const SizedBox(height: 18),
-          const AICustodyFingerprintCard(),
           const SizedBox(height: 18),
           _ReviewQueueCard(
             loading: _loadingReview,
@@ -261,14 +261,16 @@ class _Hero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Governance',
+            'Message provenance',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Recent governed dispatches across the organization. Every row reads from the same persisted provenance the wire carried.',
+            'What was actually sent, and on whose authority. Every row is read '
+            'back from the record kept when the message left, not reconstructed '
+            'afterwards.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.muted,
                 ),

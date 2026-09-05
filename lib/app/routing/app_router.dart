@@ -66,7 +66,6 @@ import 'package:orchestrate_app/features/ops_console/ops_campaigns_screen.dart';
 import 'package:orchestrate_app/features/ops_console/ops_inventory_screen.dart';
 import 'package:orchestrate_app/features/ops_console/ops_jobs_screen.dart';
 import 'package:orchestrate_app/features/ops_console/ops_history_screen.dart';
-import 'package:orchestrate_app/features/ops_console/ops_system_screen.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/platform/ios_route_policy.dart';
@@ -99,6 +98,17 @@ const _clientCoreRoutes = <String>{
 /// bookmarks. They resolve to the work queue rather than to a dead end.
 const _retiredOperatorSurfaces = <String>{
   '/ops/adaptation',
+  // A SECOND MENU IS NOT A SURFACE.
+  //
+  // "System & tools" was a grid of twelve cards. Eight of them pointed at
+  // routes retired with the rest of the estate and silently redirected here,
+  // so pressing "Runtime Truth" landed on the work queue with no explanation.
+  // The four that still resolved — audit history, message provenance, system
+  // doctor, backend surfaces — are all in the sidebar already. It offered
+  // nothing the navigation did not, plus eight dead ends, and it announced in
+  // its own words that it supported no operational actions.
+  '/ops/system',
+  '/ops/overview',
   '/ops/cognition',
   '/ops/continuity',
   '/ops/runtime-truth',
@@ -1556,12 +1566,7 @@ GoRouter get router {
         GoRoute(
             path: '/ops/history',
             builder: (context, state) => const OpsHistoryScreen()),
-        GoRoute(
-            path: '/ops/system',
-            builder: (context, state) => const OpsSystemScreen()),
-        // /ops/overview retained for inbound links but redirected to system hub
-        GoRoute(
-            path: '/ops/overview', redirect: (context, state) => '/ops/system'),
+
         // What was done, by whom, to what, and when. The evidence behind
         // every operator decision, and the one surface of the retired estate
         // that was genuinely load-bearing — extracted rather than deleted.

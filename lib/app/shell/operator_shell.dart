@@ -138,7 +138,6 @@ class _OperatorShellState extends State<OperatorShell> {
           attentionKey: null,
           items: const [
             _NavItem('Jobs', '/ops/jobs', Icons.work_outline),
-            _NavItem('System & tools', '/ops/system', Icons.settings_outlined),
           ],
         ),
         // A DEVIATION FROM THE SEVEN, STATED RATHER THAN HIDDEN.

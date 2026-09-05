@@ -91,7 +91,7 @@ class _OpsCampaignsScreenState extends State<OpsCampaignsScreen> {
       children: [
         _ScreenHeader(
           title: 'Campaigns',
-          subtitle: '${_campaigns.length} campaign${_campaigns.length == 1 ? '' : 's'} — custody view',
+          subtitle: '${_campaigns.length} campaign${_campaigns.length == 1 ? '' : 's'} in this organisation',
           loading: _loading,
           onRefresh: _loading ? null : _load,
         ),
