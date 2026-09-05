@@ -19,13 +19,11 @@ class RelationshipsWorkspaceScreen extends StatefulWidget {
   const RelationshipsWorkspaceScreen({
     super.key,
     this.relationshipId,
-    this.initialView,
     this.returnTo,
   });
 
   /// When set, the workspace opens straight into this relationship.
   final String? relationshipId;
-  final String? initialView;
 
   /// Where the person came from — Today, Market, or a deep link. Back goes
   /// there rather than always dumping them on the list.
@@ -196,7 +194,14 @@ class _Row extends StatelessWidget {
         summary.condition.label.toLowerCase(),
         if (summary.reachability != Reachability.confirmed)
           summary.reachability.label.toLowerCase(),
-        if (summary.openEngagementId != null) 'in an undertaking',
+        // Only where the condition axis has not already said it. IN_ENGAGEMENT
+        // is labelled "In an undertaking", so adding the marker unconditionally
+        // printed the same fact twice: "in an undertaking · nothing sent · in
+        // an undertaking". It still earns its place when something is open
+        // while the relationship reads dormant or in dispute.
+        if (summary.openEngagementId != null &&
+            summary.condition != RelationshipCondition.inEngagement)
+          'in an undertaking',
         if (summary.attention > 0)
           summary.attention == 1 ? '1 waiting' : '${summary.attention} waiting',
       ].join(' · ');

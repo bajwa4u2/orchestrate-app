@@ -1181,8 +1181,6 @@ GoRouter get router {
         GoRoute(
           path: '/client/relationships',
           builder: (context, state) => RelationshipsWorkspaceScreen(
-            // Pipeline is a view of these records, not a second domain.
-            initialView: state.uri.queryParameters['view'],
             relationshipId: state.uri.queryParameters['id'],
             returnTo: state.uri.queryParameters[kReturnToParam],
           ),
@@ -1297,7 +1295,7 @@ GoRouter get router {
             // Opportunities were a second list of the same durable records.
             // Pipeline survives as a view; the second universe does not.
             path: '/client/opportunities',
-            redirect: (context, state) => '/client/relationships?view=pipeline'),
+            redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/client/leads',
             redirect: (context, state) => '/client/relationships'),

@@ -206,21 +206,26 @@ class _ClientBusinessIdentityScreenState
           eyebrow: 'Representation',
           title: 'How Orchestrate represents your business operationally',
           subtitle:
-              'Five guided sections + authorization. Required vs recommended is named plainly. Partial saves work. Readiness orchestration re-checks on each save and activates managed execution once the gates pass.',
+              'What Orchestrate needs to know before it can represent your '
+              'business. Some of it is required and some of it sharpens the '
+              'result — both are marked. You can save as you go, and managed '
+              'execution begins once the required parts are in place.',
           banner: ClientStatusBanner(
             tone: requiredComplete
                 ? ClientBannerTone.success
                 : ClientBannerTone.warning,
             title: requiredComplete
                 ? 'Business identity is sufficient for managed execution'
-                : 'Business identity is incomplete on ${missingRequired.length} required field(s)',
+                : missingRequired.length == 1
+                    ? 'One required detail is still missing'
+                    : '${missingRequired.length} required details are still '
+                        'missing',
             message: requiredComplete
-                ? 'Add the recommended fields below to lift qualification precision and message context.'
-                : missingRequired
-                    .take(3)
-                    .map((m) => readText(m, 'label'))
-                    .where((s) => s.isNotEmpty)
-                    .join(' · '),
+                ? 'Adding the recommended details below sharpens who Orchestrate '
+                    'looks for and what it says on your behalf.'
+                // Named rather than counted-then-truncated: the banner used to
+                // say six and then list three, which reads as a bug.
+                : _named(missingRequired),
           ),
           actions: [
             WhyAffordance(
@@ -628,7 +633,7 @@ class _ReadinessSummaryPanel extends StatelessWidget {
               title: readText(m, 'label'),
               primary:
                   readText(m, 'message', fallback: 'This field is required.'),
-              secondary: 'Section: ${readText(m, 'section')}',
+              secondary: _sectionName(readText(m, 'section')),
               trailing: const ClientBadge(label: 'Required'),
             ),
           ),
@@ -640,7 +645,7 @@ class _ReadinessSummaryPanel extends StatelessWidget {
                   title: readText(m, 'label'),
                   primary: readText(m, 'message',
                       fallback: 'This field is recommended.'),
-                  secondary: 'Section: ${readText(m, 'section')}',
+                  secondary: _sectionName(readText(m, 'section')),
                   trailing: const ClientBadge(label: 'Recommended'),
                 ),
               ),
@@ -756,4 +761,41 @@ class _RepresentationAuthPanelState extends State<_RepresentationAuthPanel> {
       ],
     );
   }
+}
+
+
+/// WHERE A MISSING DETAIL LIVES, IN WORDS A PERSON USES.
+///
+/// The server names sections the way the model does — business_identity,
+/// market_and_offer, ideal_client — and those identifiers were printed to
+/// customers verbatim, prefixed with "Section:". Unknown keys are still shown
+/// rather than swallowed, just spelled like English: a section this map has
+/// not met is more useful than silence.
+String _sectionName(String raw) {
+  const known = {
+    'business_identity': 'Under Business identity',
+    'market_and_offer': 'Under What you sell',
+    'ideal_client': 'Under Who you sell to',
+    'communication': 'Under How you communicate',
+    'authorization': 'Under Authority to represent you',
+  };
+  final key = raw.trim();
+  if (key.isEmpty) return '';
+  final match = known[key];
+  if (match != null) return match;
+  final words = key.replaceAll('_', ' ').trim();
+  return 'Under ${words[0].toUpperCase()}${words.substring(1)}';
+}
+
+/// The missing details, named. Long lists end with a count rather than a
+/// truncation, so the sentence stays true however many there are.
+String _named(List<dynamic> missing) {
+  final labels = missing
+      .map((m) => readText(m, 'label'))
+      .where((s) => s.isNotEmpty)
+      .toList();
+  if (labels.isEmpty) return '';
+  if (labels.length <= 3) return labels.join(' · ');
+  final shown = labels.take(3).join(' · ');
+  return '$shown · and ${labels.length - 3} more';
 }

@@ -740,13 +740,10 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     }
 
     final providerCode = readText(mailbox, 'provider').toUpperCase();
-    final providerLabel = providerCode.isEmpty
-        ? ''
-        : (providerCode == 'GOOGLE'
-            ? 'Google Workspace / Gmail'
-            : providerCode == 'MICROSOFT'
-                ? 'Microsoft 365'
-                : providerCode);
+    // PROVIDER CODES ARE IDENTIFIERS, NOT NAMES. IMAP_SMTP was rendering to
+    // customers exactly like that, underscore and all, in the row that tells
+    // them who carries their mail.
+    final providerLabel = _providerName(providerCode);
     final authorized = readText(mailbox, 'connected').toLowerCase() == 'true';
 
     return _OperationalIdentity(
@@ -956,7 +953,8 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       return const _MailboxHero(
         headline: 'Client-authorized transport active',
         subtitle:
-            'A client-owned sending mailbox is authorized and reply continuity is enabled. Managed execution dispatches against this infrastructure.',
+            'Your sending mailbox is authorised and replies come back to it. '
+            'Orchestrate sends from here on your behalf.',
         bannerTitle: 'Dispatch eligibility granted',
         bannerMessage:
             'No action required here unless your provider asks you to re-authorize the OAuth grant.',
@@ -2053,4 +2051,28 @@ class _TransportChoicesPanel extends StatelessWidget {
       ],
     );
   }
+}
+
+
+/// WHO CARRIES THE MAIL, IN A NAME A PERSON RECOGNISES.
+///
+/// An unknown code is still shown rather than hidden — knowing it is something
+/// beats knowing nothing — but spelled as words rather than as an identifier.
+String _providerName(String code) {
+  final key = code.trim().toUpperCase();
+  if (key.isEmpty) return '';
+  const known = {
+    'GOOGLE': 'Google Workspace / Gmail',
+    'MICROSOFT': 'Microsoft 365',
+    'IMAP_SMTP': 'SMTP and IMAP',
+    'SMTP': 'SMTP',
+    'IMAP': 'IMAP',
+  };
+  final match = known[key];
+  if (match != null) return match;
+  return key
+      .split(RegExp(r'[_\s]+'))
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0] + w.substring(1).toLowerCase())
+      .join(' ');
 }

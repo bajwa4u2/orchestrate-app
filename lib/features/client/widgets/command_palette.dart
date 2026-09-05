@@ -73,16 +73,23 @@ class _Command {
 const List<_Command> _commands = [
   _Command('What needs me', '/client/today', Icons.today_outlined),
   _Command('Relationships', '/client/relationships', Icons.hub_outlined),
-  _Command('Pipeline', '/client/relationships?view=pipeline', Icons.view_kanban_outlined,
-      hint: 'Relationships, as a board'),
-  _Command('Waiting on a reply', '/client/relationships?view=waiting',
-      Icons.hourglass_empty),
+  // NO PIPELINE, NO WAITING VIEW.
+  //
+  // Both pointed at ?view= values nothing reads. The relationships screen has
+  // one ordering — anything contested or never reached first — and offering a
+  // board and a filter that quietly resolve to that same list is worse than
+  // not offering them: a person searches the palette for the view they were
+  // promised, lands on the ordinary list, and concludes the product is broken
+  // rather than that the view was never built.
   _Command('Business settings', '/client/business', Icons.tune_outlined),
-  _Command('Targeting and discovery', '/client/business#targeting',
+  // These were fragments — #targeting, #infrastructure, #trust — and nothing
+  // in the app reads a fragment, so all three landed on the Business hub. The
+  // sections are real routes; the palette now names them.
+  _Command('Targeting and discovery', '/client/representation/targeting',
       Icons.travel_explore_outlined),
-  _Command('Mailbox and sending', '/client/business#infrastructure',
+  _Command('Mailbox and sending', '/client/infrastructure',
       Icons.mark_email_read_outlined),
-  _Command('Credentials and evidence', '/client/business#trust',
+  _Command('Credentials and evidence', '/client/trust',
       Icons.verified_outlined),
   _Command('People and authority', '/account/people', Icons.badge_outlined,
       hint: 'Who can decide for the business'),
