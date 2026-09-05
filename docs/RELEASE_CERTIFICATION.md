@@ -193,9 +193,10 @@ Everything here is a founder action. None of it can be done from this machine.
    header over the retired operator shell. Play's Data safety declared two
    data types and called both ephemeral; it now declares five, none ephemeral.
    Field-by-field record in `store_assets/release_notes/0.2.3.md`.
-7. **Owed on the Microsoft rail:** Partner Center's Credentials section is
-   empty, so the reviewer sign-in is not recorded where a certification tester
-   can read it. Submission 7 passed without it; do not rely on that.
+7. **Not owed, despite how it reads:** Partner Center's Credentials grid
+   renders empty, but the reviewer sign-in was given to Microsoft in an
+   earlier submission and is held in their records. That is why submission 7
+   certified. An empty grid here is not a missing credential.
 8. **Optional, and currently moot:** link the Play service account, if Android
    commerce is ever to open.
 
