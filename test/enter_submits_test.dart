@@ -46,7 +46,15 @@ void main() {
 
   test('a busy form does not submit twice', () {
     // Enter while a request is in flight must be as inert as the button is.
-    expect(client.contains('state._busy ? null : state.login'), isTrue);
-    expect(ops.contains('_busy\n                                  ? null'), isTrue);
+    //
+    // Matched with whitespace collapsed. The original assertion embedded a
+    // literal newline and an exact indentation, which made it a test about how
+    // the file happened to be wrapped and how git checked out its line
+    // endings. It passed on the machine that wrote it and failed on CI, where
+    // the file arrives with CRLF — and because `flutter test` gates the iOS
+    // build, that is a failed release build over a line ending.
+    String flat(String source) => source.replaceAll(RegExp(r'\s+'), ' ');
+    expect(flat(client).contains('state._busy ? null : state.login'), isTrue);
+    expect(flat(ops).contains('_busy ? null'), isTrue);
   });
 }
