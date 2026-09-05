@@ -426,9 +426,19 @@ class OpsConsoleRepository {
     return Map<String, dynamic>.from(_asMap(json));
   }
 
-  Future<Map<String, dynamic>> fetchWorkQueue({int? limit}) async {
+  Future<Map<String, dynamic>> fetchWorkQueue({
+    int? limit,
+    int? offset,
+    String? workType,
+    String? clientId,
+    String? severity,
+  }) async {
     final query = <String, String>{};
     if (limit != null) query['limit'] = '$limit';
+    if (offset != null && offset > 0) query['offset'] = '$offset';
+    if (workType != null && workType.isNotEmpty) query['workType'] = workType;
+    if (clientId != null && clientId.isNotEmpty) query['clientId'] = clientId;
+    if (severity != null && severity.isNotEmpty) query['severity'] = severity;
     final json = await _api.getJson(
       '/operator/work-queue',
       query: query.isEmpty ? null : query,

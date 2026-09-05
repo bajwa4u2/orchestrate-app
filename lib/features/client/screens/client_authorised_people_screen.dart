@@ -4,6 +4,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
 import 'package:orchestrate_app/features/client/widgets/standing_authority.dart';
 import 'package:orchestrate_app/data/repositories/client/client_representative_repository.dart';
+import '../widgets/authority_evidence_panel.dart';
 
 /// WHERE A PERSON NAMES THEMSELVES AS AUTHORISED TO ACT FOR THE BUSINESS.
 ///
@@ -125,6 +126,13 @@ class _ClientAuthorisedPeopleScreenState
               onDone: _load,
             ),
           StandingAuthority(onResolve: _resolve),
+          const SizedBox(height: 16),
+          // WHAT THE CLAIM RESTS ON, where the person who made it is looking.
+          //
+          // Directly under their standing, because "we are reviewing what you
+          // sent" is unanswerable without it — and because when an operator
+          // asks for more, this is the screen they are already on.
+          AuthorityEvidencePanel(onChanged: _load),
           const SizedBox(height: 20),
           if (_people.isEmpty)
             _NobodyYetCard(

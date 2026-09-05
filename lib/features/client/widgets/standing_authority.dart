@@ -85,6 +85,16 @@ class _Standing extends StatelessWidget {
                 settled: authority.orchestrateEverGranted,
                 pending: false,
                 meaning: authority.orchestrateMeaning,
+                // WHY THIS IS NOT A CONTRADICTION.
+                //
+                // "Your business has not recognised you as able to decide for
+                // it" sits directly above "Orchestrate may communicate on your
+                // behalf", and the two read as impossible together. They are
+                // both true, and the bridge is a record — somebody accepted, on
+                // a date, somewhere in the product, naming no areas at all. A
+                // person left to reconcile that themselves concludes the
+                // product is wrong, and they are not being unreasonable.
+                provenance: authority.orchestrateProvenance,
               ),
             ],
           ),
@@ -126,6 +136,7 @@ class _Part extends StatelessWidget {
     required this.pending,
     required this.meaning,
     this.areas = const [],
+    this.provenance,
   });
 
   final String title;
@@ -133,6 +144,10 @@ class _Part extends StatelessWidget {
   final bool pending;
   final String meaning;
   final List<AreaStanding> areas;
+
+  /// Where this came from. Shown where a statement would otherwise look like it
+  /// contradicts the one above it.
+  final GrantProvenance? provenance;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +164,15 @@ class _Part extends StatelessWidget {
               Text(title, style: text.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
               Text(meaning, style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+              if (provenance != null) ...[
+                const SizedBox(height: 6),
+                Text(provenance!.say,
+                    style: text.bodySmall?.copyWith(height: 1.5)),
+                const SizedBox(height: 2),
+                Text(provenance!.why,
+                    style: text.bodySmall
+                        ?.copyWith(color: AppTheme.publicMuted, height: 1.5)),
+              ],
               if (areas.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 for (final area in areas) _AreaLine(area: area),

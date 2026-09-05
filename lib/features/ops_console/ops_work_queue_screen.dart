@@ -3,6 +3,22 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'ops_console_repository.dart';
 import 'ops_empty_state.dart';
 
+/// WHAT NEEDS A PERSON, NOW.
+///
+/// Rebuilt around two things the old queue could not do at twenty-seven cases
+/// and would have done worse at two hundred.
+///
+/// IT TOLD THE TRUTH ABOUT ITS OWN SIZE. It did not: every detector carried a
+/// private ceiling, the queue sliced the result to a hundred, and the console
+/// rendered that as the total. Thirty-nine held messages appeared as
+/// twenty-five under a heading that read "27 cases". The count now describes
+/// the work, the page says whether there is more, and the server names any
+/// detector that reached its ceiling.
+///
+/// IT LET SOMEBODY LOOK AT ONE THING. It did not: every case rendered its whole
+/// diagnosis, evidence table and action grid inline, so a queue of thirty was
+/// several thousand pixels of decision surface nobody had asked for. The list
+/// is now one line per case with one way in, and reviewing opens the case.
 class OpsWorkQueueScreen extends StatefulWidget {
   const OpsWorkQueueScreen({super.key});
 
@@ -13,12 +29,30 @@ class OpsWorkQueueScreen extends StatefulWidget {
 class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
   final _repo = OpsConsoleRepository();
 
+  static const _pageSize = 25;
+
   List<Map<String, dynamic>> _cases = [];
+  List<Map<String, dynamic>> _workTypes = const [];
+  List<Map<String, dynamic>> _businesses = const [];
+  Map<String, dynamic> _bySeverity = const {};
   String? _generatedAt;
+  List<String> _atCeiling = const [];
+
+  int _total = 0;
+  int _totalUnfiltered = 0;
+  int _offset = 0;
+  bool _hasMore = false;
+
+  String? _workType;
+  String? _clientId;
+  String? _severity;
+
+  /// Which case is open. Null is the list; anything else is the review state.
+  String? _reviewing;
+
   bool _loading = true;
   String? _error;
 
-  // Per-case action state: case id → _CaseAction
   final Map<String, _CaseAction> _action = {};
 
   @override
@@ -33,14 +67,27 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
       _error = null;
     });
     try {
-      final data = await _repo.fetchWorkQueue();
+      final data = await _repo.fetchWorkQueue(
+        limit: _pageSize,
+        offset: _offset,
+        workType: _workType,
+        clientId: _clientId,
+        severity: _severity,
+      );
       if (!mounted) return;
-      final rawCases = data['cases'];
+      final page = Map<String, dynamic>.from((data['page'] as Map?) ?? {});
+      final totals = Map<String, dynamic>.from((data['totals'] as Map?) ?? {});
       setState(() {
-        _cases = rawCases is List
-            ? rawCases.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList()
-            : [];
+        _cases = _mapList(data['cases']);
+        _workTypes = _mapList(data['workTypes']);
+        _businesses = _mapList(totals['byClient']);
+        _bySeverity = Map<String, dynamic>.from((totals['bySeverity'] as Map?) ?? {});
         _generatedAt = data['generatedAt'] as String?;
+        _total = (data['total'] as num?)?.toInt() ?? _cases.length;
+        _totalUnfiltered = (data['totalUnfiltered'] as num?)?.toInt() ?? _total;
+        _hasMore = page['hasMore'] == true;
+        _atCeiling =
+            ((data['atCeiling'] as List?) ?? const []).whereType<String>().toList();
         _loading = false;
       });
     } catch (e) {
@@ -52,61 +99,138 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
     }
   }
 
-  int get _criticalCount =>
-      _cases.where((c) => c['severity'] == 'critical').length;
-  int get _warningCount =>
-      _cases.where((c) => c['severity'] == 'warning').length;
+  static List<Map<String, dynamic>> _mapList(dynamic raw) => raw is List
+      ? raw.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList()
+      : const [];
+
+  void _filter({String? workType, String? clientId, String? severity, bool clear = false}) {
+    setState(() {
+      if (clear) {
+        _workType = null;
+        _clientId = null;
+        _severity = null;
+      } else {
+        if (workType != null) _workType = workType == _workType ? null : workType;
+        if (clientId != null) _clientId = clientId == _clientId ? null : clientId;
+        if (severity != null) _severity = severity == _severity ? null : severity;
+      }
+      // A filter changes what the pages are, so staying on page three of the
+      // old result is meaningless.
+      _offset = 0;
+      _reviewing = null;
+    });
+    _load();
+  }
+
+  Map<String, dynamic>? get _openCase {
+    if (_reviewing == null) return null;
+    for (final c in _cases) {
+      if (c['id'] == _reviewing) return c;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final open = _openCase;
+    if (open != null) {
+      return _CaseDetail(
+        wqCase: open,
+        action: _action[open['id'] as String? ?? ''],
+        onAction: (a) => _runAction(open['id'] as String? ?? '', open, a),
+        onBack: () => setState(() => _reviewing = null),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _Header(
-          caseCount: _cases.length,
-          criticalCount: _criticalCount,
-          warningCount: _warningCount,
+          total: _total,
+          totalUnfiltered: _totalUnfiltered,
+          bySeverity: _bySeverity,
           generatedAt: _generatedAt,
           loading: _loading,
+          atCeiling: _atCeiling,
+          filtered: _workType != null || _clientId != null || _severity != null,
+          onClear: () => _filter(clear: true),
           onRefresh: _loading ? null : _load,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
+        _Filters(
+          workTypes: _workTypes,
+          businesses: _businesses,
+          bySeverity: _bySeverity,
+          workType: _workType,
+          clientId: _clientId,
+          severity: _severity,
+          onWorkType: (v) => _filter(workType: v),
+          onClient: (v) => _filter(clientId: v),
+          onSeverity: (v) => _filter(severity: v),
+        ),
+        const SizedBox(height: 14),
         Expanded(child: _body()),
+        if (!_loading && _error == null && (_hasMore || _offset > 0)) ...[
+          const SizedBox(height: 10),
+          _Pager(
+            offset: _offset,
+            shown: _cases.length,
+            total: _total,
+            hasMore: _hasMore,
+            onPrevious: _offset == 0
+                ? null
+                : () {
+                    setState(() => _offset = (_offset - _pageSize).clamp(0, 1 << 30));
+                    _load();
+                  },
+            onNext: !_hasMore
+                ? null
+                : () {
+                    setState(() => _offset = _offset + _pageSize);
+                    _load();
+                  },
+          ),
+        ],
       ],
     );
   }
 
   Widget _body() {
     if (_loading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppTheme.accent));
+      return const Center(child: CircularProgressIndicator(color: AppTheme.accent));
     }
     if (_error != null) {
       return _ErrorPanel(message: _error!, onRetry: _load);
     }
     if (_cases.isEmpty) {
+      final filtered = _workType != null || _clientId != null || _severity != null;
+      if (filtered) {
+        return OpsEmptyState(
+          headline: 'Nothing matches this filter.',
+          detail: _totalUnfiltered > 0
+              ? 'There ${_totalUnfiltered == 1 ? 'is' : 'are'} $_totalUnfiltered case'
+                  '${_totalUnfiltered == 1 ? '' : 's'} in total. Clear the filter to see them.'
+              : 'Nothing is waiting for a decision.',
+        );
+      }
       return const OpsEmptyState(
         icon: Icons.check_circle_outline,
         headline: 'Nothing is waiting for a decision.',
-        // The queue reaches held messages and authority submissions across
-        // every business, and everything else only inside this organisation.
-        // "All subsystems normal" was a claim it could not make.
-        detail: 'Held messages and authority submissions are checked across '
-            'every business. Everything else is checked in the organisation '
-            'you are signed in as.',
+        detail: 'Held messages and authority submissions are checked across every '
+            'business. Everything else is checked in the organisation you are '
+            'signed in as.',
       );
     }
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: _cases.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final c = _cases[i];
         final id = c['id'] as String? ?? '$i';
-        return _CaseCard(
+        return _QueueRow(
           wqCase: c,
-          action: _action[id],
-          onAction: (action) => _runAction(id, c, action),
+          onReview: () => setState(() => _reviewing = id),
         );
       },
     );
@@ -127,6 +251,7 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
         label: action['label'] as String? ?? 'Confirm',
         entityLabel: wqCase['entityLabel'] as String? ?? '',
         requiresReason: requiresReason,
+        records: action['records'] as String?,
       );
       if (result == null) return; // cancelled
       reason = result;
@@ -141,11 +266,9 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
       if (method == 'POST') {
         // The server decides what an action means; the console posts what it
         // was handed. `body` carries fields already determined server-side —
-        // which of five quarantine dispositions this button records, for
-        // instance — and `reasonField` names where the operator's own account
-        // of the decision belongs. Quarantine calls it `evidence`, because what
-        // is recorded is what the operator determined rather than why they
-        // pressed a button.
+        // which of five quarantine dispositions this button records, or which
+        // capabilities an admission establishes — and `reasonField` names where
+        // the operator's own account of the decision belongs.
         //
         // Nothing here interprets a case type. A console that grew a switch on
         // caseType would become a second copy of the domain, and the two would
@@ -162,13 +285,22 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
       if (!mounted) return;
       setState(() => _action[caseId] =
           _CaseAction.done(action['label'] as String? ?? 'Done'));
-      // Reload after a short pause so verification data has time to land
+      // Reload after a short pause so verification data has time to land, and
+      // return to the list: the case that was being reviewed has been decided.
       await Future.delayed(const Duration(seconds: 2));
-      if (mounted) await _load();
+      if (mounted) {
+        setState(() => _reviewing = null);
+        await _load();
+      }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _action[caseId] = _CaseAction.error(e.toString()));
+      setState(() => _action[caseId] = _CaseAction.error(_readable(e)));
     }
+  }
+
+  String _readable(Object error) {
+    final text = error.toString().replaceFirst('Exception: ', '');
+    return text.length > 200 ? '${text.substring(0, 200)}…' : text;
   }
 
   Future<String?> _showActionDialog(
@@ -176,42 +308,45 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
     required String label,
     required String entityLabel,
     required bool requiresReason,
+    String? records,
   }) async {
     final controller = TextEditingController();
     return showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.panelRaised,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLarge)),
-        title: Text(label,
-            style: const TextStyle(fontSize: 15, color: AppTheme.text)),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.panel,
+        title: Text(label, style: const TextStyle(fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Target: $entityLabel',
-                style: const TextStyle(fontSize: 12, color: AppTheme.subdued)),
+            Text(
+              entityLabel,
+              style: const TextStyle(fontSize: 12, color: AppTheme.muted),
+            ),
+            if (records != null) ...[
+              const SizedBox(height: 10),
+              // What pressing this writes, repeated at the moment of pressing
+              // it. A confirmation that only says "are you sure" asks somebody
+              // to be sure about something it declined to restate.
+              Text(
+                records,
+                style: const TextStyle(
+                    fontSize: 12, color: AppTheme.subdued, height: 1.4),
+              ),
+            ],
             if (requiresReason) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               TextField(
                 controller: controller,
-                style: const TextStyle(fontSize: 13, color: AppTheme.text),
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Reason (required)',
-                  hintStyle: const TextStyle(color: AppTheme.subdued, fontSize: 12),
-                  filled: true,
-                  fillColor: AppTheme.panel,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radius),
-                    borderSide: const BorderSide(color: AppTheme.line),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radius),
-                    borderSide:
-                        BorderSide(color: AppTheme.accent.withOpacity(0.6)),
-                  ),
+                autofocus: true,
+                minLines: 2,
+                maxLines: 4,
+                style: const TextStyle(fontSize: 13),
+                decoration: const InputDecoration(
+                  labelText: 'What did you determine?',
+                  helperText: 'Recorded with the decision. It is not the decision.',
+                  helperStyle: TextStyle(fontSize: 11),
                 ),
               ),
             ],
@@ -219,18 +354,15 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppTheme.subdued)),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () {
-              if (requiresReason && controller.text.trim().isEmpty) return;
-              Navigator.pop(ctx, controller.text.trim().isEmpty ? '' : controller.text.trim());
-            },
+            onPressed: () => Navigator.of(context).pop(
+              requiresReason ? controller.text.trim() : '',
+            ),
             style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
-            child: Text(label,
-                style: const TextStyle(color: AppTheme.background, fontSize: 13)),
+            child: Text(label, style: const TextStyle(color: AppTheme.background)),
           ),
         ],
       ),
@@ -238,406 +370,631 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
   }
 }
 
-// ── Header ────────────────────────────────────────────────────────────────────
+// ── The list ─────────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
   const _Header({
-    required this.caseCount,
-    required this.criticalCount,
-    required this.warningCount,
+    required this.total,
+    required this.totalUnfiltered,
+    required this.bySeverity,
+    required this.generatedAt,
     required this.loading,
-    this.generatedAt,
-    this.onRefresh,
+    required this.atCeiling,
+    required this.filtered,
+    required this.onClear,
+    required this.onRefresh,
   });
-  final int caseCount;
-  final int criticalCount;
-  final int warningCount;
-  final bool loading;
+
+  final int total;
+  final int totalUnfiltered;
+  final Map<String, dynamic> bySeverity;
   final String? generatedAt;
+  final bool loading;
+  final List<String> atCeiling;
+  final bool filtered;
+  final VoidCallback onClear;
   final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final critical = (bySeverity['critical'] as num?)?.toInt() ?? 0;
+    final warning = (bySeverity['warning'] as num?)?.toInt() ?? 0;
+
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Work queue', style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 6),
+              Row(
                 children: [
-                  Text('Work Queue',
-                      style: Theme.of(context).textTheme.headlineMedium),
-                  const SizedBox(height: 6),
-                  if (!loading && caseCount > 0)
-                    Row(
-                      children: [
-                        if (criticalCount > 0) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.rose.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '$criticalCount critical',
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppTheme.rose,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        if (warningCount > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.amber.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '$warningCount warning',
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppTheme.amber,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '$caseCount case${caseCount == 1 ? '' : 's'}',
-                          style: const TextStyle(
-                              fontSize: 12, color: AppTheme.subdued),
-                        ),
-                      ],
-                    )
-                  else if (!loading)
-                    Text(
-                      'No open cases',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: AppTheme.muted),
+                  if (critical > 0) ...[
+                    _Pill(text: '$critical critical', color: AppTheme.rose),
+                    const SizedBox(width: 8),
+                  ],
+                  if (warning > 0) ...[
+                    _Pill(text: '$warning warning', color: AppTheme.amber),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    filtered
+                        ? '$total of $totalUnfiltered case'
+                            '${totalUnfiltered == 1 ? '' : 's'}'
+                        : '$total case${total == 1 ? '' : 's'}',
+                    style: const TextStyle(fontSize: 13, color: AppTheme.muted),
+                  ),
+                  if (filtered) ...[
+                    const SizedBox(width: 10),
+                    TextButton(
+                      onPressed: onClear,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: AppTheme.accent,
+                      ),
+                      child: const Text('Show everything', style: TextStyle(fontSize: 12)),
                     ),
+                  ],
                 ],
               ),
-            ),
-            if (onRefresh != null)
-              OutlinedButton.icon(
-                onPressed: onRefresh,
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Refresh'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.muted,
-                  side: const BorderSide(color: AppTheme.line),
+              if (generatedAt != null) ...[
+                const SizedBox(height: 3),
+                Text(
+                  'Generated ${_clock(generatedAt!)}',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.subdued),
                 ),
-              ),
-          ],
-        ),
-        if (generatedAt != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Generated ${_formatTs(generatedAt!)}',
-            style: const TextStyle(fontSize: 10, color: AppTheme.subdued),
+              ],
+              // A count that is a floor rather than a total says so. Silence
+              // here is what made "27 cases" above twenty-five rows possible.
+              if (atCeiling.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'More than we read: ${atCeiling.join(', ')}. The counts above are '
+                  'at least this many.',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.amber),
+                ),
+              ],
+            ],
           ),
-        ],
+        ),
+        OutlinedButton.icon(
+          onPressed: onRefresh,
+          icon: loading
+              ? const SizedBox(
+                  width: 13,
+                  height: 13,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.muted),
+                )
+              : const Icon(Icons.refresh, size: 15),
+          label: const Text('Refresh'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.muted,
+            side: const BorderSide(color: AppTheme.line),
+          ),
+        ),
       ],
     );
   }
 
-  static String _formatTs(String iso) {
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      return '${_p(dt.hour)}:${_p(dt.minute)}:${_p(dt.second)}';
-    } catch (_) {
-      return iso;
-    }
+  static String _clock(String iso) {
+    final at = DateTime.tryParse(iso);
+    if (at == null) return iso;
+    final local = at.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
   }
-
-  static String _p(int n) => n.toString().padLeft(2, '0');
 }
 
-// ── Case card ─────────────────────────────────────────────────────────────────
-
-class _CaseCard extends StatefulWidget {
-  const _CaseCard({
-    required this.wqCase,
-    required this.action,
-    required this.onAction,
+/// WHOSE WORK, AND WHAT KIND.
+///
+/// The two questions an operator actually switches between: everything owed to
+/// one business, and every decision of one kind across all of them. A row of
+/// permanent tabs per business would be unreadable at twenty clients, so the
+/// businesses are a menu that names how much each owes.
+class _Filters extends StatelessWidget {
+  const _Filters({
+    required this.workTypes,
+    required this.businesses,
+    required this.bySeverity,
+    required this.workType,
+    required this.clientId,
+    required this.severity,
+    required this.onWorkType,
+    required this.onClient,
+    required this.onSeverity,
   });
-  final Map<String, dynamic> wqCase;
-  final _CaseAction? action;
-  final void Function(Map<String, dynamic> action) onAction;
 
-  @override
-  State<_CaseCard> createState() => _CaseCardState();
-}
-
-class _CaseCardState extends State<_CaseCard> {
-  bool _expanded = false;
-
-  Color get _severityColor {
-    switch (widget.wqCase['severity'] as String?) {
-      case 'critical':
-        return AppTheme.rose;
-      case 'warning':
-        return AppTheme.amber;
-      default:
-        return AppTheme.accent;
-    }
-  }
-
-  String get _severityLabel {
-    switch (widget.wqCase['severity'] as String?) {
-      case 'critical':
-        return 'CRITICAL';
-      case 'warning':
-        return 'WARNING';
-      default:
-        return 'INFO';
-    }
-  }
+  final List<Map<String, dynamic>> workTypes;
+  final List<Map<String, dynamic>> businesses;
+  final Map<String, dynamic> bySeverity;
+  final String? workType;
+  final String? clientId;
+  final String? severity;
+  final void Function(String) onWorkType;
+  final void Function(String) onClient;
+  final void Function(String) onSeverity;
 
   @override
   Widget build(BuildContext context) {
-    final c = widget.wqCase;
-    final sc = _severityColor;
-    final entityLabel = c['entityLabel'] as String? ?? c['entityId'] as String? ?? '—';
-    final clientName = c['clientName'] as String?;
-    final campaignName = c['campaignName'] as String?;
-    final caseType = c['caseType'] as String? ?? '';
-    final state = c['state'] as Map? ?? {};
-    final stateLabel = state['label'] as String? ?? state['value'] as String? ?? '—';
-    // How long this has been waiting. A queue that shows severity but not age
-    // cannot distinguish a case raised a minute ago from one nobody has looked
-    // at for a fortnight, and those need different responses.
-    final since = DateTime.tryParse('${state['since'] ?? ''}');
-    final waited = since == null ? null : _howLong(DateTime.now().difference(since));
-    final actions = c['actions'] as List? ?? [];
-    final isWorking = widget.action?.isWorking ?? false;
+    final withWork = workTypes.where((t) => ((t['count'] as num?)?.toInt() ?? 0) > 0).toList();
+    final selectedBusiness = businesses.firstWhere(
+      (b) => b['clientId'] == clientId,
+      orElse: () => const {},
+    );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.panel,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: Border.all(
-          color: _expanded ? sc.withOpacity(0.35) : AppTheme.line,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Header row ────────────────────────────────────────────
-          InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(AppTheme.radiusLarge),
-              topRight: Radius.circular(AppTheme.radiusLarge),
-              bottomLeft: _expanded ? Radius.zero : Radius.circular(AppTheme.radiusLarge),
-              bottomRight: _expanded ? Radius.zero : Radius.circular(AppTheme.radiusLarge),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Severity stripe
-                  Container(
-                    width: 3,
-                    height: 44,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      color: sc,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: sc.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: Text(
-                                _severityLabel,
-                                style: TextStyle(
-                                    fontSize: 9,
-                                    color: sc,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.5),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              caseType,
-                              style: const TextStyle(
-                                  fontSize: 10,
-                                  color: AppTheme.subdued,
-                                  fontFamily: 'monospace'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          entityLabel,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontSize: 14),
-                        ),
-                        if (clientName != null || campaignName != null || waited != null)
-                          Text(
-                            [
-                              clientName,
-                              if (campaignName != null && campaignName != entityLabel)
-                                campaignName,
-                              if (waited != null) waited,
-                            ].whereType<String>().join(' · '),
-                            style: const TextStyle(
-                                fontSize: 11, color: AppTheme.subdued),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        // Only the kinds of work that exist. An empty tab is a promise of
+        // somewhere to go that goes nowhere.
+        for (final type in withWork)
+          _FilterChip(
+            label: '${type['label']}',
+            count: (type['count'] as num?)?.toInt() ?? 0,
+            selected: workType == type['key'],
+            tooltip: type['describes'] as String?,
+            onTap: () => onWorkType('${type['key']}'),
+          ),
+        if (withWork.isNotEmpty && businesses.length > 1)
+          const SizedBox(width: 4, height: 24),
+        if (businesses.length > 1)
+          PopupMenuButton<String>(
+            tooltip: 'Show one business',
+            onSelected: onClient,
+            color: AppTheme.panel,
+            itemBuilder: (context) => [
+              for (final b in businesses)
+                PopupMenuItem<String>(
+                  value: '${b['clientId'] ?? ''}',
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.panelRaised,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: AppTheme.line),
-                        ),
-                        child: Text(
-                          stateLabel,
-                          style: const TextStyle(
-                              fontSize: 10,
-                              color: AppTheme.muted,
-                              fontWeight: FontWeight.w500),
-                        ),
+                      Text(
+                        '${b['clientName'] ?? 'Not attached to a business'}',
+                        style: const TextStyle(fontSize: 12),
                       ),
-                      const SizedBox(height: 6),
-                      // Named, because a bare chevron does not tell an operator
-                      // that this is where the decision is made. The list states
-                      // what happened; review is where it is acted on.
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _expanded ? 'Close' : 'Review',
-                            style: const TextStyle(
-                                fontSize: 11, color: AppTheme.subdued),
-                          ),
-                          const SizedBox(width: 2),
-                          Icon(
-                            _expanded ? Icons.expand_less : Icons.expand_more,
-                            size: 16,
-                            color: AppTheme.subdued,
-                          ),
-                        ],
-                      ),
+                      const SizedBox(width: 16),
+                      Text('${b['count']}',
+                          style: const TextStyle(fontSize: 11, color: AppTheme.subdued)),
                     ],
                   ),
+                ),
+            ],
+            child: _ChipShell(
+              selected: clientId != null,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    clientId == null
+                        ? 'All businesses'
+                        : '${selectedBusiness['clientName'] ?? 'One business'}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: clientId != null ? AppTheme.accent : AppTheme.muted,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.expand_more,
+                      size: 14,
+                      color: clientId != null ? AppTheme.accent : AppTheme.muted),
                 ],
               ),
             ),
           ),
+        for (final level in const ['critical', 'warning'])
+          if (((bySeverity[level] as num?)?.toInt() ?? 0) > 0)
+            _FilterChip(
+              label: level == 'critical' ? 'Critical' : 'Warning',
+              count: (bySeverity[level] as num?)?.toInt() ?? 0,
+              selected: severity == level,
+              color: level == 'critical' ? AppTheme.rose : AppTheme.amber,
+              onTap: () => onSeverity(level),
+            ),
+      ],
+    );
+  }
+}
 
-          // ── Expanded body ─────────────────────────────────────────
-          if (_expanded) ...[
-            Divider(height: 1, color: AppTheme.line),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+class _ChipShell extends StatelessWidget {
+  const _ChipShell({required this.child, required this.selected, this.color});
+  final Widget child;
+  final bool selected;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = color ?? AppTheme.accent;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: selected ? tint.withOpacity(0.12) : AppTheme.panel,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: selected ? tint.withOpacity(0.5) : AppTheme.line),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+    this.tooltip,
+    this.color,
+  });
+
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+  final String? tooltip;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = color ?? AppTheme.accent;
+    final chip = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppTheme.radius),
+      child: _ChipShell(
+        selected: selected,
+        color: color,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12, color: selected ? tint : AppTheme.muted)),
+            const SizedBox(width: 6),
+            Text('$count',
+                style: TextStyle(
+                    fontSize: 11,
+                    color: selected ? tint.withOpacity(0.8) : AppTheme.subdued)),
+          ],
+        ),
+      ),
+    );
+    return tooltip == null ? chip : Tooltip(message: tooltip!, child: chip);
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({required this.text, required this.color});
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(text,
+            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+      );
+}
+
+/// ONE LINE PER CASE, ONE WAY IN.
+///
+/// Whose it is, what kind of work, what needs deciding, how long it has waited,
+/// how urgent, and Review. The old row rendered the entire diagnosis, evidence
+/// table and action grid inline, which made a queue of thirty into several
+/// thousand pixels of decision surface nobody had asked to see yet.
+class _QueueRow extends StatelessWidget {
+  const _QueueRow({required this.wqCase, required this.onReview});
+
+  final Map<String, dynamic> wqCase;
+  final VoidCallback onReview;
+
+  @override
+  Widget build(BuildContext context) {
+    final severity = wqCase['severity'] as String? ?? 'info';
+    final colour = severity == 'critical'
+        ? AppTheme.rose
+        : severity == 'warning'
+            ? AppTheme.amber
+            : AppTheme.accent;
+    final state = wqCase['state'] as Map? ?? {};
+    final since = DateTime.tryParse('${state['since'] ?? ''}');
+    final waited = since == null ? null : _howLong(DateTime.now().difference(since));
+    final client = (wqCase['clientName'] as String?)?.trim();
+
+    return InkWell(
+      onTap: onReview,
+      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        decoration: BoxDecoration(
+          color: AppTheme.panel,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          border: Border.all(color: AppTheme.line),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 3,
+              height: 34,
+              margin: const EdgeInsets.only(right: 12),
+              decoration:
+                  BoxDecoration(color: colour, borderRadius: BorderRadius.circular(2)),
+            ),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Evidence
-                  _SectionLabel('Evidence'),
-                  const SizedBox(height: 6),
-                  _EvidenceTable(evidence: c['evidence'] as List? ?? []),
-                  const SizedBox(height: 14),
-
-                  // Diagnosis
-                  _SectionLabel('Diagnosis'),
-                  const SizedBox(height: 6),
                   Text(
-                    c['diagnosis'] as String? ?? '—',
+                    '${wqCase['entityLabel'] ?? wqCase['entityId'] ?? '—'}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontSize: 12, color: AppTheme.muted, height: 1.5),
+                        fontSize: 14, fontWeight: FontWeight.w600, height: 1.2),
                   ),
-                  const SizedBox(height: 14),
-
-                  // Actions
-                  if (actions.isNotEmpty) ...[
-                    _SectionLabel('Actions'),
-                    const SizedBox(height: 8),
-                    if (isWorking)
-                      Row(
-                        children: [
-                          const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: AppTheme.accent)),
-                          const SizedBox(width: 8),
-                          Text(widget.action!.message ?? 'Running…',
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppTheme.muted)),
-                        ],
-                      )
-                    else
-                      _ActionSet(
-                        actions: actions
-                            .whereType<Map>()
-                            .map((a) => Map<String, dynamic>.from(a))
-                            .toList(),
-                        onAction: widget.onAction,
-                      ),
-                    if (widget.action != null && !isWorking) ...[
-                      const SizedBox(height: 8),
-                      _VerificationRow(action: widget.action!),
-                    ],
-                    const SizedBox(height: 14),
-                  ],
-
-                  // Verification source
-                  _SectionLabel('How you will know'),
-                  const SizedBox(height: 6),
-                  _VerificationSourceRow(
-                    source: c['verificationSource'] as Map? ?? {},
-                  ),
-                  const SizedBox(height: 14),
-
-                  // What has already been decided about this case.
-                  _SectionLabel('What has been done'),
-                  const SizedBox(height: 6),
-                  _HistoryList(
-                    rows: c['history'] as List? ?? [],
+                  const SizedBox(height: 3),
+                  Text(
+                    [
+                      if (client != null && client.isNotEmpty) client,
+                      '${(state['label'] ?? state['value'] ?? '—')}',
+                      if (waited != null) waited,
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: AppTheme.subdued),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 12),
+            TextButton(
+              onPressed: onReview,
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.accent,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('Review', style: TextStyle(fontSize: 12)),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Pager extends StatelessWidget {
+  const _Pager({
+    required this.offset,
+    required this.shown,
+    required this.total,
+    required this.hasMore,
+    required this.onPrevious,
+    required this.onNext,
+  });
+
+  final int offset;
+  final int shown;
+  final int total;
+  final bool hasMore;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final first = total == 0 ? 0 : offset + 1;
+    final last = offset + shown;
+    return Row(
+      children: [
+        Text(
+          '$first–$last of $total',
+          style: const TextStyle(fontSize: 12, color: AppTheme.subdued),
+        ),
+        const Spacer(),
+        TextButton(
+          onPressed: onPrevious,
+          style: TextButton.styleFrom(foregroundColor: AppTheme.muted),
+          child: const Text('Previous', style: TextStyle(fontSize: 12)),
+        ),
+        const SizedBox(width: 4),
+        TextButton(
+          onPressed: onNext,
+          style: TextButton.styleFrom(foregroundColor: AppTheme.muted),
+          child: const Text('Next', style: TextStyle(fontSize: 12)),
+        ),
+      ],
+    );
+  }
+}
+
+// ── The review state ─────────────────────────────────────────────────────────
+
+/// ONE CASE, WITH EVERYTHING NEEDED TO DECIDE IT.
+///
+/// Its own state rather than an expander in the list. Deciding whether a
+/// business authorised somebody, or where a held message belongs, is not
+/// something to do while scrolling past twenty other things.
+class _CaseDetail extends StatelessWidget {
+  const _CaseDetail({
+    required this.wqCase,
+    required this.action,
+    required this.onAction,
+    required this.onBack,
+  });
+
+  final Map<String, dynamic> wqCase;
+  final _CaseAction? action;
+  final void Function(Map<String, dynamic>) onAction;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = wqCase;
+    final severity = c['severity'] as String? ?? 'info';
+    final colour = severity == 'critical'
+        ? AppTheme.rose
+        : severity == 'warning'
+            ? AppTheme.amber
+            : AppTheme.accent;
+    final state = c['state'] as Map? ?? {};
+    final actions = (c['actions'] as List? ?? [])
+        .whereType<Map>()
+        .map((a) => Map<String, dynamic>.from(a))
+        .toList();
+    final isWorking = action?.isWorking ?? false;
+    final client = (c['clientName'] as String?)?.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextButton.icon(
+          onPressed: onBack,
+          icon: const Icon(Icons.arrow_back, size: 15),
+          label: const Text('Back to the queue', style: TextStyle(fontSize: 12)),
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.muted,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          '${c['entityLabel'] ?? '—'}',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 5),
+        Text(
+          [
+            if (client != null && client.isNotEmpty) client,
+            '${state['label'] ?? state['value'] ?? '—'}',
+          ].join(' · '),
+          style: const TextStyle(fontSize: 13, color: AppTheme.muted),
+        ),
+        const SizedBox(height: 18),
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              _SectionLabel('Why this exists'),
+              const SizedBox(height: 6),
+              Text(
+                c['diagnosis'] as String? ?? '—',
+                style: const TextStyle(fontSize: 13, color: AppTheme.muted, height: 1.55),
+              ),
+              const SizedBox(height: 18),
+              _SectionLabel('Evidence'),
+              const SizedBox(height: 6),
+              _EvidenceTable(evidence: c['evidence'] as List? ?? []),
+              const SizedBox(height: 18),
+              if (actions.isNotEmpty) ...[
+                _SectionLabel('Actions'),
+                const SizedBox(height: 8),
+                if (isWorking)
+                  Row(
+                    children: [
+                      const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppTheme.accent)),
+                      const SizedBox(width: 8),
+                      Text(action!.message ?? 'Running…',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.muted)),
+                    ],
+                  )
+                else
+                  _ActionSet(actions: actions, onAction: onAction),
+                if (action != null && !isWorking) ...[
+                  const SizedBox(height: 10),
+                  _VerificationRow(action: action!),
+                ],
+                const SizedBox(height: 18),
+              ],
+              _SectionLabel('How you will know'),
+              const SizedBox(height: 6),
+              _VerificationSourceRow(source: c['verificationSource'] as Map? ?? {}),
+              const SizedBox(height: 18),
+              _SectionLabel('What has been done'),
+              const SizedBox(height: 6),
+              _HistoryList(rows: c['history'] as List? ?? []),
+              const SizedBox(height: 18),
+              // TECHNICAL IDENTITY, LAST AND QUIET.
+              //
+              // A case type and a row id are how an engineer finds this again;
+              // they are not what a person needs to decide it, and leading with
+              // them is how an operator surface starts reading like a log.
+              _Fingerprint(
+                caseType: c['caseType'] as String? ?? '',
+                entityType: c['entityType'] as String? ?? '',
+                entityId: c['entityId'] as String? ?? '',
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+        Container(height: 2, color: colour.withOpacity(0.0)),
+      ],
+    );
+  }
+}
+
+class _Fingerprint extends StatelessWidget {
+  const _Fingerprint({
+    required this.caseType,
+    required this.entityType,
+    required this.entityId,
+  });
+
+  final String caseType;
+  final String entityType;
+  final String entityId;
+
+  @override
+  Widget build(BuildContext context) {
+    if (entityId.isEmpty && caseType.isEmpty) return const SizedBox.shrink();
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+        title: const Text(
+          'Details',
+          style: TextStyle(fontSize: 11, color: AppTheme.subdued, letterSpacing: 0.4),
+        ),
+        iconColor: AppTheme.subdued,
+        collapsedIconColor: AppTheme.subdued,
+        children: [
+          for (final line in [
+            if (caseType.isNotEmpty) caseType,
+            if (entityType.isNotEmpty || entityId.isNotEmpty)
+              [entityType, entityId].where((s) => s.isNotEmpty).join(' '),
+          ])
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: Text(
+                line,
+                style: const TextStyle(
+                    fontSize: 11, color: AppTheme.subdued, height: 1.4),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── Sub-components ───────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.label);

@@ -11,6 +11,8 @@ export '../../data/repositories/client/client_authority_repository.dart'
         AuthorityProjection,
         AuthorityRefusal,
         Consequence,
+        EvidenceStanding,
+        GrantProvenance,
         MissingStep,
         PerformedBy,
         Submission,

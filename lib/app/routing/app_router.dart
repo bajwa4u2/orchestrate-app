@@ -71,6 +71,7 @@ import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/platform/ios_route_policy.dart';
 import '../../features/feedback/feedback_screen.dart';
 import '../../features/feedback/feedback_queue_screen.dart';
+import 'package:orchestrate_app/features/ops_console/ops_authority_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _clientShellNavigatorKey = GlobalKey<NavigatorState>();
@@ -1563,6 +1564,11 @@ GoRouter get router {
         GoRoute(
             path: '/ops/jobs',
             builder: (context, state) => const OpsJobsScreen()),
+        // The durable half of authority work. The queue is what needs deciding;
+        // this is what the deciding produced, and it outlives the case.
+        GoRoute(
+            path: '/ops/authority',
+            builder: (context, state) => const OpsAuthorityScreen()),
         GoRoute(
             path: '/ops/history',
             builder: (context, state) => const OpsHistoryScreen()),

@@ -29,6 +29,31 @@ class ClientAuthorityRepository {
     return AuthorityProjection.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
+  /// Where this person's designation stands, and what supports it.
+  ///
+  /// Its own call rather than a field on the projection: the projection answers
+  /// "what may happen", and this answers "what did I send and what is being
+  /// relied on". Conflating them is how "we are reviewing what you sent" ended
+  /// up being the whole of what a business could learn.
+  Future<EvidenceStanding> evidence() async {
+    final json = await _apiClient.getJson(
+      '/client/designation/evidence',
+      surface: ApiSurface.client,
+    );
+    return EvidenceStanding.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
+  /// Add something supporting to a submission still under review.
+  Future<({bool ok, String? reason})> addSupport(String reference) async {
+    final json = await _apiClient.postJson(
+      '/client/designation/evidence',
+      body: {'reference': reference},
+      surface: ApiSurface.client,
+    );
+    final map = Map<String, dynamic>.from(json as Map);
+    return (ok: map['ok'] == true, reason: map['reason'] as String?);
+  }
+
   /// Whether one specific act may proceed, and if not, why.
   ///
   /// Asking causes nothing, so a screen can shape itself around the answer
@@ -156,6 +181,113 @@ class Submission {
   }
 }
 
+/// WHERE ORCHESTRATE'S OWN AUTHORITY CAME FROM.
+///
+/// Without this, a person reads "your business has not recognised you as able
+/// to decide for it" and, directly beneath it, "Orchestrate may communicate on
+/// your behalf", and the two look like they cannot both be true. They are both
+/// true, and the bridge is a record: somebody accepted, on a date, somewhere in
+/// the product, and — for the oldest rows — named no areas at all.
+class GrantProvenance {
+  const GrantProvenance({
+    required this.acceptedBy,
+    required this.acceptedAt,
+    required this.scopeWasStated,
+    required this.say,
+    required this.why,
+  });
+
+  final String acceptedBy;
+  final DateTime? acceptedAt;
+
+  /// False when the record named no areas, so it resolves to communication
+  /// only. Different from a business deciding communication only.
+  final bool scopeWasStated;
+
+  /// What happened, in a sentence a person can check.
+  final String say;
+
+  /// Why that permits what it permits.
+  final String why;
+
+  static GrantProvenance? fromJson(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    return GrantProvenance(
+      acceptedBy: (json['acceptedBy'] as String?) ?? 'someone in this workspace',
+      acceptedAt: DateTime.tryParse('${json['acceptedAt'] ?? ''}'),
+      scopeWasStated: json['scopeWasStated'] == true,
+      say: (json['say'] as String?) ?? '',
+      why: (json['why'] as String?) ?? '',
+    );
+  }
+}
+
+/// What a claim rests on, and what is still being asked for.
+class EvidenceStanding {
+  const EvidenceStanding({
+    required this.state,
+    required this.claimed,
+    required this.admitted,
+    required this.notAdmitted,
+    required this.reliedUpon,
+    required this.asking,
+    required this.refusedBecause,
+    required this.mayAddSupport,
+  });
+
+  final SubmissionState state;
+
+  /// The areas this person said the business authorised them for.
+  final List<String> claimed;
+  final List<String> admitted;
+
+  /// Claimed and not admitted. Only meaningful once a decision exists.
+  final List<String> notAdmitted;
+
+  /// What Orchestrate is already relying on, rather than asking for again.
+  final List<({String what, String detail})> reliedUpon;
+
+  /// What is being asked of this person now, when anything is.
+  final ({String what, String why, String how})? asking;
+
+  final String? refusedBecause;
+
+  /// Evidence may only be added to something still under review. Attaching it
+  /// to a decided submission would supply evidence for a judgement already
+  /// made.
+  final bool mayAddSupport;
+
+  static EvidenceStanding fromJson(Map<String, dynamic> json) {
+    List<String> strings(dynamic raw) =>
+        ((raw as List?) ?? const []).whereType<String>().toList();
+    final asking = json['asking'];
+    return EvidenceStanding(
+      state: SubmissionState.parse(json['state'] as String?),
+      claimed: strings(json['claimed']),
+      admitted: strings(json['admitted']),
+      notAdmitted: strings(json['notAdmitted']),
+      reliedUpon: ((json['reliedUpon'] as List?) ?? const [])
+          .whereType<Map>()
+          .map((m) => (
+                what: '${m['what'] ?? ''}',
+                detail: '${m['detail'] ?? ''}',
+              ))
+          .toList(growable: false),
+      asking: asking is Map
+          ? (
+              what: '${asking['what'] ?? ''}',
+              why: '${asking['why'] ?? ''}',
+              how: '${asking['how'] ?? ''}',
+            )
+          : null,
+      refusedBecause: (json['refusedBecause'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['refusedBecause'] as String).trim(),
+      mayAddSupport: json['mayAddSupport'] == true,
+    );
+  }
+}
+
 class AuthorityProjection {
   const AuthorityProjection({
     required this.businessName,
@@ -173,6 +305,7 @@ class AuthorityProjection {
     required this.orchestrateEverGranted,
     required this.orchestrateIsLegacyCommunicationOnly,
     required this.orchestrateMeaning,
+    this.orchestrateProvenance,
     required this.missing,
   });
 
@@ -200,6 +333,9 @@ class AuthorityProjection {
   final bool orchestrateEverGranted;
   final bool orchestrateIsLegacyCommunicationOnly;
   final String orchestrateMeaning;
+
+  /// Where Orchestrate's authority came from. Null when it has none.
+  final GrantProvenance? orchestrateProvenance;
 
   /// Genuine blockers only. A settled step is never listed as a satisfied
   /// checkbox, because a list of ticks is a progress bar wearing a disguise.
@@ -250,6 +386,11 @@ class AuthorityProjection {
       orchestrateEverGranted: orch['everGranted'] == true,
       orchestrateIsLegacyCommunicationOnly: orch['isLegacyCommunicationOnly'] == true,
       orchestrateMeaning: (orch['meaning'] as String?) ?? '',
+      orchestrateProvenance: GrantProvenance.fromJson(
+        orch['provenance'] is Map
+            ? Map<String, dynamic>.from(orch['provenance'] as Map)
+            : null,
+      ),
       missing: ((json['missing'] as List?) ?? const [])
           .whereType<Map>()
           .map((m) => MissingStep.fromJson(Map<String, dynamic>.from(m)))

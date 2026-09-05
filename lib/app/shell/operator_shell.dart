@@ -99,6 +99,20 @@ class _OperatorShellState extends State<OperatorShell> {
             _NavItem('Work queue', '/ops/work', Icons.inbox_outlined),
           ],
         ),
+        // AUTHORITY & GOVERNANCE, WHICH NOW HAS SOMETHING TO SHOW.
+        //
+        // Deliberately absent in the first reconstruction: the only authority
+        // work was in the queue, and a nav item pointing at "see the work
+        // queue" is worse than none. That changed when the durable record
+        // arrived — a queue forgets a case the moment it is decided, and who
+        // may sign for a business is not a thing to forget.
+        _NavGroup(
+          label: 'Authority & governance',
+          attentionKey: null,
+          items: const [
+            _NavItem('Authority', '/ops/authority', Icons.verified_user_outlined),
+          ],
+        ),
         _NavGroup(
           label: 'Clients & businesses',
           attentionKey: null,
