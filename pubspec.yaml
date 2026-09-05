@@ -62,7 +62,12 @@ msix_config:
   publisher_display_name: Aura Platform LLC
   identity_name: AuraPlatformLLC.Orchestrateoperations
   publisher: CN=3E4027A7-4D4D-4492-B8DE-BBE425E307E5
-  msix_version: 0.2.2.0
+  # Reconciled with the pubspec version above. It read 0.2.2.0 while every
+  # other client reported 0.2.3 — a customer on Windows would have been told a
+  # different version from a customer on Android running the same code, and
+  # support would have chased the wrong build. The fourth part stays 0: the
+  # Microsoft Store requires the revision to be zero on submission.
+  msix_version: 0.2.3.0
   store: true
   logo_path: store_assets/source/orchestrate-app-icon-master-1024.png
   capabilities: internetClient

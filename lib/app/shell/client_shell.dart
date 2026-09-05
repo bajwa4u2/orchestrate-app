@@ -8,6 +8,9 @@ import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/command_palette.dart';
+import 'package:orchestrate_app/features/client/widgets/feedback_sheet.dart';
+import 'package:orchestrate_app/core/release/release_identity.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// THE WORKSPACE SHELL.
 ///
@@ -216,6 +219,7 @@ class _ClientShellState extends State<ClientShell> {
                       ),
                       _AccountButton(
                           session: session,
+                          currentPath: widget.currentPath,
                           signingOut: _signingOut,
                           onSignOut: () => _signOut(context)),
                     ],
@@ -239,6 +243,7 @@ class _ClientShellState extends State<ClientShell> {
                         collapsed: size == WorkspaceSize.compact,
                         destinations: _destinations,
                         isSelected: _isSelected,
+                        currentPath: widget.currentPath,
                         session: session,
                         signingOut: _signingOut,
                         onSignOut: () => _signOut(context),
@@ -293,8 +298,10 @@ class _Rail extends StatelessWidget {
     required this.session,
     required this.signingOut,
     required this.onSignOut,
+    required this.currentPath,
   });
 
+  final String currentPath;
   final double width;
   final bool collapsed;
   final List<_Destination> destinations;
@@ -369,12 +376,14 @@ class _Rail extends StatelessWidget {
                   ? Center(
                       child: _AccountButton(
                           session: session,
+                          currentPath: currentPath,
                           signingOut: signingOut,
                           onSignOut: onSignOut))
                   : Row(
                       children: [
                         _AccountButton(
                             session: session,
+                            currentPath: currentPath,
                             signingOut: signingOut,
                             onSignOut: onSignOut),
                         const SizedBox(width: 8),
@@ -531,16 +540,42 @@ class _RailAction extends StatelessWidget {
 /// Authority, plan, billing and security live behind this rather than in the
 /// operational navigation. They describe the business's relationship with
 /// Orchestrate, not the work being done today.
-class _AccountButton extends StatelessWidget {
+class _AccountButton extends StatefulWidget {
   const _AccountButton({
     required this.session,
     required this.signingOut,
     required this.onSignOut,
+    this.currentPath = '',
   });
 
   final AuthSessionController session;
   final bool signingOut;
   final VoidCallback onSignOut;
+
+  /// Where the person is, sent with feedback so a report about a page does not
+  /// have to describe which page.
+  final String currentPath;
+
+  @override
+  State<_AccountButton> createState() => _AccountButtonState();
+}
+
+class _AccountButtonState extends State<_AccountButton> {
+  ReleaseIdentity? version;
+
+  AuthSessionController get session => widget.session;
+  bool get signingOut => widget.signingOut;
+  VoidCallback get onSignOut => widget.onSignOut;
+  String get currentPath => widget.currentPath;
+
+  @override
+  void initState() {
+    super.initState();
+    // Read once. Every surface that shows a version shows this one.
+    ReleaseIdentity.load().then((r) {
+      if (mounted) setState(() => version = r);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -552,9 +587,18 @@ class _AccountButton extends StatelessWidget {
     return PopupMenuButton<String>(
       tooltip: 'Account',
       offset: const Offset(0, 40),
-      onSelected: (value) {
+      onSelected: (value) async {
         if (value == 'signout') {
           onSignOut();
+        } else if (value == 'feedback') {
+          await FeedbackSheet.open(context, surface: currentPath);
+        } else if (value == 'rate') {
+          final destination = StoreListing.ratingDestination();
+          if (destination != null) {
+            // externalApplication so it opens the store app itself where one
+            // exists, rather than the web page inside a browser tab.
+            await launchUrl(destination, mode: LaunchMode.externalApplication);
+          }
         } else {
           context.go(value);
         }
@@ -577,6 +621,38 @@ class _AccountButton extends StatelessWidget {
             value: '/account/plan', child: Text('Plan & billing')),
         const PopupMenuItem(
             value: '/account/security', child: Text('Account & security')),
+        const PopupMenuDivider(),
+        // FEEDBACK, RATE AND VERSION LIVE HERE.
+        //
+        // In the account menu rather than in the workspace, because none of
+        // them is work — they are things a person does about the product
+        // rather than in it, and a workspace that carries them starts carrying
+        // everything.
+        const PopupMenuItem(value: 'feedback', child: Text('Tell us something')),
+        // Only where there is a listing to open. Web has none, and Windows
+        // holds a Partner Center reservation rather than a published product,
+        // so neither shows a Rate action rather than showing one that goes
+        // nowhere.
+        if (StoreListing.ratingDestination() != null)
+          PopupMenuItem(
+            value: 'rate',
+            child: Text('Rate on ${StoreListing.ratingStoreName()}'),
+          ),
+        PopupMenuItem(
+          enabled: false,
+          height: 30,
+          child: Text(
+            version == null
+                ? 'Orchestrate'
+                : version!.isUnknown
+                    ? 'Orchestrate — version unavailable'
+                    : 'Orchestrate ${version!.label}',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: AppTheme.publicMuted),
+          ),
+        ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: 'signout',
