@@ -51,7 +51,24 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- iOS privacy purpose strings required by App Store review. -->
+	<!-- PURPOSE STRINGS ARE ABOUT THE BINARY, NOT ABOUT OUR CODE.
+	     All three were removed once on the reasoning that the product uses
+	     none of them: the only picker is `file_picker`, for a logo image and a
+	     CSV of counterparties. That reasoning was wrong, and App Store Connect
+	     rejected the upload for it — ITMS-90683 on camera, with location as a
+	     warning beside it.
+	     Apple analyses the shipped binary. `file_picker` links the frameworks
+	     that reference these APIs, so the strings are required whether or not
+	     a line of our code ever calls them. Apple's own message says as much:
+	     "While your app might not use these APIs, a purpose string is still
+	     required."
+	     Each string therefore describes the one path that could ever reach it,
+	     rather than claiming a capability the product does not have. -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Orchestrate asks for your photo library only when you choose a logo image for your business.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Orchestrate asks for the camera only if you choose to take a photo instead of picking an existing file — for example when adding your logo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Orchestrate does not ask for your location. This appears because a component used to choose files also refers to location services, and iOS requires an explanation to be present.</string>
 </dict>
 </plist>

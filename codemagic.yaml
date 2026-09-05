@@ -85,12 +85,12 @@ workflows:
       - name: Build signed IPA
         script: |
           # Version + build number come from pubspec.yaml (currently
-          # 0.2.3+12) and reach Info.plist through $(FLUTTER_BUILD_NAME) and
+          # 0.2.3+13) and reach Info.plist through $(FLUTTER_BUILD_NAME) and
           # $(FLUTTER_BUILD_NUMBER). Nothing hardcodes a visible version.
           #
           # Bump pubspec for each release so TestFlight build numbers never
-          # collide. TestFlight currently holds up to 0.2.1 (10), so 0.2.3 (12)
-          # is clear.
+          # collide -- including with a build that FAILED processing, which
+          # still consumes its number. 12 was spent that way; 13 is clear.
           flutter build ipa --release \
             --export-options-plist=/Users/builder/export_options.plist
           # API base URL defaults to https://api.orchestrateops.com/v1 at
