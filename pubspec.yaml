@@ -41,6 +41,11 @@ dev_dependencies:
   image: ^4.8.0
   flutter_test:
     sdk: flutter
+  # Runs the real native app — the actual Windows executable, the actual
+  # Android build — rather than a widget tree in a test harness. Web
+  # certification is done in a browser and cannot say anything about either.
+  integration_test:
+    sdk: flutter
   flutter_lints: ^4.0.0
   msix: ^3.16.13
 

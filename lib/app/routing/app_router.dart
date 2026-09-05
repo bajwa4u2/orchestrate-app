@@ -368,7 +368,9 @@ GoRouter get router {
         // still arrived nowhere in particular.
         return readReturnTo(state.uri.queryParameters) ?? '/client/today';
       }
-      if (isOpsAuth || path.startsWith('/ops/')) return '/app/home';
+      // Today, directly. This pointed at /app/home, which now only redirects
+      // here — an operator path bouncing twice through a retired page.
+      if (isOpsAuth || path.startsWith('/ops/')) return '/client/today';
     }
 
     return null;

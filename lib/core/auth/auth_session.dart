@@ -104,6 +104,23 @@ class AuthSessionController extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
 
+    // A SESSION ESTABLISHED WHILE WE WERE READING DISK WINS.
+    //
+    // Reading preferences suspends this function. Anything that signs in
+    // during that gap — a deep link resolving, a test establishing a session,
+    // a second caller — has a real session in memory, and finishing the read
+    // afterwards would replace it with whatever was on disk before they
+    // arrived, which is nothing. In production main() awaits this before
+    // runApp so the gap is not reachable; that is a reason it stayed hidden,
+    // not a reason it is safe.
+    if (_session != null &&
+        (((_session?['token'] as String?)?.isNotEmpty ?? false) ||
+            ((_session?['clientId'] as String?)?.isNotEmpty ?? false))) {
+      _ready = true;
+      notifyListeners();
+      return;
+    }
+
     final clientRaw = prefs.getString(_clientKey);
     final operatorRaw = prefs.getString(_operatorKey);
 
