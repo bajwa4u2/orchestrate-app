@@ -1169,41 +1169,48 @@ GoRouter get router {
             redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/client/setup',
-            builder: (context, state) => const ClientSetupScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientSetupScreen())),
         // ── THE THREE DESTINATIONS ─────────────────────────────────────
         // Today, Relationships, Business. Everything else is reached by
         // entering the work, or lives in the account layer below.
         GoRoute(
             path: '/client/today',
-            builder: (context, state) => const TodayScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const TodayScreen())),
         GoRoute(
           path: '/client/relationships',
-          builder: (context, state) => RelationshipsWorkspaceScreen(
+          pageBuilder: (context, state) =>
+            NoTransitionPage(child: RelationshipsWorkspaceScreen(
             relationshipId: state.uri.queryParameters['id'],
             returnTo: state.uri.queryParameters[kReturnToParam],
-          ),
+          )),
         ),
         GoRoute(
           path: '/client/relationships/:id',
-          builder: (context, state) => RelationshipsWorkspaceScreen(
+          pageBuilder: (context, state) =>
+            NoTransitionPage(child: RelationshipsWorkspaceScreen(
             relationshipId: state.pathParameters['id'],
             // Where they came from — Today, Market, the list, or a deep link.
             // Back goes there instead of always dumping them on the list.
             returnTo: state.uri.queryParameters[kReturnToParam],
-          ),
+          )),
         ),
         GoRoute(
           path: '/client/market',
-          builder: (context, state) => MarketScreen(
+          pageBuilder: (context, state) =>
+            NoTransitionPage(child: MarketScreen(
             focusCounterpartyKey: state.uri.queryParameters['focus'],
-          ),
+          )),
         ),
         GoRoute(
             path: '/client/inbound',
-            builder: (context, state) => const AttentionScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const AttentionScreen())),
         GoRoute(
             path: '/client/business',
-            builder: (context, state) => const BusinessScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const BusinessScreen())),
 
         // ── THE ACCOUNT LAYER ──────────────────────────────────────────
         // Deliberately NOT subject to the setup or subscription gates below.
@@ -1215,16 +1222,16 @@ GoRouter get router {
             path: '/account', redirect: (context, state) => '/account/people'),
         GoRoute(
             path: '/account/people',
-            builder: (context, state) =>
-                const AccountLayerScreen(section: AccountSection.people)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const AccountLayerScreen(section: AccountSection.people))),
         GoRoute(
             path: '/account/plan',
-            builder: (context, state) =>
-                const AccountLayerScreen(section: AccountSection.plan)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const AccountLayerScreen(section: AccountSection.plan))),
         GoRoute(
             path: '/account/security',
-            builder: (context, state) =>
-                const AccountLayerScreen(section: AccountSection.security)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const AccountLayerScreen(section: AccountSection.security))),
         // The authority screen's first home. It moved; the link still works.
         GoRoute(
             path: '/client/authorised-people',
@@ -1234,20 +1241,22 @@ GoRouter get router {
         // redirect here so the operational IA stays single-source.
         GoRoute(
             path: '/client/representation',
-            builder: (context, state) => const ClientBusinessIdentityScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientBusinessIdentityScreen())),
         // OAuth return surface — backend's ORCH_APP_OAUTH_RETURN_URL
         // should be configured to land here so the result is rendered
         // with operation-scoped mailbox disclosure + next-action CTAs
         // rather than dumping the user on a bare query-string URL.
         GoRoute(
             path: '/client/oauth/return',
-            builder: (context, state) => OAuthReturnScreen(
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: OAuthReturnScreen(
                   status: state.uri.queryParameters['status'] ?? '',
                   provider: state.uri.queryParameters['provider'],
                   reason: state.uri.queryParameters['reason'],
                   email: state.uri.queryParameters['email'],
                   mailboxId: state.uri.queryParameters['mailboxId'],
-                )),
+                ))),
         GoRoute(
             path: '/client/business-identity',
             redirect: (context, state) => '/client/representation'),
@@ -1274,17 +1283,19 @@ GoRouter get router {
         // DELETE /client/sequence-steps/:stepId).
         GoRoute(
             path: '/client/sequences/:sequenceId',
-            builder: (context, state) => ClientSequenceAuthorScreen(
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: ClientSequenceAuthorScreen(
                   sequenceId: state.pathParameters['sequenceId'] ?? '',
-                )),
+                ))),
         GoRoute(
             path: '/client/subscribe',
-            builder: (context, state) =>
-                const ClientSubscribeScreen(insideWorkspace: true)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientSubscribeScreen(insideWorkspace: true))),
         // Relationships — mailbox-derived relationship intelligence.
         GoRoute(
             path: '/client/contacts/inventory',
-            builder: (context, state) => const ClientRelationshipsScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientRelationshipsScreen())),
         GoRoute(
             path: '/client/contacts',
             redirect: (context, state) => '/client/relationships'),
@@ -1314,9 +1325,10 @@ GoRouter get router {
         // consolidated under one surface (was /client/mailbox).
         GoRoute(
             path: '/client/infrastructure',
-            builder: (context, state) => ClientMailboxScreen(
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: ClientMailboxScreen(
                   focus: state.uri.queryParameters['focus'],
-                )),
+                ))),
         GoRoute(
             path: '/client/mailbox',
             redirect: (context, state) => '/client/infrastructure'),
@@ -1326,10 +1338,12 @@ GoRouter get router {
             redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/client/billing',
-            builder: (context, state) => const ClientBillingScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientBillingScreen())),
         GoRoute(
             path: '/client/records',
-            builder: (context, state) => const ClientRecordsScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientRecordsScreen())),
         GoRoute(
             path: '/client/invoices',
             redirect: (context, state) => '/client/records'),
@@ -1351,13 +1365,16 @@ GoRouter get router {
             redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/client/support',
-            builder: (context, state) => const ClientSupportScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientSupportScreen())),
         GoRoute(
             path: '/client/settings',
-            builder: (context, state) => const ClientSettingsScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientSettingsScreen())),
         GoRoute(
             path: '/client/account',
-            builder: (context, state) => const ClientAccountScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientAccountScreen())),
         GoRoute(
             path: '/client/help',
             redirect: (context, state) => '/client/support'),
@@ -1437,7 +1454,8 @@ GoRouter get router {
             redirect: (context, state) => '/client/business'),
         GoRoute(
             path: '/app/branding',
-            builder: (context, state) => const ClientBrandingScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientBrandingScreen())),
         GoRoute(
             path: '/app/branding/identity',
             redirect: (context, state) => '/app/branding'),
@@ -1449,13 +1467,16 @@ GoRouter get router {
             redirect: (context, state) => '/app/branding'),
         GoRoute(
             path: '/app/trust',
-            builder: (context, state) => const ClientTrustScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientTrustScreen())),
         GoRoute(
             path: '/app/evidence',
-            builder: (context, state) => const ClientEvidenceScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientEvidenceScreen())),
         GoRoute(
             path: '/app/artifacts',
-            builder: (context, state) => const ClientArtifactsScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientArtifactsScreen())),
         // Retired with the home it belonged to. It carried no title, no
         // breadcrumb, buttons in a colour the design system does not use, and
         // "ICP" as a word shown to a customer — while /client/billing is the
@@ -1465,7 +1486,8 @@ GoRouter get router {
             redirect: (context, state) => '/client/billing'),
         GoRoute(
             path: '/app/account',
-            builder: (context, state) => const ClientAccountScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientAccountScreen())),
       ],
     ),
     ShellRoute(
@@ -1481,11 +1503,13 @@ GoRouter get router {
             redirect: (context, state) => '/ops/work'),
         GoRoute(
             path: '/operator/system',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.system)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorBackendSurfaceScreen(
+                surface: OperatorBackendSurface.system))),
         GoRoute(
             path: '/operator/system-doctor',
-            builder: (context, state) => const OperatorSystemDoctorScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorSystemDoctorScreen())),
         // Legacy operator Clients panel removed — it was disconnected
         // from runtime truth. Redirect to the runtime-backed
         // campaign-lifecycle surface.
@@ -1494,8 +1518,9 @@ GoRouter get router {
             redirect: (context, state) => '/ops/continuity/campaigns'),
         GoRoute(
             path: '/operator/organizations',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.organizations)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorBackendSurfaceScreen(
+                surface: OperatorBackendSurface.organizations))),
         // Legacy operator Campaigns panel removed — it reported
         // "Campaigns = 0" while real campaigns existed. Redirect to
         // the runtime-backed campaign-lifecycle surface.
@@ -1504,24 +1529,29 @@ GoRouter get router {
             redirect: (context, state) => '/ops/continuity/campaigns'),
         GoRoute(
             path: '/operator/leads',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.leads)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorBackendSurfaceScreen(
+                surface: OperatorBackendSurface.leads))),
         GoRoute(
             path: '/operator/jobs',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.execution)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.execution))),
         GoRoute(
             path: '/operator/workers',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.execution)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.execution))),
         GoRoute(
             path: '/operator/queues',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.execution)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.execution))),
         GoRoute(
             path: '/operator/ai-governance',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.aiGovernance)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorBackendSurfaceScreen(
+                surface: OperatorBackendSurface.aiGovernance))),
         // Legacy operator Providers panel removed — superseded by the
         // Runtime Truth surface that replaced it. Transport owns provider health.
         GoRoute(
@@ -1529,90 +1559,111 @@ GoRouter get router {
             redirect: (context, state) => '/ops/transport'),
         GoRoute(
             path: '/operator/sources',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.sources)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorBackendSurfaceScreen(
+                surface: OperatorBackendSurface.sources))),
         GoRoute(
             path: '/operator/reachability',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.reachability)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorBackendSurfaceScreen(
+                surface: OperatorBackendSurface.reachability))),
         GoRoute(
             path: '/operator/qualification',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.qualification)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorBackendSurfaceScreen(
+                surface: OperatorBackendSurface.qualification))),
         GoRoute(
             path: '/operator/signals',
-            builder: (context, state) => const OperatorBackendSurfaceScreen(
-                surface: OperatorBackendSurface.signals)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorBackendSurfaceScreen(
+                surface: OperatorBackendSurface.signals))),
         GoRoute(
             path: '/operator/deliverability',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.deliverability)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.deliverability))),
         GoRoute(
             path: '/operator/emails',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.communications)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.communications))),
         GoRoute(
             path: '/operator/replies',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.replies)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.replies))),
         GoRoute(
             path: '/operator/meetings',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.meetings)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.meetings))),
         GoRoute(
             path: '/operator/billing',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.revenue)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.revenue))),
         GoRoute(
             path: '/operator/documents',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.records)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.records))),
         GoRoute(
             path: '/operator/support',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.inquiries)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.inquiries))),
         GoRoute(
             path: '/operator/analytics',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.analytics)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.analytics))),
         GoRoute(
             path: '/operator/activity',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.activity)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.activity))),
         // Cognition Home replaces the legacy command center at the
         // canonical landing URL. The legacy command surface remains
         // reachable as a drill-down inside Continuity for operators
         // who want the metric-wall view.
         GoRoute(
             path: '/ops/work',
-            builder: (context, state) => const OpsWorkQueueScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsWorkQueueScreen())),
         GoRoute(
             path: '/ops/dispatch',
-            builder: (context, state) => const OpsDispatchScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsDispatchScreen())),
         GoRoute(
             path: '/ops/transport',
-            builder: (context, state) => const OpsTransportScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsTransportScreen())),
         GoRoute(
             path: '/ops/inventory',
-            builder: (context, state) => const OpsInventoryScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsInventoryScreen())),
         GoRoute(
             path: '/ops/jobs',
-            builder: (context, state) => const OpsJobsScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsJobsScreen())),
         // The durable half of authority work. The queue is what needs deciding;
         // this is what the deciding produced, and it outlives the case.
         GoRoute(
             path: '/ops/authority',
-            builder: (context, state) => const OpsAuthorityScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsAuthorityScreen())),
         GoRoute(
             path: '/ops/history',
-            builder: (context, state) => const OpsHistoryScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsHistoryScreen())),
 
         // What was done, by whom, to what, and when. The evidence behind
         // every operator decision, and the one surface of the retired estate
         // that was genuinely load-bearing — extracted rather than deleted.
         GoRoute(
             path: '/ops/governance/audit',
-            builder: (context, state) => const AuditTimelineScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const AuditTimelineScreen())),
         GoRoute(
             path: '/operator/jobs-legacy',
             redirect: (context, state) => '/ops/continuity?drill=jobs'),
@@ -1624,7 +1675,8 @@ GoRouter get router {
             redirect: (context, state) => '/ops/continuity?drill=workers'),
         GoRoute(
             path: '/ops/clients',
-            builder: (context, state) => const OpsClientsScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsClientsScreen())),
         GoRoute(
             // Inventory & imports owns contact records. This was a second,
             // unlinked view of the same thing in the legacy sectioned screen.
@@ -1632,7 +1684,8 @@ GoRouter get router {
             redirect: (context, state) => '/ops/inventory'),
         GoRoute(
             path: '/ops/campaigns',
-            builder: (context, state) => const OpsCampaignsScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OpsCampaignsScreen())),
         GoRoute(
             // Transport owns mailboxes and sending identity.
             path: '/ops/mailboxes',
@@ -1646,32 +1699,38 @@ GoRouter get router {
             redirect: (context, state) => '/ops/history'),
         GoRoute(
             path: '/ops/inquiries',
-            builder: (context, state) => const OperatorWorkspaceScreen(
-                section: OperatorSection.inquiries)),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorWorkspaceScreen(
+                section: OperatorSection.inquiries))),
         // Product feedback. The operator queue sits beside Inquiries because
         // it is the same job — listening — and not a second console.
         GoRoute(
             path: '/ops/feedback',
-            builder: (context, state) => const FeedbackQueueScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const FeedbackQueueScreen())),
         // Telling us something. Open to any member of any role: requiring
         // seniority would collect only the opinions of people who can already
         // change things.
         GoRoute(
             path: '/feedback',
-            builder: (context, state) => FeedbackScreen(
-                fromSurface: _firstSegment(state.uri.queryParameters['from']))),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: FeedbackScreen(
+                fromSurface: _firstSegment(state.uri.queryParameters['from'])))),
         GoRoute(
             path: '/ops/inquiries/:id',
-            builder: (context, state) => InquiryDetailScreen(
-                inquiryId: state.pathParameters['id'] ?? '')),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: InquiryDetailScreen(
+                inquiryId: state.pathParameters['id'] ?? ''))),
         GoRoute(
             path: '/ops/debug',
-            builder: (context, state) => const OperatorDebugScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorDebugScreen())),
         // Operator governance workspace — cross-client provenance + lifecycle
         // visibility. Reads /operator/governance/messages/{recent,:id}.
         GoRoute(
             path: '/ops/governance',
-            builder: (context, state) => const OperatorGovernanceScreen()),
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const OperatorGovernanceScreen())),
         GoRoute(
             path: '/operator/governance',
             redirect: (context, state) => '/ops/governance'),

@@ -5,6 +5,7 @@ import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/attention/client_attention.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/today/client_today.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
 import 'package:orchestrate_app/data/repositories/client/client_today_repository.dart';
 
@@ -31,23 +32,35 @@ class TodayScreen extends StatefulWidget {
 }
 
 class _TodayScreenState extends State<TodayScreen> {
-  final _repo = ClientTodayRepository();
-  TodayState? _state;
-  bool _loading = true;
-  Refusal? _refusal;
-
+  final ClientToday _today = ClientToday.instance;
   final ClientAttention _attention = ClientAttention.instance;
+
+  TodayState? get _state => _today.state;
+
+  /// Only while there is nothing to show. A refresh over an answer already on
+  /// screen happens underneath it — blanking the most-visited screen in the
+  /// product on every return was the whole defect.
+  bool get _loading => _today.isLoading && !_today.hasAnswer;
+
+  Refusal? get _refusal =>
+      _today.error == null ? null : Refusal.unexpected(_today.error!);
 
   @override
   void initState() {
     super.initState();
     _attention.addListener(_onAttentionChanged);
-    _load();
+    _today.addListener(_onAttentionChanged);
+    // Asked once, when there is no answer. Returning to Today after leaving it
+    // paints what it already knows.
+    if (!_today.hasAnswer && !_today.isLoading && _today.error == null) {
+      _load();
+    }
   }
 
   @override
   void dispose() {
     _attention.removeListener(_onAttentionChanged);
+    _today.removeListener(_onAttentionChanged);
     super.dispose();
   }
 
@@ -56,27 +69,11 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _refusal = null;
-    });
-    try {
-      final state = await _repo.load();
-      // Attention is asked for here rather than inside the band, so Today does
-      // not fetch it again on every rebuild.
-      await _attention.refresh();
-      if (!mounted) return;
-      setState(() {
-        _state = state;
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _refusal = Refusal.unexpected(e);
-        _loading = false;
-      });
-    }
+    await _today.refresh();
+    // Attention is asked for here rather than inside the band, so Today does
+    // not fetch it again on every rebuild.
+    await _attention.refresh();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -91,7 +88,7 @@ class _TodayScreenState extends State<TodayScreen> {
           // Orientation only. Not plan, not tier, not onboarding state.
           context_: _contextLine(),
           trailing: IconButton(
-            onPressed: _loading ? null : _load,
+            onPressed: _today.isLoading ? null : _load,
             icon: const Icon(Icons.refresh, size: 18),
             tooltip: 'Refresh',
             visualDensity: VisualDensity.compact,

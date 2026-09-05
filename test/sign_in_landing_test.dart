@@ -91,8 +91,18 @@ void main() {
         '/app/branding', '/app/setup', '/app/subscribe']) {
       final at = router.indexOf("path: '$kept'");
       expect(at, greaterThan(-1), reason: '$kept must exist');
-      expect(router.substring(at, at + 220).contains('builder:'), isTrue,
+      // builder: or pageBuilder: — the workspace routes were converted to
+      // NoTransitionPage so the content area stops animating between screens.
+      // What matters here is that they render rather than redirect.
+      // Bounded by the next route, not by a character count — a fixed window
+      // spilled into the following GoRoute, which is a redirect, and read as
+      // this one having been retired.
+      final next = router.indexOf('GoRoute(', at);
+      final decl = router.substring(at, next == -1 ? at + 260 : next);
+      expect(decl.contains('uilder:'), isTrue,
           reason: '$kept is a real surface and must still render');
+      expect(decl.contains('redirect:'), isFalse,
+          reason: '$kept must not have been retired');
     }
   });
 
