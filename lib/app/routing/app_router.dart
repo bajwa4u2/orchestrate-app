@@ -3,8 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/features/auth/screens/client_login_screen.dart';
 import 'package:orchestrate_app/features/auth/screens/ops_login_screen.dart';
-import 'package:orchestrate_app/features/client/screens/campaigns_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_activity_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_artifacts_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_branding_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_evidence_screen.dart';
@@ -19,7 +17,6 @@ import 'package:orchestrate_app/features/client/screens/client_authorised_people
 import 'package:orchestrate_app/features/client/screens/client_trust_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_relationships_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_mailbox_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_newsletter_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_account_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_billing_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_business_identity_screen.dart';
@@ -1397,33 +1394,45 @@ GoRouter get router {
         GoRoute(
             path: '/app/contacts/:contactId',
             redirect: (context, state) => '/client/relationships'),
+        // LEGACY TARGETING. Unlinked from the current IA, and it told a
+        // business "Billing: ACTIVE" beside "Plan: opportunity ·" — the first
+        // flatly untrue for an account with no subscription, the second a
+        // concept the product retired. Market and targeting is the surface the
+        // Business hub maintains.
         GoRoute(
             path: '/app/campaigns',
-            builder: (context, state) => const CampaignsScreen()),
+            redirect: (context, state) => '/client/representation/targeting'),
         GoRoute(
             path: '/app/campaigns/create',
-            redirect: (context, state) => '/app/campaigns'),
+            redirect: (context, state) => '/client/representation/targeting'),
         GoRoute(
             path: '/app/campaigns/:campaignId',
-            redirect: (context, state) => '/app/campaigns'),
+            redirect: (context, state) => '/client/representation/targeting'),
+        // A SECOND EXECUTION SURFACE, LINKED FROM NOWHERE. What has actually
+        // moved belongs on the relationship it moved on, which is where the
+        // reconstructed workspace puts it.
         GoRoute(
             path: '/app/activity',
-            builder: (context, state) => const ClientActivityScreen()),
+            redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/app/mailbox',
-            builder: (context, state) => const ClientMailboxScreen()),
+            redirect: (context, state) => '/client/infrastructure'),
+        // A PLACEHOLDER IS NOT A FEATURE. This said "Update controls are
+        // available later" and nothing else, and nothing linked to it. A
+        // customer who found it learned only that something might exist one
+        // day.
         GoRoute(
             path: '/app/newsletter',
-            builder: (context, state) => const ClientNewsletterScreen()),
+            redirect: (context, state) => '/client/business'),
         GoRoute(
             path: '/app/newsletter/audience',
-            redirect: (context, state) => '/app/newsletter'),
+            redirect: (context, state) => '/client/business'),
         GoRoute(
             path: '/app/newsletter/issues',
-            redirect: (context, state) => '/app/newsletter'),
+            redirect: (context, state) => '/client/business'),
         GoRoute(
             path: '/app/newsletter/settings',
-            redirect: (context, state) => '/app/newsletter'),
+            redirect: (context, state) => '/client/business'),
         GoRoute(
             path: '/app/branding',
             builder: (context, state) => const ClientBrandingScreen()),

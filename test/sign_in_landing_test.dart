@@ -56,6 +56,46 @@ void main() {
     );
   });
 
+  /// AND THE OTHER ORPHANS FOUND ALONGSIDE IT.
+  ///
+  /// Retiring the legacy home surfaced a whole family of /app/* client screens
+  /// the reconstructed IA links to from nowhere. Two of them were worse than
+  /// stale: /app/campaigns told a business "Billing: ACTIVE" when it had no
+  /// subscription at all, and /app/newsletter was a placeholder whose entire
+  /// content was that controls might exist later.
+  test('the orphaned legacy client screens are retired', () {
+    const retired = <String, String>{
+      '/app/campaigns': '/client/representation/targeting',
+      '/app/activity': '/client/relationships',
+      '/app/mailbox': '/client/infrastructure',
+      '/app/newsletter': '/client/business',
+    };
+    retired.forEach((from, to) {
+      final at = router.indexOf("path: '$from'");
+      expect(at, greaterThan(-1), reason: '$from must still resolve');
+      expect(router.substring(at, at + 220).contains("'$to'"), isTrue,
+          reason: '$from must lead to $to');
+    });
+    for (final gone in <String>[
+      'lib/features/client/screens/campaigns_screen.dart',
+      'lib/features/client/screens/client_activity_screen.dart',
+      'lib/features/client/screens/client_newsletter_screen.dart',
+    ]) {
+      expect(File(gone).existsSync(), isFalse, reason: '$gone is retired');
+    }
+  });
+
+  /// The screens that stayed are the ones the Business hub actually opens.
+  test('the linked /app surfaces are not retired by mistake', () {
+    for (final kept in <String>['/app/trust', '/app/evidence', '/app/artifacts',
+        '/app/branding', '/app/setup', '/app/subscribe']) {
+      final at = router.indexOf("path: '$kept'");
+      expect(at, greaterThan(-1), reason: '$kept must exist');
+      expect(router.substring(at, at + 220).contains('builder:'), isTrue,
+          reason: '$kept is a real surface and must still render');
+    }
+  });
+
   test('nothing else points at the retired home', () {
     final offenders = <String>[];
     for (final file in Directory('lib').listSync(recursive: true)) {

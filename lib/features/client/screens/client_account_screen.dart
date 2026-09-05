@@ -168,6 +168,13 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
         final billingStatus = _title(
           _read(subscription, 'status', fallback: session.subscriptionStatus),
         );
+        // Whether there is a subscription at all, as opposed to a status
+        // string that reads "None". Actions about managing one depend on it.
+        final hasSubscription = subscription.isNotEmpty &&
+            !const {'', 'none', 'null'}.contains(
+                _read(subscription, 'status', fallback: session.subscriptionStatus)
+                    .trim()
+                    .toLowerCase());
         final currency = _read(profile, 'currencyCode', fallback: 'USD');
         final periodEnd = _read(subscription, 'currentPeriodEnd');
         final websiteUrl = _read(profile, 'websiteUrl');
@@ -279,10 +286,15 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                           if (!externalPurchaseAllowed)
                             kIosPlanManagementNotice,
                         ]),
-                        actionLabel: externalPurchaseAllowed
+                        // A PORTAL FOR NOTHING IS NOT AN ACTION.
+                        //
+                        // The billing portal manages a subscription. Offered
+                        // to a business that has never had one, it opens a
+                        // provider page about an account with nothing in it.
+                        actionLabel: externalPurchaseAllowed && hasSubscription
                             ? 'Open billing portal'
                             : null,
-                        onTap: externalPurchaseAllowed
+                        onTap: externalPurchaseAllowed && hasSubscription
                             ? _openBillingPortal
                             : null,
                       ),
@@ -1159,9 +1171,15 @@ String _accountState(
 }) {
   if (!session.emailVerified) return 'Verification pending';
   if (!session.hasSetupCompleted) return 'Setup incomplete';
-  // Subscription is the first operational gate; without it execution
-  // is blocked regardless of readiness state.
-  if (session.normalizedSubscriptionStatus != 'active') return 'Billing review';
+  // NOT "BILLING REVIEW". Nothing is under review.
+  //
+  // A business that has never subscribed was told its account state was
+  // "Billing review", which reads as a problem with a payment — and there is
+  // no payment. It says what is true: managed execution is what a subscription
+  // turns on, and it has not been turned on.
+  if (session.normalizedSubscriptionStatus != 'active') {
+    return 'Not activated';
+  }
   // Setup recorded + billing active is necessary but not sufficient —
   // representation authorization and the rest of the readiness chain
   // must also clear before the account is operationally active.
