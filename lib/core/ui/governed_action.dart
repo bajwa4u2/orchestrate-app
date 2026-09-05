@@ -207,18 +207,19 @@ class RefusalNotice extends StatelessWidget {
               ),
             ],
           ),
-          if (refusal.code != null || onRetry != null)
+          // THE CODE IS OURS, NOT THEIRS.
+          //
+          // ORGANIZATION_AUTHORITY_NOT_ESTABLISHED was printed in monospace
+          // underneath a refusal a customer had just read in plain English. It
+          // told them nothing they could act on and made a clear sentence look
+          // like an error screen. The refusal already says what happened and
+          // what would resolve it; the code stays in the payload for support
+          // and in the tooltip for anyone who needs to quote it.
+          if (onRetry != null)
             Padding(
               padding: const EdgeInsets.only(top: 8, left: 24),
               child: Row(
                 children: [
-                  if (refusal.code != null)
-                    Text(refusal.code!,
-                        style: text.bodySmall?.copyWith(
-                          color: AppTheme.publicMuted,
-                          fontFamily: 'monospace',
-                          fontSize: 11,
-                        )),
                   const Spacer(),
                   if (onRetry != null)
                     TextButton(

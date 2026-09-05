@@ -683,6 +683,9 @@ String _when(DateTime moment) {
   if (days <= 0) return 'today';
   if (days == 1) return 'yesterday';
   if (days < 30) return '$days days ago';
-  if (days < 365) return '${(days / 30).floor()} months ago';
+  if (days < 365) {
+    final months = (days / 30).floor();
+    return months <= 1 ? 'last month' : '$months months ago';
+  }
   return '${(days / 365).floor()} years ago';
 }

@@ -73,7 +73,11 @@ void main() {
     // Rendered as written. Rewriting this into "Invalid purpose" would throw
     // away the only part of the response that tells someone what to type.
     expect(find.textContaining('not who it is with'), findsOneWidget);
-    expect(find.textContaining('PURPOSE_REQUIRED'), findsOneWidget);
+    // The CODE is not customer copy. It used to be printed in monospace under
+    // a sentence the person had just read in plain English — telling them
+    // nothing they could act on and making a clear refusal look like an error
+    // screen. It still travels in the payload, for support.
+    expect(find.textContaining('PURPOSE_REQUIRED'), findsNothing);
   });
 
   testWidgets('a lapsed plan refuses here in the words of the commercial boundary',
@@ -98,7 +102,8 @@ void main() {
     // The commercial boundary and the authority boundary refuse differently
     // and are fixed differently. Only one of them is solved by paying.
     expect(find.textContaining('your plan is not active'), findsOneWidget);
-    expect(find.textContaining('PLAN_ACTIVATION_REQUIRED'), findsOneWidget);
+    expect(find.textContaining('PLAN_ACTIVATION_REQUIRED'), findsNothing,
+        reason: 'the reason is for the customer; the code is for us');
     expect(canned.opened, 1, reason: 'the refusal came from the server, not from here');
   });
 
@@ -176,7 +181,8 @@ void main() {
     // Two people see the same OPEN row. The second to act is told what
     // happened rather than overwriting the first.
     expect(find.textContaining('was already completed'), findsOneWidget);
-    expect(find.textContaining('ALREADY_COMPLETED'), findsOneWidget);
+    expect(find.textContaining('ALREADY_COMPLETED'), findsNothing,
+        reason: 'the reason is for the customer; the code is for us');
   });
 
   testWidgets('stopping asks why, and says why it asks', (tester) async {
