@@ -45,8 +45,19 @@ workflows:
       # ANY issue, info included — which once meant this workflow would have
       # failed here, and the failure would have read like a signing or
       # toolchain problem rather than a dozen lint infos.
+      #
+      # That was fixed by clearing the infos, which left the trap loaded: the
+      # next style hint anybody introduces turns into a red build three steps
+      # before signing, and reads like a certificate problem. --no-fatal-infos
+      # takes the trap out while keeping the gate. Errors and warnings are
+      # still fatal, which is what this step is for; a lint suggestion is not
+      # a reason to refuse to ship. The Aura side reached the same conclusion
+      # independently after losing a build to it.
+      #
+      # The tree is at zero issues today, so this changes nothing now. It
+      # changes what happens the first time it is not.
       - name: Static analysis
-        script: flutter analyze
+        script: flutter analyze --no-fatal-infos
       - name: Unit tests
         script: flutter test
       # DOES IT ACTUALLY RUN ON iOS.
