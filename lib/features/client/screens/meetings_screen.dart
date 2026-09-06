@@ -101,14 +101,23 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               ),
           ],
           children: [
+            // A count Orchestrate cannot observe is shown as unknown, not as
+            // zero. The backend sends null for booked / completed / missed
+            // while no meeting provider is connected, because "we have no way
+            // to know" and "it did not happen" are different statements and
+            // only one of them was ever true here.
             ClientMetricStrip(metrics: [
               ClientMetric('Total', '${summary['total'] ?? meetings.length}'),
               ClientMetric('Open handoffs', '${summary['openHandoffs'] ?? 0}'),
-              ClientMetric('Booked', '${summary['booked'] ?? 0}'),
-              ClientMetric('Completed', '${summary['completed'] ?? 0}'),
+              ClientMetric('Booked', _count(summary['booked'])),
+              ClientMetric('Completed', _count(summary['completed'])),
             ]),
             const SizedBox(height: 18),
             ...(() {
+              // No chart at all when outcomes are unobservable. Bars of zero
+              // would draw a picture of meetings that did not happen, which is
+              // a claim the product is in no position to make.
+              if (provider['observesOutcomes'] != true) return <Widget>[];
               final dist = <ClientChartDatum>[
                 ClientChartDatum('Open handoffs', _mi(summary['openHandoffs']),
                     tone: ClientBarTone.attention),
@@ -130,16 +139,20 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               ];
             })(),
             ClientPanel(
-              title: 'Calendar and provider state',
+              title: 'Meeting provider',
               children: [
                 ClientInfoRow(
-                  title: provider['calendarConnected'] == true
-                      ? 'Calendar connected'
-                      : 'Calendar connection not available',
+                  title: provider['observesOutcomes'] == true
+                      ? 'Connected to ${provider['meetingProviderName'] ?? 'a meeting provider'}'
+                      : 'No meeting provider connected',
                   primary:
                       'Mailbox readiness: ${provider['mailboxReady'] == true ? 'Ready' : 'Not ready'}',
-                  secondary:
-                      'Calendar provider status is not currently exposed by the backend, so unsupported calendar actions are hidden.',
+                  // The backend's own words about what it can and cannot see,
+                  // rather than this screen guessing. Said to the business in
+                  // terms of what happens to its meetings, not in terms of
+                  // which endpoint is missing.
+                  secondary: provider['outcomesNote'] as String? ??
+                      'Meeting outcomes are reported by the connected provider.',
                 ),
               ],
             ),
@@ -218,6 +231,18 @@ class _MeetingGroup extends StatelessWidget {
 int _mi(dynamic value) {
   if (value is num) return value.toInt();
   return int.tryParse('${value ?? ''}') ?? 0;
+}
+
+/// A count for display, where null means the product cannot see it.
+///
+/// `_mi` folds null to 0 because a chart needs a number. A metric does not:
+/// printing 0 where nothing is known tells a business its meetings did not
+/// happen, which is a stronger and different claim than the truth, which is
+/// that Orchestrate is not connected to whatever runs them.
+String _count(dynamic value) {
+  if (value == null) return '—';
+  if (value is num) return '${value.toInt()}';
+  return '${int.tryParse('$value') ?? 0}';
 }
 
 String? _resolveUpstreamBlocker(
