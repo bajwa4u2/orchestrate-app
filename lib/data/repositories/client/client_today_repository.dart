@@ -173,6 +173,31 @@ class TodayState {
 
     for (final m in recentMessages) {
       final state = (m['deliveryState'] ?? m['status'])?.toString().toUpperCase();
+      final delivery = m['delivery'] as Map<String, dynamic>?;
+      final recipientImplicated = delivery?['recipientImplicated'] == true;
+      final senderSide = delivery != null && !recipientImplicated;
+
+      // A sender-side rejection is not the recipient's doing. Naming them
+      // points the business at a contact that did nothing wrong and hides the
+      // thing that actually needs fixing — the sending identity. Three of the
+      // four failures on this estate were exactly that: a receiving server
+      // refusing the sending domain, not a bad address.
+      if (senderSide) {
+        final by = delivery['reportedBy']?.toString();
+        items.add(TodayItem(
+          title: 'A receiving server refused your message',
+          detail: [
+            m['failureReason']?.toString(),
+            if (by != null && by.isNotEmpty) 'Reported by $by.',
+            'This is about your sending identity, not the person you wrote to.',
+          ].whereType<String>().where((t) => t.isNotEmpty).join(' '),
+          meta: _ago(m['updatedAt'] ?? m['sentAt']),
+          severity: 'WARNING',
+          category: 'delivery',
+        ));
+        continue;
+      }
+
       if (state == 'BOUNCED' || state == 'FAILED') {
         items.add(TodayItem(
           title: 'Delivery failed to ${m['toEmail'] ?? 'a recipient'}',
