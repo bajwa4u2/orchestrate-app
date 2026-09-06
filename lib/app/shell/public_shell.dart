@@ -598,8 +598,8 @@ class _PublicFooter extends StatelessWidget {
                 // in the personal repo. The earlier stacked
                 // institutional band beneath the column groups read
                 // as a second footer. The ecosystem is now a single
-                // bottom-row attribution: "Aura Platform LLC ·
-                // Part of Aura Platform LLC." on the left,
+                // bottom-row attribution: the product name over
+                // "A product of Aura Platform LLC." on the left,
                 // canonical five-link continuity on the right.
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -853,8 +853,10 @@ class _PublicMenuButton extends StatelessWidget {
 // See docs/ecosystem/ECOSYSTEM_CONTINUITY_ARCHITECTURE.md in the
 // personal repo for the doctrine this implements.
 //
-// Orchestrate's attribution copy is "Part of Aura Platform LLC." —
-// substrate framing, not parent-corp framing. The five canonical links
+// Orchestrate's attribution names the product first and the company
+// that makes it second: "Orchestrate" over "A product of Aura Platform
+// LLC." Naming the company on both lines said the same thing twice and
+// left the product itself unnamed. The five canonical links
 // appear in doctrine-locked order; the current surface (Orchestrate)
 // is the "you are here" link.
 
@@ -872,7 +874,7 @@ class _PublicFooterAttribution extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Aura Platform LLC',
+              'Orchestrate',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -882,7 +884,7 @@ class _PublicFooterAttribution extends StatelessWidget {
             ),
             SizedBox(height: 2),
             Text(
-              'Part of Aura Platform LLC.',
+              'A product of Aura Platform LLC.',
               style: TextStyle(
                 color: AppTheme.publicOnDarkMuted,
                 fontSize: 11,
@@ -974,7 +976,7 @@ class _PublicFooterBottomRow extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: const [
             Text(
-              'Aura Platform LLC',
+              'Orchestrate',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -984,7 +986,7 @@ class _PublicFooterBottomRow extends StatelessWidget {
             ),
             SizedBox(height: 2),
             Text(
-              'Part of Aura Platform LLC.',
+              'A product of Aura Platform LLC.',
               style: TextStyle(
                 color: Color(0xFFB9C8D6),
                 fontSize: 11,
