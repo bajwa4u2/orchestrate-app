@@ -67,12 +67,31 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 720;
+          // The wide layout needs about a thousand pixels before it is
+          // honest: six stage nodes at their 144 minimum plus gaps is already
+          // 974, and the asset cluster wants the right-hand 42% on top of that.
+          // The threshold was 720, so a default desktop window sat four pixels
+          // above it and got the wide layout in a space that could not hold it
+          // — nodes ran off the right edge and labels truncated with the last
+          // node half outside the window.
+          //
+          // Below this the compact layout stacks instead, which fits.
+          final compact = constraints.maxWidth < 1040;
+          // Never wider than the window, whatever the parent says it may
+          // have. This band was laying out at about 1180 logical pixels inside
+          // a 1024-wide window: the right-hand nodes were positioned off the
+          // edge and the last one was half outside it, which reads as a broken
+          // layout rather than as a container being told the wrong size.
+          //
+          // A full-width band cannot be wider than the page it is a band of, so
+          // the viewport is a ceiling rather than a fallback for when
+          // constraints are missing.
+          final viewportCeiling = (MediaQuery.sizeOf(context).width - 56)
+              .clamp(0, 1320)
+              .toDouble();
           final width = constraints.hasBoundedWidth
-              ? constraints.maxWidth
-              : (MediaQuery.sizeOf(context).width - 56)
-                  .clamp(0, 1320)
-                  .toDouble();
+              ? math.min(constraints.maxWidth, viewportCeiling)
+              : viewportCeiling;
           final duration = MediaQuery.disableAnimationsOf(context)
               ? Duration.zero
               : const Duration(milliseconds: 260);
@@ -337,19 +356,38 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
     // this is that inequality solved for nodeWidth, floored at the old value so
     // nothing gets narrower than it was, and capped so a two-node diagram does
     // not spread into two enormous slabs.
-    // Stage row only. Asset nodes keep 144 because their 148-step spacing
-    // leaves no room for more.
     const double nodeGap = 22;
-    final double nodeWidth = count <= 1
+
+    // The stage row spreads across the whole width at even steps, so a node may
+    // be as wide as that spacing allows once a gap is reserved.
+    final double stageWidth = count <= 1
         ? 144
         : (((width - nodeGap * (count - 1)) / count).clamp(144.0, 232.0));
+
+    // Asset nodes are a separate cluster on the right with their own step, and
+    // 148 was a constant rather than a measurement: two labels sat truncated at
+    // 144 with a third of the width empty beside them.
+    //
+    // The cluster starts at 58% and therefore has 42% of the width to live in.
+    // Sizing the step from the space it would LIKE rather than the space it HAS
+    // pushed the last node straight out of the window, so this solves for the
+    // space it has: n nodes at `step`, the last one `step - gap` wide, must fit
+    // in width * .42. Anything else is a guess that happens to look right at
+    // one window size.
+    const double assetGap = 16;
+    final double assetStep = count <= 1
+        ? 148
+        : (((width * .42 + assetGap) / count).clamp(148.0, 236.0));
+    final double assetWidth = (assetStep - assetGap).clamp(132.0, 220.0);
+
+    final double nodeWidth = assets ? assetWidth : stageWidth;
 
     final left = widget.compact
         ? (assets
             ? width * .16
             : (local.isEven ? 4.0 : width - compactNodeWidth - 4.0))
         : (assets
-            ? width * .58 + (local * 148).clamp(0, width * .35)
+            ? width * .58 + (local * assetStep).clamp(0, width * .35)
             : (count <= 1
                 ? width / 2 - nodeWidth / 2
                 : (width - nodeWidth) * local / (count - 1)));
@@ -361,14 +399,13 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
     return Positioned(
         left: left.toDouble(),
         top: top.toDouble(),
-        // Asset nodes are NOT the stage row and do not share its spacing.
-        // They sit at fixed 148-pixel steps, so the derived stage width — which
-        // can reach 232 — overlapped them: VERIFIED DOMAIN was painted straight
-        // over DOMAIN INTELLIGENCE. Widening a node is only safe against the
-        // rule that positions it.
+        // Each cluster is sized against the rule that positions it. Applying
+        // the stage width to the asset nodes once painted VERIFIED DOMAIN
+        // straight over DOMAIN INTELLIGENCE, because they are stepped
+        // differently — widening a node is only safe against its own spacing.
         width: widget.compact
             ? (assets ? width * .68 : compactNodeWidth)
-            : (assets ? 144 : nodeWidth),
+            : nodeWidth,
         child: _NetworkNode(
             node: node,
             selected: widget.selected == index,
