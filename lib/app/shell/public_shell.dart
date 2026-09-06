@@ -173,7 +173,7 @@ class _PublicHeader extends StatelessWidget {
         border: Border(bottom: BorderSide(color: Color(0xFF2A4A56))),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
         child: Center(
           child: ConstrainedBox(
             constraints:
@@ -186,15 +186,19 @@ class _PublicHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppTheme.radius),
                   onTap: onHome,
                   child: SizedBox(
-                    height: 34,
+                    height: 44,
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: BrandAssets.operatorLockup(
                         context,
-                        symbolSize: 30,
-                        fontSize: 24,
+                        symbolSize: 34,
+                        fontSize: 26,
                         darkSurface: true,
                         color: AppTheme.publicOnDark,
+                        // Never shortened. Everywhere else a lockup may fade
+                        // when space runs out; the company name on its own
+                        // front door may not, so it scales instead.
+                        allowTruncation: false,
                       ),
                     ),
                   ),
@@ -234,45 +238,76 @@ class _PublicHeader extends StatelessWidget {
                 );
 
                 return SizedBox(
-                  height: 52,
+                  height: 72,
                   child: Row(
                     children: [
-                      Expanded(child: brand),
-                      if (tablet) ...[
-                        OutlinedButton(
-                          onPressed: () => context.go('/auth/login'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.publicOnDark,
-                            side: const BorderSide(
-                              color: Color(0xFF416170),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radius),
-                            ),
-                          ),
-                          child: const Text('Sign in'),
+                      // The lockup is wider than the space it is given on a
+                      // narrow window, and a Row does not shrink its child to
+                      // fit — it overflows and paints outside, so the wordmark
+                      // lost its last letters. Scaling down is the only
+                      // response that cannot cut the company name in half.
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: brand,
                         ),
-                        const SizedBox(width: 10),
-                        FilledButton(
-                          onPressed: () => context.go('/auth/register'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppTheme.publicAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radius),
+                      ),
+                      const Spacer(),
+                      if (tablet) ...[
+                        // The two buttons are a fixed width and the brand was
+                        // the only thing able to give way, so once the brand
+                        // had shrunk as far as it could the row simply ran off
+                        // the right edge and "Sign in" was cut in half by the
+                        // window. Scaling them too means the header cannot
+                        // overflow at any width: everything gets smaller
+                        // together rather than the last item falling off.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () => context.go('/auth/login'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.publicOnDark,
+                                    side: const BorderSide(
+                                      color: Color(0xFF416170),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          AppTheme.radius),
+                                    ),
+                                  ),
+                                  child: const Text('Sign in'),
+                                ),
+                                const SizedBox(width: 10),
+                                FilledButton(
+                                  onPressed: () =>
+                                      context.go('/auth/register'),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: AppTheme.publicAccent,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          AppTheme.radius),
+                                    ),
+                                  ),
+                                  child: const Text('Start setup'),
+                                ),
+                              ],
                             ),
                           ),
-                          child: const Text('Start setup'),
                         ),
                         const SizedBox(width: 8),
                       ],

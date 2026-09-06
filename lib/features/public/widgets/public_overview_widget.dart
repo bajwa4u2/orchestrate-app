@@ -337,6 +337,8 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
     // this is that inequality solved for nodeWidth, floored at the old value so
     // nothing gets narrower than it was, and capped so a two-node diagram does
     // not spread into two enormous slabs.
+    // Stage row only. Asset nodes keep 144 because their 148-step spacing
+    // leaves no room for more.
     const double nodeGap = 22;
     final double nodeWidth = count <= 1
         ? 144
@@ -359,7 +361,14 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
     return Positioned(
         left: left.toDouble(),
         top: top.toDouble(),
-        width: widget.compact ? (assets ? width * .68 : compactNodeWidth) : nodeWidth,
+        // Asset nodes are NOT the stage row and do not share its spacing.
+        // They sit at fixed 148-pixel steps, so the derived stage width — which
+        // can reach 232 — overlapped them: VERIFIED DOMAIN was painted straight
+        // over DOMAIN INTELLIGENCE. Widening a node is only safe against the
+        // rule that positions it.
+        width: widget.compact
+            ? (assets ? width * .68 : compactNodeWidth)
+            : (assets ? 144 : nodeWidth),
         child: _NetworkNode(
             node: node,
             selected: widget.selected == index,

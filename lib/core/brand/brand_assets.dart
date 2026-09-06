@@ -69,6 +69,29 @@ class BrandAssets {
     );
   }
 
+  static Widget _wordmark({
+    required String label,
+    required double fontSize,
+    required Color? color,
+    required ThemeData theme,
+    required bool flexible,
+  }) {
+    final text = Text(
+      label,
+      maxLines: 1,
+      overflow: flexible ? TextOverflow.fade : TextOverflow.visible,
+      softWrap: false,
+      style: theme.textTheme.headlineSmall?.copyWith(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.6,
+        height: 1,
+        color: color,
+      ),
+    );
+    return flexible ? Flexible(child: text) : text;
+  }
+
   static Widget operatorLockup(
     BuildContext context, {
     double symbolSize = 34,
@@ -76,6 +99,13 @@ class BrandAssets {
     String label = 'Orchestrate',
     bool darkSurface = false,
     Color? color,
+    /// Whether the wordmark may fade out when it does not fit.
+    ///
+    /// Fading is a reasonable default in a dense operator surface where the
+    /// brand is incidental. It is the wrong answer on a public header, where a
+    /// company introducing itself as "Orchest" is worse than a company whose
+    /// name is a little smaller than intended.
+    bool allowTruncation = true,
   }) {
     final theme = Theme.of(context);
     final symbol = darkSurface ? _symbolDark : symbolFor(context);
@@ -94,20 +124,16 @@ class BrandAssets {
             semanticLabel: label,
           ),
           const SizedBox(width: 12),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.fade,
-              softWrap: false,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontSize: fontSize,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.6,
-                height: 1,
-                color: color,
-              ),
-            ),
+          // Flexible is what allows the fade: it hands the text less width
+          // than it asked for, and the text gives up the difference. Without
+          // it the wordmark reports its true width, and a FittedBox above can
+          // scale the whole lockup instead of the name losing letters.
+          _wordmark(
+            label: label,
+            fontSize: fontSize,
+            color: color,
+            theme: theme,
+            flexible: allowTruncation,
           ),
         ],
       ),
