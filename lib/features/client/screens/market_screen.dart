@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/market/client_market.dart';
+import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/client/widgets/candidate_sheet.dart';
 
@@ -42,7 +45,12 @@ class _MarketScreenState extends State<MarketScreen> {
     super.initState();
     _market.addListener(_onChanged);
     if (!_market.hasAnswer && !_market.isLoading && _market.error == null) {
-      _market.load().catchError((Object e) => throw e);
+      // Held, not rethrown. load() has already recorded the error and notified
+      // listeners, so _body() renders the failure; rethrowing here does nothing
+      // except turn a handled error into an unhandled async one, which reaches
+      // the zone handler and reports as a crash on top of a screen that is
+      // already showing the problem correctly.
+      unawaited(_market.load().then<void>((_) {}, onError: (Object _) {}));
     }
     _focusIfAsked();
   }
@@ -93,8 +101,9 @@ class _MarketScreenState extends State<MarketScreen> {
   }
 
   Widget _body() {
-    if (_market.error != null) {
-      return _Unavailable(onRetry: () => _market.refresh());
+    final failure = _market.error;
+    if (failure != null) {
+      return _Unavailable(error: failure, onRetry: () => _market.refresh());
     }
     final view = _market.view;
     if (view == null) {
@@ -307,29 +316,95 @@ class _Row extends StatelessWidget {
       ].join(' · ');
 }
 
+/// WHY IT COULD NOT BE LOADED, WHICH IS NOT ONE SITUATION.
+///
+/// This said "we could not read it right now" whatever had happened, and threw
+/// away an exception that already knew the status code, the message and the
+/// request id. Four different faults with four different owners read
+/// identically: a session that ended, a network that could not be reached, an
+/// error on our side, and an answer that arrived intact and could not be
+/// parsed. Only one of them is fixed by pressing Try again, and nobody looking
+/// at the screen could tell which one they had.
+///
+/// What it keeps: a failure is never rendered as an empty market. Zero
+/// candidates would tell a business its pipeline had vanished, and that is a
+/// worse lie than an unhelpful message.
 class _Unavailable extends StatelessWidget {
-  const _Unavailable({required this.onRetry});
+  const _Unavailable({required this.error, required this.onRetry});
 
+  final Object error;
   final VoidCallback onRetry;
+
+  /// Platform-safe: naming SocketException directly would pull in dart:io,
+  /// which does not exist on web, and this screen builds for both.
+  bool get _isNetwork {
+    final name = error.runtimeType.toString();
+    return name.contains('SocketException')
+        || name.contains('ClientException')
+        || name.contains('HandshakeException')
+        || name.contains('TimeoutException');
+  }
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final api = error is ApiException ? error as ApiException : null;
+
+    final String headline;
+    final String detail;
+    final String? reference;
+
+    if (api != null && api.isAuthFailure) {
+      headline = 'Your session has ended.';
+      detail = 'Sign in again and your market will be here. Nothing was lost.';
+      reference = null;
+    } else if (_isNetwork) {
+      headline = 'Orchestrate could not be reached.';
+      detail = 'This looks like the connection rather than your data. '
+          'Nothing has changed and nothing was lost.';
+      reference = null;
+    } else if (api != null && api.statusCode >= 500) {
+      headline = 'Orchestrate answered with an error.';
+      // Named as ours, because it is. Telling a business to try again when the
+      // fault is on this side wastes their time on a button that cannot help.
+      detail = 'This is a fault on our side rather than anything about your '
+          'business. Trying again may not help; the reference below identifies '
+          'exactly what failed.';
+      reference = api.displayId.isEmpty ? null : api.displayId;
+    } else if (api != null) {
+      headline = 'We could not load your market.';
+      detail = api.message;
+      reference = api.displayId.isEmpty ? null : api.displayId;
+    } else {
+      // The answer arrived and could not be read. A different fault with a
+      // different owner: retrying fetches the same unreadable answer again.
+      headline = 'Your market arrived but could not be read.';
+      detail = 'The answer reached this device and did not have the shape this '
+          'version expects, so nothing is being shown rather than something '
+          'wrong. Updating the app is more likely to help than trying again.';
+      reference = error.runtimeType.toString();
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('We could not load your market.',
+          Text(headline,
               style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          // Not "0 candidates". A failure that renders as an empty market
-          // would tell a business its pipeline had vanished.
-          Text(
-            'Nothing has changed and nothing was lost. We just could not read '
-            'it right now.',
-            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
-          ),
+          Text(detail,
+              style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+          if (reference != null) ...[
+            const SizedBox(height: 8),
+            SelectableText(
+              reference,
+              style: text.bodySmall?.copyWith(
+                color: AppTheme.publicMuted,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
         ],
