@@ -213,12 +213,23 @@ class _BroadcastStripState extends State<_BroadcastStrip>
                     ),
                   )
                 else
+                  // Space is shared in proportion to how much each label
+                  // needs. Every item was Flexible with the default flex of 1,
+                  // which divides the row into equal shares whatever the text
+                  // is: TRUST 3 was given exactly as much room as DOMAIN
+                  // INTELLIGENCE 75, and the space the short one could not use
+                  // was not available to the long one. So half the labels
+                  // ellipsised on a two-thousand-pixel screen with visible room
+                  // to spare, which reads as the product having something to
+                  // hide rather than as a layout that divided badly.
                   for (var i = 0; i < widget.nodes.length; i++) ...[
                     if (i > 0)
                       const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 9),
                           child: Text('•', style: TextStyle(color: _line))),
                     Flexible(
+                        flex: _stripFlexFor(
+                            '${widget.nodes[i].label.toUpperCase()} ${widget.nodes[i].valueText}'),
                         child: AnimatedOpacity(
                             duration: const Duration(milliseconds: 220),
                             opacity: i == focus ? 1 : .5,
@@ -315,6 +326,22 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
       _LifecycleNode node, int index, int local, int count, double width,
       {required bool assets, required int stageCount}) {
     final compactNodeWidth = math.min(width * .58, 220.0);
+    // Nodes were pinned to 144 whatever the width, so every label longer than
+    // about twelve characters was cut: VERIFIED DOM..., OPPORTUNITI...,
+    // DOMAIN INTE... — while the row they sit in had space going spare, because
+    // the gaps between nodes grow with the window and the nodes did not.
+    //
+    // Derived rather than guessed at, so it cannot overlap. Nodes are laid out
+    // at even steps of (width - nodeWidth) / (count - 1), so keeping a gap
+    // between them requires nodeWidth * count + gap * (count - 1) <= width;
+    // this is that inequality solved for nodeWidth, floored at the old value so
+    // nothing gets narrower than it was, and capped so a two-node diagram does
+    // not spread into two enormous slabs.
+    const double nodeGap = 22;
+    final double nodeWidth = count <= 1
+        ? 144
+        : (((width - nodeGap * (count - 1)) / count).clamp(144.0, 232.0));
+
     final left = widget.compact
         ? (assets
             ? width * .16
@@ -322,8 +349,8 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
         : (assets
             ? width * .58 + (local * 148).clamp(0, width * .35)
             : (count <= 1
-                ? width / 2 - 72
-                : (width - 144) * local / (count - 1)));
+                ? width / 2 - nodeWidth / 2
+                : (width - nodeWidth) * local / (count - 1)));
     final top = widget.compact
         ? (assets
             ? 16 + stageCount * 88.0 + 20 + local * 78.0
@@ -332,7 +359,7 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
     return Positioned(
         left: left.toDouble(),
         top: top.toDouble(),
-        width: widget.compact ? (assets ? width * .68 : compactNodeWidth) : 144,
+        width: widget.compact ? (assets ? width * .68 : compactNodeWidth) : nodeWidth,
         child: _NetworkNode(
             node: node,
             selected: widget.selected == index,
@@ -340,6 +367,13 @@ class _OperatingNetworkState extends State<_OperatingNetwork>
             onTap: () => widget.onSelect(index)));
   }
 }
+
+/// How much of the strip one label should be allowed to claim.
+///
+/// Proportional to its length, so the row divides by need rather than by head
+/// count. Clamped at both ends: a floor so a very short label still gets enough
+/// to render, and a ceiling so one long label cannot squeeze the rest out.
+int _stripFlexFor(String label) => label.length.clamp(6, 26);
 
 class _NetworkNode extends StatelessWidget {
   const _NetworkNode(

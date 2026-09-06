@@ -144,6 +144,18 @@ class _PublicShellState extends State<PublicShell> {
   }
 }
 
+/// BRAND, THE TWO THINGS A VISITOR CAN DO, AND EVERYTHING ELSE BEHIND A MENU.
+///
+/// This carried six centred links — Execution, Readiness, Signals, Trust,
+/// Plans, Talk to us — across the top of every public page. Six competing
+/// destinations at the moment of arrival is noise: it asks a visitor to choose
+/// a section before they know what the product is, and it competes with the two
+/// actions that actually matter on this surface.
+///
+/// Nothing became unreachable. The footer carries the section pages and the
+/// menu carries all of them including Pricing, which the footer does not. So
+/// this is one button in place of six links rather than a removal of
+/// navigation.
 class _PublicHeader extends StatelessWidget {
   const _PublicHeader({required this.currentPath, required this.onHome});
 
@@ -168,7 +180,6 @@ class _PublicHeader extends StatelessWidget {
                 const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final desktop = constraints.maxWidth >= 1120;
                 final tablet = constraints.maxWidth >= 720;
 
                 final brand = InkWell(
@@ -187,43 +198,6 @@ class _PublicHeader extends StatelessWidget {
                       ),
                     ),
                   ),
-                );
-
-                final nav = Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _HeaderLink(
-                      label: 'Execution',
-                      active: _isActive(const ['/product']),
-                      onTap: () => context.go('/product'),
-                    ),
-                    _HeaderLink(
-                      label: 'Readiness',
-                      active: _isActive(const ['/how-it-works']),
-                      onTap: () => context.go('/how-it-works'),
-                    ),
-                    _HeaderLink(
-                      label: 'Signals',
-                      active: _isActive(const ['/lead-sourcing']),
-                      onTap: () => context.go('/lead-sourcing'),
-                    ),
-                    _HeaderLink(
-                      label: 'Trust',
-                      active: _isActive(const ['/trust-compliance']),
-                      onTap: () => context.go('/trust-compliance'),
-                    ),
-                    _HeaderLink(
-                      label: 'Plans',
-                      active: _isActive(const ['/pricing']),
-                      onTap: () => context.go('/pricing'),
-                    ),
-                    _HeaderLink(
-                      label: 'Talk to us',
-                      active: _isActive(const ['/contact', '/intake']),
-                      onTap: () => context.go('/intake'),
-                    ),
-                  ],
                 );
 
                 final actions = Row(
@@ -258,25 +232,6 @@ class _PublicHeader extends StatelessWidget {
                     ),
                   ],
                 );
-
-                if (desktop) {
-                  return SizedBox(
-                    height: 52,
-                    child: Row(
-                      children: [
-                        SizedBox(width: 190, child: brand),
-                        Expanded(child: Center(child: nav)),
-                        SizedBox(
-                          width: 246,
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: actions,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
 
                 return SizedBox(
                   height: 52,
@@ -705,34 +660,6 @@ class _FooterGroup extends StatelessWidget {
   }
 }
 
-class _HeaderLink extends StatelessWidget {
-  const _HeaderLink(
-      {required this.label, required this.active, required this.onTap});
-
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        foregroundColor:
-            active ? AppTheme.publicOnDark : AppTheme.publicOnDarkMuted,
-        backgroundColor: active ? const Color(0xFF1B4050) : Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-        minimumSize: const Size(0, 38),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radius)),
-        textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-            ),
-      ),
-      child: Text(label),
-    );
-  }
-}
 
 class _FooterLink extends StatelessWidget {
   const _FooterLink({required this.label, required this.onTap});
