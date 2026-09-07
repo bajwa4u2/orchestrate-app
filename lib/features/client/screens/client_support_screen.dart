@@ -4,6 +4,7 @@ import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets
 import 'package:orchestrate_app/features/client/widgets/support_context_card.dart';
 import 'package:orchestrate_app/features/client/widgets/support_timeline_card.dart';
 import 'package:orchestrate_app/features/support/services/support_service.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 
 class ClientSupportScreen extends StatefulWidget {
   const ClientSupportScreen({super.key});
@@ -219,7 +220,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
             }),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Create a new request',
+              title: 'Ask for help',
               children: [
                 TextField(
                   controller: _newRequest,
@@ -228,8 +229,28 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
                   maxLines: 6,
                   decoration: const InputDecoration(
                     labelText: 'What do you need help with?',
-                    border: OutlineInputBorder(),
+                    // No border override. Inheriting the workspace input
+                    // styling is what stops this form being its own product.
                   ),
+                ),
+                const SizedBox(height: 8),
+                // WHAT THE PRODUCT ALREADY KNOWS, SO NOBODY RETYPES IT.
+                //
+                // Every one of these genuinely travels with the request: the
+                // intake endpoint attaches the signed-in person, their address,
+                // the business and the plan, and records which page it was sent
+                // from. It said none of that, so people wrote it out again —
+                // and the business name in particular was being typed into a
+                // request that could have carried it and did not, because the
+                // field was sent as null.
+                Text(
+                  'Your name, email, business and plan are attached '
+                  'automatically, along with the page you were on. Describe '
+                  'what happened rather than who you are.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Ws.inkSubtle),
                 ),
                 const SizedBox(height: 12),
                 FilledButton.icon(

@@ -50,32 +50,44 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
         final authorizations = asList(data['authorizations']);
         final imports = asList(asMap(data['sourceRecords'])['imports']);
 
+        // WHOSE RECORDS THESE ARE — WHICH THE PAGE NEVER SAID.
+        //
+        // Traced to the models rather than assumed: this reads
+        // serviceAgreement, invoice, receipt, statement, reminder,
+        // clientRepresentationAuth and importBatch. Every one of those is
+        // between Orchestrate and this business.
+        //
+        // That matters because the product also holds CommercialAgreement and
+        // CommercialInvoice, which are the business's OWN agreements and
+        // invoices with its counterparties and live on the relationship. Two
+        // sets of documents with the same nouns and opposite parties.
+        //
+        // "Everything issued to your business collects here — agreements,
+        // invoices, receipts" could be read as either, and a business that
+        // came here looking for what it had invoiced a counterparty would find
+        // what Orchestrate had invoiced IT. The distinction is now stated
+        // rather than left to be inferred from the contents.
         return ClientPage(
           eyebrow: 'Records',
-          title: 'Service records and documents',
+          title: 'Your service record with Orchestrate',
           subtitle:
-              'Browse the documents and operational records that explain service, billing, permission, and source history.',
+              'What Orchestrate agreed with this business, what it has charged, '
+              'what authority the business granted it, and where imported data '
+              'came from.',
           banner: const ClientStatusBanner(
             tone: ClientBannerTone.info,
-            title: 'Records are read-only',
+            title: 'These are between the business and Orchestrate',
             message:
-                'Everything issued to your business collects here — agreements, '
-                'invoices, receipts and statements. Nothing on this page can be '
-                'changed from it.',
+                'Agreements and invoices with your own counterparties are not '
+                'here — those belong to the relationship they were made in. '
+                'Nothing on this page can be changed from it.',
           ),
           children: [
-            ClientMetricStrip(metrics: [
-              ClientMetric('Agreements', '${agreements.length}'),
-              ClientMetric('Billing docs',
-                  '${invoices.length + receipts.length + statements.length + reminders.length}'),
-              ClientMetric('Authorizations', '${authorizations.length}'),
-              ClientMetric('Imports', '${imports.length}'),
-            ]),
-            const SizedBox(height: 18),
             ClientPanel(
-              title: 'Service agreements',
+              title: 'What Orchestrate agreed to do',
               subtitle:
-                  'These define the service relationship and accepted terms for this account.',
+                  'The service relationship and the terms this business '
+                  'accepted.',
               children: agreements.isEmpty
                   ? const [
                       ClientEmptyState(
@@ -99,9 +111,13 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Invoices & statements',
+              title: 'What Orchestrate has charged',
+              // The counts live on the thing they count, rather than in a
+              // strip of four numbers at the top of the page — none of which
+              // was the subject of an action.
               subtitle:
-                  'These explain charges, payments, receipts, reminders, and account standing.',
+                  'Charges, payments and account standing between this '
+                  'business and Orchestrate.',
               children: [
                 _RecordCountRow(label: 'Invoices', items: invoices),
                 _RecordCountRow(label: 'Receipts', items: receipts),
@@ -111,9 +127,10 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Permissions',
+              title: 'What the business authorised Orchestrate to do',
               subtitle:
-                  'These records show whether Orchestrate is authorized to represent your business in outreach.',
+                  'Whether Orchestrate may represent this business in '
+                  'outreach, who accepted that, and when.',
               children: authorizations.isEmpty
                   ? const [
                       ClientEmptyState(
@@ -135,9 +152,10 @@ class _ClientRecordsScreenState extends State<ClientRecordsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Data sources',
+              title: 'Where the imported data came from',
               subtitle:
-                  'These records show source/import batches used to create lead and contact inventory.',
+                  'The batches that produced the lead and contact inventory. '
+                  'Provenance, so a contact can be traced to how it arrived.',
               children: imports.isEmpty
                   ? const [
                       ClientEmptyState(
