@@ -12,6 +12,7 @@ import 'package:orchestrate_app/features/client/widgets/imap_connect_dialog.dart
 import 'package:orchestrate_app/features/client/widgets/smtp_connect_dialog.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 
 /// Mailbox is the one infrastructure surface where the client genuinely
 /// owns an action: connecting and verifying the sending identity Orchestrate
@@ -219,8 +220,43 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
             //  Derived from snapshot.primaryAction. Everything else
             //  on this page is demoted to "Details" below.
             // ─────────────────────────────────────────────────────
+            // ── IS COMMUNICATION READY, AND WHY NOT ──────────────
+            //
+            // The verdict and the reason for it used to be eight panels
+            // apart: the status card led the page and the readiness chain
+            // that explains it sat below five configuration panels. So the
+            // page opened with a conclusion and buried its evidence, and an
+            // operator asking "why can I not send" had to scroll past
+            // everything they would need to CHANGE before reaching anything
+            // that told them what was WRONG.
+            //
+            // They are one region now. The chain is the explanation of the
+            // card directly above it, which is what it always was.
             _PrimaryStatusCard(snapshot: data.snapshot),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
+            ClientPanel(
+              title: 'What has to be true, and what is',
+              subtitle:
+                  'Each layer depends on the one above. Waiting rows unblock '
+                  'themselves once the layer above them is satisfied — they '
+                  'are not asking you for anything.',
+              children: [
+                for (final step in data.identitySteps)
+                  ClientInfoRow(
+                    title: step.label,
+                    primary: step.description,
+                    trailing: ClientBadge(label: step.badge),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _GroupLabel(
+              label: 'HOW THIS BUSINESS COMMUNICATES',
+              detail:
+                  'What is set up, and what you can change. Everything above '
+                  'is derived from these.',
+            ),
+            const SizedBox(height: 10),
             // "Latest result" is demoted to a thin transient line
             // and ONLY appears for ~3 seconds of "Last action: …"
             // copy. It does not compete with the primary card.
@@ -287,25 +323,26 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
               providerAvailability: data.providerAvailability,
               hasMailbox: data.operationalIdentity.mailboxAddress.isNotEmpty,
             ),
-            const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Readiness chain',
-              subtitle:
-                  'Each layer depends on the one above. Waiting rows unblock automatically.',
-              children: [
-                for (final step in data.identitySteps)
-                  ClientInfoRow(
-                    title: step.label,
-                    primary: step.description,
-                    trailing: ClientBadge(label: step.badge),
-                  ),
-              ],
+            const SizedBox(height: 24),
+            _GroupLabel(
+              label: 'WHAT HAS ACTUALLY HAPPENED',
+              detail: 'Evidence, not configuration.',
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 10),
             ClientPanel(
               title: 'Recent sending activity',
+              // THE COUNTS BELONG TO THE THING THEY COUNT.
+              //
+              // "Activity summary" was a separate panel holding three
+              // numbers — dispatches, replies, notices — none of which was
+              // the subject of an action. Three numbers in a box is a
+              // dashboard fragment; the same three numbers as context for
+              // the list they describe is orientation.
               subtitle:
-                  'Outbound dispatches from your mailbox. Orchestrate manages the cadence; this is here so you can verify what was sent.',
+                  '${data.dispatchCount} sent, ${data.replyCount} replied, '
+                  '${data.noticeCount} account notice(s) open. Orchestrate '
+                  'manages the cadence; this is here so you can verify what '
+                  'was sent.',
               children: data.dispatchRows.isEmpty
                   ? const [
                       ClientEmptyState(
@@ -320,25 +357,6 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
                           secondary: row.secondary,
                         ),
                     ],
-            ),
-            const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Activity summary',
-              children: [
-                ClientInfoRow(
-                  title: 'Dispatches',
-                  primary: '${data.dispatchCount} outbound message(s) recorded.',
-                ),
-                ClientInfoRow(
-                  title: 'Replies',
-                  primary: '${data.replyCount} inbound reply event(s) recorded.',
-                ),
-                ClientInfoRow(
-                  title: 'Account notices',
-                  primary:
-                      '${data.noticeCount} account notice(s) open in your workspace.',
-                ),
-              ],
             ),
           ],
         );
@@ -1010,6 +1028,37 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       bannerMessage:
           'Resolve the pending identity layer. Dispatch eligibility is granted as soon as it clears.',
       bannerTone: ClientBannerTone.warning,
+    );
+  }
+}
+
+/// A REGION HEADING, WHICH IS NOT A PANEL.
+///
+/// This surface has three jobs — say whether communication works, let
+/// somebody change how it works, and show what it has actually done — and
+/// eleven panels in a single column made all three read as one settings
+/// list. A label between regions costs one line and does what another card
+/// around a group of cards could not.
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel({required this.label, this.detail});
+
+  final String label;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: text.labelLarge),
+        if (detail != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(detail!,
+                style: text.bodySmall?.copyWith(color: Ws.inkSubtle)),
+          ),
+      ],
     );
   }
 }
