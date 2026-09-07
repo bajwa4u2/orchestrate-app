@@ -2,6 +2,7 @@ import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_trust_repository.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 
 class ClientTrustScreen extends StatefulWidget {
   const ClientTrustScreen({super.key});
@@ -57,9 +58,29 @@ class _ClientTrustScreenState extends State<ClientTrustScreen> {
           ],
         ),
         const SizedBox(height: 6),
+        // "OTHER VERIFIABLE CREDENTIALS" WAS A CLAIM THE PRODUCT CANNOT MAKE.
+        //
+        // Traced to the service: clientTrustRecord stores exactly what the
+        // business submits, and the status is whatever it chose from a
+        // dropdown, validated only against a list of allowed words. Nothing
+        // verifies an issuer, an identifier or an expiry.
+        //
+        // "Verifiable" reads as verified, and a green ACTIVE chip beside
+        // public liability insurance reads as checked. Neither is true, and
+        // trust that overstates itself is worse than trust not recorded —
+        // somebody could rely on it.
+        //
+        // What IS true is worth keeping: a business declaring what it holds is
+        // real, useful, and exactly what this is.
         Text(
-          'Certifications, licenses, insurance, and other verifiable credentials.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+          'What this business declares it holds — certifications, licences, '
+          'insurance. Recorded as given. Orchestrate does not verify these, '
+          'and the status beside each one is the business\'s own statement '
+          'about it.',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: Ws.inkMuted),
         ),
         const SizedBox(height: 24),
         if (_loading)
@@ -82,13 +103,25 @@ class _ClientTrustScreenState extends State<ClientTrustScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Archive record?'),
-        content: const Text('This credential will be removed from your identity. The record is preserved but inactive.'),
+        // The third of these, and it was missed by the first sweep because
+        // that grep matched the other two dialogs by their titles. Recorded
+        // rather than quietly corrected: an audit that finds two of three is
+        // not an audit, and the way it was scoped is the reason.
+        title: const Text('Archive this credential?'),
+        content: const Text(
+          'It will no longer count as something this business declares it '
+          'holds, so anything relying on it no longer has it to draw on.\n\n'
+          'This record will be preserved, but it cannot be restored from this '
+          'workspace.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Keep it')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Archive', style: TextStyle(color: Colors.red)),
+            child: const Text('Archive record',
+                style: TextStyle(color: Ws.critical)),
           ),
         ],
       ),
@@ -129,7 +162,7 @@ class _TrustCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        border: Border.all(color: Ws.hairline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +170,7 @@ class _TrustCard extends StatelessWidget {
           Icon(
             _iconFor(record['recordType'] as String? ?? ''),
             size: 22,
-            color: AppTheme.publicMuted,
+            color: Ws.inkMuted,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -163,7 +196,7 @@ class _TrustCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     record['notes'] as String,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Ws.inkMuted),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -180,7 +213,7 @@ class _TrustCard extends StatelessWidget {
               const PopupMenuItem(value: 'edit', child: Text('Edit')),
               const PopupMenuItem(value: 'archive', child: Text('Archive')),
             ],
-            child: const Icon(Icons.more_horiz, color: AppTheme.publicMuted),
+            child: const Icon(Icons.more_horiz, color: Ws.inkMuted),
           ),
         ],
       ),
@@ -205,7 +238,7 @@ class _TrustCard extends StatelessWidget {
       case 'active': return Colors.green;
       case 'expired': return Colors.red;
       case 'pending': return Colors.orange;
-      default: return AppTheme.publicMuted;
+      default: return Ws.inkMuted;
     }
   }
 }
@@ -309,7 +342,9 @@ class _TrustEditDialogState extends State<_TrustEditDialog> {
               _label('Status'),
               DropdownButtonFormField<String>(
                 value: _status,
-                items: _statuses.map((s) => DropdownMenuItem(value: s, child: Text(_fmt(s)))).toList(),
+                items: _statuses
+                    .map((s) => DropdownMenuItem(value: s, child: Text(_fmt(s))))
+                    .toList(),
                 onChanged: (v) => setState(() => _status = v!),
                 decoration: _dec(),
               ),
@@ -371,7 +406,7 @@ class _TrustEditDialogState extends State<_TrustEditDialog> {
 
   Widget _label(String text) => Padding(
     padding: const EdgeInsets.only(bottom: 6),
-    child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.publicMuted)),
+    child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Ws.inkMuted)),
   );
 
   InputDecoration _dec({String? hint}) => InputDecoration(
@@ -396,14 +431,14 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.verified_outlined, size: 48, color: AppTheme.publicMuted.withOpacity(.4)),
+            Icon(Icons.verified_outlined, size: 48, color: Ws.inkMuted.withOpacity(.4)),
             const SizedBox(height: 16),
             Text('No credentials yet', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Text(
               'Add certifications, licenses, and other credentials\nto strengthen your outreach and proposals.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Ws.inkMuted),
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
@@ -452,12 +487,12 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: (color ?? AppTheme.publicMuted).withOpacity(.1),
+        color: (color ?? Ws.inkMuted).withOpacity(.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color ?? AppTheme.publicMuted),
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color ?? Ws.inkMuted),
       ),
     );
   }

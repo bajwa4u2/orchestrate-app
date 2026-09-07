@@ -426,11 +426,11 @@ what remains, not to be read once.
 | `client_mailbox_screen` | 2084 | **RECOMPOSED** — verdict and reason reunited, one panel removed |
 | `client_business_identity_screen` | 807 | **FORM SIMPLIFIED** — split by consequence, semantic widths |
 | `client_settings_screen` | 419 | **RECOMPOSED** — readiness leads; restatements name their owner |
-| `client_records_screen` | 197 | REMAINING |
-| `client_support_screen` | 351 | REMAINING |
+| `client_records_screen` | 197 | **RECOMPOSED** — says whose records these are |
+| `client_support_screen` | 351 | **STATE/COPY FIX** + backend: request carries the business |
 | `client_artifacts_screen` | 403 | **DESTRUCTIVE FLOW FIX** — archive stated as irreversible |
 | `client_evidence_screen` | 501 | **DESTRUCTIVE FLOW FIX** — archive stated as irreversible |
-| `client_trust_screen` | 464 | REMAINING |
+| `client_trust_screen` | 464 | **STATE/COPY FIX** — stopped implying verification |
 | `client_branding_screen` | 610 | REMAINING |
 | `client_subscribe_screen` | 874 | **STATE/COPY FIX** — in-workspace path leads with entitlement, not pricing |
 | `/account/people` | — | REMAINING |
@@ -634,4 +634,55 @@ authenticated surfaces are not reachable without a session, so narrow-web
 runtime proof of Business Identity, Mailbox readiness, Entitlement, Artifacts
 and Evidence is blocked by the same constraint as authenticated automation.
 Composition at those widths remains WIDGET PROOF.
+
+## CW-20 — Trust implied verification it does not perform
+
+**Finding.** The credentials surface described itself as holding "other
+verifiable credentials", and rendered each one with a coloured status chip —
+green for ACTIVE beside things like public liability insurance.
+
+**Traced.** `clientTrustRecord` stores exactly what the business submits. The
+status is whatever it picked from a dropdown, validated only against a list of
+allowed words. Nothing verifies an issuer, an identifier or an expiry, and
+there is no verification code anywhere in the service.
+
+**Why it matters more than most copy.** Trust that overstates itself is worse
+than trust not recorded at all, because somebody could rely on it. "Verifiable"
+reads as verified; a green chip reads as checked.
+
+**Fix.** The surface now says what is true: what this business DECLARES it
+holds, recorded as given, not verified by Orchestrate, with the status being
+the business's own statement. Recording declarations is legitimate and useful —
+what was wrong was the certainty implied around them.
+
+**Classified STATE/COPY, not DOMAIN.** The service behaves exactly as designed;
+the surface described it as something stronger.
+
+---
+
+## CW-21 — My own destructive audit was scoped wrong, twice
+
+**Recorded because the method failed, not the product.**
+
+The first sweep matched destructive dialogs by their title text and reported
+the audit complete at five actions. It had missed `'Archive record?'` on the
+credentials surface — a third dialog with the identical understatement — and
+two more on relationships. A grep that matches the titles it already knows
+about finds the cases it already knows about.
+
+**Complete audit, eight actions:**
+
+| Action | Verdict |
+|---|---|
+| Delete account | Already exemplary — untouched |
+| Remove a contact from Orchestrate | Already exemplary — names what is removed, what is NOT affected, that re-discovery can occur, and offers suppression as the better alternative |
+| Remove mailbox as a source | Already correct — real choice with each option's consequence |
+| Remove CSV / Google source | Already correct — same pattern |
+| Archive artifact | FIXED |
+| Archive evidence | FIXED |
+| Archive credential | FIXED — found only on the third pass |
+| Remove branding logo | Correct with no ceremony — trivially reversible |
+
+Five of eight were already right. The lesson is about the sweep, not the
+estate: an audit that finds what it went looking for is not an audit.
 
