@@ -439,6 +439,10 @@ class TimelineEntry {
     required this.consequence,
     required this.isCurrent,
     required this.engagementId,
+    this.authority = '',
+    this.subjectType,
+    this.subjectId,
+    this.decidedCondition = false,
   });
 
   final String kind;
@@ -456,10 +460,34 @@ class TimelineEntry {
   final bool isCurrent;
   final String? engagementId;
 
+  /// Who says so. An observed fact and an admitted one are not equal, and a
+  /// history that renders them alike is asserting more than it knows.
+  final String authority;
+
+  /// What this fact concerned, and therefore what could be opened from it.
+  final String? subjectType;
+  final String? subjectId;
+
+  /// One of the facts that made the relationship's condition what it is.
+  ///
+  /// Set by the server from the same ladder that derived the condition. The
+  /// client does not decide this — a second condition engine here is how two
+  /// surfaces come to disagree about the same relationship.
+  final bool decidedCondition;
+
+  /// Whether this fact was admitted rather than merely observed.
+  bool get isAdmitted => authority.toUpperCase().contains('ADMIT') ||
+      authority.toUpperCase() == 'CLIENT' ||
+      authority.toUpperCase() == 'COUNTERPARTY';
+
   static TimelineEntry fromJson(Map<String, dynamic> j) => TimelineEntry(
         kind: (j['kind'] as String?) ?? 'OTHER',
         says: (j['says'] as String?) ?? '',
         at: DateTime.tryParse(j['at']?.toString() ?? '') ?? DateTime(1970),
+        authority: (j['authority'] as String?) ?? '',
+        subjectType: _text(j['subjectType']),
+        subjectId: _text(j['subjectId']),
+        decidedCondition: j['decidedCondition'] == true,
         until: DateTime.tryParse(j['until']?.toString() ?? ''),
         occurrences: (j['occurrences'] as num?)?.toInt() ?? 1,
         consequence: (j['consequence'] as String?) ?? '',
@@ -512,6 +540,8 @@ class RelationshipDepth {
     this.meetingsPast = const [],
     this.meetingsSays = '',
     this.commercial = const RelationshipCommercial(),
+    this.conditionDecidedBy = '',
+    this.conditionShownInHistory = false,
   });
 
   final String id;
@@ -543,6 +573,16 @@ class RelationshipDepth {
 
   /// What has been agreed, owed, invoiced and paid with this counterparty.
   final RelationshipCommercial commercial;
+
+  /// Which class of admitted fact decided the condition.
+  final String conditionDecidedBy;
+
+  /// Whether there is anything in the history to point at.
+  ///
+  /// Some conditions are decided by the ABSENCE of facts — nothing recorded,
+  /// or nothing for ninety days. There is no entry to highlight, and a surface
+  /// has to say that in words rather than mark a row that does not exist.
+  final bool conditionShownInHistory;
 
   EngagementSummary? get currentEngagement {
     for (final e in engagements) {
@@ -603,6 +643,8 @@ class RelationshipDepth {
           (j['meetings'] as Map?)?['upcoming']),
       meetingsPast: RelationshipMeeting.listFrom((j['meetings'] as Map?)?['past']),
       meetingsSays: ((j['meetings'] as Map?)?['says'] as String?) ?? '',
+      conditionDecidedBy: (j['conditionDecidedBy'] as String?) ?? '',
+      conditionShownInHistory: j['conditionShownInHistory'] == true,
       commercial: RelationshipCommercial.fromJson(
           j['commercial'] is Map
               ? Map<String, dynamic>.from(j['commercial'] as Map)

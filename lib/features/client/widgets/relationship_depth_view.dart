@@ -161,6 +161,28 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
           because: depth.conditionBecause,
         ),
 
+        // WHERE THE REASON CAN BE SEEN.
+        //
+        // Some conditions are decided by facts, and those facts are marked in
+        // the history below. Others are decided by the ABSENCE of facts —
+        // nothing recorded at all, or nothing for months — and there is no row
+        // to point at. Highlighting nothing and hoping the reader infers why
+        // is how a condition becomes a badge again.
+        if (depth.timeline.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(2, 6, 2, 0),
+            child: Text(
+              depth.conditionShownInHistory
+                  ? 'The facts behind this are marked in the history below.'
+                  : 'This follows from what has NOT happened, so there is no '
+                      'single record to point at.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Ws.inkSubtle),
+            ),
+          ),
+
         // The channel, on its own line and in its own words. A relationship can
         // be active while nothing is getting through, and saying only one of
         // those would mislead in one direction or the other.
@@ -344,16 +366,30 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
                   // Superseded facts stay in the story and stop being the
                   // answer. History explains how we got here; current truth
                   // explains what governs now.
-                  detail: entry.isCurrent
-                      ? null
-                      : 'A later record replaced this. Kept because it happened.',
+                  //
+                  // And the facts that decided the condition say so. A
+                  // condition rendered as a coloured word is a claim with
+                  // nothing behind it; this is where the badge and the record
+                  // become the same statement. Marked by the server from the
+                  // same ladder that derived the condition, because a second
+                  // condition engine here is how two surfaces come to disagree
+                  // about one relationship.
+                  detail: !entry.isCurrent
+                      ? 'A later record replaced this. Kept because it happened.'
+                      : entry.decidedCondition
+                          ? 'This is why the relationship reads as it does now.'
+                          : null,
                   meta: [
                     _when(entry.at),
                     if (entry.until != null && entry.occurrences > 1)
                       'through ${_when(entry.until!)}',
                     if (!entry.isCurrent) 'superseded',
                   ].join(' · '),
-                  tone: entry.isCurrent ? RowTone.neutral : RowTone.waiting,
+                  tone: !entry.isCurrent
+                      ? RowTone.waiting
+                      : entry.decidedCondition
+                          ? RowTone.good
+                          : RowTone.neutral,
                 ),
             ],
           ),
