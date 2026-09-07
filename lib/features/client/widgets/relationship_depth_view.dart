@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/core/ui/authority_gate.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
@@ -211,6 +212,48 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
           // change is re-read from the server rather than guessed at here.
           onChanged: _load,
         ),
+
+        // ── MEETINGS ──────────────────────────────────────────────────────
+        //
+        // The nav removed meetings as a destination on the grounds that they
+        // are events inside a relationship. They were removed and never put
+        // inside one, so a booked meeting could be found nowhere in the
+        // workspace at all. This is where that claim becomes true.
+        //
+        // Upcoming only when the provider holds the meeting. A meeting that
+        // never reached it was offered to nobody, and listing it as upcoming
+        // tells a business to prepare for something that does not exist.
+        if (depth.meetingsUpcoming.isNotEmpty)
+          WorkspaceBand(
+            title: 'MEETINGS AHEAD',
+            children: [
+              for (final m in depth.meetingsUpcoming)
+                WorkspaceRow(
+                  title: m.title,
+                  detail: [
+                    titleCase(m.status),
+                    if (m.scheduledAt != null) dateLabel(m.scheduledAt),
+                  ].where((p) => p.isNotEmpty).join(' · '),
+                ),
+            ],
+          ),
+        if (depth.meetingsPast.isNotEmpty)
+          WorkspaceBand(
+            title: 'MEETINGS HELD',
+            children: [
+              for (final m in depth.meetingsPast)
+                WorkspaceRow(
+                  title: m.title,
+                  detail: [
+                    if (m.neverReachedProvider)
+                      'never created with the meeting provider'
+                    else
+                      titleCase(m.status),
+                    if (m.scheduledAt != null) dateLabel(m.scheduledAt),
+                  ].where((p) => p.isNotEmpty).join(' · '),
+                ),
+            ],
+          ),
 
         // ── HISTORY ───────────────────────────────────────────────────────
         const SizedBox(height: 8),

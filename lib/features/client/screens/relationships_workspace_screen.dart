@@ -5,6 +5,8 @@ import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/data/repositories/client/client_relationship_workspace_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/relationship_depth_view.dart';
 
 /// RELATIONSHIPS — THE DURABLE UNIT OF ACCOUNT.
@@ -101,7 +103,7 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
         ),
       );
     }
-    if (list.relationships.isEmpty) {
+    if (list.relationships.isEmpty && list.unattachedMeetings.isEmpty) {
       return const QuietState(
         message: 'No relationships yet.',
         hint: 'One begins when something durable passes between your business '
@@ -116,9 +118,19 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
     final wanting = list.relationships.where(needsALook);
     final rest = list.relationships.where((r) => !needsALook(r));
 
+    // Meetings that belong to no relationship on record. Placed high because
+    // a meeting somebody may attend is a commitment, and this is the only
+    // place in the workspace it appears at all.
+    final loose = list.unattachedMeetings;
+
     return ListView(
       padding: EdgeInsets.zero,
       children: [
+        if (loose.isNotEmpty)
+          WorkspaceBand(
+            title: 'MEETINGS NOT TIED TO A RELATIONSHIP',
+            children: [for (final m in loose) _MeetingRow(meeting: m)],
+          ),
         if (wanting.isNotEmpty)
           WorkspaceBand(
             title: 'NEEDS A LOOK',
@@ -156,6 +168,52 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
       '/client/relationships/${summary.id}',
       '/client/relationships',
     ));
+  }
+}
+
+/// A meeting that has no relationship to sit inside.
+///
+/// Deliberately reads as a meeting rather than as a relationship: the point of
+/// showing it here is that the business has a commitment the product could not
+/// place, and dressing it up as a counterparty row would hide exactly that.
+class _MeetingRow extends StatelessWidget {
+  const _MeetingRow({required this.meeting});
+
+  final RelationshipMeeting meeting;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final when = meeting.scheduledAt;
+    final parts = <String>[
+      if (meeting.neverReachedProvider)
+        'never created with the meeting provider'
+      else
+        titleCase(meeting.status),
+      if (when != null) dateLabel(when),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(meeting.title, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 2),
+          Text(
+            parts.join(' · '),
+            style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+          ),
+          if (meeting.entrance != null) ...[
+            const SizedBox(height: 2),
+            SelectableText(
+              meeting.entrance!,
+              style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

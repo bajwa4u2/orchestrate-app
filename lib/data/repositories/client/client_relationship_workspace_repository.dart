@@ -149,11 +149,20 @@ class RelationshipList {
     required this.relationships,
     required this.counts,
     required this.note,
+    this.unattachedMeetings = const [],
   });
 
   final List<RelationshipSummary> relationships;
   final Map<RelationshipCondition, int> counts;
   final String note;
+
+  /// Meetings this business holds that belong to no relationship on record.
+  ///
+  /// Real, and previously invisible. A meeting offered before invitees were
+  /// recorded has nothing to correlate on, and a meeting with somebody the
+  /// business has no relationship row for is still a commitment somebody may
+  /// attend. Forcing a correlation would put it on a stranger's record.
+  final List<RelationshipMeeting> unattachedMeetings;
 
   static RelationshipList fromJson(Map<String, dynamic> j) {
     final raw = Map<String, dynamic>.from(j['counts'] as Map? ?? {});
@@ -167,8 +176,56 @@ class RelationshipList {
           c: (raw[c.wire] as num?)?.toInt() ?? 0,
       },
       note: (j['note'] as String?) ?? '',
+      unattachedMeetings: RelationshipMeeting.listFrom(j['unattachedMeetings']),
     );
   }
+}
+
+/// A meeting, seen from inside the relationship it belongs to.
+///
+/// Meetings stopped being a destination on the grounds that they are events
+/// inside a relationship. This is the type that makes that true rather than
+/// only stated — before it, a booked meeting appeared nowhere in the workspace
+/// at all.
+class RelationshipMeeting {
+  const RelationshipMeeting({
+    required this.id,
+    required this.title,
+    required this.status,
+    required this.handoffStage,
+    required this.scheduledAt,
+    required this.entrance,
+  });
+
+  final String id;
+  final String title;
+  final String status;
+
+  /// Whether the meeting exists on the provider. A meeting that never reached
+  /// it was never offered to anybody, whatever its status says.
+  final String handoffStage;
+  final DateTime? scheduledAt;
+
+  /// Where the counterparty goes. Absent when there is more than one invitee,
+  /// because then there is no single door.
+  final String? entrance;
+
+  bool get neverReachedProvider => handoffStage == 'NEVER_REACHED_PROVIDER';
+
+  static RelationshipMeeting fromJson(Map<String, dynamic> j) => RelationshipMeeting(
+        id: (j['id'] as String?) ?? '',
+        title: _text(j['title']) ?? 'Meeting',
+        status: (j['status'] as String?) ?? '',
+        handoffStage: (j['handoffStage'] as String?) ?? '',
+        scheduledAt: DateTime.tryParse('${j['scheduledAt'] ?? ''}'),
+        entrance: _text(j['entrance']),
+      );
+
+  static List<RelationshipMeeting> listFrom(Object? raw) =>
+      ((raw as List?) ?? const [])
+          .whereType<Map>()
+          .map((m) => RelationshipMeeting.fromJson(Map<String, dynamic>.from(m)))
+          .toList(growable: false);
 }
 
 /// Why this relationship exists at all.
@@ -310,6 +367,9 @@ class RelationshipDepth {
     required this.timeline,
     required this.eventCount,
     required this.refusalReason,
+    this.meetingsUpcoming = const [],
+    this.meetingsPast = const [],
+    this.meetingsSays = '',
   });
 
   final String id;
@@ -331,6 +391,13 @@ class RelationshipDepth {
   final List<TimelineEntry> timeline;
   final int eventCount;
   final String? refusalReason;
+
+  /// Meetings held with this counterparty.
+  final List<RelationshipMeeting> meetingsUpcoming;
+  final List<RelationshipMeeting> meetingsPast;
+  final String meetingsSays;
+
+  bool get hasMeetings => meetingsUpcoming.isNotEmpty || meetingsPast.isNotEmpty;
 
   EngagementSummary? get currentEngagement {
     for (final e in engagements) {
@@ -387,6 +454,10 @@ class RelationshipDepth {
           .toList(growable: false),
       eventCount: (counts['events'] as num?)?.toInt() ?? 0,
       refusalReason: null,
+      meetingsUpcoming: RelationshipMeeting.listFrom(
+          (j['meetings'] as Map?)?['upcoming']),
+      meetingsPast: RelationshipMeeting.listFrom((j['meetings'] as Map?)?['past']),
+      meetingsSays: ((j['meetings'] as Map?)?['says'] as String?) ?? '',
     );
   }
 }
