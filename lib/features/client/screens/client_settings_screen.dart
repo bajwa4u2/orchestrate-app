@@ -178,10 +178,35 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                   mailbox['ready'] == true ? 'Ready' : 'Not ready'),
             ]),
             const SizedBox(height: 18),
+            // ── WHAT THIS SCREEN IS ACTUALLY FOR ─────────────────────
+            //
+            // Readiness led fourth, below three panels restating things this
+            // screen does not own: business identity, billing and security
+            // each have a home, and repeating them here is what made Settings
+            // read as the miscellaneous bucket everything lands in.
+            //
+            // The restatements are kept — seeing subscription state beside a
+            // blocker is genuinely useful — but they now say where they are
+            // owned, so somebody who wants to CHANGE one knows where to go
+            // instead of hunting for an edit control that was never here.
+            ClientPanel(
+              title: 'Permissions and readiness',
+              subtitle:
+                  'Each item below names what is blocked, who owns it, and the path to resolve it.',
+              children: [
+                BlockerResolutionList(
+                  blockers: blockers,
+                  authorized: authorized,
+                  authAcceptedAt: asMap(data.auth['latest'])['acceptedAt'],
+                  onReturned: _retry,
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
             ClientPanel(
               title: 'Account',
               subtitle:
-                  'These details identify the workspace and the client-facing links used by service records.',
+                  'Shown here for context. Changed in Business identity.',
               children: [
                 ClientInfoRow(
                   title: readText(profile, 'legalName',
@@ -223,7 +248,8 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
             ClientPanel(
               title: 'Billing',
               subtitle:
-                  'Billing state determines whether service can remain active.',
+                  'Billing state determines whether service can remain active. '
+                  'Shown here for context; changed in Account.',
               children: [
                 ClientInfoRow(
                   title: 'Subscription',
@@ -240,23 +266,10 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
             ),
             const SizedBox(height: 18),
             ClientPanel(
-              title: 'Permissions and readiness',
-              subtitle:
-                  'Each item below names what is blocked, who owns it, and the path to resolve it.',
-              children: [
-                BlockerResolutionList(
-                  blockers: blockers,
-                  authorized: authorized,
-                  authAcceptedAt: asMap(data.auth['latest'])['acceptedAt'],
-                  onReturned: _retry,
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            ClientPanel(
               title: 'Security',
               subtitle:
-                  'Trusted devices skip the email code until they expire or are revoked.',
+                  'Trusted devices skip the email code until they expire or '
+                  'are revoked. Shown here for context; managed in Account.',
               children: trustedDevices.isEmpty
                   ? const [
                       ClientInfoRow(

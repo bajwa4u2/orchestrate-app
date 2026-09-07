@@ -407,3 +407,71 @@ build to make a message go away.
   surfaced elsewhere, but "the content is elsewhere" is not the same as "this
   screen has no place in the product promise", and the reading needed to say
   that has not been done.
+
+---
+
+# Business + Account estate — live inventory
+
+Fifteen surfaces. **None used the workspace system before this pass** — zero
+`Ws.` references across all of them — which is what confirmed the estate had
+genuinely been left outside the reconstruction rather than merely looking dated.
+
+Status is updated as work proceeds. It is meant to tell the next pass exactly
+what remains, not to be read once.
+
+| Surface | Lines | Status |
+|---|---|---|
+| `business_screen` | 137 | **RECOMPOSED** — says who the business is and whether it can act |
+| `account_layer_screen` | 316 | **RECOMPOSED** — grouped by what a person is asking |
+| `client_mailbox_screen` | 2084 | **RECOMPOSED** — verdict and reason reunited, one panel removed |
+| `client_business_identity_screen` | 807 | **FORM SIMPLIFIED** — split by consequence, semantic widths |
+| `client_settings_screen` | 419 | **RECOMPOSED** — readiness leads; restatements name their owner |
+| `client_records_screen` | 197 | REMAINING |
+| `client_support_screen` | 351 | REMAINING |
+| `client_artifacts_screen` | 403 | REMAINING |
+| `client_evidence_screen` | 501 | REMAINING |
+| `client_trust_screen` | 464 | REMAINING |
+| `client_branding_screen` | 610 | REMAINING |
+| `client_subscribe_screen` | 874 | REMAINING |
+| `/account/people` | — | REMAINING |
+| `/account/plan` | — | REMAINING |
+| `/account-deletion` | — | REMAINING |
+
+## What complexity was real
+
+- **Personal-provider mailboxes.** A `gmail.com` mailbox genuinely cannot
+  publish SPF, DKIM or DMARC. The mailbox screen branches on this and never
+  renders an impossible task. Left exactly as it was.
+- **Transport authority vs operational identity.** Who may send and who is
+  seen to send are different questions with different answers.
+- **Section-scoped saves on business identity.** Already correct, and the split
+  by consequence depended on it.
+- **Readiness as a dependent chain.** Layers genuinely depend on the one above,
+  and waiting rows genuinely unblock themselves.
+
+## What complexity was accidental
+
+- **The verdict eight panels from its reason.** The mailbox status card led the
+  page while the chain explaining it sat below five configuration panels.
+- **A panel holding three numbers.** "Activity summary" — dispatches, replies,
+  notices — none the subject of an action. Removed; the numbers now caption the
+  list they describe.
+- **One block treating a legal name and a timezone as the same edit.**
+- **Every field full width**, because a stretched Column makes that the default.
+- **A "Required" badge on five of six fields**, which is not emphasis.
+- **Settings restating three surfaces it does not own**, with its own subject
+  fourth.
+
+## What was removed
+
+- The `Activity summary` panel (mailbox).
+- The duplicate readiness position (settings).
+- Per-field required badges, inverted to mark the rarer `optional`.
+
+## Domain defects the forms exposed
+
+None yet in this estate. The composition problems here were presentation and
+information architecture, not domain truth — unlike the meetings work, where
+`startedAt` was a genuine gap in the record. Recorded plainly rather than
+inflated: not every pass finds a domain defect, and reporting one that is not
+there would make the register useless.
