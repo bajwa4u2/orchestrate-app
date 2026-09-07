@@ -138,15 +138,14 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
     return ListView(
       padding: EdgeInsets.zero,
       children: [
+        // Only what is still ahead earns space above the relationships. A
+        // meeting somebody may still attend is a commitment; four settled ones
+        // are history, and history that pushes eighteen relationships below
+        // the fold has taken a place it did not earn.
         if (looseAhead.isNotEmpty)
           WorkspaceBand(
             title: 'MEETINGS AHEAD, NOT TIED TO A RELATIONSHIP',
             children: [for (final m in looseAhead) _MeetingRow(meeting: m)],
-          ),
-        if (looseSettled.isNotEmpty)
-          WorkspaceBand(
-            title: 'MEETINGS HELD, NOT TIED TO A RELATIONSHIP',
-            children: [for (final m in looseSettled) _MeetingRow(meeting: m)],
           ),
         if (wanting.isNotEmpty)
           WorkspaceBand(
@@ -160,6 +159,16 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
             // would be furniture.
             title: wanting.isEmpty ? 'RELATIONSHIPS' : 'EVERYTHING ELSE',
             children: [for (final r in rest) _Row(summary: r, onOpen: _open)],
+          ),
+        // History, after the relationships rather than in front of them.
+        //
+        // Not "held": this band carried a cancelled meeting under a heading
+        // that said it took place. The band says where these sit in time and
+        // each row says what actually happened to it.
+        if (looseSettled.isNotEmpty)
+          WorkspaceBand(
+            title: 'EARLIER MEETINGS, NOT TIED TO A RELATIONSHIP',
+            children: [for (final m in looseSettled) _MeetingRow(meeting: m)],
           ),
         if (list.note.isNotEmpty) ...[
           const SizedBox(height: 12),

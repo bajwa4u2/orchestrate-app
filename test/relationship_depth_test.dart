@@ -588,7 +588,7 @@ void main() {
     ));
     await render(tester, 'list — unattached meeting');
 
-    expect(find.text('MEETINGS HELD, NOT TIED TO A RELATIONSHIP'), findsOneWidget);
+    expect(find.text('EARLIER MEETINGS, NOT TIED TO A RELATIONSHIP'), findsOneWidget);
     expect(find.text('Orchestrate certification'), findsOneWidget);
   });
 
@@ -614,7 +614,7 @@ void main() {
     await render(tester, 'list — live beside settled');
 
     expect(find.text('MEETINGS AHEAD, NOT TIED TO A RELATIONSHIP'), findsOneWidget);
-    expect(find.text('MEETINGS HELD, NOT TIED TO A RELATIONSHIP'), findsOneWidget);
+    expect(find.text('EARLIER MEETINGS, NOT TIED TO A RELATIONSHIP'), findsOneWidget);
     expect(find.text('Third attempt'), findsOneWidget);
   });
 
