@@ -168,6 +168,14 @@ void main() {
     String name, {
     String? relationshipId,
   }) async {
+    // A tall surface, because these assert on the WHOLE composition rather
+    // than on the first screenful. A ListView builds lazily, so a default
+    // 800x600 viewport silently stops rendering once a band is added above —
+    // which reads as "the content disappeared" when it has only moved down.
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

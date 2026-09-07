@@ -11,6 +11,8 @@ export '../../data/repositories/client/client_relationship_workspace_repository.
         RelationshipAttention,
         RelationshipCondition,
         RelationshipDepth,
+        CommercialObligationView,
+        RelationshipCommercial,
         RelationshipList,
         RelationshipMeeting,
         RelationshipOrigin,

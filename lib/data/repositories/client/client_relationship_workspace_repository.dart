@@ -281,6 +281,94 @@ class RelationshipMeeting {
           .toList(growable: false);
 }
 
+/// ONE COMMERCIAL OBLIGATION, WHICH IS THE ONLY PART OF THIS WITH A CLOCK.
+class CommercialObligationView {
+  const CommercialObligationView({
+    required this.id,
+    required this.description,
+    required this.state,
+    required this.dueAt,
+    required this.owedBy,
+  });
+
+  final String id;
+  final String description;
+  final String state;
+  final DateTime? dueAt;
+
+  /// Whose obligation it is. A thing this business owes and a thing it is
+  /// owed are opposite situations, and a surface that renders them alike is
+  /// telling somebody to chase their own commitment.
+  final String owedBy;
+
+  bool get owedByUs => owedBy.toUpperCase() == 'CLIENT';
+
+  static CommercialObligationView fromJson(Map<String, dynamic> j) =>
+      CommercialObligationView(
+        id: (j['id'] as String?) ?? '',
+        description: _text(j['description']) ?? 'Obligation',
+        state: (j['state'] as String?) ?? '',
+        dueAt: DateTime.tryParse('${j['dueAt'] ?? ''}'),
+        owedBy: (j['owedBy'] as String?) ?? '',
+      );
+}
+
+/// AGREEMENT → OBLIGATION → INVOICE → PAYMENT, AS ONE CONTINUITY.
+///
+/// Four counts rather than four modules, because the sequence is the point: an
+/// obligation exists because something was agreed, an invoice because
+/// something was owed, a payment because something was invoiced. Rendered as
+/// separate lists, a business would have to assemble that itself.
+///
+/// Production holds none of these for any client. That absence is the reason
+/// to give them a home now rather than later: without one, the first agreement
+/// a business signs arrives into a product with nowhere to show it.
+class RelationshipCommercial {
+  const RelationshipCommercial({
+    this.agreements = 0,
+    this.obligations = 0,
+    this.invoices = 0,
+    this.payments = 0,
+    this.dueNext = const [],
+    this.says = '',
+    this.explains,
+  });
+
+  final int agreements;
+  final int obligations;
+  final int invoices;
+  final int payments;
+
+  /// Obligations still owed, soonest first.
+  final List<CommercialObligationView> dueNext;
+
+  final String says;
+
+  /// The honest empty state: what belongs here and why none exists yet.
+  final String? explains;
+
+  bool get isEmpty =>
+      agreements == 0 && obligations == 0 && invoices == 0 && payments == 0;
+
+  static RelationshipCommercial fromJson(Map<String, dynamic>? j) {
+    if (j == null) return const RelationshipCommercial();
+    int len(Object? v) => (v is List) ? v.length : 0;
+    return RelationshipCommercial(
+      agreements: len(j['agreements']),
+      obligations: len(j['obligations']),
+      invoices: len(j['invoices']),
+      payments: len(j['payments']),
+      dueNext: ((j['dueNext'] as List?) ?? const [])
+          .whereType<Map>()
+          .map((o) => CommercialObligationView.fromJson(
+              Map<String, dynamic>.from(o)))
+          .toList(growable: false),
+      says: (j['says'] as String?) ?? '',
+      explains: _text(j['explains']),
+    );
+  }
+}
+
 /// Why this relationship exists at all.
 class RelationshipOrigin {
   const RelationshipOrigin({
@@ -423,6 +511,7 @@ class RelationshipDepth {
     this.meetingsUpcoming = const [],
     this.meetingsPast = const [],
     this.meetingsSays = '',
+    this.commercial = const RelationshipCommercial(),
   });
 
   final String id;
@@ -451,6 +540,9 @@ class RelationshipDepth {
   final String meetingsSays;
 
   bool get hasMeetings => meetingsUpcoming.isNotEmpty || meetingsPast.isNotEmpty;
+
+  /// What has been agreed, owed, invoiced and paid with this counterparty.
+  final RelationshipCommercial commercial;
 
   EngagementSummary? get currentEngagement {
     for (final e in engagements) {
@@ -511,6 +603,10 @@ class RelationshipDepth {
           (j['meetings'] as Map?)?['upcoming']),
       meetingsPast: RelationshipMeeting.listFrom((j['meetings'] as Map?)?['past']),
       meetingsSays: ((j['meetings'] as Map?)?['says'] as String?) ?? '',
+      commercial: RelationshipCommercial.fromJson(
+          j['commercial'] is Map
+              ? Map<String, dynamic>.from(j['commercial'] as Map)
+              : null),
     );
   }
 }

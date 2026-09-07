@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/meeting_line.dart';
 import 'package:orchestrate_app/core/ui/authority_gate.dart';
@@ -254,6 +255,75 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
                 ),
             ],
           ),
+
+        // ── THE COMMERCIAL RECORD ─────────────────────────────────────────
+        //
+        // Agreement, obligation, invoice, payment — one continuity rather than
+        // four modules, because the sequence is the point. An obligation
+        // exists because something was agreed; an invoice because something
+        // was owed; a payment because something was invoiced.
+        //
+        // Production holds none of these for any client. That is exactly why
+        // it is composed now: without a home, the first agreement a business
+        // signs arrives into a product with nowhere to show it, and the answer
+        // then is six empty cards added in a hurry.
+        //
+        // The empty case is a sentence, not an ornament. It says what belongs
+        // here and why none exists, and offers no action, because drafting and
+        // issuing are operator work and a button that does nothing is worse
+        // than saying so.
+        WorkspaceBand(
+          title: 'COMMERCIAL RECORD',
+          children: [
+            if (depth.commercial.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(depth.commercial.says,
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    if (depth.commercial.explains != null) ...[
+                      const SizedBox(height: 4),
+                      Text(depth.commercial.explains!,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: Ws.inkMuted)),
+                    ],
+                  ],
+                ),
+              )
+            else ...[
+              WorkspaceRow(
+                title: 'Agreed',
+                detail: '${depth.commercial.agreements} agreement'
+                    '${depth.commercial.agreements == 1 ? '' : 's'}',
+              ),
+              // Obligations lead with what is owed and by whom. A thing this
+              // business owes and a thing it is owed are opposite situations,
+              // and rendering them alike tells somebody to chase their own
+              // commitment.
+              for (final o in depth.commercial.dueNext)
+                WorkspaceRow(
+                  title: o.description,
+                  detail: o.owedByUs
+                      ? 'You owe this${o.dueAt == null ? '' : ' · due '
+                          '${meetingWhen(o.dueAt!)}'}'
+                      : 'Owed to you${o.dueAt == null ? '' : ' · due '
+                          '${meetingWhen(o.dueAt!)}'}',
+                  tone: o.owedByUs ? RowTone.problem : RowTone.neutral,
+                ),
+              WorkspaceRow(
+                title: 'Invoiced and paid',
+                detail: '${depth.commercial.invoices} invoice'
+                    '${depth.commercial.invoices == 1 ? '' : 's'} · '
+                    '${depth.commercial.payments} payment'
+                    '${depth.commercial.payments == 1 ? '' : 's'}',
+              ),
+            ],
+          ],
+        ),
 
         // ── HISTORY ───────────────────────────────────────────────────────
         const SizedBox(height: 8),
