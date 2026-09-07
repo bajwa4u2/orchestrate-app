@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
-import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/screens/client_authorised_people_screen.dart';
 
@@ -145,7 +145,7 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
             detail: 'Manage the subscription, payment method and receipts.',
             onTap: () => context.go('/client/billing'),
             action: const Icon(Icons.chevron_right,
-                size: 18, color: AppTheme.publicMuted),
+                size: 18, color: Ws.inkMuted),
           ),
           WorkspaceRow(
             title: "Orchestrate's invoices to you",
@@ -154,7 +154,7 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
                 'customers.',
             onTap: () => context.go('/client/records'),
             action: const Icon(Icons.chevron_right,
-                size: 18, color: AppTheme.publicMuted),
+                size: 18, color: Ws.inkMuted),
           ),
         ],
       ),
@@ -171,15 +171,25 @@ class _AccountAndSecurity extends StatelessWidget {
     return _AccountFrame(
       title: 'Account & security',
       context_: session.email,
+      // GROUPED BY WHAT A PERSON IS ACTUALLY ASKING.
+      //
+      // These were four rows in a bare column, which made "who am I", "what
+      // may I do for the business" and "how does this workspace behave" read
+      // as one undifferentiated list of settings. They are three different
+      // questions with three different owners, and the middle one is the one
+      // people get wrong.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          WorkspaceBand(
+            title: 'YOU',
+            children: [
           WorkspaceRow(
             title: 'Your account',
             detail: session.fullName.isNotEmpty ? session.fullName : session.email,
             onTap: () => context.go('/client/account'),
             action: const Icon(Icons.chevron_right,
-                size: 18, color: AppTheme.publicMuted),
+                size: 18, color: Ws.inkSubtle),
           ),
           // WHO YOU ARE. Nothing more, and it must not imply more.
           //
@@ -196,6 +206,8 @@ class _AccountAndSecurity extends StatelessWidget {
                 : 'Not confirmed yet. Confirming it establishes who you are.',
             tone: session.emailVerified ? RowTone.good : RowTone.attention,
           ),
+            ],
+          ),
           // WHAT THE COMPANY PERMITS. A separate question with a separate
           // answer, and the only place the resolution actually lives.
           //
@@ -203,21 +215,36 @@ class _AccountAndSecurity extends StatelessWidget {
           // confused because only one of them was ever shown, so a person with
           // a confirmed address and no authority had nothing to read except a
           // green tick.
-          WorkspaceRow(
-            title: 'Authority to act for the business',
-            detail: 'Being signed in, and confirmed, is not the same as the '
-                'business having authorised you to act in its name. That is '
-                'recorded against the organisation, not against you.',
-            onTap: () => context.go('/account/people'),
-            action: const Icon(Icons.chevron_right,
-                size: 18, color: AppTheme.publicMuted),
+          // THE BUSINESS, WHICH IS NOT YOU.
+          //
+          // Its own band, because the distinction is the point. A person with
+          // a confirmed address and no authority previously had nothing to
+          // read except a green tick, and drew the obvious wrong conclusion.
+          WorkspaceBand(
+            title: 'WHAT THE BUSINESS PERMITS',
+            children: [
+              WorkspaceRow(
+                title: 'Authority to act for the business',
+                detail: 'Being signed in, and confirmed, is not the same as the '
+                    'business having authorised you to act in its name. That is '
+                    'recorded against the organisation, not against you.',
+                onTap: () => context.go('/account/people'),
+                action: const Icon(Icons.chevron_right,
+                    size: 18, color: Ws.inkSubtle),
+              ),
+            ],
           ),
-          WorkspaceRow(
-            title: 'Workspace settings',
-            detail: 'Preferences for this workspace.',
-            onTap: () => context.go('/client/settings'),
-            action: const Icon(Icons.chevron_right,
-                size: 18, color: AppTheme.publicMuted),
+          WorkspaceBand(
+            title: 'THIS WORKSPACE',
+            children: [
+              WorkspaceRow(
+                title: 'Workspace settings',
+                detail: 'Preferences for this workspace.',
+                onTap: () => context.go('/client/settings'),
+                action: const Icon(Icons.chevron_right,
+                    size: 18, color: Ws.inkSubtle),
+              ),
+            ],
           ),
         ],
       ),
@@ -297,15 +324,15 @@ class _AreaChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: selected ? AppTheme.publicAccentSoft : Colors.transparent,
+            color: selected ? Ws.accentSoft : Colors.transparent,
             border: Border.all(
-                color: selected ? AppTheme.publicAccent : AppTheme.publicLine),
+                color: selected ? Ws.accent : Ws.hairlineStrong),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: selected ? AppTheme.publicAccent : AppTheme.publicMuted,
+                  color: selected ? Ws.accent : Ws.inkMuted,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 ),
           ),
