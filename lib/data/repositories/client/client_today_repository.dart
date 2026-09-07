@@ -19,17 +19,26 @@ class ClientTodayRepository {
     // Fetched together, and individually survivable. One unavailable source
     // must not blank the operational home — a person still needs to see the
     // rest of their morning.
+    //
+    // SURVIVABLE IS NOT THE SAME AS SILENT.
+    //
+    // Every one of these used to return an empty list on any failure and say
+    // nothing, so a source that was failing looked exactly like a source with
+    // nothing in it. A business reading "nothing needs a decision from you"
+    // could not tell whether that was true or whether the request had failed,
+    // and neither could anyone trying to find out why.
+    final unavailable = <String>{};
     final results = await Future.wait([
-      _safeList('/client/notifications'),
-      _safeMap('/client/workflow-state'),
-      _safeMap('/client/execution-eligibility'),
-      _safeList('/client/messages/recent'),
-      _safeList('/client/replies'),
+      _safeList('/client/notifications', 'notifications', unavailable),
+      _safeMap('/client/workflow-state', 'workflow', unavailable),
+      _safeMap('/client/execution-eligibility', 'eligibility', unavailable),
+      _safeList('/client/messages/recent', 'messages', unavailable),
+      _safeList('/client/replies', 'replies', unavailable),
       // A meeting is the most time-bound thing this product holds, and Today
       // is the only surface organised by time. Without it a business could
       // have a meeting in an hour and read its whole morning without meeting
       // it anywhere.
-      _safeList('/client/meetings'),
+      _safeList('/client/meetings', 'meetings', unavailable),
     ]);
 
     return TodayState(
@@ -39,30 +48,48 @@ class ClientTodayRepository {
       recentMessages: results[3] as List<Map<String, dynamic>>,
       replies: results[4] as List<Map<String, dynamic>>,
       meetings: results[5] as List<Map<String, dynamic>>,
+      unavailable: unavailable,
     );
   }
 
-  Future<List<Map<String, dynamic>>> _safeList(String path) async {
+  Future<List<Map<String, dynamic>>> _safeList(
+    String path,
+    String name,
+    Set<String> unavailable,
+  ) async {
     try {
       final json = await _apiClient.getJson(path, surface: ApiSurface.client);
       final raw = json is Map
           ? (json['items'] ?? json['data'] ?? json['records'] ?? const [])
           : json;
-      if (raw is! List) return const [];
+      if (raw is! List) {
+        // An answer arrived in a shape this version cannot read. Not the same
+        // as an empty list, and reporting it as one hides a contract change.
+        unavailable.add(name);
+        return const [];
+      }
       return raw
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
     } catch (_) {
+      unavailable.add(name);
       return const [];
     }
   }
 
-  Future<Map<String, dynamic>> _safeMap(String path) async {
+  Future<Map<String, dynamic>> _safeMap(
+    String path,
+    String name,
+    Set<String> unavailable,
+  ) async {
     try {
       final json = await _apiClient.getJson(path, surface: ApiSurface.client);
-      return json is Map ? Map<String, dynamic>.from(json) : <String, dynamic>{};
+      if (json is Map) return Map<String, dynamic>.from(json);
+      unavailable.add(name);
+      return <String, dynamic>{};
     } catch (_) {
+      unavailable.add(name);
       return <String, dynamic>{};
     }
   }
@@ -76,6 +103,7 @@ class TodayState {
     required this.recentMessages,
     required this.replies,
     this.meetings = const [],
+    this.unavailable = const {},
   });
 
   final List<Map<String, dynamic>> alerts;
@@ -84,6 +112,32 @@ class TodayState {
   final List<Map<String, dynamic>> recentMessages;
   final List<Map<String, dynamic>> replies;
   final List<Map<String, dynamic>> meetings;
+
+  /// Sources that did not answer. Named so a surface can say which part of the
+  /// morning is missing rather than presenting a partial view as a whole one.
+  final Set<String> unavailable;
+
+  /// What to tell somebody when part of Today could not be loaded.
+  ///
+  /// Deliberately plain about consequence: the rest of the screen is still
+  /// true, and the missing part is not evidence of absence.
+  String? get incompleteBecause {
+    if (unavailable.isEmpty) return null;
+    const names = <String, String>{
+      'notifications': 'alerts',
+      'workflow': 'what is running',
+      'eligibility': 'readiness',
+      'messages': 'recent messages',
+      'replies': 'replies',
+      'meetings': 'meetings',
+    };
+    final missing = unavailable.map((k) => names[k] ?? k).toList()..sort();
+    final list = missing.length == 1
+        ? missing.first
+        : '${missing.take(missing.length - 1).join(', ')} and ${missing.last}';
+    return 'Today could not load $list, so this is not the whole picture. '
+        'Nothing here is wrong — it is incomplete.';
+  }
 
   /// A meeting that is still ahead and that the provider actually holds.
   ///

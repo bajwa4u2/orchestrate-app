@@ -174,12 +174,49 @@ disagree the measurement wins.
 
 ---
 
-## Open
+## CW-8 — Today showed no meeting, and was right
 
-- **CW-8 — Today shows no meeting.** A meeting exists at 13:16Z, bound, ahead,
-  and `needsYou` renders empty. `_safeList` swallows the failure, so the screen
-  cannot say whether the request failed or the list was genuinely empty. Not yet
-  diagnosed; the swallowing is itself a finding.
+**Claimed twice as a defect. It was not one.**
+
+**What I asserted.** That a meeting existed, bound and ahead, and Today
+rendered nothing — a functional gap.
+
+**What the evidence says.** Every meeting was already settled before any
+screenshot was taken:
+
+```
+created  scheduled  completed  status     meeting
+08:01    11:01      08:09      COMPLETED  single meeting
+08:27    11:27      09:33      COMPLETED  second attempt
+10:16    13:16      10:23      COMPLETED  third attempt
+```
+
+The first workspace capture was taken after 10:23. Nothing was ahead at any
+point I looked, so an empty meetings section was the correct rendering.
+
+**Why I got it wrong.** I checked the database at 10:18 — when the third
+meeting genuinely was ahead — and then read screenshots taken later as though
+they showed the same moment. A stale premise, not a stale screen.
+
+**What it did produce, which was worth having.** Diagnosing it exposed a real
+defect: every Today source returned an empty list on failure and said nothing,
+so a source that was failing looked exactly like a source with nothing in it.
+"Nothing needs a decision from you" could mean either, and neither a business
+nor anyone debugging could tell which. Today now names which parts did not
+load and says plainly that the rest is still true. It was that change which
+proved the meetings fetch was succeeding, and therefore that CW-8 was not real.
+
+**Standing observation, not a claim.** All three meetings reached COMPLETED
+between seven and twelve minutes after creation, roughly three hours before
+their scheduled time. That may be the founder exercising them, or it may be
+the stranded-session path Aura addressed in 62d09ca. Not investigated here,
+and not asserted as a defect. It does raise a presentation question for this
+product: a meeting filed under MEETINGS HELD with a scheduled time still in
+the future is a strange commercial record, however true.
+
+---
+
+## Open
 - **CW-9 — Orphaned empty state.** "Nothing needs a decision from you." renders
   outside any surface, below the CHANGED band rather than where the missing
   band would be.

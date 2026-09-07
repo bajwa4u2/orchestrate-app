@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/attention/client_attention.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/today/client_today.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
@@ -95,6 +96,37 @@ class _TodayScreenState extends State<TodayScreen> {
           ),
         ),
         if (_refusal != null) RefusalNotice(refusal: _refusal!, onRetry: _load),
+
+        // PART OF THE MORNING IS MISSING, AND SAYING SO IS THE POINT.
+        //
+        // Every source here is individually survivable, which is right — one
+        // failure must not blank the operational home. But survivable was
+        // silent: a source that failed returned an empty list, so it looked
+        // exactly like a source with nothing in it, and "nothing needs a
+        // decision from you" could mean either.
+        if (_state?.incompleteBecause != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(2, 0, 2, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 1, right: 8),
+                  child: Icon(Icons.info_outline, size: 15, color: Ws.info),
+                ),
+                Expanded(
+                  child: Text(
+                    _state!.incompleteBecause!,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Ws.info),
+                  ),
+                ),
+                TextButton(onPressed: _load, child: const Text('Try again')),
+              ],
+            ),
+          ),
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator())
