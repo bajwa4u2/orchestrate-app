@@ -8,6 +8,8 @@ import 'package:orchestrate_app/core/config/pricing_config.dart';
 import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
+import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 
 class ClientSubscribeScreen extends StatefulWidget {
   const ClientSubscribeScreen({super.key, this.insideWorkspace = false});
@@ -197,6 +199,27 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── WHAT YOU ALREADY HAVE, BEFORE WHAT YOU COULD BUY ─────
+                //
+                // This screen is an acquisition funnel, and as a funnel it is
+                // right: choose a plan, see the price, activate. But it is
+                // also where somebody already inside the workspace lands when
+                // they want to understand their commercial state — and a plan
+                // chooser cannot answer "what do I have access to".
+                //
+                // The product already holds that answer. The entitlement
+                // authority reports each capability with whether it is
+                // permitted, why not, and what resolves it. It gates the
+                // workspace; it was simply never shown to the person it
+                // governs.
+                //
+                // Only inside the workspace. Somebody arriving from setup has
+                // no entitlement to report, and leading with an empty one
+                // would be answering a question they have not asked yet.
+                if (widget.insideWorkspace) ...[
+                  const _CurrentAccessCard(),
+                  const SizedBox(height: 18),
+                ],
                 _SubscribeHero(
                   planCode: _planCode,
                   trialRequested: _trialRequested,
@@ -281,6 +304,97 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
       maxContentWidth: 1120,
       setupFlow: true,
       child: content,
+    );
+  }
+}
+
+/// WHAT THIS BUSINESS CAN CURRENTLY DO.
+///
+/// Read from the entitlement authority, which is the same source that gates
+/// the workspace. Nothing here is derived a second time: a capability says
+/// whether it is permitted, and when it is not it says why and what resolves
+/// it, in the authority's own words.
+///
+/// Capability codes are translated because READ_OWN_RECORDS is not a sentence.
+/// The translation is a label only — the reason and the resolution are passed
+/// through untouched, because those are the parts that carry consequence.
+class _CurrentAccessCard extends StatefulWidget {
+  const _CurrentAccessCard();
+
+  @override
+  State<_CurrentAccessCard> createState() => _CurrentAccessCardState();
+}
+
+class _CurrentAccessCardState extends State<_CurrentAccessCard> {
+  final ClientCapabilities _capabilities = ClientCapabilities.instance;
+
+  static const _labels = <String, String>{
+    'READ_OWN_RECORDS': 'See your own records',
+    'CONFIGURE_BUSINESS': 'Configure the business',
+    'MANAGE_ACCOUNT': 'Manage the account',
+    'EXPORT': 'Export your data',
+    'OPERATE_COMMERCIALLY': 'Operate commercially',
+    'RESEARCH_COUNTERPARTIES': 'Research counterparties',
+    'GOVERNED_EXECUTION': 'Run governed execution',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _capabilities.addListener(_changed);
+    _capabilities.load();
+  }
+
+  @override
+  void dispose() {
+    _capabilities.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final projection = _capabilities.projection;
+    if (projection == null) {
+      // Silent while loading. A skeleton above a pricing page would be
+      // furniture, and the funnel below is already usable.
+      return const SizedBox.shrink();
+    }
+
+    final verdicts = projection.capabilities;
+    final permitted = verdicts.where((v) => v.permitted).toList();
+    final refused = verdicts.where((v) => !v.permitted).toList();
+
+    return ClientPanel(
+      title: 'What this business can do today',
+      subtitle: refused.isEmpty
+          ? 'Everything below is available.'
+          : 'Some capability is not available yet. Each one says why, and what '
+              'resolves it.',
+      children: [
+        // Refusals first: they are the reason somebody opened this screen.
+        for (final v in refused)
+          ClientInfoRow(
+            title: _labels[v.capability] ?? v.capability,
+            primary: v.why ?? 'Not available.',
+            secondary: v.resolution ?? '',
+          ),
+        if (permitted.isNotEmpty)
+          ClientInfoRow(
+            title: 'Available now',
+            primary: permitted
+                .map((v) => _labels[v.capability] ?? v.capability)
+                .join(' · '),
+          ),
+        // The authority's own sentence, carried verbatim. It draws a line the
+        // product must not blur: paying for capability is not the same as
+        // authorising a person to act.
+        if (projection.note.isNotEmpty)
+          ClientInfoRow(title: 'Worth knowing', primary: projection.note),
+      ],
     );
   }
 }

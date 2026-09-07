@@ -432,7 +432,7 @@ what remains, not to be read once.
 | `client_evidence_screen` | 501 | REMAINING |
 | `client_trust_screen` | 464 | REMAINING |
 | `client_branding_screen` | 610 | REMAINING |
-| `client_subscribe_screen` | 874 | REMAINING |
+| `client_subscribe_screen` | 874 | **STATE/COPY FIX** — in-workspace path leads with entitlement, not pricing |
 | `/account/people` | — | REMAINING |
 | `/account/plan` | — | REMAINING |
 | `/account-deletion` | — | REMAINING |
@@ -475,3 +475,33 @@ information architecture, not domain truth — unlike the meetings work, where
 `startedAt` was a genuine gap in the record. Recorded plainly rather than
 inflated: not every pass finds a domain defect, and reporting one that is not
 there would make the register useless.
+
+## The "Subscribe" concept, questioned before it was styled
+
+**Asked first: is this still the right product concept?**
+
+The backend authority never says "subscribe". `commercial-policy` exposes
+`offerings`, `purchase-intent`, `purchase`, `capabilities` and `management`;
+`billing` exposes `subscription`. So the domain models this as
+**offering → purchase → capability**, and "subscribe" is the funnel's word for
+the middle step.
+
+**Verdict: not stale, but doing two jobs.** As an acquisition funnel — choose a
+plan, see the price, activate — the screen is correct and stays. What it could
+not do is answer the question somebody already inside the workspace arrives
+with: *what do I have access to, and what is blocked?* A plan chooser cannot
+answer that, and `insideWorkspace` previously changed only the back-links.
+
+**The answer already existed and was never shown.** `/client/capabilities`
+reports every capability with `permitted`, `why` and `resolution`, and it is
+the same authority that gates the workspace. The in-workspace path now leads
+with it — refusals first, since they are why the screen was opened — and the
+funnel follows.
+
+**Not renamed.** Renaming the route would have been the cheap half of the
+observation and would have changed nothing about what the screen could answer.
+
+**No new domain defect.** The entitlement authority was correct and complete;
+it simply had no surface. Recorded as STATE/COPY FIX rather than DOMAIN FIX,
+because inflating the category would make the register useless.
+
