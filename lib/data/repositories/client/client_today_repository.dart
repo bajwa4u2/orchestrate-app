@@ -197,6 +197,8 @@ class TodayState {
         // Not a warning. A meeting going ahead is the product working.
         severity: 'INFO',
         category: 'meeting',
+        at: at,
+        when: TodayWhen.due,
       ));
     }
 
@@ -212,6 +214,9 @@ class TodayState {
         meta: _ago(m['updatedAt'] ?? m['createdAt']),
         severity: 'WARNING',
         category: 'meeting',
+        // No date orders this. It is true until somebody offers the meeting
+        // again, and it will still be true tomorrow.
+        when: TodayWhen.standing,
       ));
     }
 
@@ -233,6 +238,7 @@ class TodayState {
         final reason = b['reason']?.toString() ?? b['message']?.toString();
         if (reason == null || reason.isEmpty) continue;
         items.add(TodayItem(
+          when: TodayWhen.standing,
           title: b['title']?.toString() ?? 'Sending is held',
           // AN INTERNAL ERROR IS NOT AN ATTENTION ITEM.
           //
@@ -252,7 +258,7 @@ class TodayState {
       }
     }
 
-    return items;
+    return orderForToday(items);
   }
 
   /// Underway, or waiting on someone else. Never a metric.
@@ -283,11 +289,40 @@ class TodayState {
       ));
     }
 
-    return items;
+    return orderForToday(items);
   }
 
-  /// Movement worth reading, as events rather than counters.
+  /// How far back "changed" reaches.
+  ///
+  /// Today is a temporal surface, and a temporal surface that leads with last
+  /// week is not answering the question it exists for. Production showed three
+  /// five-day-old refusals filling the screen under a heading that reads as
+  /// news, while the day itself had nothing in it.
+  ///
+  /// Four days rather than one, because a business does not work every day and
+  /// a Monday should still show what happened on Friday.
+  static const _recently = Duration(days: 4);
+
+  /// Whether something moved, but not lately.
+  ///
+  /// Lets the surface say so plainly rather than either showing week-old items
+  /// as news or rendering an empty section that reads as "nothing ever
+  /// happened here".
+  bool get changedButNotRecently =>
+      changed.isEmpty && _everythingChanged.isNotEmpty;
+
+  /// Movement worth reading, within the window.
   List<TodayItem> get changed {
+    final cutoff = DateTime.now().subtract(_recently);
+    return orderForToday(_everythingChanged.where((i) {
+      final at = i.at;
+      return at == null || at.isAfter(cutoff);
+    }).toList());
+  }
+
+  /// Everything that moved, however long ago. Kept separate so the window is
+  /// applied in one place and the surface can tell the two apart.
+  List<TodayItem> get _everythingChanged {
     final items = <TodayItem>[];
 
     for (final r in replies.take(6)) {
@@ -299,6 +334,7 @@ class TodayState {
         meta: _ago(r['receivedAt'] ?? r['createdAt']),
         category: 'reply',
         intent: intent,
+        at: DateTime.tryParse('${r['receivedAt'] ?? r['createdAt'] ?? ''}'),
       ));
     }
 
@@ -360,6 +396,9 @@ class TodayState {
       }
     }
 
+    // Anything older than the window is real and is not news. It stays in the
+    // record — the relationship and message surfaces still hold it — and stops
+    // occupying the first screen of somebody's morning.
     return items;
   }
 
@@ -479,6 +518,28 @@ class TodayState {
   }
 }
 
+/// WHAT AN ITEM'S TIME MEANS.
+///
+/// Sorting a day by one timestamp assumes every object's time means the same
+/// thing, and none of them do. A meeting has a time it is due; a delivery has
+/// a time it happened; a blocked provider has no time at all — it is simply
+/// true until somebody fixes it, and giving it a date to be ordered by would
+/// be inventing one.
+///
+/// So each item says which kind of time it carries, and the day is composed
+/// from that rather than from a common `date` field nothing actually has.
+enum TodayWhen {
+  /// It will happen at this time unless something changes.
+  due,
+
+  /// It happened at this time and cannot be changed.
+  happened,
+
+  /// It is true now. No timestamp orders it, and inventing one would rank a
+  /// standing condition against events by a number that means nothing.
+  standing,
+}
+
 class TodayItem {
   const TodayItem({
     required this.title,
@@ -487,6 +548,8 @@ class TodayItem {
     this.severity,
     this.category,
     this.intent,
+    this.at,
+    this.when = TodayWhen.happened,
   });
 
   final String title;
@@ -495,4 +558,40 @@ class TodayItem {
   final String? severity;
   final String? category;
   final String? intent;
+
+  /// The moment this item is about, in its own sense.
+  final DateTime? at;
+  final TodayWhen when;
+}
+
+/// Order a section by what its items' times actually mean.
+///
+/// Standing conditions lead: they are true right now and nothing about them
+/// resolves by waiting. Then what is due, soonest first, because that is the
+/// order a day is actually lived. Then what happened, most recent first.
+List<TodayItem> orderForToday(List<TodayItem> items) {
+  int rank(TodayItem i) {
+    switch (i.when) {
+      case TodayWhen.standing:
+        return 0;
+      case TodayWhen.due:
+        return 1;
+      case TodayWhen.happened:
+        return 2;
+    }
+  }
+
+  final sorted = [...items];
+  sorted.sort((a, b) {
+    final byKind = rank(a).compareTo(rank(b));
+    if (byKind != 0) return byKind;
+    final at = a.at;
+    final bt = b.at;
+    if (at == null && bt == null) return 0;
+    if (at == null) return 1;
+    if (bt == null) return -1;
+    // Due: soonest first. Happened: most recent first.
+    return a.when == TodayWhen.due ? at.compareTo(bt) : bt.compareTo(at);
+  });
+  return sorted;
 }

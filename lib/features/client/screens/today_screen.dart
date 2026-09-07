@@ -257,6 +257,24 @@ class _TodayScreenState extends State<TodayScreen> {
               ),
           ],
         ),
+        // Nothing has moved lately, and the record is not empty.
+        //
+        // Two different truths that used to render identically: an absent
+        // CHANGED band read as "nothing ever happened here", while widening
+        // the window to avoid that put five-day-old refusals at the top of the
+        // morning under a heading that says news.
+        if (changed.isEmpty && s.changedButNotRecently)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(2, 0, 2, 18),
+            child: Text(
+              'Nothing has changed in the last few days. Earlier activity is '
+              'on the relationships it belongs to.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Ws.inkSubtle),
+            ),
+          ),
         WorkspaceBand(
           title: 'CHANGED',
           children: [
