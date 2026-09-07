@@ -100,9 +100,8 @@ class _ClientArtifactsScreenState extends State<ClientArtifactsScreen> {
         content: const Text(
           'It stops appearing in your artifacts and is no longer offered '
           'anywhere it would normally be used.\n\n'
-          'The document itself is kept on record. But archiving cannot be '
-          'undone from here — there is no way to bring it back in the '
-          'product.',
+          'This record will be preserved, but it cannot be restored from this '
+          'workspace.',
         ),
         actions: [
           TextButton(
@@ -110,7 +109,7 @@ class _ClientArtifactsScreenState extends State<ClientArtifactsScreen> {
               child: const Text('Keep it')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Archive permanently',
+            child: const Text('Archive record',
                 style: TextStyle(color: Ws.critical)),
           ),
         ],

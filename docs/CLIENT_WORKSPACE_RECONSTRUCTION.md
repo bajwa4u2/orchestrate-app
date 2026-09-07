@@ -532,3 +532,41 @@ labelling it "Cancel".
 **Not classified as a domain defect.** The backend behaves exactly as designed;
 the surfaces described it inaccurately. STATE/COPY, not DOMAIN.
 
+## Responsive proof — what was actually obtained
+
+Exercised rather than postponed, and classified rather than blurred.
+
+**WIDGET PROOF — obtained.** `responsive_form_composition_test.dart` renders the
+primitives introduced during this pass across seven real viewports: web narrow
+at 1.0x and 1.3x, Android phone at 1.0x and largest text, iPhone with Dynamic
+Type, small tablet, and desktop at 1.75x. Twenty-three assertions, all passing.
+It covers the field row, a long legal name with a long consequence line, and
+the archive confirmation — which must never clip, because a person who cannot
+read the consequence still believes they have.
+
+Primitives rather than screens, deliberately: `_FieldRow` decides every form's
+column behaviour, and fixing it in five screens independently is how five
+screens come to disagree.
+
+**WEB RUNTIME — obtained at desktop width only.** The built web client was
+served and driven in Chrome. It boots, the public surface renders, and its
+failure state is already disciplined: *"The public authority could not be
+reached. This is different from an empty operating record."*
+
+**WEB NARROW RUNTIME — NOT obtained.** `resize_window` reported success and the
+rendered viewport stayed at 1142px across repeated attempts. That is the
+instrument failing to do what it claims, and it is the third time in this
+program that a measuring tool produced what would have looked like a product
+result. No narrow-web runtime claim is made.
+
+**ANDROID RUNTIME — NOT obtained.** `flutter devices` lists Windows, Chrome and
+Edge. `flutter emulators` reports no AVD images available. There is no handset
+and no emulator on this machine, so system Back, keyboard behaviour, scroll-to-
+error and gesture navigation are unexercised. Widget proof covers composition at
+Android viewport sizes; it says nothing about any of those behaviours.
+
+**Standing rule reaffirmed:** a harness that cannot observe the thing it claims
+to certify is not evidence. Widget proof is not runtime proof, viewport
+arithmetic is not a handset, and a resize that silently does nothing is not a
+narrow screen.
+

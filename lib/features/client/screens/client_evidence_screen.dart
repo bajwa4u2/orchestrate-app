@@ -112,10 +112,10 @@ class _ClientEvidenceScreenState extends State<ClientEvidenceScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Archive this evidence?'),
         content: const Text(
-          'It stops being part of what this business can evidence about '
-          'itself, so anything relying on it no longer has it to draw on.\n\n'
-          'The record is preserved and not deleted. But archiving cannot be '
-          'undone from here.',
+          'It will no longer count as active evidence for the business, so '
+          'anything relying on it no longer has it to draw on.\n\n'
+          'This record will be preserved, but it cannot be restored from this '
+          'workspace.',
         ),
         actions: [
           TextButton(
@@ -123,7 +123,7 @@ class _ClientEvidenceScreenState extends State<ClientEvidenceScreen> {
               child: const Text('Keep it')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Archive permanently',
+            child: const Text('Archive record',
                 style: TextStyle(color: Ws.critical)),
           ),
         ],
