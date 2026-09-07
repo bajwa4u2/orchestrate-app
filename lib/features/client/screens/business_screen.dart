@@ -61,7 +61,7 @@ class BusinessScreen extends StatelessWidget {
             _Entry(
               label: 'Market and targeting',
               detail: 'Ideal customer, geography, industries.',
-              path: '/client/representation/targeting',
+              path: '/client/business-identity',
             ),
             // "Discovery" was a second row pointing at the same destination as
             // "Business identity". Two labels for one surface is a navigation

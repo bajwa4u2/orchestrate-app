@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:orchestrate_app/core/layout/workspace.dart';
+
 import 'package:orchestrate_app/data/repositories/public_repository.dart';
 
 const _field = Color(0xFF0B1825);
@@ -76,7 +78,7 @@ class _PublicOverviewWidgetState extends State<PublicOverviewWidget> {
           // node half outside the window.
           //
           // Below this the compact layout stacks instead, which fits.
-          final compact = constraints.maxWidth < 1040;
+          final compact = Workspace.effectiveWidth(context, constraints.maxWidth) < 1040;
           // Never wider than the window, whatever the parent says it may
           // have. This band was laying out at about 1180 logical pixels inside
           // a 1024-wide window: the right-hand nodes were positioned off the

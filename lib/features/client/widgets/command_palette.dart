@@ -85,7 +85,7 @@ const List<_Command> _commands = [
   // These were fragments — #targeting, #infrastructure, #trust — and nothing
   // in the app reads a fragment, so all three landed on the Business hub. The
   // sections are real routes; the palette now names them.
-  _Command('Targeting and discovery', '/client/representation/targeting',
+  _Command('Targeting and discovery', '/client/business-identity',
       Icons.travel_explore_outlined),
   _Command('Mailbox and sending', '/client/infrastructure',
       Icons.mark_email_read_outlined),

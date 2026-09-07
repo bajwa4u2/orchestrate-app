@@ -198,7 +198,12 @@ class _ClientShellState extends State<ClientShell> {
     return Theme(
       data: AppTheme.lightTheme,
       child: LayoutBuilder(builder: (context, constraints) {
-        final size = Workspace.sizeOf(context);
+        // Measured against the constraints this shell actually has, and in
+        // the text that has to fit inside them. With the OS enlarging text the
+        // window stays the same size while everything in it grows, so the rail
+        // collapses at the width where the work beside it would otherwise be
+        // squeezed rather than at a pixel count that assumes ordinary text.
+        final size = Workspace.sizeOf(context, constraints.maxWidth);
         final phone = size.isPhone;
 
         return CommandPaletteHost(
@@ -219,7 +224,7 @@ class _ClientShellState extends State<ClientShell> {
                     scrolledUnderElevation: 0,
                     actions: [
                       IconButton(
-                        icon: const Icon(Icons.search, size: 20),
+                        icon: Icon(Icons.search, size: Workspace.icon(context, 20)),
                         tooltip: 'Search and actions',
                         onPressed: () => CommandPaletteHost.open(context),
                       ),
@@ -437,8 +442,14 @@ class _RailItem extends StatelessWidget {
         mainAxisAlignment:
             collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
         children: [
+          // Icons do not follow the text scaler on their own, so with the OS
+          // enlarging text they stay at their designed size while every label
+          // beside them grows — the rail stops reading as one control and the
+          // hit target stops matching the row it belongs to. Tracked, and
+          // capped, because an icon is a mark rather than a sentence and does
+          // not need to keep growing to stay legible.
           Icon(selected ? destination.selectedIcon : destination.icon,
-              size: 19,
+              size: Workspace.icon(context, 19),
               color: selected ? AppTheme.publicAccent : AppTheme.publicMuted),
           if (!collapsed) ...[
             const SizedBox(width: 12),
@@ -504,7 +515,7 @@ class _RailAction extends StatelessWidget {
                   ? MainAxisAlignment.center
                   : MainAxisAlignment.start,
               children: [
-                Icon(icon, size: 18, color: AppTheme.publicMuted),
+                Icon(icon, size: Workspace.icon(context, 18), color: AppTheme.publicMuted),
                 if (!collapsed) ...[
                   const SizedBox(width: 12),
                   Text(label,
@@ -743,8 +754,8 @@ class _BottomBar extends StatelessWidget {
       destinations: [
         for (final d in destinations)
           NavigationDestination(
-            icon: Icon(d.icon, size: 20),
-            selectedIcon: Icon(d.selectedIcon, size: 20),
+            icon: Icon(d.icon, size: Workspace.icon(context, 20)),
+            selectedIcon: Icon(d.selectedIcon, size: Workspace.icon(context, 20)),
             label: d.label,
           ),
       ],
@@ -784,8 +795,9 @@ class _SurfaceReturn extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.chevron_left,
-                      size: 18, color: AppTheme.publicMuted),
+                  Icon(Icons.chevron_left,
+                      size: Workspace.icon(context, 18),
+                      color: AppTheme.publicMuted),
                   const SizedBox(width: 2),
                   Text(
                     // Named, not "Back". Back is where you came from; this is

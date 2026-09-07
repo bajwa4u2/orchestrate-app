@@ -27,8 +27,48 @@ class Workspace {
   /// Above this, an inspector can sit beside both without crushing them.
   static const double threePane = 1440;
 
-  static WorkspaceSize sizeOf(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
+  /// Width measured in the text that has to fit inside it.
+  ///
+  /// A breakpoint in raw pixels assumes text of a known size, and the operating
+  /// system does not guarantee that. Windows "Make text bigger" at 175% renders
+  /// every string almost twice as wide while the window stays exactly as it
+  /// was, so a 1266-pixel window holds about as much text as a 723-pixel one.
+  /// Compared against a raw breakpoint it looks roomy and behaves cramped:
+  /// headings clip, rows run past the right edge, and labels truncate with
+  /// visible space beside them.
+  ///
+  /// So layout decisions are made in this width rather than the real one. The
+  /// scale is clamped at the bottom because a user who has made text smaller
+  /// has not asked for a denser layout, and at the top because past a point the
+  /// answer is a simpler arrangement rather than an ever-narrower one.
+  static double effectiveWidth(BuildContext context, [double? available]) {
+    final media = MediaQuery.of(context);
+    final width = available ?? media.size.width;
+    final scale = media.textScaler.scale(14) / 14;
+    return width / scale.clamp(1.0, 2.2);
+  }
+
+  /// An icon size that keeps its relationship to the text beside it.
+  ///
+  /// Icons do not follow the text scaler. With the OS enlarging text by three
+  /// quarters, every label grows and every mark beside it stays put, so a row
+  /// stops reading as one control: the icon drifts from its own label, and the
+  /// hit target stops matching the thing it belongs to.
+  ///
+  /// Capped below the text's own growth on purpose. A sentence has to stay
+  /// readable at any size; an icon is a mark, and past a point making it larger
+  /// stops helping and starts crowding the words it was meant to support.
+  static double icon(BuildContext context, double base) {
+    final scale = MediaQuery.of(context).textScaler.scale(14) / 14;
+    return base * scale.clamp(1.0, 1.5);
+  }
+
+  /// Whether the OS is enlarging text enough to change what fits.
+  static bool textIsEnlarged(BuildContext context) =>
+      MediaQuery.of(context).textScaler.scale(14) / 14 > 1.15;
+
+  static WorkspaceSize sizeOf(BuildContext context, [double? available]) {
+    final w = effectiveWidth(context, available);
     if (w < phone) return WorkspaceSize.phone;
     if (w < twoPane) return WorkspaceSize.compact;
     if (w < threePane) return WorkspaceSize.wide;
@@ -90,7 +130,7 @@ class WorkspaceHeader extends StatelessWidget {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 onPressed: onBack,
-                icon: const Icon(Icons.arrow_back, size: 20),
+                icon: Icon(Icons.arrow_back, size: Workspace.icon(context, 20)),
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Back',
               ),
@@ -380,7 +420,7 @@ class WorkspaceSection extends StatelessWidget {
           Row(
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 16, color: AppTheme.publicMuted),
+                Icon(icon, size: Workspace.icon(context, 16), color: AppTheme.publicMuted),
                 const SizedBox(width: 8),
               ],
               Text(title,

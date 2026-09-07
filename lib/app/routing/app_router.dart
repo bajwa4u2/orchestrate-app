@@ -1273,8 +1273,18 @@ GoRouter get router {
         // /app/campaigns for now; representation links to it as
         // "refine targeting".
         GoRoute(
+            // Targeting is edited on the business identity surface — ideal
+            // customer, geography, industry — so this points there rather than
+            // at a route that no longer renders anything.
+            //
+            // It used to redirect to /app/campaigns while /app/campaigns
+            // redirected back here, so the two were a cycle: every arrival
+            // bounced between them and the workspace reported no surface. The
+            // pair was written when /app/campaigns still rendered the targeting
+            // editor, and survived the retirement of the /app screens as two
+            // redirects with nothing left underneath either.
             path: '/client/representation/targeting',
-            redirect: (context, state) => '/app/campaigns'),
+            redirect: (context, state) => '/client/business-identity'),
         // Sequence authoring (governed template vs legacy custom body).
         // Mounted under the client shell so the workspace chrome wraps
         // it. Step CRUD posts directly to the new ClientPortalService
@@ -1420,7 +1430,7 @@ GoRouter get router {
         // Business hub maintains.
         GoRoute(
             path: '/app/campaigns',
-            redirect: (context, state) => '/client/representation/targeting'),
+            redirect: (context, state) => '/client/business-identity'),
         GoRoute(
             path: '/app/campaigns/create',
             redirect: (context, state) => '/client/representation/targeting'),
