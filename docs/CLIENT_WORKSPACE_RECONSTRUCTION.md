@@ -318,6 +318,55 @@ failure indistinguishable from a product that fails to respond.
 
 ---
 
+## CW-15 — The breakpoint rule audited across the client family
+
+**What was audited.** The Phase-1 separation — structural layout from actual
+composition space, accessibility scale from typography — against thirteen real
+machine profiles rather than only the one where the defect was found.
+
+**Profiles.** Windows desktop at 1.0x and at 1.75x; a narrow Windows window;
+web desktop; web desktop at 200% browser zoom; web narrow; Android phone at
+1.0x and at largest text; Android tablet; iPhone; iPhone with Dynamic Type;
+iPad; iPad with Dynamic Type.
+
+**A distinction the original defect depended on.** Browser zoom changes the
+logical viewport; it is not a text scaler. At 200% a 1440 window presents 720
+logical pixels, and that genuinely is a narrow composition space and correctly
+becomes phone structure. Android and iOS accessibility text is a scaler on a
+viewport that does not change, and correctly changes nothing structural.
+Confusing those two is how the original rule was written.
+
+**Result.** All nineteen assertions pass, including that enlarging text never
+changes structure on a given machine while still reducing how many panes fit,
+and that the rail never exceeds a quarter of a desktop at any scale.
+
+**Evidence class.** WIDGET PROOF of the rule across profiles. Web and Android
+release builds compile; neither is exercised at runtime, and iOS cannot be
+built from Windows.
+
+---
+
+## CW-16 — Today lost the operator's place
+
+**Finding.** A Today item opened the relationships surface without carrying
+where it came from, so going back from a relationship landed on the list
+rather than on the day the person was working through.
+
+**Root cause.** The relationships surface already honours a return path. It was
+simply never given one from Today.
+
+---
+
+## Observed, not a defect
+
+- **cupertino_icons font warning** on web and Android builds. Nothing in this
+  product references `CupertinoIcons`, and the package is in neither the
+  pubspec nor the lockfile — it is a transitive declaration. Recorded rather
+  than dismissed: a dependency could render one on iOS, which cannot be
+  verified from Windows.
+
+---
+
 ## Open
 - **CW-9 — Orphaned empty state.** "Nothing needs a decision from you." renders
   outside any surface, below the CHANGED band rather than where the missing

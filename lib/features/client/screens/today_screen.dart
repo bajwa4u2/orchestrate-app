@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/attention/client_attention.dart';
+import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
@@ -286,7 +287,15 @@ class _TodayScreenState extends State<TodayScreen> {
                 tone: item.severity == 'WARNING'
                     ? RowTone.problem
                     : (item.intent == 'INTERESTED' ? RowTone.good : RowTone.neutral),
-                onTap: () => context.go('/client/relationships'),
+                // TODAY IS A PLACE, AND SOMEBODY SHOULD GET BACK TO IT.
+                //
+                // Inspecting one relationship should not cost an operator
+                // their morning. The relationships surface already honours a
+                // return path — it was simply never given one from here, so
+                // going back from a relationship landed on the list rather
+                // than on the day the person was working through.
+                onTap: () => context.go(
+                    withReturnTo('/client/relationships', '/client/today')),
               ),
           ],
         ),
