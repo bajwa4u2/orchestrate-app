@@ -140,21 +140,29 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
           const EntitlementSummary(),
 
           const SizedBox(height: 24),
-          WorkspaceRow(
-            title: 'Subscription and payment',
-            detail: 'Manage the subscription, payment method and receipts.',
-            onTap: () => context.go('/client/billing'),
-            action: const Icon(Icons.chevron_right,
-                size: 18, color: Ws.inkMuted),
-          ),
-          WorkspaceRow(
-            title: "Orchestrate's invoices to you",
-            detail: 'Service agreement, invoices and statements from '
-                'Orchestrate. Separate from invoices you issue to your own '
-                'customers.',
-            onTap: () => context.go('/client/records'),
-            action: const Icon(Icons.chevron_right,
-                size: 18, color: Ws.inkMuted),
+          // Contained, like the other Account sections. Two rows in a bare
+          // column read as leftovers under the summary rather than as the
+          // places those questions are answered.
+          WorkspaceBand(
+            title: 'WHERE THIS IS MANAGED',
+            children: [
+              WorkspaceRow(
+                title: 'Subscription and payment',
+                detail: 'Manage the subscription, payment method and receipts.',
+                onTap: () => context.go('/client/billing'),
+                action: const Icon(Icons.chevron_right,
+                    size: 18, color: Ws.inkSubtle),
+              ),
+              WorkspaceRow(
+                title: "Orchestrate's invoices to you",
+                detail: 'Service agreement, invoices and statements from '
+                    'Orchestrate. Separate from invoices you issue to your own '
+                    'customers.',
+                onTap: () => context.go('/client/records'),
+                action: const Icon(Icons.chevron_right,
+                    size: 18, color: Ws.inkSubtle),
+              ),
+            ],
           ),
         ],
       ),

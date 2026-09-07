@@ -7,6 +7,7 @@ import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/config/app_config.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_branding_repository.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 
 class ClientBrandingScreen extends StatefulWidget {
   const ClientBrandingScreen({super.key});
@@ -201,6 +202,37 @@ class _ClientBrandingScreenState extends State<ClientBrandingScreen> {
           else if (_error != null)
             _ErrorCard(message: _error!, onRetry: _load)
           else ...[
+            // WHERE ANY OF THIS ACTUALLY SHOWS UP.
+            //
+            // The surface opened straight into a logo uploader and said
+            // nothing about what a logo or a colour changes. Traced before
+            // claiming: branding is read by artifact generation and by the
+            // email templates, so it appears on documents produced for this
+            // business and on the mail sent on its behalf.
+            //
+            // Kept subordinate to Business Identity on purpose. This is how
+            // the business LOOKS; what it is called, legally and in
+            // correspondence, is decided there and is a different kind of
+            // fact.
+            Text(
+              'How this business looks on what it sends',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Your logo and colours appear on the documents Orchestrate '
+              'produces for this business and on the mail sent on its behalf, '
+              'so counterparties see them. Names are not set here — the '
+              'trading and legal names live in Business identity.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Ws.inkMuted),
+            ),
+            const SizedBox(height: 20),
             _LogoSection(
               branding: _branding!,
               uploading: _uploadingLogo,
@@ -400,6 +432,9 @@ class _LogoSlot extends StatelessWidget {
                     TextButton(
                       onPressed: hasBusy ? null : () => onRemove(assetType),
                       style: TextButton.styleFrom(foregroundColor: Colors.red.shade600),
+                      // No confirmation, deliberately: uploading again
+                      // restores it, and ceremony where reversal is trivial
+                      // trains people to dismiss the dialogs that matter.
                       child: hasBusy && removing
                           ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 1.5))
                           : const Text('Remove', style: TextStyle(fontSize: 13)),

@@ -431,11 +431,11 @@ what remains, not to be read once.
 | `client_artifacts_screen` | 403 | **DESTRUCTIVE FLOW FIX** — archive stated as irreversible |
 | `client_evidence_screen` | 501 | **DESTRUCTIVE FLOW FIX** — archive stated as irreversible |
 | `client_trust_screen` | 464 | **STATE/COPY FIX** — stopped implying verification |
-| `client_branding_screen` | 610 | REMAINING |
+| `client_branding_screen` | 610 | **RECOMPOSED** — says where branding actually appears |
 | `client_subscribe_screen` | 874 | **STATE/COPY FIX** — in-workspace path leads with entitlement, not pricing |
-| `/account/people` | — | REMAINING |
-| `/account/plan` | — | REMAINING |
-| `/account-deletion` | — | REMAINING |
+| `/account/people` | — | **REVIEWED, ALREADY CORRECT** — withdraw-authority states consequence exactly |
+| `/account/plan` | — | **RECOMPOSED** — banded; entitlement already server-derived |
+| `/account-deletion` | — | **REVIEWED, ALREADY CORRECT** — the delete flow is exemplary |
 
 ## What complexity was real
 
@@ -685,4 +685,29 @@ about finds the cases it already knows about.
 
 Five of eight were already right. The lesson is about the sweep, not the
 estate: an audit that finds what it went looking for is not an audit.
+
+## The estate is complete — 11 / 11 Business, 4 / 4 Account
+
+**The four acts §13 names, kept distinct.** Checked rather than assumed:
+
+- **Delete my account** — exemplary already. What is destroyed, that it cannot
+  be undone, that the subscription ends and the session closes, which records
+  are legally retained, and a typed DELETE.
+- **Withdraw someone's authority** — exemplary already, and it draws the
+  hardest line correctly: the person can authorise nothing further, *and*
+  "this does not undo what was already done. Decisions made while the authority
+  was valid stay valid, and stay on the record."
+- **Revoke a trusted device** — the mildest of the four, and it read more final
+  than it is. No confirmation added, because trusting the device again restores
+  it and ceremony where reversal is trivial trains people to dismiss the
+  dialogs that matter. The consequence is now stated instead.
+- **Leave a business** — does not exist as an act in this product. Recorded as
+  absent rather than invented.
+
+**Branding.** Opened straight into a logo uploader and never said what a logo
+or a colour changes. Traced before claiming: branding is read by artifact
+generation and by the email templates, so it appears on documents produced for
+the business and on mail sent on its behalf. It says so now, and stays
+subordinate to Business Identity — this is how the business LOOKS; what it is
+called is decided there.
 

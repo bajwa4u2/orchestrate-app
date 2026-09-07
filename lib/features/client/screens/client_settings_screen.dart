@@ -420,10 +420,25 @@ class _TrustedDeviceRow extends StatelessWidget {
         if (device['revokedAt'] != null)
           'Revoked ${dateLabel(device['revokedAt'])}',
       ].join(' · '),
+      // REVOKING A DEVICE IS NOT DELETING ACCESS, AND SHOULD NOT LOOK LIKE IT.
+      //
+      // Four different acts get confused here, and this is the mildest of
+      // them: revoking a trusted device is not losing a role, not leaving a
+      // business, and not deleting an account. It means one machine has to
+      // enter an email code again, and trusting it afterwards restores it.
+      //
+      // So no confirmation — ceremony where reversal is trivial trains people
+      // to dismiss the dialogs that matter — but the consequence is stated,
+      // because "Revoke" alone reads more final than it is.
       trailing: active && id.isNotEmpty
-          ? TextButton(
-              onPressed: busy ? null : () => onRevoke(id),
-              child: Text(busy ? 'Revoking' : 'Revoke'),
+          ? Tooltip(
+              message:
+                  'This device will need an email code again next time. '
+                  'Trusting it afterwards restores it.',
+              child: TextButton(
+                onPressed: busy ? null : () => onRevoke(id),
+                child: Text(busy ? 'Revoking' : 'Revoke'),
+              ),
             )
           : null,
     );
