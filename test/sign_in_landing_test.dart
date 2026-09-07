@@ -64,8 +64,18 @@ void main() {
   /// subscription at all, and /app/newsletter was a placeholder whose entire
   /// content was that controls might exist later.
   test('the orphaned legacy client screens are retired', () {
+    // /app/campaigns pointed at /client/representation/targeting, which
+    // pointed back at /app/campaigns. Each half was defensible alone and the
+    // pair rendered nothing: every arrival bounced until the workspace
+    // reported no surface was available. Both now land on business identity,
+    // which is where the targeting editor actually lives.
+    //
+    // The destination is pinned here because retirement means arriving
+    // somewhere real, not merely resolving. That a destination exists at all,
+    // and that no redirect returns to its own origin, is checked across the
+    // whole table in router_redirect_integrity_test.
     const retired = <String, String>{
-      '/app/campaigns': '/client/representation/targeting',
+      '/app/campaigns': '/client/business-identity',
       '/app/activity': '/client/relationships',
       '/app/mailbox': '/client/infrastructure',
       '/app/newsletter': '/client/business',

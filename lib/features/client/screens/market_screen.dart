@@ -345,6 +345,19 @@ class _Unavailable extends StatelessWidget {
         || name.contains('TimeoutException');
   }
 
+  /// Did the answer arrive and fail to be understood?
+  ///
+  /// Only claimed when the error actually says so. Asserting it for anything
+  /// unrecognised tells a business its app is out of date and sends them to
+  /// update it, which is a confident answer to a question this screen did not
+  /// have the evidence to answer.
+  bool get _isUnreadable {
+    final name = error.runtimeType.toString();
+    return name.contains('FormatException')
+        || name.contains('TypeError')
+        || name.contains('CastError');
+  }
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
@@ -356,12 +369,11 @@ class _Unavailable extends StatelessWidget {
 
     if (api != null && api.isAuthFailure) {
       headline = 'Your session has ended.';
-      detail = 'Sign in again and your market will be here. Nothing was lost.';
+      detail = 'Sign in again and your market will be here.';
       reference = null;
     } else if (_isNetwork) {
       headline = 'Orchestrate could not be reached.';
-      detail = 'This looks like the connection rather than your data. '
-          'Nothing has changed and nothing was lost.';
+      detail = 'This looks like the connection rather than your data.';
       reference = null;
     } else if (api != null && api.statusCode >= 500) {
       headline = 'Orchestrate answered with an error.';
@@ -375,13 +387,21 @@ class _Unavailable extends StatelessWidget {
       headline = 'We could not load your market.';
       detail = api.message;
       reference = api.displayId.isEmpty ? null : api.displayId;
-    } else {
+    } else if (_isUnreadable) {
       // The answer arrived and could not be read. A different fault with a
       // different owner: retrying fetches the same unreadable answer again.
       headline = 'Your market arrived but could not be read.';
       detail = 'The answer reached this device and did not have the shape this '
           'version expects, so nothing is being shown rather than something '
           'wrong. Updating the app is more likely to help than trying again.';
+      reference = error.runtimeType.toString();
+    } else {
+      // Something went wrong that this screen cannot classify. Saying so is
+      // the honest answer; naming a cause it cannot see would send a business
+      // to fix the wrong thing.
+      headline = 'We could not load your market.';
+      detail = 'Something went wrong on the way to your market, and this '
+          'screen cannot tell what. Trying again is worth doing first.';
       reference = error.runtimeType.toString();
     }
 
@@ -394,6 +414,17 @@ class _Unavailable extends StatelessWidget {
               style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Text(detail,
+              style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+          const SizedBox(height: 6),
+          // SAID IN EVERY CASE, WHATEVER FAILED.
+          //
+          // A market that cannot be loaded and a market with nobody in it look
+          // the same on a screen, and only one of them means the pipeline is
+          // gone. This sentence is what separates them, so it cannot live
+          // inside individual branches where a new branch quietly omits it —
+          // which is exactly what happened when this screen learned to tell
+          // faults apart.
+          Text('Nothing has changed and nothing was lost.',
               style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
           if (reference != null) ...[
             const SizedBox(height: 8),
