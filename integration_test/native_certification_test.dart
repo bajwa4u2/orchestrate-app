@@ -209,4 +209,106 @@ void main() {
     debugPrint('[certification] ${identity.platform} ${identity.label} '
         '(${identity.packageName})');
   });
+  /// THE WORKSPACE SHELL, ON THE REAL PLATFORM.
+  ///
+  /// Phase 1 repaired a layout-authority defect that only appeared at runtime:
+  /// a 1265-point desktop window with the OS enlarging text 1.75x was
+  /// classified as a phone, so Windows was served a bottom navigation bar and
+  /// no rail. A widget test pins the rule; this proves the rule reaches the
+  /// shipped binary.
+  ///
+  /// Deliberately not a screenshot. What it certifies is that the structural
+  /// decision holds on the platform, and that the shell says whose business is
+  /// being operated — which is the question the rail exists to answer.
+  testWidgets('the desktop shell holds its structure under enlarged text',
+      (tester) async {
+    await signedIn();
+
+    // A desktop viewport with accessibility text scaling on, which is the
+    // exact combination that used to collapse the product into phone
+    // navigation.
+    tester.view.physicalSize = const Size(1582, 900);
+    tester.view.devicePixelRatio = 1.25;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(MediaQuery(
+      data: const MediaQueryData(textScaler: TextScaler.linear(1.75)),
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        routerConfig: app,
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 400));
+    await settleTo(tester, '/client/today');
+
+    // WITHOUT A TOKEN THIS CERTIFIES THE FRONT DOOR, AND SAYS SO.
+    //
+    // The first authenticated call is answered 401 and the app correctly
+    // signs itself out, so the workspace shell is not reachable. Asserting
+    // against it anyway would compare the rail to a login screen and fail for
+    // a reason that has nothing to do with layout.
+    if (!authenticated) {
+      // The front door carries where it was going, so the path is a prefix
+      // rather than an equality.
+      expect(where(), startsWith('/auth/login'),
+          reason: 'unauthenticated, the desktop build lands on the front door');
+      debugPrint('[certification] shell structure NOT exercised — no CERT_TOKEN');
+      return;
+    }
+
+    // The rail, not a bottom bar. Destination labels are the evidence: a
+    // collapsed rail shows icons only, and a phone layout shows neither.
+    expect(find.text('Relationships'), findsWidgets,
+        reason: 'a desktop window with enlarged text kept its navigation rail');
+    expect(find.byType(BottomNavigationBar), findsNothing,
+        reason: 'phone navigation must not appear on a desktop viewport');
+
+    debugPrint('[certification] desktop shell held at 1.75x text scale');
+  });
+
+  /// THE COMMERCIAL JOURNEY, AS A JOURNEY.
+  ///
+  /// Today, relationships, one relationship in depth, and back. Run against
+  /// the real router on the real platform rather than by driving synthetic
+  /// mouse coordinates at the window — which proved unreliable, and worse,
+  /// produced a failure that looked like the product not responding when it
+  /// was the harness not clicking.
+  testWidgets('today, relationships and depth are one reachable journey',
+      (tester) async {
+    await signedIn();
+    await boot(tester, at: '/client/today');
+
+    if (!authenticated) {
+      // The journey cannot be walked without a session, and pretending
+      // otherwise would certify the login screen four times over.
+      expect(where(), startsWith('/auth/login'));
+      debugPrint('[certification] journey NOT exercised — no CERT_TOKEN');
+      return;
+    }
+
+    expect(where(), '/client/today');
+
+    // Relationships: the surface whose subject is the durable unit of account.
+    expect(await settleTo(tester, '/client/relationships'),
+        '/client/relationships');
+
+    // One relationship in depth. Without a seeded id this exercises the
+    // refusal path, which is the more valuable half: a relationship that is
+    // not this client's must not render as an empty relationship, and the
+    // person must still have somewhere to go.
+    final depth = await settleTo(
+        tester, '/client/relationships/not-a-relationship-of-yours');
+    expect(depth, contains('/client/relationships/'),
+        reason: 'a relationship id resolves to depth rather than bouncing');
+
+    // And back, which is the half a workspace usually gets wrong.
+    expect(await settleTo(tester, '/client/relationships'),
+        '/client/relationships');
+
+    // Today remains reachable from anywhere, because it is the way home.
+    expect(await settleTo(tester, '/client/today'), '/client/today');
+
+    debugPrint('[certification] journey: today -> relationships -> depth -> back');
+  });
 }

@@ -224,6 +224,100 @@ the future is a strange commercial record, however true.
 
 ---
 
+## CW-10 — Today led with last week — CLOSED
+
+**Finding.** Three five-day-old refusals filled the first screen of the day
+under a heading that reads as news, while the day itself had nothing in it.
+
+**Fix.** Change is bounded to four days — four rather than one, because a
+business does not work every day and a Monday should still show Friday. Older
+activity is relocated rather than deleted: it stays on the relationship and
+message surfaces that own it.
+
+**The second half, which was the harder one.** An absent CHANGED band and a
+quiet stretch rendered identically, so narrowing the window would have made a
+working product look like an empty one. The surface now distinguishes them and
+says where the earlier activity lives.
+
+---
+
+## CW-12 — Every object was ordered by one timestamp
+
+**Finding.** Today sorted a day as though every object's time meant the same
+thing. None of them do: a meeting has a time it is DUE, a delivery a time it
+HAPPENED, and a blocked provider no time at all — it is true until somebody
+fixes it.
+
+**Root cause.** A single `date` field nothing actually had. Ranking a standing
+condition against events requires inventing a timestamp for it, which is how a
+permanent blocker ends up buried under yesterday's deliveries.
+
+**Fix.** Items declare which kind of time they carry. Standing conditions lead,
+then what is due soonest first, then what happened most recent first — opposite
+directions for opposite reasons.
+
+---
+
+## CW-13 — Commercial objects had models and no home
+
+**Finding.** Agreement, obligation, invoice and payment carry real
+`relationshipId` keys and appear on no client surface. Production holds zero of
+each, for every client.
+
+**Why it was composed anyway.** Zero rows is not the same as no place to put
+them. Without a home the first agreement a business signs arrives into a
+product with nowhere to show it, and the answer at that point is six empty
+cards added in a hurry.
+
+**Treatment.** One continuity rather than four modules, because the sequence is
+the point. The empty case is a sentence answering what belongs here, what
+creates it and why none exists — and offers no action, because drafting and
+issuing are operator work and a button that does nothing is worse than saying
+so.
+
+---
+
+## CW-14 — The depth tests were only ever seeing the first screenful
+
+**Finding.** Adding a band above the history made three passing tests fail,
+looking exactly like content disappearing.
+
+**It was not a product defect.** A `ListView` builds lazily, and the tests
+rendered into the default 800x600 surface, so content that moved below the fold
+was never built. They assert about the whole composition and were only ever
+seeing part of it.
+
+**Fix.** The depth tests render a viewport tall enough for what they claim to
+check. Recorded because it is the third time a measuring instrument, not the
+product, produced the failure.
+
+---
+
+## Evidence classification
+
+Kept distinct, because blurring them is how a certification comes to claim more
+than it proved.
+
+- **WIDGET / INTEGRATION PROOF** — 314 client tests, 187 backend suites.
+- **RUNTIME AUTOMATION PROOF** — `flutter test integration_test -d windows`
+  drives the real executable: it boots, resolves its version from package
+  metadata, and lands on the front door unauthenticated. **The authenticated
+  shell and the Today→Relationships→depth journey are NOT exercised**: without
+  a `CERT_TOKEN` the first authenticated call is answered 401 and the app
+  correctly signs itself out. The tests say so rather than asserting against a
+  login screen.
+- **FOUNDER-OBSERVED RUNTIME PROOF** — the workspace rendered against the
+  founder's live session: rail identity, banded surfaces, view tabs with
+  counts, and meeting lines reading "Held 06:17 today · ran 6 min · was due
+  09:16 today".
+
+**Coordinate-driven mouse input is no longer used as product evidence.** One
+navigation landed and later identical attempts did not, and moving the window
+broke the coordinates outright. A harness that fails to click produces a
+failure indistinguishable from a product that fails to respond.
+
+---
+
 ## Open
 - **CW-9 — Orphaned empty state.** "Nothing needs a decision from you." renders
   outside any surface, below the CHANGED band rather than where the missing
