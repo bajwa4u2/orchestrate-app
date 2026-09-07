@@ -6,6 +6,7 @@ import 'package:orchestrate_app/data/repositories/client/client_campaign_reposit
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 
 /// Business identity / commercial profile surface.
 ///
@@ -260,28 +261,99 @@ class _ClientBusinessIdentityScreenState
               missingRecommended: missingRecommended,
             ),
             const SizedBox(height: 18),
+            // ── WHO THIS BUSINESS IS, AND WHO SEES WHAT ──────────────
+            //
+            // These six fields were one block called "Representation
+            // profile", which treated a legal name and a timezone as the same
+            // kind of edit. They are not. A legal name is what the business
+            // commits as on an agreement; a display name is what a
+            // counterparty reads on an email; a timezone is scheduling.
+            //
+            // Split by consequence, because that is the question somebody
+            // editing them actually has — who sees this, and what does
+            // changing it change.
             _IdentitySectionCard(
-              title: 'Representation profile',
-              subtitle: 'Entity facts that anchor every dispatch.',
+              title: 'Legal identity',
+              subtitle:
+                  'The name this business commits under. It appears on '
+                  'agreements and invoices, and it is not what counterparties '
+                  'see day to day.',
               guidanceLabel: 'Why this matters',
               // ignore: sort_child_properties_last
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _Field(label: 'Legal name', controller: _legalName, required: true),
-                  _Field(label: 'Display name', controller: _displayName, required: true),
-                  _Field(label: 'Website URL', controller: _websiteUrl, required: true, hint: 'https://example.com'),
-                  _Field(label: 'Industry / category', controller: _industry, required: true),
-                  _Field(label: 'Primary country (ISO code or name)', controller: _country, required: true),
-                  _Field(label: 'Primary timezone', controller: _timezone, hint: 'America/Los_Angeles'),
-                ],
-              ),
+              child: _FieldRow(children: [
+                _Field(
+                  label: 'Legal name',
+                  controller: _legalName,
+                  required: true,
+                  width: _FieldWidth.medium,
+                  affects: 'Used on agreements and invoices.',
+                ),
+              ]),
+              onSave: _savingSection
+                  ? null
+                  : () => _saveSection({'legalName': _legalName.text.trim()}),
+            ),
+            const SizedBox(height: 16),
+            _IdentitySectionCard(
+              title: 'How counterparties see this business',
+              subtitle:
+                  'What appears on correspondence. Changing these changes what '
+                  'the people you write to read.',
+              // ignore: sort_child_properties_last
+              child: _FieldRow(children: [
+                _Field(
+                  label: 'Display name',
+                  controller: _displayName,
+                  required: true,
+                  width: _FieldWidth.medium,
+                  affects: 'Shown on every message that leaves the business.',
+                ),
+                _Field(
+                  label: 'Website',
+                  controller: _websiteUrl,
+                  required: true,
+                  hint: 'https://example.com',
+                  width: _FieldWidth.medium,
+                ),
+              ]),
               onSave: _savingSection
                   ? null
                   : () => _saveSection({
-                        'legalName': _legalName.text.trim(),
                         'displayName': _displayName.text.trim(),
                         'websiteUrl': _websiteUrl.text.trim(),
+                      }),
+            ),
+            const SizedBox(height: 16),
+            _IdentitySectionCard(
+              title: 'Where it operates',
+              subtitle:
+                  'Used to find counterparties and to time what is sent. '
+                  'Counterparties do not see any of it.',
+              // ignore: sort_child_properties_last
+              child: _FieldRow(children: [
+                _Field(
+                  label: 'Industry',
+                  controller: _industry,
+                  required: true,
+                  width: _FieldWidth.medium,
+                ),
+                _Field(
+                  label: 'Primary country',
+                  controller: _country,
+                  required: true,
+                  hint: 'US',
+                  width: _FieldWidth.compact,
+                ),
+                _Field(
+                  label: 'Primary timezone',
+                  controller: _timezone,
+                  hint: 'America/Los_Angeles',
+                  width: _FieldWidth.medium,
+                ),
+              ]),
+              onSave: _savingSection
+                  ? null
+                  : () => _saveSection({
                         'industry': _industry.text.trim(),
                         'country': _country.text.trim(),
                         'primaryTimezone': _timezone.text.trim(),
@@ -542,6 +614,70 @@ class _IdentitySectionCard extends StatelessWidget {
   }
 }
 
+/// HOW MUCH ROOM A VALUE ACTUALLY NEEDS.
+///
+/// Every field on this screen was full width because a Column with stretch
+/// makes that the default. So an ISO country code and a timezone got the same
+/// eight hundred pixels as a company's value proposition, which tells a person
+/// nothing about what is expected and makes a desktop form look like a phone
+/// form that grew.
+///
+/// Width is information. A short value in a short box is a hint that arrives
+/// before the label is read.
+enum _FieldWidth {
+  /// Country code, timezone, reference — a handful of characters.
+  compact,
+
+  /// A name, a domain, an address.
+  medium,
+
+  /// Long-form prose that deserves a full measure.
+  full,
+}
+
+
+/// FIELDS LAID OUT BY WHAT THEY HOLD.
+///
+/// A Wrap rather than a Column, so a country code and a timezone can share a
+/// line on a desktop and stack on a phone without either being told to.
+class _FieldRow extends StatelessWidget {
+  const _FieldRow({required this.children});
+
+  final List<_Field> children;
+
+  double _widthFor(_FieldWidth w, double available) {
+    // Below this there is no room for two fields side by side, and forcing
+    // it produces two cramped boxes instead of one usable one.
+    if (available < 520) return available;
+    switch (w) {
+      case _FieldWidth.compact:
+        return 190;
+      case _FieldWidth.medium:
+        return (available - 16) / 2;
+      case _FieldWidth.full:
+        return available;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final available = constraints.maxWidth;
+      return Wrap(
+        spacing: 16,
+        runSpacing: 0,
+        children: [
+          for (final field in children)
+            SizedBox(
+              width: _widthFor(field.width, available),
+              child: field,
+            ),
+        ],
+      );
+    });
+  }
+}
+
 class _Field extends StatelessWidget {
   const _Field({
     required this.label,
@@ -549,6 +685,8 @@ class _Field extends StatelessWidget {
     this.required = false,
     this.hint,
     this.multiline = false,
+    this.width = _FieldWidth.full,
+    this.affects,
   });
 
   final String label;
@@ -556,6 +694,12 @@ class _Field extends StatelessWidget {
   final bool required;
   final String? hint;
   final bool multiline;
+  final _FieldWidth width;
+
+  /// What changing this value actually does. Shown only where the answer is
+  /// consequential — a legal name appears on agreements, a display name on
+  /// correspondence — and omitted where the field speaks for itself.
+  final String? affects;
 
   @override
   Widget build(BuildContext context) {
@@ -567,23 +711,19 @@ class _Field extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(label, style: theme.textTheme.titleSmall),
-              if (required) ...[
+              Flexible(child: Text(label, style: theme.textTheme.titleSmall)),
+              // A PILL ON ALMOST EVERY FIELD IS NOT EMPHASIS.
+              //
+              // Five of six fields here were required, each carrying a
+              // bordered red-tinted badge. When nearly everything is marked,
+              // the marking stops meaning anything and the form reads as a
+              // wall of warnings. What is OPTIONAL is the rarer and more
+              // useful thing to say, and it says it quietly.
+              if (!required) ...[
                 const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.errorContainer.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: theme.colorScheme.errorContainer),
-                  ),
-                  child: Text(
-                    'Required',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onErrorContainer,
-                    ),
-                  ),
-                ),
+                Text('optional',
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: Ws.inkSubtle)),
               ],
             ],
           ),
@@ -591,14 +731,20 @@ class _Field extends StatelessWidget {
           TextField(
             controller: controller,
             maxLines: multiline ? 4 : 1,
-            decoration: InputDecoration(
-              hintText: hint,
-              isDense: true,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
+            decoration: InputDecoration(hintText: hint),
           ),
+          // WHAT CHANGING THIS ACTUALLY DOES.
+          //
+          // Only where the answer is consequential. A legal name appears on
+          // agreements; a display name is read by every counterparty. A
+          // timezone explains itself and gets nothing.
+          if (affects != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(affects!,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: Ws.inkSubtle)),
+            ),
         ],
       ),
     );
