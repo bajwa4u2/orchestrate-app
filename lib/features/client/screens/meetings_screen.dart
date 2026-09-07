@@ -51,8 +51,20 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
         final provider = asMap(data['provider']);
         final meetings = asList(data['items']).map(asMap).toList();
         final upstreamBlocker = _resolveUpstreamBlocker(meetings, workflowState);
+        // A meeting the provider never confirmed. The local row is written
+        // before the provider is called — deliberately, because a provider
+        // meeting with no local row is invisible — so a row on its own proves
+        // nothing about whether anybody was invited. Status cannot tell these
+        // apart: PROPOSED covers both a real meeting waiting on a counterparty
+        // and a handoff that never landed and never will.
+        final stranded = meetings
+            .where((item) =>
+                readText(item, 'handoffStage') == 'NEVER_REACHED_PROVIDER')
+            .toList();
         final handoff = meetings
-            .where((item) => readText(item, 'status') == 'PROPOSED')
+            .where((item) =>
+                readText(item, 'status') == 'PROPOSED' &&
+                readText(item, 'handoffStage') != 'NEVER_REACHED_PROVIDER')
             .toList();
         final upcoming = meetings.where((item) {
           final status = readText(item, 'status');
@@ -69,11 +81,17 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
         final past = meetings.where((item) {
           final status = readText(item, 'status');
           final scheduled = DateTime.tryParse('${item['scheduledAt'] ?? ''}');
+          // A meeting that never reached the provider did not happen and did
+          // not get missed. Listing it as past would say a meeting took place.
+          if (readText(item, 'handoffStage') == 'NEVER_REACHED_PROVIDER') {
+            return false;
+          }
           return ['COMPLETED', 'CANCELED', 'NO_SHOW'].contains(status) ||
               (scheduled != null &&
                   scheduled.toLocal().isBefore(DateTime.now()));
         }).toList();
         final banner = _meetingBanner(
+          stranded: stranded,
           handoff: handoff,
           upcoming: upcoming,
           past: past,
@@ -157,6 +175,17 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               ],
             ),
             const SizedBox(height: 18),
+            // First, because it is the only group here that is waiting on us
+            // rather than on somebody else. Rendered only when it happens.
+            if (stranded.isNotEmpty) ...[
+              _MeetingGroup(
+                title: 'Never reached the meeting provider',
+                empty: '',
+                items: stranded,
+                nextStep: 'Nobody was invited',
+              ),
+              const SizedBox(height: 18),
+            ],
             _MeetingGroup(
               title: 'Unconfirmed handoffs',
               empty:
@@ -264,12 +293,29 @@ String? _resolveUpstreamBlocker(
 }
 
 ClientStatusBanner _meetingBanner({
+  required List<Map<String, dynamic>> stranded,
   required List<Map<String, dynamic>> handoff,
   required List<Map<String, dynamic>> upcoming,
   required List<Map<String, dynamic>> past,
   required int total,
   String? upstreamBlocker,
 }) {
+  // Ahead of handoffs, because a handoff is a wait and this is not. Nothing
+  // will arrive for these however long they are left.
+  if (stranded.isNotEmpty) {
+    final one = stranded.length == 1;
+    return ClientStatusBanner(
+      tone: ClientBannerTone.warning,
+      title: one
+          ? 'A meeting was never created with the meeting provider'
+          : '${stranded.length} meetings were never created with the meeting provider',
+      message: one
+          ? 'It was prepared here, but the meeting provider never confirmed it, so nobody was '
+              'invited and nothing will arrive for it. Offer the meeting again to create it.'
+          : 'They were prepared here, but the meeting provider never confirmed them, so nobody '
+              'was invited and nothing will arrive for them. Offer them again to create them.',
+    );
+  }
   if (handoff.isNotEmpty) {
     return ClientStatusBanner(
       tone: ClientBannerTone.warning,
