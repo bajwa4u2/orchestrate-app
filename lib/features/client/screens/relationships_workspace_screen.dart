@@ -125,15 +125,26 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
     // Meetings that belong to no relationship on record. Placed high because
     // a meeting somebody may attend is a commitment, and this is the only
     // place in the workspace it appears at all.
+    // Split, because a meeting that is going to happen and a meeting that
+    // already did are not the same thing to a person scanning this. Shown
+    // together, one booked meeting among four settled ones reads as archive
+    // and the live one disappears into it — which is exactly what happened.
     final loose = list.unattachedMeetings;
+    final looseAhead = loose.where((m) => m.isAhead).toList();
+    final looseSettled = loose.where((m) => !m.isAhead).toList();
 
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        if (loose.isNotEmpty)
+        if (looseAhead.isNotEmpty)
           WorkspaceBand(
-            title: 'MEETINGS NOT TIED TO A RELATIONSHIP',
-            children: [for (final m in loose) _MeetingRow(meeting: m)],
+            title: 'MEETINGS AHEAD, NOT TIED TO A RELATIONSHIP',
+            children: [for (final m in looseAhead) _MeetingRow(meeting: m)],
+          ),
+        if (looseSettled.isNotEmpty)
+          WorkspaceBand(
+            title: 'MEETINGS HELD, NOT TIED TO A RELATIONSHIP',
+            children: [for (final m in looseSettled) _MeetingRow(meeting: m)],
           ),
         if (wanting.isNotEmpty)
           WorkspaceBand(

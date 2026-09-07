@@ -25,6 +25,11 @@ class ClientTodayRepository {
       _safeMap('/client/execution-eligibility'),
       _safeList('/client/messages/recent'),
       _safeList('/client/replies'),
+      // A meeting is the most time-bound thing this product holds, and Today
+      // is the only surface organised by time. Without it a business could
+      // have a meeting in an hour and read its whole morning without meeting
+      // it anywhere.
+      _safeList('/client/meetings'),
     ]);
 
     return TodayState(
@@ -33,6 +38,7 @@ class ClientTodayRepository {
       eligibility: results[2] as Map<String, dynamic>,
       recentMessages: results[3] as List<Map<String, dynamic>>,
       replies: results[4] as List<Map<String, dynamic>>,
+      meetings: results[5] as List<Map<String, dynamic>>,
     );
   }
 
@@ -69,6 +75,7 @@ class TodayState {
     required this.eligibility,
     required this.recentMessages,
     required this.replies,
+    this.meetings = const [],
   });
 
   final List<Map<String, dynamic>> alerts;
@@ -76,6 +83,34 @@ class TodayState {
   final Map<String, dynamic> eligibility;
   final List<Map<String, dynamic>> recentMessages;
   final List<Map<String, dynamic>> replies;
+  final List<Map<String, dynamic>> meetings;
+
+  /// A meeting that is still ahead and that the provider actually holds.
+  ///
+  /// Both halves matter. A settled meeting is not upcoming, and a meeting the
+  /// provider never confirmed was offered to nobody — telling somebody to
+  /// prepare for it would be inventing an appointment.
+  static bool _isAhead(Map<String, dynamic> m) {
+    const settled = {'COMPLETED', 'CANCELED', 'NO_SHOW'};
+    final status = (m['status'] ?? '').toString().toUpperCase();
+    if (settled.contains(status)) return false;
+    if ((m['handoffStage'] ?? '').toString() == 'NEVER_REACHED_PROVIDER') {
+      return false;
+    }
+    final at = DateTime.tryParse('${m['scheduledAt'] ?? ''}');
+    return at != null && at.isAfter(DateTime.now());
+  }
+
+  static String _who(Map<String, dynamic> m) {
+    final contact = m['contact'];
+    if (contact is Map) {
+      final name = (contact['name'] ?? '').toString().trim();
+      if (name.isNotEmpty) return name;
+      final email = (contact['email'] ?? '').toString().trim();
+      if (email.isNotEmpty) return email;
+    }
+    return '';
+  }
 
   /// Things a person has to decide or do.
   ///
@@ -83,6 +118,48 @@ class TodayState {
   /// blocker nobody can act on belongs in flight, not here.
   List<TodayItem> get needsYou {
     final items = <TodayItem>[];
+
+    // MEETINGS FIRST, BECAUSE THEY ARE THE ONLY THING HERE WITH A CLOCK.
+    //
+    // Everything else on this screen keeps. A meeting does not: it happens at
+    // a time whether or not anybody read about it, and being told afterwards
+    // is worth nothing. Ordered soonest first for the same reason.
+    final ahead = meetings.where(_isAhead).toList()
+      ..sort((a, b) => '${a['scheduledAt']}'.compareTo('${b['scheduledAt']}'));
+
+    for (final m in ahead.take(5)) {
+      final who = _who(m);
+      final at = DateTime.tryParse('${m['scheduledAt'] ?? ''}');
+      items.add(TodayItem(
+        title: who.isEmpty
+            ? '${m['title'] ?? 'Meeting'}'
+            : '${m['title'] ?? 'Meeting'} with $who',
+        // The entrance, so the thing a person does about a meeting is on the
+        // same line as being told about it.
+        detail: (m['bookingUrl'] ?? '').toString().isEmpty
+            ? 'No joining link was issued for this meeting.'
+            : m['bookingUrl'].toString(),
+        meta: at == null ? null : _whenReadable(at),
+        // Not a warning. A meeting going ahead is the product working.
+        severity: 'INFO',
+        category: 'meeting',
+      ));
+    }
+
+    // A meeting nobody was invited to. This one IS ours to fix, and it will
+    // not resolve on its own — nothing will ever arrive for a meeting the
+    // provider does not hold.
+    for (final m in meetings.where(
+        (m) => (m['handoffStage'] ?? '').toString() == 'NEVER_REACHED_PROVIDER')) {
+      items.add(TodayItem(
+        title: 'A meeting was never created: ${m['title'] ?? 'Meeting'}',
+        detail: 'It was prepared here and the meeting provider never confirmed '
+            'it, so nobody was invited. Offer it again to create it.',
+        meta: _ago(m['updatedAt'] ?? m['createdAt']),
+        severity: 'WARNING',
+        category: 'meeting',
+      ));
+    }
 
     for (final a in alerts) {
       if ((a['status']?.toString() ?? 'OPEN') != 'OPEN') continue;
@@ -230,6 +307,34 @@ class TodayState {
     }
 
     return items;
+  }
+
+  /// When a meeting is, said the way a person would say it.
+  ///
+  /// A meeting today is a time; a meeting later this week is a day. Rendering
+  /// "in 47 hours" makes somebody do arithmetic about their own calendar.
+  static String _whenReadable(DateTime at) {
+    final local = at.toLocal();
+    final now = DateTime.now();
+    final hh = local.hour.toString().padLeft(2, '0');
+    final mm = local.minute.toString().padLeft(2, '0');
+
+    final sameDay = local.year == now.year
+        && local.month == now.month
+        && local.day == now.day;
+    if (sameDay) return 'today at $hh:$mm';
+
+    final tomorrow = now.add(const Duration(days: 1));
+    final isTomorrow = local.year == tomorrow.year
+        && local.month == tomorrow.month
+        && local.day == tomorrow.day;
+    if (isTomorrow) return 'tomorrow at $hh:$mm';
+
+    const months = <String>[
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${local.day} ${months[local.month - 1]} at $hh:$mm';
   }
 
   /// Say why we declined, in words a business can act on.

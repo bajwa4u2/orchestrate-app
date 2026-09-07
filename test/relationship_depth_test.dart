@@ -588,8 +588,56 @@ void main() {
     ));
     await render(tester, 'list — unattached meeting');
 
-    expect(find.text('MEETINGS NOT TIED TO A RELATIONSHIP'), findsOneWidget);
+    expect(find.text('MEETINGS HELD, NOT TIED TO A RELATIONSHIP'), findsOneWidget);
     expect(find.text('Orchestrate certification'), findsOneWidget);
+  });
+
+  testWidgets('14b. a live meeting is not filed among settled ones',
+      (tester) async {
+    // What the founder reported: one booked meeting sitting in the same list
+    // as four cancelled ones reads as archive, and the live one disappears
+    // into it. Separated so a meeting that is going to happen is legible as
+    // one.
+    ClientRelationships.instance.seed(list(
+      [summary()],
+      unattached: [
+        meeting(
+          id: 'live',
+          title: 'Third attempt',
+          status: 'BOOKED',
+          at: DateTime.now().add(const Duration(hours: 3)),
+        ),
+        meeting(id: 'dead1', title: 'First attempt', status: 'CANCELED'),
+        meeting(id: 'dead2', title: 'Second attempt', status: 'COMPLETED'),
+      ],
+    ));
+    await render(tester, 'list — live beside settled');
+
+    expect(find.text('MEETINGS AHEAD, NOT TIED TO A RELATIONSHIP'), findsOneWidget);
+    expect(find.text('MEETINGS HELD, NOT TIED TO A RELATIONSHIP'), findsOneWidget);
+    expect(find.text('Third attempt'), findsOneWidget);
+  });
+
+  testWidgets('14c. a meeting the provider never held is never ahead',
+      (tester) async {
+    // Scheduled in the future and offered to nobody. Listing it as ahead
+    // would tell a business to prepare for a meeting that does not exist.
+    ClientRelationships.instance.seed(list(
+      [summary()],
+      unattached: [
+        meeting(
+          status: 'PROPOSED',
+          handoffStage: 'NEVER_REACHED_PROVIDER',
+          at: DateTime.now().add(const Duration(hours: 3)),
+          entrance: null,
+        ),
+      ],
+    ));
+    await render(tester, 'list — never created, still future');
+
+    expect(find.text('MEETINGS AHEAD, NOT TIED TO A RELATIONSHIP'), findsNothing);
+    expect(find.textContaining('never created with the meeting provider'),
+        findsOneWidget);
   });
 
   testWidgets('15. a business with no relationships still sees its meeting',

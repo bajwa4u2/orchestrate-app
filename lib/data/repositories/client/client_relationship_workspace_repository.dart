@@ -224,6 +224,22 @@ class RelationshipMeeting {
 
   bool get neverReachedProvider => handoffStage == 'NEVER_REACHED_PROVIDER';
 
+  static const _settled = {'COMPLETED', 'CANCELED', 'NO_SHOW'};
+
+  /// Still going to happen.
+  ///
+  /// A settled meeting is not ahead, and neither is one the provider never
+  /// confirmed — nobody was invited to that, so there is nothing to be ahead
+  /// of. Both halves are needed: a booked meeting sitting in the same list as
+  /// four cancelled ones reads as archive, and the live one disappears into
+  /// it.
+  bool get isAhead {
+    if (_settled.contains(status.toUpperCase())) return false;
+    if (neverReachedProvider) return false;
+    final at = scheduledAt;
+    return at != null && at.isAfter(DateTime.now());
+  }
+
   static RelationshipMeeting fromJson(Map<String, dynamic> j) => RelationshipMeeting(
         id: (j['id'] as String?) ?? '',
         title: _text(j['title']) ?? 'Meeting',
