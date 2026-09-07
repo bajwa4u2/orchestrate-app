@@ -5,7 +5,6 @@ import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
-import 'package:orchestrate_app/data/repositories/client/client_relationship_workspace_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/relationship_depth_view.dart';
 
@@ -77,6 +76,11 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
         const WorkspaceHeader(
           title: 'Relationships',
           context_: 'The businesses you have durable commercial context with.',
+        ),
+        _ViewTabs(
+          selected: _relationships.view,
+          counts: _relationships.list?.viewCounts ?? const {},
+          onSelect: (v) => _relationships.load(view: v).catchError((Object e) => throw e),
         ),
         Expanded(child: _body()),
       ],
@@ -168,6 +172,117 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
       '/client/relationships/${summary.id}',
       '/client/relationships',
     ));
+  }
+}
+
+/// FILTERS OVER THE SAME DURABLE RECORDS.
+///
+/// Fifty-five relationships in one undifferentiated list is a table, and a
+/// table is what this surface was rebuilt to stop being. These are questions
+/// asked of the same records — a relationship's condition does not change
+/// because somebody looked at a different view, and nothing here writes
+/// anything.
+///
+/// The views are the server's own, so the two cannot drift into meaning
+/// different things, and the counts are taken before filtering so a view that
+/// is currently empty still says zero instead of disappearing. A tab that
+/// vanishes when it holds nothing is how a person stops believing the tabs are
+/// the whole picture.
+///
+/// "Cannot be reached" is the channel, not the relationship, and is named so
+/// it can never be read as a lifecycle stage — a bounce-only relationship is
+/// ACTIVE with reachability FAILED, and neither half implies the other.
+class _ViewTabs extends StatelessWidget {
+  const _ViewTabs({
+    required this.selected,
+    required this.counts,
+    required this.onSelect,
+  });
+
+  final String selected;
+  final Map<String, int> counts;
+  final void Function(String) onSelect;
+
+  static const _views = <({String key, String label})>[
+    (key: 'all', label: 'All'),
+    (key: 'attention', label: 'Needs attention'),
+    (key: 'engaged', label: 'Undertaking open'),
+    (key: 'open', label: 'Not closed'),
+    (key: 'unreachable', label: 'Cannot be reached'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        children: [
+          for (final v in _views)
+            _Tab(
+              label: v.label,
+              // Absent while the first answer is still loading, and shown as
+              // soon as it arrives. A dash is honest; a zero would not be.
+              count: counts[v.key],
+              selected: v.key == selected,
+              onTap: () => onSelect(v.key),
+              theme: theme,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  const _Tab({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+    required this.theme,
+  });
+
+  final String label;
+  final int? count;
+  final bool selected;
+  final VoidCallback onTap;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected ? null : AppTheme.publicMuted,
+              ),
+            ),
+            if (count != null) ...[
+              const SizedBox(width: 6),
+              Text(
+                '$count',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppTheme.publicMuted,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

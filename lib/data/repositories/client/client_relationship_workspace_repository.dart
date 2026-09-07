@@ -150,6 +150,7 @@ class RelationshipList {
     required this.counts,
     required this.note,
     this.unattachedMeetings = const [],
+    this.viewCounts = const {},
   });
 
   final List<RelationshipSummary> relationships;
@@ -164,6 +165,13 @@ class RelationshipList {
   /// attend. Forcing a correlation would put it on a stranger's record.
   final List<RelationshipMeeting> unattachedMeetings;
 
+  /// How many relationships each saved view holds, counted before filtering.
+  ///
+  /// A view that is currently empty still reports zero rather than
+  /// disappearing. A tab that vanishes when it has nothing in it is how a
+  /// person stops believing the tabs are the whole picture.
+  final Map<String, int> viewCounts;
+
   static RelationshipList fromJson(Map<String, dynamic> j) {
     final raw = Map<String, dynamic>.from(j['counts'] as Map? ?? {});
     return RelationshipList(
@@ -177,6 +185,10 @@ class RelationshipList {
       },
       note: (j['note'] as String?) ?? '',
       unattachedMeetings: RelationshipMeeting.listFrom(j['unattachedMeetings']),
+      viewCounts: {
+        for (final e in (Map<String, dynamic>.from(j['viewCounts'] as Map? ?? {})).entries)
+          e.key: (e.value as num?)?.toInt() ?? 0,
+      },
     );
   }
 }

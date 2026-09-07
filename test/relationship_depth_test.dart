@@ -45,8 +45,30 @@ void main() {
         attention: attention,
       );
 
-  RelationshipList list(List<RelationshipSummary> rows) => RelationshipList(
+  RelationshipMeeting meeting({
+    String id = 'm1',
+    String title = 'Introductory call',
+    String status = 'BOOKED',
+    String handoffStage = 'CONFIRMED_BY_PROVIDER',
+    DateTime? at,
+    String? entrance = 'https://app.example.org/m/warm-peak-860?in=tok',
+  }) =>
+      RelationshipMeeting(
+        id: id,
+        title: title,
+        status: status,
+        handoffStage: handoffStage,
+        scheduledAt: at,
+        entrance: entrance,
+      );
+
+  RelationshipList list(
+    List<RelationshipSummary> rows, {
+    List<RelationshipMeeting> unattached = const [],
+  }) =>
+      RelationshipList(
         relationships: rows,
+        unattachedMeetings: unattached,
         counts: {
           for (final c in RelationshipCondition.values)
             c: rows.where((r) => r.condition == c).length,
@@ -71,6 +93,8 @@ void main() {
     List<TimelineEntry> timeline = const [],
     bool weakProvenance = false,
     int eventCount = 2,
+    List<RelationshipMeeting> meetingsUpcoming = const [],
+    List<RelationshipMeeting> meetingsPast = const [],
   }) =>
       RelationshipDepth(
         id: id,
@@ -93,6 +117,9 @@ void main() {
         timeline: timeline,
         eventCount: eventCount,
         refusalReason: null,
+        meetingsUpcoming: meetingsUpcoming,
+        meetingsPast: meetingsPast,
+        meetingsSays: '',
       );
 
   TimelineEntry entry({
@@ -483,6 +510,122 @@ void main() {
       debugPrint('  ok  ${size.width.toInt()}x${size.height.toInt()} — no overflow');
     }
   });
+
+  // ── MEETINGS, WHICH THE NAV PROMISED AND NOTHING DELIVERED ──────────
+  //
+  // Meetings stopped being a destination on the stated grounds that they are
+  // events inside a relationship. They were removed from the sidebar and never
+  // put inside one, so a booked meeting could be found nowhere in the
+  // workspace. The founder went looking and found none.
+
+  testWidgets('11. a meeting ahead appears inside the relationship', (tester) async {
+    ClientRelationships.instance.seed(
+      list([summary()]),
+      depth: {
+        'r1': depth(
+          meetingsUpcoming: [
+            meeting(at: DateTime.now().add(const Duration(days: 2))),
+          ],
+        ),
+      },
+    );
+    await render(tester, 'depth — a meeting ahead', relationshipId: 'r1');
+
+    expect(find.text('MEETINGS AHEAD'), findsOneWidget);
+    expect(find.text('Introductory call'), findsOneWidget);
+  });
+
+  testWidgets('12. a meeting that never reached the provider says so',
+      (tester) async {
+    // A local row written before the provider was called is not a meeting.
+    // Showing its status alone implies somebody was invited, and nobody was.
+    ClientRelationships.instance.seed(
+      list([summary()]),
+      depth: {
+        'r1': depth(
+          meetingsPast: [
+            meeting(
+              status: 'PROPOSED',
+              handoffStage: 'NEVER_REACHED_PROVIDER',
+              entrance: null,
+            ),
+          ],
+        ),
+      },
+    );
+    await render(tester, 'depth — never created', relationshipId: 'r1');
+
+    expect(find.textContaining('never created with the meeting provider'),
+        findsOneWidget);
+    // And it is not dressed up as a meeting that happened.
+    expect(find.textContaining('Proposed'), findsNothing);
+  });
+
+  testWidgets('13. a relationship with no meetings says nothing about meetings',
+      (tester) async {
+    // Absence is not a void to be filled with a heading. Most production
+    // relationships have never had a meeting and should not carry an empty
+    // section saying so.
+    ClientRelationships.instance.seed(
+      list([summary()]),
+      depth: {'r1': depth()},
+    );
+    await render(tester, 'depth — no meetings', relationshipId: 'r1');
+
+    expect(find.text('MEETINGS AHEAD'), findsNothing);
+    expect(find.text('MEETINGS HELD'), findsNothing);
+  });
+
+  testWidgets('14. a meeting belonging to no relationship is still shown',
+      (tester) async {
+    // The case that made this visible. All four production meetings correlate
+    // to no relationship — three predate invitees being recorded, and one is
+    // with an address that is not a counterparty. Dropping them is how the
+    // product lost track of meetings that exist.
+    ClientRelationships.instance.seed(list(
+      [summary()],
+      unattached: [meeting(title: 'Orchestrate certification')],
+    ));
+    await render(tester, 'list — unattached meeting');
+
+    expect(find.text('MEETINGS NOT TIED TO A RELATIONSHIP'), findsOneWidget);
+    expect(find.text('Orchestrate certification'), findsOneWidget);
+  });
+
+  testWidgets('15. a business with no relationships still sees its meeting',
+      (tester) async {
+    // The empty state used to return before anything else could render, which
+    // would have hidden this for exactly the client most likely to have one.
+    ClientRelationships.instance.seed(list(
+      const [],
+      unattached: [meeting(title: 'Orchestrate certification')],
+    ));
+    await render(tester, 'list — no relationships, one meeting');
+
+    expect(find.text('Orchestrate certification'), findsOneWidget);
+    expect(find.textContaining('No relationships yet'), findsNothing);
+  });
+
+  testWidgets('16. meetings fit, phone through desktop', (tester) async {
+    for (final size in const [Size(360, 900), Size(768, 1024), Size(1440, 900)]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      ClientRelationships.instance.seed(list(
+        [summary()],
+        unattached: [
+          meeting(
+            title: 'A meeting with a genuinely long title that a business '
+                'might reasonably have written for itself',
+          ),
+        ],
+      ));
+      await render(tester, 'sizes ${size.width.toInt()}');
+      expect(tester.takeException(), isNull,
+          reason: '${size.width.toInt()}x${size.height.toInt()} overflowed');
+    }
+  });
 }
 
 Map<String, dynamic> _row({
@@ -530,4 +673,5 @@ class _Undertakings implements ClientEngagementRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
 }

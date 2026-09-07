@@ -194,11 +194,21 @@ class WorkspaceBand extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                title,
-                style: text.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
+              // Flexible, because a band title is written for what the band
+              // contains and not for the width it gets. Unconstrained beside a
+              // Spacer, any title longer than the viewport overflows the row —
+              // which is a red-and-yellow stripe across a real workspace, and
+              // it waited here until a title happened to be long enough.
+              //
+              // Wrapping rather than ellipsis: these titles are the only label
+              // the band has, and half of one is not a heading.
+              Flexible(
+                child: Text(
+                  title,
+                  style: text.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
                 ),
               ),
               if (subtitle != null) ...[

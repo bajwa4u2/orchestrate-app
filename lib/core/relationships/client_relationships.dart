@@ -12,6 +12,7 @@ export '../../data/repositories/client/client_relationship_workspace_repository.
         RelationshipCondition,
         RelationshipDepth,
         RelationshipList,
+        RelationshipMeeting,
         RelationshipOrigin,
         RelationshipSummary,
         TimelineEntry;
@@ -55,11 +56,28 @@ class ClientRelationships extends ChangeNotifier {
 
   RelationshipDepth? cachedDepth(String id) => _depth[id];
 
-  Future<RelationshipList> load({bool refresh = false}) {
+  /// Which saved view is showing. Kept here rather than in the screen so a
+  /// return from depth lands back on the view the person was reading.
+  String _view = 'all';
+  String get view => _view;
+
+  Future<RelationshipList> load({bool refresh = false, String? view}) {
     final clientId = AuthSessionController.instance.clientId;
     if (_forClientId != null && _forClientId != clientId) _reset();
 
-    if (!refresh && _list != null) return Future.value(_list);
+    // A different view is a different question, so the cached answer to the
+    // previous one does not apply.
+    final changed = view != null && view != _view;
+    if (view != null) _view = view;
+
+    if (!refresh && !changed && _list != null) return Future.value(_list);
+    if (changed) {
+      // The previous view's rows are not this view's answer. Holding them
+      // while the new one loads shows a person relationships under a heading
+      // that excludes them, which is worse than showing nothing for a moment.
+      _list = null;
+      _inFlight = null;
+    }
     final existing = _inFlight;
     if (existing != null) return existing;
 
@@ -69,7 +87,7 @@ class ClientRelationships extends ChangeNotifier {
       if (_loading) notifyListeners();
     });
 
-    final future = _repository.fetchList().then((value) {
+    final future = _repository.fetchList(view: _view == 'all' ? null : _view).then((value) {
       _list = value;
       _forClientId = clientId;
       _error = null;
