@@ -6,6 +6,14 @@ and so a claim in a commit message can be checked against evidence.
 
 Findings are numbered `CW-n`. Anything still open says so.
 
+**Withdrawn findings stay in this register.** A claim that runtime evidence
+disproved is not an embarrassment to be deleted — it is the most useful entry
+here, because it records how a certification went wrong and what kind of
+evidence corrected it. Two are marked WITHDRAWN below: one where a premise went
+stale between measuring and looking, and one where the measuring instrument
+itself was lying. Deleting either would leave the next pass free to make the
+same mistake with the same confidence.
+
 ---
 
 ## CW-1 — The workspace had no theme of its own
@@ -151,7 +159,7 @@ sits on rather than faking a brightness to get the right file.
 
 ---
 
-## CW-7 — A capture artifact that looked exactly like a content overflow
+## CW-7 — Text clipping — **WITHDRAWN: CAPTURE ARTIFACT**
 
 **Finding.** Screenshots showed workspace text clipped mid-sentence at the
 right edge. It reproduced across captures, so it was not a stale raster.
@@ -174,7 +182,7 @@ disagree the measurement wins.
 
 ---
 
-## CW-8 — Today showed no meeting, and was right
+## CW-8 — Today upcoming-meeting defect — **WITHDRAWN: NOT PROVEN**
 
 **Claimed twice as a defect. It was not one.**
 

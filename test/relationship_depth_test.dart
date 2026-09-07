@@ -555,7 +555,7 @@ void main() {
     );
     await render(tester, 'depth — never created', relationshipId: 'r1');
 
-    expect(find.textContaining('never created with the meeting provider'),
+    expect(find.textContaining('Never created with the meeting provider'),
         findsOneWidget);
     // And it is not dressed up as a meeting that happened.
     expect(find.textContaining('Proposed'), findsNothing);
@@ -636,7 +636,7 @@ void main() {
     await render(tester, 'list — never created, still future');
 
     expect(find.text('MEETINGS AHEAD, NOT TIED TO A RELATIONSHIP'), findsNothing);
-    expect(find.textContaining('never created with the meeting provider'),
+    expect(find.textContaining('Never created with the meeting provider'),
         findsOneWidget);
   });
 

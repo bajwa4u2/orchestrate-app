@@ -5,6 +5,7 @@ import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/meeting_line.dart';
 import 'package:orchestrate_app/core/ui/authority_gate.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
@@ -230,27 +231,26 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
               for (final m in depth.meetingsUpcoming)
                 WorkspaceRow(
                   title: m.title,
-                  detail: [
-                    titleCase(m.status),
-                    if (m.scheduledAt != null) dateLabel(m.scheduledAt),
-                  ].where((p) => p.isNotEmpty).join(' · '),
+                  detail: meetingLine(m),
+                  tone: RowTone.good,
                 ),
             ],
           ),
         if (depth.meetingsPast.isNotEmpty)
           WorkspaceBand(
-            title: 'MEETINGS HELD',
+            // Not "held". Some of these were cancelled, some never reached
+            // the provider, and one may be recorded as complete with no
+            // evidence it ever started. The band says where they sit in time;
+            // each row says what actually happened to it.
+            title: 'EARLIER MEETINGS',
             children: [
               for (final m in depth.meetingsPast)
                 WorkspaceRow(
                   title: m.title,
-                  detail: [
-                    if (m.neverReachedProvider)
-                      'never created with the meeting provider'
-                    else
-                      titleCase(m.status),
-                    if (m.scheduledAt != null) dateLabel(m.scheduledAt),
-                  ].where((p) => p.isNotEmpty).join(' · '),
+                  detail: meetingLine(m),
+                  tone: m.neverReachedProvider
+                      ? RowTone.problem
+                      : RowTone.neutral,
                 ),
             ],
           ),

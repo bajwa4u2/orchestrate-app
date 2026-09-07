@@ -207,6 +207,8 @@ class RelationshipMeeting {
     required this.handoffStage,
     required this.scheduledAt,
     required this.entrance,
+    this.startedAt,
+    this.completedAt,
   });
 
   final String id;
@@ -217,6 +219,27 @@ class RelationshipMeeting {
   /// it was never offered to anybody, whatever its status says.
   final String handoffStage;
   final DateTime? scheduledAt;
+
+  /// When it actually began and ended, which may legitimately differ from the
+  /// schedule. Three facts, none standing in for another: a meeting due at one
+  /// and held at ten is a true thing that happened, and a surface given only
+  /// one timestamp has to present the plan as though it were the event.
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+
+  /// Did this actually happen?
+  bool get wasHeld => startedAt != null;
+
+  /// Held far enough from its schedule that saying so is worth the words.
+  ///
+  /// Fifteen minutes, because meetings routinely start a little late and
+  /// captioning that would be noise. Three hours early is not noise.
+  bool get heldAwayFromSchedule {
+    final due = scheduledAt;
+    final held = startedAt;
+    if (due == null || held == null) return false;
+    return held.difference(due).abs() > const Duration(minutes: 15);
+  }
 
   /// Where the counterparty goes. Absent when there is more than one invitee,
   /// because then there is no single door.
@@ -246,6 +269,8 @@ class RelationshipMeeting {
         status: (j['status'] as String?) ?? '',
         handoffStage: (j['handoffStage'] as String?) ?? '',
         scheduledAt: DateTime.tryParse('${j['scheduledAt'] ?? ''}'),
+        startedAt: DateTime.tryParse('${j['startedAt'] ?? ''}'),
+        completedAt: DateTime.tryParse('${j['completedAt'] ?? ''}'),
         entrance: _text(j['entrance']),
       );
 

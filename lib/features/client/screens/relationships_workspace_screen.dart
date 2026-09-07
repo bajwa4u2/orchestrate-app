@@ -5,7 +5,9 @@ import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/features/client/widgets/meeting_line.dart';
 import 'package:orchestrate_app/features/client/widgets/relationship_depth_view.dart';
 
 /// RELATIONSHIPS — THE DURABLE UNIT OF ACCOUNT.
@@ -310,31 +312,30 @@ class _MeetingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final when = meeting.scheduledAt;
-    final parts = <String>[
-      if (meeting.neverReachedProvider)
-        'never created with the meeting provider'
-      else
-        titleCase(meeting.status),
-      if (when != null) dateLabel(when),
-    ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(meeting.title, style: theme.textTheme.bodyMedium),
+          Text(meeting.title,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 2),
+          // What happened, what was planned, and how long it ran — composed
+          // once, so every surface says the same thing about a meeting.
           Text(
-            parts.join(' · '),
-            style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+            meetingLine(meeting),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: meeting.neverReachedProvider ? Ws.caution : Ws.inkMuted,
+            ),
           ),
-          if (meeting.entrance != null) ...[
-            const SizedBox(height: 2),
+          // The way in, and only while there is still a meeting to get into.
+          if (meeting.entrance != null && meeting.isAhead) ...[
+            const SizedBox(height: 4),
             SelectableText(
               meeting.entrance!,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.publicMuted),
+              style: theme.textTheme.bodySmall?.copyWith(color: Ws.accent),
             ),
           ],
         ],
