@@ -173,6 +173,7 @@ class TodayState {
 
     for (final m in recentMessages) {
       final state = (m['deliveryState'] ?? m['status'])?.toString().toUpperCase();
+      final stage = m['deliveryStage']?.toString().toUpperCase();
       final delivery = m['delivery'] as Map<String, dynamic>?;
       final recipientImplicated = delivery?['recipientImplicated'] == true;
       final senderSide = delivery != null && !recipientImplicated;
@@ -198,6 +199,25 @@ class TodayState {
         continue;
       }
 
+      // A refusal Orchestrate made is not a delivery failure, and the status
+      // column cannot tell them apart: these rows say BOUNCED while nothing
+      // ever left the building. Reported as a bounce it tells a business its
+      // mail is failing and sends it looking at a mail server; reported as what
+      // it is, it says the product declined to write to something that was
+      // never a prospect, which is the thing it was bought to do.
+      if (stage == 'REFUSED_BEFORE_DISPATCH') {
+        items.add(TodayItem(
+          title: 'Not sent to ${m['toEmail'] ?? 'a recipient'}',
+          detail: _refusalInPlainWords(m['failureReason']?.toString()),
+          meta: _ago(m['updatedAt'] ?? m['sentAt']),
+          // Not a warning. Nothing went wrong, and a row of amber flags across
+          // the first screen of the day says otherwise.
+          severity: 'INFO',
+          category: 'governed',
+        ));
+        continue;
+      }
+
       if (state == 'BOUNCED' || state == 'FAILED') {
         items.add(TodayItem(
           title: 'Delivery failed to ${m['toEmail'] ?? 'a recipient'}',
@@ -210,6 +230,58 @@ class TodayState {
     }
 
     return items;
+  }
+
+  /// Say why we declined, in words a business can act on.
+  ///
+  /// The guard writes for an operator: `representation blocked (SIGNAL_SOURCE):
+  /// signal-source/news domain "techcrunch.com" is not a prospect`. That string
+  /// is correct and it is not addressed to the person reading it, who is
+  /// running a business rather than reading a policy engine. It also puts an
+  /// internal code on the first screen of their day.
+  ///
+  /// Unrecognised reasons keep their original text rather than being replaced
+  /// by something vaguer. A sentence nobody wrote for this audience is still
+  /// better than a reassurance that says nothing.
+  static String _refusalInPlainWords(String? raw) {
+    final text = (raw ?? '').trim();
+    if (text.isEmpty) return 'Orchestrate declined to send this.';
+
+    final code = RegExp(r'representation blocked \(([A-Z_/ ]+)\)')
+        .firstMatch(text)
+        ?.group(1)
+        ?.trim();
+
+    switch (code) {
+      case 'SIGNAL_SOURCE':
+      case 'SOURCE_NOT_PROSPECT':
+        return 'This address belongs to a news or signal source rather than a '
+            'company you could sell to, so nothing was sent.';
+      case 'SYNTHETIC_TARGET':
+        return 'This address was constructed from a pattern rather than '
+            'observed, so nothing was sent.';
+      case 'REPRESENTATION_AUTHORITY_ABSENT':
+        return 'Nobody has authorised Orchestrate to write on your behalf yet, '
+            'so nothing was sent.';
+      case 'REPRESENTATION_AUTHORITY_EXPIRED':
+        return 'The authorisation to write on your behalf has expired, so '
+            'nothing was sent.';
+      case 'REPRESENTATION_AUTHORITY_REVOKED':
+        return 'The authorisation to write on your behalf was withdrawn, so '
+            'nothing was sent.';
+      case 'REPRESENTATION_SCOPE_NOT_GRANTED':
+        return 'Writing to this counterparty is outside what Orchestrate was '
+            'authorised to do, so nothing was sent.';
+      case 'REPRESENTATION_ACCEPTOR_UNIDENTIFIED':
+        return 'Orchestrate could not establish who authorised this, so '
+            'nothing was sent.';
+    }
+
+    // Strip the operator prefix at least, so an unmapped reason still reads as
+    // a sentence rather than as a log line.
+    final withoutPrefix =
+        text.replaceFirst(RegExp(r'^representation blocked \([^)]*\):\s*', caseSensitive: false), '');
+    return withoutPrefix.isEmpty ? text : '${withoutPrefix[0].toUpperCase()}${withoutPrefix.substring(1)}';
   }
 
   /// Does this read like our failure rather than the client's situation?
