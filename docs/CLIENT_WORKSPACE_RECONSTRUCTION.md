@@ -357,13 +357,40 @@ simply never given one from Today.
 
 ---
 
-## Observed, not a defect
+## CW-17 — cupertino_icons warning — HARMLESS TRANSITIVE BUILD WARNING
 
-- **cupertino_icons font warning** on web and Android builds. Nothing in this
-  product references `CupertinoIcons`, and the package is in neither the
-  pubspec nor the lockfile — it is a transitive declaration. Recorded rather
-  than dismissed: a dependency could render one on iOS, which cannot be
-  verified from Windows.
+**Classified, with the chain that proves it.**
+
+1. `cupertino_icons` appears in neither `pubspec.yaml`, `pubspec.lock`, nor
+   `.dart_tool/package_config.json`. It is not a dependency at any depth.
+2. The built web bundle's `FontManifest.json` declares only MaterialIcons, and
+   no font file is bundled under `assets/packages/`.
+3. No package this product depends on references `CupertinoIcons` anywhere in
+   its `lib/`.
+4. This product never imports `package:flutter/cupertino.dart` and never
+   constructs a Cupertino widget.
+5. In the Flutter SDK, only `lib/src/cupertino/*` references `CupertinoIcons`.
+   `lib/src/material/` never does — so nothing renders one without opting in.
+6. The icon-rendering references live inside widgets this product does not
+   instantiate, such as `CupertinoTextField`'s clear button.
+
+**Why the warning appears anyway.** The icon tree-shaker over-approximates.
+Material links parts of the cupertino library for platform-adaptive text
+selection, so the `IconData` constants exist in the compiled kernel even though
+no reachable widget renders one. The shaker sees a declared family with no font
+and says so.
+
+**Is iOS actually exempt, given it cannot be built here?** The reachability
+argument is platform-independent: it is about which widgets exist in the
+program, not which platform runs it. The one genuinely platform-specific path —
+Material text selection adopting Cupertino controls on iOS — lives in
+`cupertino/text_selection.dart`, which is not among the files that reference
+`CupertinoIcons`. Selection handles are painted shapes and the toolbar buttons
+are text.
+
+**Decision.** `cupertino_icons` is NOT added. Adding a dependency to silence a
+warning about a font nothing renders would put a megabyte of glyphs into every
+build to make a message go away.
 
 ---
 
