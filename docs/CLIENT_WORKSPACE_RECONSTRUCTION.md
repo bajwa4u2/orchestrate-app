@@ -570,3 +570,68 @@ to certify is not evidence. Widget proof is not runtime proof, viewport
 arithmetic is not a handset, and a resize that silently does nothing is not a
 narrow screen.
 
+## CW-18 — The Android emulator cannot be installed on this machine
+
+**Authorized, attempted, and blocked by the host architecture — not by effort
+or permission.**
+
+This machine is **Windows on ARM 64-bit** (Snapdragon X Elite X1E80100).
+PowerShell reports `PROCESSOR_ARCHITECTURE=AMD64` because it runs under x64
+emulation; `Win32_OperatingSystem.OSArchitecture` reports `ARM 64-bit
+Processor`, which is the truth.
+
+The SDK repository offers **561 packages to this host and `emulator` is not
+one of them**, on any channel including canary. The only emulator-adjacent
+entry is `extras;google;Android_Emulator_Hypervisor_Driver`, which is the
+x86 AEHD driver and irrelevant here. Google does not ship an Android Emulator
+host build for Windows/ARM64.
+
+Checked and working: `adb` 36.0.2 runs, and `arm64-v8a` system images for API
+34, 35 and 36 are all downloadable. The images exist; the thing that would run
+them does not.
+
+**Consequence.** ANDROID_RUNTIME, SYSTEM_BACK, ANDROID_KEYBOARD,
+ANDROID_SCROLL_TO_ERROR and LARGE_TEXT_ANDROID_RUNTIME cannot be obtained on
+this machine. They are not deferred by choice.
+
+**What would unblock it**, in order of directness: a physical Android handset
+over USB — `adb` is present and would find it; or a cloud device farm; or an
+x86_64 machine. None of these is mine to decide.
+
+---
+
+## CW-19 — A real viewport authority for narrow web — PROVEN
+
+**The instrument problem, solved rather than worked around.**
+
+`resize_window` reported success while `window.innerWidth` stayed at 1142
+across repeated attempts. Confirmed by asking the page instead of the tool —
+which is the standing rule this program keeps rediscovering.
+
+**The mechanism.** `tool/web_viewport_harness.html` loads the built client in a
+frame of a controlled width, on the same origin so the frame's own window can be
+interrogated. Flutter inside it genuinely lays out against that width; nothing
+is scaled after the fact.
+
+**Proven from inside the page**, at every width §5 names:
+
+| requested | innerWidth | scrollWidth | clientWidth | horizontal overflow |
+|---|---|---|---|---|
+| 1142 | 1142 | 1142 | 1142 | none |
+| 834 | 834 | 834 | 834 | none |
+| 720 | 720 | 720 | 720 | none |
+| 420 | 420 | 420 | 420 | none |
+| 390 | 390 | 390 | 390 | none |
+
+`devicePixelRatio` 2.1875 throughout.
+
+Overflow is asserted from `documentElement.scrollWidth > clientWidth` inside the
+frame rather than read off a screenshot, because a screenshot is a picture of a
+capture and not of a layout — which this program has now been misled by once.
+
+**Scope, stated honestly.** This exercises the PUBLIC surface. The reconstructed
+authenticated surfaces are not reachable without a session, so narrow-web
+runtime proof of Business Identity, Mailbox readiness, Entitlement, Artifacts
+and Evidence is blocked by the same constraint as authenticated automation.
+Composition at those widths remains WIDGET PROOF.
+

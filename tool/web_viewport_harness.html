@@ -1,0 +1,58 @@
+<!--
+  A REAL VIEWPORT AUTHORITY FOR NARROW-WEB CERTIFICATION.
+
+  Written because the browser automation's resize_window reported success while
+  window.innerWidth never changed. Asking the tool whether it resized is not
+  evidence; the page is the only authority for the width it was given.
+
+  This loads the built client in a frame of a controlled width, on the same
+  origin so the frame's own window can be read. Flutter inside it genuinely
+  lays out against that width — nothing is scaled after the fact.
+
+  Usage:
+    (cd build/web && python -m http.server 8731)
+    cp tool/web_viewport_harness.html build/web/_viewport.html
+    open http://localhost:8731/_viewport.html
+
+  Then, from the harness page:
+    window.setViewport(390)     — set a real rendering width
+    window.frameViewport()      — what the frame actually got
+
+  Certify horizontal overflow from inside the frame rather than from a
+  screenshot, because a screenshot is a picture of a capture and not of a
+  layout:
+    doc.scrollWidth > doc.clientWidth
+-->
+<!doctype html>
+<meta charset="utf-8">
+<title>Orchestrate viewport harness</title>
+<style>
+  body { margin: 0; background: #2b2b2b; font: 12px system-ui; color: #ddd; }
+  #bar { padding: 6px 10px; }
+  #frame { border: 0; display: block; background: #fff; height: 880px; }
+</style>
+<div id="bar">width: <span id="w">—</span></div>
+<iframe id="frame" src="/" width="420"></iframe>
+<script>
+  // The harness sets a real rendering width on the app's own frame. Flutter
+  // inside it lays out against that width for real — this is not a screenshot
+  // scaled after the fact, and the frame's own window is the authority for
+  // what it got.
+  window.setViewport = (px) => {
+    const f = document.getElementById('frame');
+    f.width = px;
+    document.getElementById('w').textContent = px + 'px';
+    return px;
+  };
+  window.frameViewport = () => {
+    const f = document.getElementById('frame');
+    const w = f.contentWindow;
+    return JSON.stringify({
+      requested: Number(f.width),
+      innerWidth: w.innerWidth,
+      innerHeight: w.innerHeight,
+      dpr: w.devicePixelRatio,
+      title: w.document.title,
+    });
+  };
+</script>
