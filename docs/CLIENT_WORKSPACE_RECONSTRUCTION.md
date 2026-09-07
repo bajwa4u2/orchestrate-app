@@ -428,8 +428,8 @@ what remains, not to be read once.
 | `client_settings_screen` | 419 | **RECOMPOSED** — readiness leads; restatements name their owner |
 | `client_records_screen` | 197 | REMAINING |
 | `client_support_screen` | 351 | REMAINING |
-| `client_artifacts_screen` | 403 | REMAINING |
-| `client_evidence_screen` | 501 | REMAINING |
+| `client_artifacts_screen` | 403 | **DESTRUCTIVE FLOW FIX** — archive stated as irreversible |
+| `client_evidence_screen` | 501 | **DESTRUCTIVE FLOW FIX** — archive stated as irreversible |
 | `client_trust_screen` | 464 | REMAINING |
 | `client_branding_screen` | 610 | REMAINING |
 | `client_subscribe_screen` | 874 | **STATE/COPY FIX** — in-workspace path leads with entitlement, not pricing |
@@ -504,4 +504,31 @@ observation and would have changed nothing about what the screen could answer.
 **No new domain defect.** The entitlement authority was correct and complete;
 it simply had no surface. Recorded as STATE/COPY FIX rather than DOMAIN FIX,
 because inflating the category would make the register useless.
+
+## Destructive-action audit — every consequential action in the estate
+
+Traced rather than assumed. For each: what changes, what stops, what is kept,
+and whether it can be undone.
+
+| Action | Verdict |
+|---|---|
+| Delete account | **Already exemplary.** States what is destroyed, that it cannot be undone, that the subscription is cancelled and the session ends, and which records are legally retained. Requires typing DELETE. Untouched. |
+| Remove CSV / Google contact source | **Already correct.** Offers a real choice — keep the contacts, or remove only those that came exclusively from that source — with each option's consequence stated. Untouched. |
+| Archive artifact | **FIXED.** Said "will be removed from the list", which reads as tidying. |
+| Archive evidence | **FIXED.** Said the record is preserved, which is true, and implied a way back, which there is not. |
+| Remove branding logo | **Correct as-is, deliberately.** No confirmation, because re-uploading restores it. Ceremony here would be noise, and §10 of the standing brief says confirmation belongs where reversal is difficult or harm is material. |
+
+**The finding behind both fixes.** `archive` sets `archivedAt` and **no endpoint
+anywhere clears it**. So archiving is one-way from the client's side: the record
+is preserved in the database and the person cannot bring it back. Both dialogs
+described the preservation and neither described the permanence, which is the
+half that should change somebody's mind.
+
+Both now say both things — the document is kept, and this cannot be undone from
+here — and the action reads "Archive permanently" rather than "Archive". The
+cancel option says "Keep it", because naming the safe choice is more useful than
+labelling it "Cancel".
+
+**Not classified as a domain defect.** The backend behaves exactly as designed;
+the surfaces described it inaccurately. STATE/COPY, not DOMAIN.
 

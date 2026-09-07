@@ -2,6 +2,7 @@ import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_artifacts_repository.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 
 class ClientArtifactsScreen extends StatefulWidget {
   const ClientArtifactsScreen({super.key});
@@ -84,12 +85,34 @@ class _ClientArtifactsScreenState extends State<ClientArtifactsScreen> {
   Future<void> _archive(String id) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      // A CONFIRMATION SHOULD STATE CONSEQUENCE.
+      //
+      // This said "will be removed from the list", which is vague in the one
+      // direction that matters: it reads as tidying and is in fact one-way.
+      // The service sets archivedAt and nothing in the product ever clears it,
+      // so a person cannot bring an artifact back from here.
+      //
+      // Both halves are now said. The document is kept — archiving is not
+      // deletion and implying otherwise would be its own lie — and the action
+      // cannot be undone in the product.
       builder: (ctx) => AlertDialog(
-        title: const Text('Archive artifact?'),
-        content: const Text('This artifact will be removed from the list.'),
+        title: const Text('Archive this artifact?'),
+        content: const Text(
+          'It stops appearing in your artifacts and is no longer offered '
+          'anywhere it would normally be used.\n\n'
+          'The document itself is kept on record. But archiving cannot be '
+          'undone from here — there is no way to bring it back in the '
+          'product.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Archive', style: TextStyle(color: Colors.red))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Keep it')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Archive permanently',
+                style: TextStyle(color: Ws.critical)),
+          ),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_evidence_repository.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 
 class ClientEvidenceScreen extends StatefulWidget {
   const ClientEvidenceScreen({super.key});
@@ -101,12 +102,30 @@ class _ClientEvidenceScreenState extends State<ClientEvidenceScreen> {
   Future<void> _archive(String id) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      // This was closer than most — it already said the record is preserved.
+      // What it did not say is that the preservation is not a way back: the
+      // service sets archivedAt and nothing clears it, so "inactive" is
+      // permanent from the client's side.
+      //
+      // The consequence that actually matters to a business is also named:
+      // evidence is what it can show about itself, and archiving reduces that.
       builder: (ctx) => AlertDialog(
-        title: const Text('Archive evidence?'),
-        content: const Text('This record will be removed from your identity. The record is preserved but inactive.'),
+        title: const Text('Archive this evidence?'),
+        content: const Text(
+          'It stops being part of what this business can evidence about '
+          'itself, so anything relying on it no longer has it to draw on.\n\n'
+          'The record is preserved and not deleted. But archiving cannot be '
+          'undone from here.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Archive', style: TextStyle(color: Colors.red))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Keep it')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Archive permanently',
+                style: TextStyle(color: Ws.critical)),
+          ),
         ],
       ),
     );
