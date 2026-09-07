@@ -100,14 +100,34 @@ void main() {
   test('first workspace entry inherits the Orchestrate receiving frame', () {
     final shell = read('lib/app/shell/client_shell.dart');
     final journey = read('docs/ORCHESTRATE_VISIBLE_JOURNEY_REGISTER.md');
-    // The boundary is still converged — identity, sidebar and page chrome are
-    // owned here. The canvas is the light workspace ground rather than the
-    // dark receiving canvas: the workspace reconstruction moved operational
-    // content onto it, and dark-on-dark left the content pane unreadable.
-    expect(shell, contains('backgroundColor: AppTheme.publicBackground'));
-    expect(shell, contains('AppTheme.publicSurface'));
-    expect(shell, contains('AppTheme.publicLine'));
+    // The boundary is still converged: identity, sidebar and page chrome are
+    // owned here.
+    //
+    // What changed is where the tokens come from. The shell used to render
+    // with the marketing site's ThemeData, which is why the authenticated
+    // product drifted to white cards on grey while the public surfaces gained
+    // depth — and why it carried a 54px headline and 16px of button padding
+    // into an environment somebody works in all day. It now has a theme of
+    // its own.
+    expect(shell, contains('data: Ws.data'),
+        reason: 'the workspace renders with its own theme, not the public one');
+    expect(shell, isNot(contains('data: AppTheme.lightTheme')),
+        reason: 'inheriting the marketing ThemeData is the drift this '
+            'reconstruction exists to end');
     expect(shell, contains('BrandAssets.symbol'));
+
+    // THE CONTENT PANE STAYS LIGHT. This is the property the original
+    // assertion was really protecting: an earlier shell inherited the dark
+    // receiving canvas and rendered dark content on it, which left the pane
+    // unreadable. The rail is now a deep field on purpose — it is what carries
+    // identity across from the public product — so the guard has to say which
+    // surface may be deep rather than banning the field outright.
+    expect(shell, contains('color: Ws.canvas'),
+        reason: 'the work area sits on the light workspace ground');
+    expect(shell, isNot(contains('backgroundColor: Ws.field')),
+        reason: 'the scaffold behind the content must never be the deep field');
+    expect(shell, isNot(contains('ColoredBox(\n        color: Ws.field')),
+        reason: 'the content pane must never be the deep field');
     expect(journey, contains('converged receiving boundary'));
     expect(
         journey, isNot(contains('EXEMPT_WITH_REASON: operational workspace')));

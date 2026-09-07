@@ -18,10 +18,17 @@ class BrandAssets {
         : _logoLight;
   }
 
-  static String symbolFor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? _symbolDark
-        : _symbolLight;
+  /// Which mark to use.
+  ///
+  /// Normally the app's brightness decides. But a light theme may still place
+  /// the mark on a deep field — the workspace rail does exactly that, because
+  /// the deep field is what carries identity across from the public product —
+  /// and there the asset must follow the SURFACE it sits on rather than the
+  /// theme it inherits. Passing [onDark] says which one it is, instead of the
+  /// caller faking a brightness to get the right file.
+  static String symbolFor(BuildContext context, {bool? onDark}) {
+    final dark = onDark ?? (Theme.of(context).brightness == Brightness.dark);
+    return dark ? _symbolDark : _symbolLight;
   }
 
   static ImageProvider<Object> logoProvider(BuildContext context) {
@@ -56,10 +63,11 @@ class BrandAssets {
     BoxFit fit = BoxFit.contain,
     String semanticLabel = 'Orchestrate',
     FilterQuality filterQuality = FilterQuality.high,
+    bool? onDark,
   }) {
     return ExcludeSemantics(
       child: Image.asset(
-        symbolFor(context),
+        symbolFor(context, onDark: onDark),
         width: size,
         height: size,
         fit: fit,

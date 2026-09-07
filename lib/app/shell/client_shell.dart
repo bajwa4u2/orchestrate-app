@@ -7,6 +7,7 @@ import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/command_palette.dart';
 import 'package:orchestrate_app/features/client/widgets/feedback_sheet.dart';
@@ -176,7 +177,7 @@ class _ClientShellState extends State<ClientShell> {
     final content = RepaintBoundary(
       key: ValueKey('surface:${widget.currentPath}'),
       child: ColoredBox(
-        color: AppTheme.publicBackground,
+        color: Ws.canvas,
         child: SelectionArea(
           child: parent == null
               ? widget.child
@@ -196,7 +197,14 @@ class _ClientShellState extends State<ClientShell> {
     );
 
     return Theme(
-      data: AppTheme.lightTheme,
+      // THE WORKSPACE HAS ITS OWN THEME NOW.
+      //
+      // This was AppTheme.lightTheme — the marketing site's ThemeData, which
+      // is why the authenticated product drifted to white cards on grey while
+      // the public surfaces gained depth, and why it carried a 54px headline
+      // and 16px of padding inside every button into an environment somebody
+      // works in all day.
+      data: Ws.data,
       child: LayoutBuilder(builder: (context, constraints) {
         // Measured against the constraints this shell actually has, and in
         // the text that has to fit inside them. With the OS enlarging text the
@@ -208,9 +216,9 @@ class _ClientShellState extends State<ClientShell> {
 
         return CommandPaletteHost(
           child: Scaffold(
-            // The workspace is a light surface. It previously inherited the
-            // dark auth canvas, which rendered the content text dark-on-dark.
-            backgroundColor: AppTheme.publicBackground,
+            // A ground, not a page. Panels sit on it and are separated by
+            // the surface step rather than by borders alone.
+            backgroundColor: Ws.canvas,
             bottomNavigationBar: phone ? _BottomBar(
               destinations: _destinations,
               isSelected: _isSelected,
@@ -218,8 +226,8 @@ class _ClientShellState extends State<ClientShell> {
             appBar: phone
                 ? AppBar(
                     title: Text(_currentLabel()),
-                    backgroundColor: AppTheme.publicSurface,
-                    foregroundColor: AppTheme.publicText,
+                    backgroundColor: Ws.surface,
+                    foregroundColor: Ws.ink,
                     elevation: 0,
                     scrolledUnderElevation: 0,
                     actions: [
@@ -236,7 +244,7 @@ class _ClientShellState extends State<ClientShell> {
                     ],
                     bottom: const PreferredSize(
                       preferredSize: Size.fromHeight(1),
-                      child: Divider(height: 1, color: AppTheme.publicLine),
+                      child: Divider(height: 1, color: Ws.hairline),
                     ),
                   )
                 : null,
@@ -248,10 +256,15 @@ class _ClientShellState extends State<ClientShell> {
                 : Row(
                     children: [
                       _Rail(
-                        width: size == WorkspaceSize.compact
+                        // Measured against the window rather than against the
+                        // text-scaled content width, so a wide monitor keeps
+                        // its navigation labels when the OS enlarges text.
+                        width: Workspace.railIsCollapsed(
+                                context, constraints.maxWidth)
                             ? _railCollapsed
-                            : _railWidth,
-                        collapsed: size == WorkspaceSize.compact,
+                            : Workspace.railWidth(context),
+                        collapsed: Workspace.railIsCollapsed(
+                            context, constraints.maxWidth),
                         destinations: _destinations,
                         isSelected: _isSelected,
                         currentPath: widget.currentPath,
@@ -323,11 +336,20 @@ class _Rail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final workspaceName = session.workspaceName.trim();
+
     return Container(
       width: width,
       decoration: const BoxDecoration(
-        color: AppTheme.publicSurface,
-        border: Border(right: BorderSide(color: AppTheme.publicLine)),
+        // THE DEEP FIELD, WHICH IS THE JOIN TO THE PUBLIC PRODUCT.
+        //
+        // The public site puts its most deliberate moments on this field.
+        // Using it for the rail is what makes signing in read as descending
+        // into the same product rather than arriving at a different one, and
+        // it gives the work area a ground to be light against, which a white
+        // rail beside a white page could never do.
+        color: Ws.field,
+        border: Border(right: BorderSide(color: Ws.fieldDeep)),
       ),
       child: SafeArea(
         right: false,
@@ -342,24 +364,63 @@ class _Rail extends StatelessWidget {
               child: InkWell(
                 onTap: () => context.go('/client/today'),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(collapsed ? 14 : 20, 18, 14, 18),
+                  padding: EdgeInsets.fromLTRB(collapsed ? 14 : 18, 16, 14, 4),
                   child: Row(
                     children: [
-                      BrandAssets.symbol(context, size: 22),
+                      // Follows the surface it sits on rather than the theme
+                      // it inherits, which is light.
+                      BrandAssets.symbol(context, size: 20, onDark: true),
                       if (!collapsed) ...[
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 9),
                         Text('Orchestrate',
                             style: Theme.of(context)
                                 .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w700)),
+                                .labelMedium
+                                ?.copyWith(
+                                  color: Ws.onFieldMuted,
+                                  letterSpacing: 0.4,
+                                )),
                       ],
                     ],
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 4),
+
+            // WHOSE BUSINESS AM I OPERATING?
+            //
+            // The first question anybody entering a workspace has, and the
+            // shell answered it nowhere. It said Orchestrate, which is the
+            // supplier rather than the business being operated, so an operator
+            // holding more than one client inferred it from the contents of
+            // the screen.
+            if (!collapsed && workspaceName.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 10, 14, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      workspaceName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Ws.onField,
+                            height: 1.2,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Commercial workspace',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Ws.onFieldSubtle,
+                          ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              const SizedBox(height: 14),
             for (final d in destinations)
               _RailItem(
                 destination: d,
@@ -380,7 +441,7 @@ class _Rail extends StatelessWidget {
               collapsed: collapsed,
               onTap: () => context.go('/client/support'),
             ),
-            const Divider(height: 20, color: AppTheme.publicLine),
+            const Divider(height: 20, color: Ws.fieldRaised),
             Padding(
               padding: EdgeInsets.fromLTRB(collapsed ? 10 : 12, 0, 12, 14),
               child: collapsed
@@ -389,7 +450,8 @@ class _Rail extends StatelessWidget {
                           session: session,
                           currentPath: currentPath,
                           signingOut: signingOut,
-                          onSignOut: onSignOut))
+                          onSignOut: onSignOut,
+                          onDark: true))
                   // THE WHOLE ROW OPENS THE MENU, NOT THE CIRCLE.
                   //
                   // The avatar was the only tap target: a 30px circle at the
@@ -408,6 +470,7 @@ class _Rail extends StatelessWidget {
                       // shell built, and the shell does not rebuild when a
                       // profile is saved — so the rail kept the old name.
                       showIdentity: true,
+                      onDark: true,
                     ),
             ),
           ],
@@ -430,13 +493,25 @@ class _RailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Selection is structural rather than a filled pill: a lit left spine and
+    // a lift in the ground. A pill on a deep field reads as a button somebody
+    // pressed, when what it actually says is where you are.
     final child = Container(
-      margin: EdgeInsets.symmetric(horizontal: collapsed ? 10 : 12, vertical: 2),
-      padding: EdgeInsets.symmetric(
-          horizontal: collapsed ? 0 : 12, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      padding: EdgeInsets.only(
+          left: collapsed ? 0 : 11,
+          right: collapsed ? 0 : 10,
+          top: 9,
+          bottom: 9),
       decoration: BoxDecoration(
-        color: selected ? AppTheme.publicAccentSoft : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
+        color: selected ? Ws.fieldRaised : Colors.transparent,
+        borderRadius: BorderRadius.circular(Ws.radius),
+        border: Border(
+          left: BorderSide(
+            color: selected ? Ws.accentBright : Colors.transparent,
+            width: 2.5,
+          ),
+        ),
       ),
       child: Row(
         mainAxisAlignment:
@@ -449,16 +524,15 @@ class _RailItem extends StatelessWidget {
           // capped, because an icon is a mark rather than a sentence and does
           // not need to keep growing to stay legible.
           Icon(selected ? destination.selectedIcon : destination.icon,
-              size: Workspace.icon(context, 19),
-              color: selected ? AppTheme.publicAccent : AppTheme.publicMuted),
+              size: Workspace.icon(context, 18),
+              color: selected ? Ws.onField : Ws.onFieldSubtle),
           if (!collapsed) ...[
-            const SizedBox(width: 12),
+            const SizedBox(width: 11),
             Text(
               destination.label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color:
-                        selected ? AppTheme.publicAccent : AppTheme.publicText,
+                    color: selected ? Ws.onField : Ws.onFieldMuted,
                   ),
             ),
           ],
@@ -515,14 +589,16 @@ class _RailAction extends StatelessWidget {
                   ? MainAxisAlignment.center
                   : MainAxisAlignment.start,
               children: [
-                Icon(icon, size: Workspace.icon(context, 18), color: AppTheme.publicMuted),
+                Icon(icon,
+                    size: Workspace.icon(context, 18),
+                    color: Ws.onFieldSubtle),
                 if (!collapsed) ...[
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 11),
                   Text(label,
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
-                          ?.copyWith(color: AppTheme.publicMuted)),
+                          ?.copyWith(color: Ws.onFieldMuted)),
                 ],
               ],
             ),
@@ -545,6 +621,7 @@ class _AccountButton extends StatefulWidget {
     required this.onSignOut,
     this.currentPath = '',
     this.showIdentity = false,
+    this.onDark = false,
   });
 
   final AuthSessionController session;
@@ -556,6 +633,11 @@ class _AccountButton extends StatefulWidget {
   /// the button rather than next to it so the whole row opens the menu — it
   /// reads as one control and it behaves as one.
   final bool showIdentity;
+
+  /// Which surface this sits on. The same control appears in the rail, which
+  /// is a deep field, and in the phone app bar, which is not. A control that
+  /// assumes one of them is unreadable on the other.
+  final bool onDark;
 
   /// Where the person is, sent with feedback so a report about a page does not
   /// have to describe which page.
@@ -689,39 +771,53 @@ class _AccountButtonState extends State<_AccountButton> {
         child: Row(
           children: [
             CircleAvatar(
-              radius: 15,
-              backgroundColor: AppTheme.publicAccentSoft,
+              radius: 14,
+              backgroundColor:
+                  widget.onDark ? Ws.fieldRaised : Ws.accentSoft,
               child: Text(
                 initials.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.publicAccent),
+                    color: widget.onDark ? Ws.onField : Ws.accent),
               ),
             ),
             if (widget.showIdentity) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 9),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // WHO YOU ARE, not which business you are operating.
+                    //
+                    // This row used to lead with the workspace name, which the
+                    // rail now states at the top where the question is
+                    // actually asked. Repeating it here spent the one place in
+                    // the shell that identifies the PERSON on saying the same
+                    // thing twice, and left an operator unable to see which
+                    // account they were signed in as without opening a menu.
                     Text(
-                      session.workspaceName.trim().isNotEmpty
-                          ? session.workspaceName.trim()
-                          : 'Workspace',
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      session.email,
+                      session.fullName.trim().isNotEmpty
+                          ? session.fullName.trim()
+                          : session.email,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.publicMuted, fontSize: 11),
+                            fontWeight: FontWeight.w600,
+                            color: widget.onDark ? Ws.onField : Ws.ink,
+                          ),
                     ),
+                    if (session.fullName.trim().isNotEmpty)
+                      Text(
+                        session.email,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: widget.onDark
+                                  ? Ws.onFieldSubtle
+                                  : Ws.inkSubtle,
+                              letterSpacing: 0,
+                            ),
+                      ),
                   ],
                 ),
               ),

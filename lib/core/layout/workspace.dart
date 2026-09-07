@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/workspace_theme.dart';
 
 /// THE SHARED WORKSPACE LAYOUT MODEL.
 ///
@@ -67,9 +68,61 @@ class Workspace {
   static bool textIsEnlarged(BuildContext context) =>
       MediaQuery.of(context).textScaler.scale(14) / 14 > 1.15;
 
+  /// HOW WIDE THE RAIL HAS TO BE TO SAY WHAT IT SAYS.
+  ///
+  /// The rail was a fixed 232px while its labels followed the OS text scale,
+  /// so with text enlarged the labels grew and the space they lived in did
+  /// not. It scales with them, capped: past a point a navigation rail that
+  /// keeps widening is taking the work area hostage, and collapsing to icons
+  /// is the better answer than a rail half the window wide.
+  static double railWidth(BuildContext context) {
+    final scale = MediaQuery.of(context).textScaler.scale(14) / 14;
+    // Capped low. Measured on the founder's machine at 1.75x the rail took
+    // 27% of a 1265pt window, which is a navigation bar wearing the work
+    // area's clothes. Labels stay legible because the type scale grew with
+    // them; the rail only has to grow enough to hold the longest one.
+    return 232 * scale.clamp(1.0, 1.25);
+  }
+
+  /// WHETHER THE RAIL SHOWS LABELS.
+  ///
+  /// Deliberately NOT sizeOf. That divides by the text scale because content
+  /// decisions are about how much fits, and at 1.75x a 1600px window reads as
+  /// 914 — under the two-pane threshold, so the rail collapsed to icons on a
+  /// wide desktop monitor and took the destination labels and the business
+  /// identity with it.
+  ///
+  /// The rail is not content. The question it has to answer is whether the
+  /// work beside it still has room once the rail has taken what it needs, and
+  /// that is a question about real pixels.
+  static bool railIsCollapsed(BuildContext context, double available) {
+    return available < railWidth(context) + 560;
+  }
+
+  /// PHONE IS A SHAPE. THE REST IS A QUESTION OF HOW MUCH FITS.
+  ///
+  /// Every boundary used to be measured in effective width — real width
+  /// divided by the OS text scale — and for the upper boundaries that is
+  /// right: how many panes fit beside each other genuinely depends on how
+  /// large the text is.
+  ///
+  /// Applying it to the phone boundary was wrong, and measurably so. On this
+  /// machine a 1582px desktop window is 1265.6 logical pixels at a device
+  /// pixel ratio of 1.25, and with the OS enlarging text 1.75x that came out
+  /// as 723 effective — under the 760 phone boundary. So the workspace
+  /// classified a desktop monitor as a phone: bottom navigation bar, app bar,
+  /// no rail, single stacked column. That is not a workspace that FEELS like
+  /// an enlarged phone; it is one that has decided it IS a phone.
+  ///
+  /// Whether there is a pointer, a keyboard and a window manager is not a
+  /// function of type size. Somebody who enlarges text on a desktop wants
+  /// larger text, not a different product — so structure follows the real
+  /// viewport, and only the density decisions above it follow the text.
   static WorkspaceSize sizeOf(BuildContext context, [double? available]) {
+    final raw = available ?? MediaQuery.of(context).size.width;
+    if (raw < phone) return WorkspaceSize.phone;
+
     final w = effectiveWidth(context, available);
-    if (w < phone) return WorkspaceSize.phone;
     if (w < twoPane) return WorkspaceSize.compact;
     if (w < threePane) return WorkspaceSize.wide;
     return WorkspaceSize.extraWide;
@@ -187,12 +240,42 @@ class WorkspaceBand extends StatelessWidget {
   Widget build(BuildContext context) {
     if (children.isEmpty) return const SizedBox.shrink();
     final text = Theme.of(context).textTheme;
+
+    // A BAND IS A SURFACE, NOT A HEADING WITH ROWS UNDER IT.
+    //
+    // This used to be a label and a list painted straight onto the page, which
+    // is why the workspace read as a flat document however carefully the rows
+    // were composed: nothing was contained by anything, so nothing had weight,
+    // and the eye had no structure to move between.
+    //
+    // Containment is the cheapest depth there is and the one an operational
+    // surface can actually afford. The band lifts to the working surface, the
+    // canvas shows around it, and a hairline closes it — no shadow, because at
+    // this density a shadow under every group blurs the grid it is supposed to
+    // clarify.
     return Padding(
-      padding: const EdgeInsets.only(bottom: 28),
-      child: Column(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Ws.surface,
+          borderRadius: BorderRadius.circular(Ws.radiusLarge),
+          border: Border.all(color: Ws.hairline),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          // The label belongs to the surface it heads, so it sits inside it on
+          // a slightly recessed strip rather than floating above it.
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
+            decoration: BoxDecoration(
+              color: Ws.surfaceSoft,
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(Ws.radiusLarge)),
+              border: const Border(
+                  bottom: BorderSide(color: Ws.hairline)),
+            ),
+            child: Row(
             children: [
               // Flexible, because a band title is written for what the band
               // contains and not for the width it gets. Unconstrained beside a
@@ -223,13 +306,35 @@ class WorkspaceBand extends StatelessWidget {
                 const Spacer(),
               if (trailing != null) trailing!,
             ],
+            ),
           ),
-          const SizedBox(height: 10),
-          ...children,
+          // SEPARATION BELONGS TO THE CONTAINER, NOT TO EACH ROW.
+          //
+          // A row that draws its own bottom rule puts one against the panel
+          // edge when it happens to be last, which reads as a double line and
+          // is the sort of thing that makes a careful surface look careless.
+          // The band knows which row is last; a row does not.
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const Divider(height: 1, thickness: 1),
+            _BandScope(child: children[i]),
+          ],
         ],
+        ),
       ),
     );
   }
+}
+
+/// Marks a subtree as living inside a band, so rows can stop drawing their own
+/// separation and let the band place it.
+class _BandScope extends InheritedWidget {
+  const _BandScope({required super.child});
+
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_BandScope>() != null;
+
+  @override
+  bool updateShouldNotify(_BandScope oldWidget) => false;
 }
 
 /// One line of work: what happened, and what resolves it.
@@ -265,11 +370,11 @@ class WorkspaceRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppTheme.radius),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: AppTheme.publicLine.withValues(alpha: 0.6)),
-            ),
+            border: _BandScope.of(context)
+                ? null
+                : const Border(bottom: BorderSide(color: Ws.hairline)),
           ),
           // Meta sits beside the title where there is room and underneath it
           // where there is not. It used to be an unconstrained child of this
