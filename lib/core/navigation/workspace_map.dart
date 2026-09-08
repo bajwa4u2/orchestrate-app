@@ -64,8 +64,20 @@ const Map<String, _Surface> _surfaces = {
       'Business identity', WorkspaceArea.business, parent: '/client/business'),
   '/app/branding':
       _Surface('Branding', WorkspaceArea.business, parent: '/client/business'),
+  // The hub's "Market and targeting" row. Caught by the hub-destination test
+  // rather than by eye — the bottom bar already absorbed this path, so it
+  // highlighted Business correctly and only the return was missing.
+  '/client/business-identity': _Surface(
+      'Market and targeting', WorkspaceArea.business,
+      parent: '/client/business'),
   '/client/infrastructure': _Surface('Mailbox and sending',
       WorkspaceArea.business, parent: '/client/business'),
+  // The Business hub opens /app/trust, not /client/trust — the latter is a
+  // generic backend diagnostic. Only the /client path was mapped, so the real
+  // Credentials screen had no return and the bottom bar fell back to Today.
+  // Both are kept: they are different screens.
+  '/app/trust':
+      _Surface('Credentials', WorkspaceArea.business, parent: '/client/business'),
   '/client/trust':
       _Surface('Credentials', WorkspaceArea.business, parent: '/client/business'),
   '/app/evidence':

@@ -208,11 +208,22 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
           eyebrow: 'Infrastructure',
           title: data.headline,
           subtitle: data.subtitle,
-          banner: ClientStatusBanner(
-            tone: data.bannerTone,
-            title: data.bannerTitle,
-            message: data.bannerMessage,
-          ),
+          // THE VERDICT WAS PRINTED TWICE.
+          //
+          // This banner and the primary status card below both derive from the
+          // same snapshot, so on a Pixel the page opened with "Dispatch
+          // blocked" and the same sentence, twice, one above the other. The
+          // card is the designated single truth — it is the one that carries
+          // what to do next — so the banner stands down whenever the card can
+          // speak, and remains for the case where there is no snapshot to
+          // build a card from.
+          banner: data.snapshot.isNotEmpty
+              ? null
+              : ClientStatusBanner(
+                  tone: data.bannerTone,
+                  title: data.bannerTitle,
+                  message: data.bannerMessage,
+                ),
           actions: _buildActions(data),
           children: [
             // ─────────────────────────────────────────────────────
@@ -1868,9 +1879,24 @@ class _OperationalIdentityPanel extends StatelessWidget {
         : 'SPF / DKIM / DMARC verification pending';
     final trustBadge =
         identity.sendingIdentityReady ? 'Verified' : 'Pending';
+    // THIS ROW GAVE A THIRD, WRONG REASON FOR ONE BLOCK.
+    //
+    // On a Pixel the surface said three things at once: the banner gave the
+    // real cause (the service is not part of what the organisation has
+    // activated), the card told the operator to capture a correlationId and
+    // contact support, and this row said every layer above had to be verified
+    // — while every layer above showed Attached, Connected, Authorized and
+    // Verified. Two of the three were false, and this was one of them.
+    //
+    // It only knows the state of the chain, so it now speaks only about the
+    // chain, and says plainly when the chain is not the problem.
+    final chainSatisfied = identity.authorized && identity.sendingIdentityReady;
     final dispatchPrimary = identity.dispatchEligible
         ? 'Dispatch eligibility granted'
-        : 'Dispatch eligibility pending. Each layer above must be verified.';
+        : chainSatisfied
+            ? 'Not eligible yet. Everything above is in place, so the reason '
+                'is not the mail setup — it is stated at the top of this page.'
+            : 'Dispatch eligibility pending. Each layer above must be verified.';
     final dispatchBadge =
         identity.dispatchEligible ? 'Eligible' : 'Blocked';
 

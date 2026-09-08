@@ -113,13 +113,19 @@ class _ClientShellState extends State<ClientShell> {
         '/client/mailbox',
         '/client/trust',
         '/client/records',
+        // The hub opens these four on /app paths. They were absent here, so
+        // Credentials, Evidence, Artifacts and Branding all left the bar
+        // highlighting Today while the screen showed a Business surface.
+        '/app/trust',
+        '/app/evidence',
+        '/app/artifacts',
+        '/app/branding',
       },
     ),
   ];
 
-  /// True on the account layer, which no bottom-bar destination represents.
-  bool get _inAccountLayer =>
-      areaOf(widget.currentPath) == WorkspaceArea.account;
+  /// Which destination contains this surface, or -1 for none of them.
+  int _selectedDestination() => _destinations.indexWhere(_isSelected);
 
   bool _isSelected(_Destination d) {
     final path = widget.currentPath;
@@ -242,10 +248,22 @@ class _ClientShellState extends State<ClientShell> {
               // The account layer is not one of these four. It is reached from
               // the avatar and carries its own return, so the honest rendering
               // is no bar rather than a false one.
-              bottomNavigationBar: phone && !_inAccountLayer
+              // A BAR THAT CANNOT SAY "NONE OF THESE" MUST NOT BE ASKED.
+              //
+              // indexWhere answers -1 when nothing matches, and the clamp
+              // turned that into 0 — so every account surface told the operator
+              // they were on Today. Material's NavigationBar asserts its index
+              // is in range, so it genuinely cannot render no-selection; the
+              // honest move is not to draw it where it would have to invent
+              // one.
+              //
+              // Stated as a general rule rather than a list of the surfaces
+              // that happened to be found on a Pixel: any destination none of
+              // these four contains gets no bar, including ones added later.
+              bottomNavigationBar: phone && _selectedDestination() >= 0
                   ? _BottomBar(
                       destinations: _destinations,
-                      isSelected: _isSelected,
+                      selectedIndex: _selectedDestination(),
                     )
                   : null,
               appBar: phone
@@ -856,15 +874,15 @@ class _AccountButtonState extends State<_AccountButton> {
 
 /// Phone navigation. The same three destinations, reachable with a thumb.
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.destinations, required this.isSelected});
+  const _BottomBar({required this.destinations, required this.selectedIndex});
 
   final List<_Destination> destinations;
-  final bool Function(_Destination) isSelected;
+
+  /// Always a real destination. The shell does not build this bar otherwise.
+  final int selectedIndex;
 
   @override
   Widget build(BuildContext context) {
-    final selectedIndex =
-        destinations.indexWhere(isSelected).clamp(0, destinations.length - 1);
     return NavigationBar(
       selectedIndex: selectedIndex,
       height: 62,

@@ -145,22 +145,54 @@ class _ClientBusinessIdentityScreenState
         .toList(growable: false);
   }
 
+  /// THE CONFIRMATION WAS AT THE TOP OF THE PAGE.
+  ///
+  /// It existed all along — a "Latest save" panel above the readiness summary
+  /// — and on a phone nobody ever saw it. The sections are tall, so saving
+  /// "Where it operates" put the only evidence the save happened several
+  /// screens above the button that was pressed. On a Pixel the form simply went
+  /// quiet: no spinner, no message, nothing to distinguish saved from ignored.
+  /// The value had in fact been written, which is the worse version of this —
+  /// it teaches people to press Save twice.
+  ///
+  /// Said where the person is looking now. An error also stays in the panel,
+  /// because a failure has to survive being glanced away from; a success does
+  /// not need to persist once it has been seen.
   Future<void> _saveSection(Map<String, dynamic> patch, {String? message}) async {
     setState(() => _savingSection = true);
     try {
       final result = await _repository.patchProfile(patch);
       final readiness = asMap(result['readiness']);
+      final saved = message ?? 'Saved.';
       setState(() {
-        _resultMessage = message ?? 'Saved.';
+        _resultMessage = null;
         _future = _refreshAfterPatch(result, readiness);
         _savingSection = false;
       });
+      _say(saved);
     } catch (error) {
+      final failure = ClientErrorView.classifyError(error);
       setState(() {
-        _resultMessage = ClientErrorView.classifyError(error);
+        _resultMessage = failure;
         _savingSection = false;
       });
+      _say(failure, error: true);
     }
+  }
+
+  void _say(String message, {bool error = false}) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: error ? Ws.critical : Ws.ink,
+          duration: Duration(seconds: error ? 6 : 3),
+        ),
+      );
   }
 
   Future<_IdentityViewModel> _refreshAfterPatch(
@@ -247,7 +279,7 @@ class _ClientBusinessIdentityScreenState
           children: [
             if (_resultMessage != null) ...[
               ClientPanel(
-                title: 'Latest save',
+                title: 'Last save did not go through',
                 children: [
                   ClientInfoRow(title: 'Status', primary: _resultMessage!),
                 ],
