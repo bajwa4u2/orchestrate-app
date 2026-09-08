@@ -66,6 +66,34 @@ void main() {
       );
     });
 
+    test('it detects the logo with the key branding actually returns', () {
+      // I assumed assets['logo_primary'] and the mark fell back to a business
+      // initial for a business that HAS a logo — the same class of mistake as
+      // the Business hub reading identity off the wrong level of its
+      // envelope. 'logo_primary' is the asset TYPE in the URL; the response
+      // names the same asset 'logo'.
+      final branding = File(
+        'lib/features/client/screens/client_branding_screen.dart',
+      ).readAsStringSync();
+      expect(
+        branding.contains("branding['logo']"),
+        isTrue,
+        reason: 'the screen that renders this logo reads this key',
+      );
+      expect(
+        mark.contains("branding['logo']"),
+        isTrue,
+        reason: 'the shell must read the same key as the screen that works',
+      );
+      // Checked as code, not as prose: the comment above the fix names the
+      // wrong key deliberately, to record what the mistake was.
+      expect(
+        mark.contains("branding['assets']"),
+        isFalse,
+        reason: 'the response has no assets envelope',
+      );
+    });
+
     test('it reads the business name from the session, not a local field', () {
       expect(mark.contains('session.workspaceName'), isTrue);
     });

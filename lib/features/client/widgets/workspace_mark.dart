@@ -42,8 +42,18 @@ class _LogoPresence {
     resolvedFor = workspace;
     try {
       final branding = await ClientBrandingRepository().fetchBranding();
-      final assets = branding['assets'];
-      has = assets is Map && assets['logo_primary'] != null;
+      // THE KEY IS 'logo', NOT assets['logo_primary'].
+      //
+      // I invented that shape and the mark fell back to the business initial
+      // for a business that HAS a logo — the same class of mistake as the
+      // Business hub reading identity off the wrong level of its envelope,
+      // which I had just finished fixing. Assuming a payload shape is how
+      // both happened; the branding screen renders this logo correctly and
+      // reads branding['logo'], so that is the shape.
+      //
+      // 'logo_primary' is the ASSET TYPE in the URL and the upload field. The
+      // response names the same asset 'logo'. The two are not interchangeable.
+      has = branding['logo'] is Map;
     } catch (_) {
       // A branding fetch that fails must not cost the workspace its name.
       has = false;
