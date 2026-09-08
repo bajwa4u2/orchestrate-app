@@ -205,17 +205,30 @@ class _ClientBrandingScreenState extends State<ClientBrandingScreen> {
             // WHERE ANY OF THIS ACTUALLY SHOWS UP.
             //
             // The surface opened straight into a logo uploader and said
-            // nothing about what a logo or a colour changes. Traced before
-            // claiming: branding is read by artifact generation and by the
-            // email templates, so it appears on documents produced for this
-            // business and on the mail sent on its behalf.
+            // nothing about what a logo or a colour changes. The first attempt
+            // to fix that OVERCLAIMED, and this is the correction: it said
+            // branding appears on documents AND on the mail sent on the
+            // business's behalf. Only the first half is true.
+            //
+            // Artifact generation resolves branding and writes primaryColor
+            // into the generated document, so documents do carry it.
+            // Correspondence does not, deliberately: client voice renders
+            // through communication/render-html, which carries no branding at
+            // all, and the platform template that does carry a logo is
+            // Orchestrate's own and must never wrap a client's message — a
+            // counterparty who receives a third party's brand mid-conversation
+            // has been handed something shaped like a phishing attempt.
+            //
+            // That distinction is worth stating rather than hiding, because
+            // somebody uploading a logo here reasonably expects it on their
+            // outbound and should be told plainly that it is not.
             //
             // Kept subordinate to Business Identity on purpose. This is how
             // the business LOOKS; what it is called, legally and in
             // correspondence, is decided there and is a different kind of
             // fact.
             Text(
-              'How this business looks on what it sends',
+              'How this business looks on the documents it produces',
               style: Theme.of(context)
                   .textTheme
                   .titleLarge
@@ -224,9 +237,11 @@ class _ClientBrandingScreenState extends State<ClientBrandingScreen> {
             const SizedBox(height: 6),
             Text(
               'Your logo and colours appear on the documents Orchestrate '
-              'produces for this business and on the mail sent on its behalf, '
-              'so counterparties see them. Names are not set here — the '
-              'trading and legal names live in Business identity.',
+              'produces for this business. They do not appear on the messages '
+              'sent to counterparties: correspondence goes out as your '
+              'business writing to them, not as a branded mailing. Names are '
+              'not set here — the trading and legal names live in Business '
+              'identity.',
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium

@@ -5,6 +5,7 @@ import 'package:orchestrate_app/features/client/widgets/support_context_card.dar
 import 'package:orchestrate_app/features/client/widgets/support_timeline_card.dart';
 import 'package:orchestrate_app/features/support/services/support_service.dart';
 import 'package:orchestrate_app/core/theme/workspace_theme.dart';
+import 'package:go_router/go_router.dart';
 
 class ClientSupportScreen extends StatefulWidget {
   const ClientSupportScreen({super.key});
@@ -65,7 +66,18 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
     if (message.isEmpty || _submitting) return;
     setState(() => _submitting = true);
     try {
-      await _service.createSession(message: message, publicMode: false);
+      // THE PAGE WAS PROMISED AND NEVER SENT.
+      //
+      // The endpoint accepts sourcePage and the copy below told people it was
+      // attached, and this call omitted it — so every client request recorded
+      // null, and the one claim on this screen that a person cannot verify for
+      // themselves was the untrue one. Found by reading the promise and then
+      // following it to the request.
+      await _service.createSession(
+        message: message,
+        publicMode: false,
+        sourcePage: GoRouterState.of(context).uri.path,
+      );
       _newRequest.clear();
       _thread = null;
       _selectedId = null;
@@ -245,8 +257,8 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
                 // field was sent as null.
                 Text(
                   'Your name, email, business and plan are attached '
-                  'automatically, along with the page you were on. Describe '
-                  'what happened rather than who you are.',
+                  'automatically, along with where in Orchestrate you sent '
+                  'this from. Describe what happened rather than who you are.',
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
