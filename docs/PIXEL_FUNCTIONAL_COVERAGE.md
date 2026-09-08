@@ -59,3 +59,26 @@ Aura had a band of widths with no navigation: its rail and its replacement bar
 asked different constants. Orchestrate does not have that shape — one
 predicate, `phone ? bottomBar : rail`, decides both, and the rail collapses to
 icons rather than disappearing. Checked rather than assumed.
+
+## §13 / §14 — an ownership question, not a defect to fix unilaterally
+
+Workspace settings is described as "Preferences for this workspace" and is
+reached from Account & security. It currently holds at least three things that
+belong to other owners:
+
+- **Signature identity** — display name, role, **business name**, website,
+  scheduling link and the **compliance footer**. The business name is a second
+  naming authority alongside Business identity's legal and trading names, and
+  the compliance footer is the field the postal-address refusal sends people to.
+- **Trusted devices and Revoke** — a person's sessions, which is a security
+  concern about the PERSON, not a preference of the workspace.
+- **Readiness status cards** — Setup, Billing, Authorization, Mailbox, which
+  restate what the Business hub and Mailbox already own.
+
+The consequence for §14's distinction is that **Account & security contains no
+security controls**. It is three links out, and the actual security surface sits
+inside a screen labelled preferences.
+
+Recorded rather than restructured. Where each of these belongs is an authority
+decision about the estate, not a defect with an obvious right answer, and moving
+a naming authority is not something to do as a side effect of a device pass.
