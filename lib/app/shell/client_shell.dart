@@ -14,6 +14,7 @@ import 'package:orchestrate_app/features/client/widgets/feedback_sheet.dart';
 import 'package:orchestrate_app/core/release/release_identity.dart';
 import 'package:orchestrate_app/app/routing/app_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:orchestrate_app/features/client/widgets/workspace_mark.dart';
 
 /// THE WORKSPACE SHELL.
 ///
@@ -123,6 +124,13 @@ class _ClientShellState extends State<ClientShell> {
       },
     ),
   ];
+
+  /// True on the account estate, where the PERSON is the subject.
+  ///
+  /// Entering your own account changes what the screen is about. It does not
+  /// change who owns the workspace, so leaving restores the business.
+  bool get _inAccountLayer =>
+      areaOf(widget.currentPath) == WorkspaceArea.account;
 
   /// Which destination contains this surface, or -1 for none of them.
   int _selectedDestination() => _destinations.indexWhere(_isSelected);
@@ -268,7 +276,19 @@ class _ClientShellState extends State<ClientShell> {
                   : null,
               appBar: phone
                   ? AppBar(
-                      title: Text(_currentLabel()),
+                      // THE BUSINESS LEADS, NOT THE SURFACE AND NOT THE PERSON.
+                      //
+                      // This said 'Today' — the fourth place on screen saying
+                      // so, after the page heading, the breadcrumb and the
+                      // selected destination below. Meanwhile nothing said
+                      // whose Today it was, and the only identity visible was
+                      // the avatar, which is the person.
+                      //
+                      // On the account estate the person becomes the subject,
+                      // because that is what those screens are about. Leaving
+                      // them restores the business.
+                      titleSpacing: 16,
+                      title: WorkspaceIdentity(showPerson: _inAccountLayer),
                       backgroundColor: Ws.surface,
                       foregroundColor: Ws.ink,
                       elevation: 0,
@@ -439,27 +459,50 @@ class _Rail extends StatelessWidget {
             // supplier rather than the business being operated, so an operator
             // holding more than one client inferred it from the contents of
             // the screen.
-            if (!collapsed && workspaceName.isNotEmpty)
+            // The mark survives collapse. A rail narrowed to icons still has
+            // to say whose workspace it is; losing the name AND the mark left
+            // the identity nowhere on a narrow desktop window.
+            if (collapsed)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(0, 10, 0, 16),
+                child: Center(child: WorkspaceMark(onDark: true)),
+              )
+            else if (workspaceName.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 10, 14, 16),
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      workspaceName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Ws.onField,
-                            height: 1.2,
+                    const WorkspaceMark(onDark: true),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            workspaceName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: Ws.onField,
+                                  height: 1.2,
+                                ),
                           ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Commercial workspace',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Ws.onFieldSubtle,
+                          const SizedBox(height: 2),
+                          Text(
+                            'Commercial workspace',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: Ws.onFieldSubtle,
+                                ),
                           ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
