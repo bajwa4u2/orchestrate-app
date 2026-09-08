@@ -53,6 +53,8 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   final _email = TextEditingController();
   final _website = TextEditingController();
   final _password = TextEditingController();
+  /// Named so NEXT from the email field lands here and nowhere else.
+  final _passwordFocus = FocusNode();
   final _confirmPassword = TextEditingController();
   final _resetPassword = TextEditingController();
   final _loginCode = TextEditingController();
@@ -98,6 +100,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     _email.dispose();
     _website.dispose();
     _password.dispose();
+    _passwordFocus.dispose();
     _confirmPassword.dispose();
     _resetPassword.dispose();
     _loginCode.dispose();
@@ -990,25 +993,35 @@ class _AuthCard extends StatelessWidget {
                   ),
                 ),
               ] else ...[
+                // TYPING WAS BEING THROWN AWAY HERE, ON THE SIGN IN PATH.
+                //
+                // Found on a physical Pixel, not in the code. The remember
+                // email checkbox used to sit between these two fields. Typing
+                // an email and pressing the keyboard's NEXT key — which is
+                // what the keyboard offers, and what people press — moved
+                // focus to the CHECKBOX, so the password typed after it went
+                // nowhere and the field stayed empty. No error, nothing to
+                // explain it, on the way into the product.
+                //
+                // Every handler here was non-null and every field had a
+                // controller, so no amount of reading this file would have
+                // shown it. It took using the form on a phone.
+                //
+                // Two things were wrong and both are fixed. The option no
+                // longer interrupts the credential pair — it is about what
+                // happens after signing in, so it belongs beside the act, not
+                // inside it. And NEXT now names its destination rather than
+                // trusting whatever happens to be rendered next.
                 _Field(
                   controller: state._email,
                   label: 'Work email',
                   keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 8),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: state._rememberEmail,
-                  onChanged: (value) => state.setState(
-                    () => state._rememberEmail = value == true,
-                  ),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text('Save email on this device'),
-                  subtitle: const Text('Your password is never saved.'),
+                  nextFocus: state._passwordFocus,
                 ),
                 const SizedBox(height: 14),
                 _Field(
                   controller: state._password,
+                  focusNode: state._passwordFocus,
                   label: 'Password',
                   obscure: state._obscurePassword,
                   onSubmitted: state._busy ? null : state.login,
@@ -1022,6 +1035,17 @@ class _AuthCard extends StatelessWidget {
                           : Icons.visibility_outlined,
                     ),
                   ),
+                ),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: state._rememberEmail,
+                  onChanged: (value) => state.setState(
+                    () => state._rememberEmail = value == true,
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Save email on this device'),
+                  subtitle: const Text('Your password is never saved.'),
                 ),
                 const SizedBox(height: 10),
                 Align(
@@ -1382,6 +1406,8 @@ class _Field extends StatelessWidget {
     this.obscure = false,
     this.suffixIcon,
     this.onSubmitted,
+    this.focusNode,
+    this.nextFocus,
   });
 
   final TextEditingController controller;
@@ -1395,10 +1421,21 @@ class _Field extends StatelessWidget {
   /// What Enter does. Absent on a field that is not the last one in its form.
   final VoidCallback? onSubmitted;
 
+  final FocusNode? focusNode;
+
+  /// Where NEXT goes, named rather than left to ambient traversal.
+  ///
+  /// Traversal hands focus to whatever is next in the tree, which on the sign
+  /// in form was a checkbox — see the note at the remember-email option. A
+  /// field that knows its successor cannot be broken by something rendered
+  /// between them.
+  final FocusNode? nextFocus;
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: keyboardType,
       obscureText: obscure,
       // ENTER SUBMITS.
@@ -1409,7 +1446,11 @@ class _Field extends StatelessWidget {
       // explain it. Signing in with the keyboard is how most people sign in.
       textInputAction:
           onSubmitted != null ? TextInputAction.done : TextInputAction.next,
-      onFieldSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
+      onFieldSubmitted: onSubmitted != null
+          ? (_) => onSubmitted!()
+          : nextFocus != null
+          ? (_) => nextFocus!.requestFocus()
+          : null,
       validator: required
           ? (value) {
               if (value == null || value.trim().isEmpty) {

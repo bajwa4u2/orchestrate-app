@@ -711,3 +711,108 @@ the business and on mail sent on its behalf. It says so now, and stays
 subordinate to Business Identity — this is how the business LOOKS; what it is
 called is decided there.
 
+
+---
+
+## CW-22 — Physical Pixel, unauthenticated estate
+
+Evidence level: **RUNTIME — PHYSICAL DEVICE**. Pixel 9a, `53061JEBF08485`,
+1080×2424 at 420dpi (≈411×923dp, phone class), font_scale 1.0, gesture
+navigation, release APK. Everything below was performed on the device by
+operating the product, not read out of the code.
+
+Three defects. All three were invisible to static analysis, and the first two
+were invisible on desktop because desktop has neither an IME action key nor a
+system Back gesture.
+
+### CW-22.1 — The two ways into the product looked disabled — FIXED, VERIFIED
+
+The public navigation menu styles its six browsing links explicitly for the
+dark panel. `Sign in` and `Start setup` were the only items with no style at
+all, so their text fell through to the ambient light theme's default ink and
+rendered visibly dimmer than everything above them — on a dark surface, the
+visual language of a disabled control.
+
+Both worked. They only looked unavailable, which is worse than broken: nothing
+tells a visitor to try. Proven by tapping `Sign in` and arriving at the sign-in
+surface.
+
+They are not browsing links and no longer share that styling. `Sign in` is now
+the brightest item, `Start setup` carries the accent as the primary act.
+Re-verified on the device after rebuild.
+
+### CW-22.2 — Typing was discarded on the sign-in path — FIXED, VERIFIED
+
+The `Save email on this device` checkbox sat between the email field and the
+password field. Typing an email and pressing the keyboard's NEXT key — which is
+the key the keyboard offers, and the one people press — moved focus to the
+**checkbox**. Everything typed after that went nowhere. The password field
+stayed empty, with no error and nothing to explain it, on the way into the
+product.
+
+Every handler on that screen is non-null and every field has a controller, so
+no reading of the file would have surfaced this. It took using the form on a
+phone.
+
+Two causes, both fixed. The option no longer interrupts the credential pair —
+it concerns what happens *after* signing in, so it belongs beside the act, not
+inside it. And the email field now names its successor rather than trusting
+ambient focus traversal to find it.
+
+Verified on the device: NEXT lands in Password, the typed text arrives there,
+and the action key becomes `done`.
+
+Checked and **not** systemic: the register form is six fields in sequence with
+nothing between them, and the verify-code form is a single field. Only sign-in
+had a non-text control inside a field run.
+
+### CW-22.3 — System Back closed the app from every page — FIXED, VERIFIED
+
+From the marketing site and from the sign-in page both, the Android Back
+gesture left Orchestrate entirely instead of returning to the previous surface.
+Public navigation is `go`, which replaces rather than pushes, so there was
+nothing on the Flutter stack to pop. On a phone Back is the primary way people
+move; this was most visitors' second gesture.
+
+**The first repair was wrong, and the device proved it.** A custom
+`BackButtonDispatcher` is the documented mechanism and it never ran at all —
+instrumented and confirmed silent in logcat. Android asks an app whether it
+handles Back *before* delivering it, and Flutter answers from the route stack:
+one route deep, it registers a null callback and the OS closes the task without
+Dart hearing anything. Logcat states it directly:
+`CoreBackPreview ... Setting back callback null`. The app has to claim the
+gesture in advance, which is what `PopScope` does and a dispatcher cannot.
+
+Back now means **up**. `UpBackHandler` wraps the three shells — public, auth,
+workspace — and resolves the parent surface.
+
+Inside the workspace it asks `semanticParentOf`, the same map the visible
+return already uses, rather than holding a second opinion: the on-screen Back
+and the system Back have to agree about what contains a surface, or one gesture
+means two things depending on where a thumb lands. A test asserts that
+agreement rather than trusting it.
+
+At an area landing, and at the public front door, Back keeps its real meaning
+and leaves.
+
+Verified on the device: home → Pricing → Back returns to home and stays in the
+app; Back again at the front door leaves. Eight assertions in
+`test/system_back_test.dart`.
+
+### Also proven working, unchanged
+
+- **Field validation refuses correctly.** An invalid email and an empty
+  password mark both fields, name both faults, and send no request.
+- **The email field summons the right keyboard** — email layout with `@` and
+  `.` on the base layer, and a `next` action key rather than `go`.
+- **Focused fields clear the IME.** The password field scrolled above the
+  keyboard rather than sitting behind it.
+- **Back dismisses the keyboard first** and consumes that press, before any
+  navigation.
+- **Cold start is clean** — no exception, no dropped frame warning in logcat.
+
+### Not yet proven
+
+The fifteen Business and Account surfaces are behind authentication and were
+not reached. `AUTHENTICATED_RUNTIME_AUTOMATION = WAITING` still holds: no token
+was minted, recovered, or fabricated to get past it.

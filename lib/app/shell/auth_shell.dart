@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/app/routing/app_router.dart';
 
 /// Shared desktop shell for the focused flows — sign in, create workspace,
 /// email verification, password reset, setup, and subscribe.
@@ -36,63 +37,69 @@ class AuthShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: AppTheme.lightTheme,
-      child: Scaffold(
-        backgroundColor: AppTheme.publicCanvas,
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              const _AuthShellHeader(),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      child: ConstrainedBox(
-                        constraints:
-                            BoxConstraints(minHeight: constraints.maxHeight),
-                        child: Column(
-                          children: [
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: (constraints.maxHeight -
-                                        _footerReserveHeight)
-                                    .clamp(0, double.infinity)
-                                    .toDouble(),
-                              ),
-                              child: Align(
-                                alignment: Alignment.topCenter,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(28, 44, 28, 44),
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                        maxWidth: maxContentWidth),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (setupFlow) ...[
-                                          const _SetupJourneyHeader(),
-                                          const SizedBox(height: 26),
+    // Auth screens sit outside both shells, so they claim the Android Back
+    // gesture here. The path comes from the router rather than a parameter
+    // because every caller already knows it as the route it was reached by.
+    return UpBackHandler(
+      path: GoRouterState.of(context).uri.path,
+      child: Theme(
+        data: AppTheme.lightTheme,
+        child: Scaffold(
+          backgroundColor: AppTheme.publicCanvas,
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                const _AuthShellHeader(),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints:
+                              BoxConstraints(minHeight: constraints.maxHeight),
+                          child: Column(
+                            children: [
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: (constraints.maxHeight -
+                                          _footerReserveHeight)
+                                      .clamp(0, double.infinity)
+                                      .toDouble(),
+                                ),
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        28, 44, 28, 44),
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                          maxWidth: maxContentWidth),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (setupFlow) ...[
+                                            const _SetupJourneyHeader(),
+                                            const SizedBox(height: 26),
+                                          ],
+                                          child,
                                         ],
-                                        child,
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const _AuthShellFooter(),
-                          ],
+                              const _AuthShellFooter(),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

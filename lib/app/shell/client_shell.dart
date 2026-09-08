@@ -12,6 +12,7 @@ import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/command_palette.dart';
 import 'package:orchestrate_app/features/client/widgets/feedback_sheet.dart';
 import 'package:orchestrate_app/core/release/release_identity.dart';
+import 'package:orchestrate_app/app/routing/app_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// THE WORKSPACE SHELL.
@@ -66,7 +67,11 @@ class _ClientShellState extends State<ClientShell> {
       icon: Icons.inbox_outlined,
       selectedIcon: Icons.inbox,
       // Legacy paths that were conceptually "the operational home".
-      absorbs: {'/client/overview', '/client/workspace', '/client/notifications'},
+      absorbs: {
+        '/client/overview',
+        '/client/workspace',
+        '/client/notifications'
+      },
     ),
     // Market sits before Relationships because that is the order the business
     // moves in: understand who may be worth pursuing, then hold a relationship
@@ -181,7 +186,7 @@ class _ClientShellState extends State<ClientShell> {
         child: SelectionArea(
           child: parent == null
               ? widget.child
-                  : Column(
+              : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _SurfaceReturn(
@@ -196,93 +201,99 @@ class _ClientShellState extends State<ClientShell> {
       ),
     );
 
-    return Theme(
-      // THE WORKSPACE HAS ITS OWN THEME NOW.
-      //
-      // This was AppTheme.lightTheme — the marketing site's ThemeData, which
-      // is why the authenticated product drifted to white cards on grey while
-      // the public surfaces gained depth, and why it carried a 54px headline
-      // and 16px of padding inside every button into an environment somebody
-      // works in all day.
-      data: Ws.data,
-      child: LayoutBuilder(builder: (context, constraints) {
-        // Measured against the constraints this shell actually has, and in
-        // the text that has to fit inside them. With the OS enlarging text the
-        // window stays the same size while everything in it grows, so the rail
-        // collapses at the width where the work beside it would otherwise be
-        // squeezed rather than at a pixel count that assumes ordinary text.
-        final size = Workspace.sizeOf(context, constraints.maxWidth);
-        final phone = size.isPhone;
+    return UpBackHandler(
+      path: widget.currentPath,
+      child: Theme(
+        // THE WORKSPACE HAS ITS OWN THEME NOW.
+        //
+        // This was AppTheme.lightTheme — the marketing site's ThemeData, which
+        // is why the authenticated product drifted to white cards on grey while
+        // the public surfaces gained depth, and why it carried a 54px headline
+        // and 16px of padding inside every button into an environment somebody
+        // works in all day.
+        data: Ws.data,
+        child: LayoutBuilder(builder: (context, constraints) {
+          // Measured against the constraints this shell actually has, and in
+          // the text that has to fit inside them. With the OS enlarging text the
+          // window stays the same size while everything in it grows, so the rail
+          // collapses at the width where the work beside it would otherwise be
+          // squeezed rather than at a pixel count that assumes ordinary text.
+          final size = Workspace.sizeOf(context, constraints.maxWidth);
+          final phone = size.isPhone;
 
-        return CommandPaletteHost(
-          child: Scaffold(
-            // A ground, not a page. Panels sit on it and are separated by
-            // the surface step rather than by borders alone.
-            backgroundColor: Ws.canvas,
-            bottomNavigationBar: phone ? _BottomBar(
-              destinations: _destinations,
-              isSelected: _isSelected,
-            ) : null,
-            appBar: phone
-                ? AppBar(
-                    title: Text(_currentLabel()),
-                    backgroundColor: Ws.surface,
-                    foregroundColor: Ws.ink,
-                    elevation: 0,
-                    scrolledUnderElevation: 0,
-                    actions: [
-                      IconButton(
-                        icon: Icon(Icons.search, size: Workspace.icon(context, 20)),
-                        tooltip: 'Search and actions',
-                        onPressed: () => CommandPaletteHost.open(context),
-                      ),
-                      _AccountButton(
-                          session: session,
-                          currentPath: widget.currentPath,
-                          signingOut: _signingOut,
-                          onSignOut: () => _signOut(context)),
-                    ],
-                    bottom: const PreferredSize(
-                      preferredSize: Size.fromHeight(1),
-                      child: Divider(height: 1, color: Ws.hairline),
-                    ),
-                  )
-                : null,
-            body: phone
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                    child: content,
-                  )
-                : Row(
-                    children: [
-                      _Rail(
-                        // Measured against the window rather than against the
-                        // text-scaled content width, so a wide monitor keeps
-                        // its navigation labels when the OS enlarges text.
-                        width: Workspace.railIsCollapsed(
-                                context, constraints.maxWidth)
-                            ? _railCollapsed
-                            : Workspace.railWidth(context),
-                        collapsed: Workspace.railIsCollapsed(
-                            context, constraints.maxWidth),
-                        destinations: _destinations,
-                        isSelected: _isSelected,
-                        currentPath: widget.currentPath,
-                        session: session,
-                        signingOut: _signingOut,
-                        onSignOut: () => _signOut(context),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(28, 20, 28, 20),
-                          child: content,
+          return CommandPaletteHost(
+            child: Scaffold(
+              // A ground, not a page. Panels sit on it and are separated by
+              // the surface step rather than by borders alone.
+              backgroundColor: Ws.canvas,
+              bottomNavigationBar: phone
+                  ? _BottomBar(
+                      destinations: _destinations,
+                      isSelected: _isSelected,
+                    )
+                  : null,
+              appBar: phone
+                  ? AppBar(
+                      title: Text(_currentLabel()),
+                      backgroundColor: Ws.surface,
+                      foregroundColor: Ws.ink,
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                      actions: [
+                        IconButton(
+                          icon: Icon(Icons.search,
+                              size: Workspace.icon(context, 20)),
+                          tooltip: 'Search and actions',
+                          onPressed: () => CommandPaletteHost.open(context),
                         ),
+                        _AccountButton(
+                            session: session,
+                            currentPath: widget.currentPath,
+                            signingOut: _signingOut,
+                            onSignOut: () => _signOut(context)),
+                      ],
+                      bottom: const PreferredSize(
+                        preferredSize: Size.fromHeight(1),
+                        child: Divider(height: 1, color: Ws.hairline),
                       ),
-                    ],
-                  ),
-          ),
-        );
-      }),
+                    )
+                  : null,
+              body: phone
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: content,
+                    )
+                  : Row(
+                      children: [
+                        _Rail(
+                          // Measured against the window rather than against the
+                          // text-scaled content width, so a wide monitor keeps
+                          // its navigation labels when the OS enlarges text.
+                          width: Workspace.railIsCollapsed(
+                                  context, constraints.maxWidth)
+                              ? _railCollapsed
+                              : Workspace.railWidth(context),
+                          collapsed: Workspace.railIsCollapsed(
+                              context, constraints.maxWidth),
+                          destinations: _destinations,
+                          isSelected: _isSelected,
+                          currentPath: widget.currentPath,
+                          session: session,
+                          signingOut: _signingOut,
+                          onSignOut: () => _signOut(context),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(28, 20, 28, 20),
+                            child: content,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -580,8 +591,8 @@ class _RailAction extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Container(
-            margin:
-                EdgeInsets.symmetric(horizontal: collapsed ? 10 : 12, vertical: 2),
+            margin: EdgeInsets.symmetric(
+                horizontal: collapsed ? 10 : 12, vertical: 2),
             padding: EdgeInsets.symmetric(
                 horizontal: collapsed ? 0 : 12, vertical: 9),
             child: Row(
@@ -590,8 +601,7 @@ class _RailAction extends StatelessWidget {
                   : MainAxisAlignment.start,
               children: [
                 Icon(icon,
-                    size: Workspace.icon(context, 18),
-                    color: Ws.onFieldSubtle),
+                    size: Workspace.icon(context, 18), color: Ws.onFieldSubtle),
                 if (!collapsed) ...[
                   const SizedBox(width: 11),
                   Text(label,
@@ -720,8 +730,7 @@ class _AccountButtonState extends State<_AccountButton> {
         ),
         const PopupMenuDivider(),
         const PopupMenuItem(
-            value: '/account/people',
-            child: Text('People & authority')),
+            value: '/account/people', child: Text('People & authority')),
         const PopupMenuItem(
             value: '/account/plan', child: Text('Plan & billing')),
         const PopupMenuItem(
@@ -733,7 +742,8 @@ class _AccountButtonState extends State<_AccountButton> {
         // them is work — they are things a person does about the product
         // rather than in it, and a workspace that carries them starts carrying
         // everything.
-        const PopupMenuItem(value: 'feedback', child: Text('Tell us something')),
+        const PopupMenuItem(
+            value: 'feedback', child: Text('Tell us something')),
         // Only where there is a listing to open. Web has none, and Windows
         // holds a Partner Center reservation rather than a published product,
         // so neither shows a Rate action rather than showing one that goes
@@ -772,8 +782,7 @@ class _AccountButtonState extends State<_AccountButton> {
           children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor:
-                  widget.onDark ? Ws.fieldRaised : Ws.accentSoft,
+              backgroundColor: widget.onDark ? Ws.fieldRaised : Ws.accentSoft,
               child: Text(
                 initials.toUpperCase(),
                 style: TextStyle(
@@ -851,7 +860,8 @@ class _BottomBar extends StatelessWidget {
         for (final d in destinations)
           NavigationDestination(
             icon: Icon(d.icon, size: Workspace.icon(context, 20)),
-            selectedIcon: Icon(d.selectedIcon, size: Workspace.icon(context, 20)),
+            selectedIcon:
+                Icon(d.selectedIcon, size: Workspace.icon(context, 20)),
             label: d.label,
           ),
       ],
@@ -900,7 +910,8 @@ class _SurfaceReturn extends StatelessWidget {
                     // where this surface belongs, and saying which is the
                     // difference between orientation and a guess.
                     areaLabel ?? 'Workspace',
-                    style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                    style:
+                        text.bodySmall?.copyWith(color: AppTheme.publicMuted),
                   ),
                 ],
               ),
@@ -908,7 +919,8 @@ class _SurfaceReturn extends StatelessWidget {
           ),
           if (title != null) ...[
             const SizedBox(width: 6),
-            Text('/', style: text.bodySmall?.copyWith(color: AppTheme.publicLine)),
+            Text('/',
+                style: text.bodySmall?.copyWith(color: AppTheme.publicLine)),
             const SizedBox(width: 6),
             Expanded(
               child: Text(title!,

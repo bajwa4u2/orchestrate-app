@@ -17,7 +17,13 @@ void main() {
 
   test('the shared field can be finished with', () {
     expect(client.contains('final VoidCallback? onSubmitted;'), isTrue);
-    expect(client.contains('onFieldSubmitted: onSubmitted == null'), isTrue);
+    // A terminal field submits; a non-terminal one hands to the field it
+    // names. Both go through onFieldSubmitted, because on a phone the NEXT key
+    // IS the handoff — trusting ambient traversal instead sent focus to a
+    // checkbox and threw the password away. See CW-22.2.
+    expect(client.contains('onFieldSubmitted: onSubmitted != null'), isTrue);
+    expect(client.contains('nextFocus!.requestFocus()'), isTrue);
+    expect(client.contains('nextFocus: state._passwordFocus'), isTrue);
     // A field that is not the last one moves to the next rather than claiming
     // to finish the form.
     expect(

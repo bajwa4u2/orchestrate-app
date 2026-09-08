@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show BrowserContextMenu;
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:go_router/go_router.dart';
 
 import 'core/auth/auth_session.dart';
 import 'app/routing/app_router.dart';
@@ -29,8 +30,18 @@ Future<void> main() async {
   runApp(const OrchestrateApp());
 }
 
-class OrchestrateApp extends StatelessWidget {
+class OrchestrateApp extends StatefulWidget {
   const OrchestrateApp({super.key});
+
+  @override
+  State<OrchestrateApp> createState() => _OrchestrateAppState();
+}
+
+class _OrchestrateAppState extends State<OrchestrateApp> {
+  // `router` builds a GoRouter on every read, so reading it inside build()
+  // handed the app a different router each rebuild. Held once here instead —
+  // per app instance, not per process, so tests still get their own.
+  final GoRouter _router = router;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +49,7 @@ class OrchestrateApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Orchestrate',
       theme: AppTheme.lightTheme,
-      routerConfig: router,
+      routerConfig: _router,
     );
   }
 }

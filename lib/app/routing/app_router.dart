@@ -7,6 +7,7 @@ import 'package:orchestrate_app/features/client/screens/client_artifacts_screen.
 import 'package:orchestrate_app/features/client/screens/client_branding_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_evidence_screen.dart';
 import 'package:orchestrate_app/core/auth/return_path.dart';
+import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 import 'package:orchestrate_app/features/client/screens/account_layer_screen.dart';
 import 'package:orchestrate_app/features/client/screens/attention_screen.dart';
 import 'package:orchestrate_app/features/client/screens/market_screen.dart';
@@ -171,7 +172,95 @@ const _clientCanonicalRoutes = <String>{
 // visitor's real journey. GoRouter 14 defaults to keeping imperative pushes
 // out of the web address bar; enable its canonical web URL projection at the
 // router authority so the visible page and durable URL cannot diverge.
-GoRouter get router {
+/// A router.
+///
+/// Deliberately NOT a cached singleton. Caching it here made the whole test
+/// suite share one GoRouter across tests, so a second test pumping the app got
+/// the first one's disposed router — green alone, red in the suite. The app
+/// holds its own instance for its own lifetime instead, which is where that
+/// stability belongs.
+GoRouter get router => _buildRouter();
+
+/// Where the Android system Back key goes when there is nothing to pop.
+///
+/// SYSTEM BACK USED TO CLOSE THE APP FROM ANY PAGE.
+///
+/// Found on a physical Pixel. Public navigation is `go`, which replaces rather
+/// than pushes, so there was no Flutter route to pop: opening the menu, tapping
+/// Pricing and pressing Back left Orchestrate entirely, from the marketing site
+/// and from the sign in page both. On a phone Back is the primary way people
+/// move, so this was every visitor's second gesture.
+///
+/// A BackButtonDispatcher was the obvious fix and it is the wrong one — proven
+/// on the device, where it never ran at all. Android asks the app whether it
+/// handles Back BEFORE delivering it, and Flutter answers from the route
+/// stack: one route deep, it registers a null callback and the OS closes the
+/// task without Dart hearing anything. Logcat says so directly, `CoreBackPreview
+/// ... Setting back callback null`. The app has to claim Back in advance, which
+/// is what PopScope does and a dispatcher cannot.
+///
+/// So [UpBackHandler] wraps each shell, and Back means "up": it resolves the
+/// parent surface and goes there. The target is always checked against the
+/// canonical route registry above, so this can never strand somebody on an
+/// unregistered path — with no known parent it falls back to the section home.
+/// At a section home, and at the public front door, [parentOf] answers null,
+/// PopScope lets the pop through, and Back keeps its real meaning of leaving.
+class WorkspaceBack {
+  const WorkspaceBack._();
+
+  static const clientHome = '/client/today';
+
+  /// The surface above [path], or null when leaving the app is correct.
+  ///
+  /// Inside the workspace this asks [semanticParentOf], which is the map the
+  /// visible return already uses. Deliberately not a second opinion: the
+  /// on-screen Back and the system Back have to agree about what contains a
+  /// surface, or the same gesture means two things depending on where a
+  /// person's thumb lands.
+  static String? parentOf(String path) {
+    if (path.isEmpty || path == '/') return null; // The public front door.
+    if (path.startsWith('/auth')) return '/';
+
+    if (path.startsWith('/client') || path.startsWith('/account')) {
+      if (isAreaLanding(path)) {
+        // A landing carries no return on screen either. Today is where the
+        // workspace begins, so Back leaves; the other landings go there.
+        return path == clientHome ? null : clientHome;
+      }
+      return semanticParentOf(path) ?? clientHome;
+    }
+
+    return '/'; // /pricing, /product, /trust and the rest of the public site.
+  }
+}
+
+/// Claims the Android Back gesture for [path] so it goes up instead of out.
+///
+/// Wrapped around each shell rather than each screen: the shells are what sit
+/// inside the route, which is where PopScope has to be to register.
+class UpBackHandler extends StatelessWidget {
+  const UpBackHandler({super.key, required this.path, required this.child});
+
+  final String path;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final up = WorkspaceBack.parentOf(path);
+    return PopScope(
+      // Claiming the gesture is the whole point: false is what makes Android
+      // deliver Back to us at all.
+      canPop: up == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || up == null) return;
+        context.go(up);
+      },
+      child: child,
+    );
+  }
+}
+
+GoRouter _buildRouter() {
   GoRouter.optionURLReflectsImperativeAPIs = true;
   return GoRouter(
   navigatorKey: _rootNavigatorKey,

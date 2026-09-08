@@ -6,6 +6,7 @@ import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/public_app_acquisition.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
+import 'package:orchestrate_app/app/routing/app_router.dart';
 
 class PublicShell extends StatefulWidget {
   const PublicShell(
@@ -51,92 +52,95 @@ class _PublicShellState extends State<PublicShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: AppTheme.lightTheme,
-      child: Scaffold(
-        backgroundColor: AppTheme.publicCanvas,
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              _PublicHeader(
-                currentPath: widget.currentPath,
-                onHome: () {
-                  if (_publicScrollController.hasClients) {
-                    _publicScrollController.jumpTo(0);
-                  }
-                  context.go('/');
-                },
-              ),
-              PublicAppAcquisition(
-                config: orchestratePublicAppAcquisitionConfig,
-                currentPath: widget.currentPath,
-              ),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final viewportWidth = MediaQuery.sizeOf(context).width;
-                    final shellWidth = constraints.hasBoundedWidth
-                        ? constraints.maxWidth
-                        : viewportWidth;
-                    return Scrollbar(
-                      controller: _publicScrollController,
-                      thumbVisibility: true,
-                      trackVisibility: true,
-                      interactive: true,
-                      child: SingleChildScrollView(
+    return UpBackHandler(
+      path: widget.currentPath,
+      child: Theme(
+        data: AppTheme.lightTheme,
+        child: Scaffold(
+          backgroundColor: AppTheme.publicCanvas,
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _PublicHeader(
+                  currentPath: widget.currentPath,
+                  onHome: () {
+                    if (_publicScrollController.hasClients) {
+                      _publicScrollController.jumpTo(0);
+                    }
+                    context.go('/');
+                  },
+                ),
+                PublicAppAcquisition(
+                  config: orchestratePublicAppAcquisitionConfig,
+                  currentPath: widget.currentPath,
+                ),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final viewportWidth = MediaQuery.sizeOf(context).width;
+                      final shellWidth = constraints.hasBoundedWidth
+                          ? constraints.maxWidth
+                          : viewportWidth;
+                      return Scrollbar(
                         controller: _publicScrollController,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minWidth: shellWidth,
-                            maxWidth: shellWidth,
-                            minHeight: constraints.maxHeight,
-                          ),
-                          child: Column(
-                            children: [
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight: (constraints.maxHeight -
-                                          PublicShell._footerReserveHeight)
-                                      .clamp(0, double.infinity)
-                                      .toDouble(),
-                                ),
-                                child: Align(
-                                  alignment: Alignment.topCenter,
-                                  child: ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: PublicShell._maxFrameWidth,
-                                    ),
-                                    child: SizedBox(
-                                      width: shellWidth.clamp(
-                                        0,
-                                        PublicShell._maxFrameWidth,
+                        thumbVisibility: true,
+                        trackVisibility: true,
+                        interactive: true,
+                        child: SingleChildScrollView(
+                          controller: _publicScrollController,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minWidth: shellWidth,
+                              maxWidth: shellWidth,
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: Column(
+                              children: [
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minHeight: (constraints.maxHeight -
+                                            PublicShell._footerReserveHeight)
+                                        .clamp(0, double.infinity)
+                                        .toDouble(),
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: PublicShell._maxFrameWidth,
                                       ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 28,
+                                      child: SizedBox(
+                                        width: shellWidth.clamp(
+                                          0,
+                                          PublicShell._maxFrameWidth,
                                         ),
-                                        child: widget.child,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 28,
+                                          ),
+                                          child: widget.child,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              if (widget.currentPath != '/intake' &&
-                                  widget.currentPath != '/contact' &&
-                                  !widget.currentPath.startsWith('/legal/'))
-                                const _CommercialClosingBand(),
-                              const _CommercializationSupportBand(),
-                              const _PublicFooter(),
-                            ],
+                                if (widget.currentPath != '/intake' &&
+                                    widget.currentPath != '/contact' &&
+                                    !widget.currentPath.startsWith('/legal/'))
+                                  const _CommercialClosingBand(),
+                                const _CommercializationSupportBand(),
+                                const _PublicFooter(),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -289,8 +293,7 @@ class _PublicHeader extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 10),
                                 FilledButton(
-                                  onPressed: () =>
-                                      context.go('/auth/register'),
+                                  onPressed: () => context.go('/auth/register'),
                                   style: FilledButton.styleFrom(
                                     backgroundColor: AppTheme.publicAccent,
                                     foregroundColor: Colors.white,
@@ -695,7 +698,6 @@ class _FooterGroup extends StatelessWidget {
   }
 }
 
-
 class _FooterLink extends StatelessWidget {
   const _FooterLink({required this.label, required this.onTap});
 
@@ -771,14 +773,21 @@ class _PublicMenuButton extends StatelessWidget {
           _isActive(const ['/contact', '/intake']),
         ),
         const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          value: '/auth/login',
-          child: Text('Sign in'),
-        ),
-        const PopupMenuItem<String>(
-          value: '/auth/register',
-          child: Text('Start setup'),
-        ),
+        // FOUND ON A PHYSICAL PIXEL, NOT IN THE CODE.
+        //
+        // These two were the only items in the menu with no style, so their
+        // text fell through to the ambient light theme's default ink and
+        // rendered dimmer than the six browsing links above them — on a dark
+        // panel, the visual language of a disabled control. Both work; they
+        // only looked unavailable. The two ways into the product read as the
+        // least available things on the public surface.
+        //
+        // They are not browsing links, so they do not share that styling.
+        // Signing in is where a returning operator is going, and it is now the
+        // brightest thing here. Start setup is the commitment, and carries the
+        // accent that marks it as the primary act.
+        _accountItem('Sign in', '/auth/login', AppTheme.publicOnDark),
+        _accountItem('Start setup', '/auth/register', AppTheme.coTeal),
       ],
       child: Container(
         width: 42,
@@ -790,6 +799,17 @@ class _PublicMenuButton extends StatelessWidget {
           border: Border.all(color: const Color(0xFF416170)),
         ),
         child: const Icon(Icons.menu, size: 20, color: AppTheme.publicOnDark),
+      ),
+    );
+  }
+
+  /// The account actions, which are destinations rather than browsing.
+  PopupMenuItem<String> _accountItem(String label, String value, Color color) {
+    return PopupMenuItem<String>(
+      value: value,
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }
