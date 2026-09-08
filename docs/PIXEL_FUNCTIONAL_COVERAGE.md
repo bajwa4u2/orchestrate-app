@@ -189,3 +189,42 @@ The key scan's limit, stated plainly: it finds keys absent *everywhere*, and
 neither defect this session was that shape — `legalName` and `logo_primary` both
 exist in the backend and were read at the wrong *level*. Nesting still has to be
 checked per payload, which is why Records was verified by hand.
+
+## Final device pass — remaining surfaces and deployed corrections
+
+| Item | Result | Evidence |
+|---|---|---|
+| Workspace identity, business leads | **PASS** — real logo + "Aura Platform" in the app bar | Screen 100 |
+| Identity on the account estate | **PASS** — person leads (M / Muhammad Sakhawat) | Screen 102 |
+| Return restores the business | **PASS** — full cycle proven | Screen 103 |
+| Entitlement guidance (deployed) | **PASS** — "Activate it from Plan & billing" replaces the correlationId instruction | Screen 101 |
+| The named next step is reachable | **PASS** — the button navigates to Plan & billing | Screen 102 |
+| Registered address (deployed) | **PASS** — populated designated address, with the DESIGNATED-source copy | Screen 106 |
+| Mailbox states its verdict once | **PASS** — no duplicate banner | Screen 101 |
+| Artifacts — generate | **PASS** — type choice, `Generating…` then `Ready`, no false success, persisted across navigation | Screens 109-112 |
+| Artifacts — archive wording | **PASS** — "This record will be preserved, but it cannot be restored from this workspace", Keep it / Archive record | Screen 114 |
+| Artifacts — archive executed | **PASS** — on a record generated for the purpose; production evidence untouched | Screen 115 |
+| Evidence | **PASS (load)** — breadcrumb, filters, honest empty state. Archive not exercisable: no record exists and none was fabricated | Screen 107 |
+| Records | **PASS** — ownership distinction leads the surface; honest empty classes | Screen 119 |
+| Support | **PASS (load)** — honest empty state and response expectation. Submission deliberately not executed | Screen 117 |
+| Plan & billing | **PASS** — honest commercial model; states that activating a plan never authorises anyone to act | Screen 118 |
+| Branding | **PASS** — copy correction live on web; logo confirmed present by the founder | Founder screenshot |
+
+### Defect found and fixed in this pass
+
+**Support had no way in on a phone.** Its entry is a `_RailAction`, and the rail
+exists only on desktop. On a phone it was reachable by knowing to search for it,
+or from Billing — while the account menu offers "Tell us something", which is
+feedback, not a support case. Somebody who needed help had nowhere obvious to
+go. Added to the Settings pointer list, which is now the surface that says where
+things live.
+
+### Deliberately not executed
+
+- **Support submission** — would reach a real destination (§10). The payload is
+  proven at the canonical request path by test instead.
+- **Delete / deactivate account** — verified by reading the confirmation, which
+  names permanence, cancellation and sign-out and is honest about legally
+  retained records, behind a typed DELETE. Classified as a production actuation
+  boundary (§15).
+- **Evidence archive** — no record exists, and none was fabricated to create one.

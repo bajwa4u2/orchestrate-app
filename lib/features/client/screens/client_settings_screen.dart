@@ -116,6 +116,21 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
               action: const Icon(Icons.chevron_right,
                   size: 18, color: Ws.inkSubtle),
             ),
+            // SUPPORT HAD NO WAY IN ON A PHONE.
+            //
+            // Its entry is a rail action, and the rail only exists on desktop.
+            // On a phone it was reachable by knowing to search for it, or from
+            // Billing — and the account menu offers 'Tell us something', which
+            // is feedback, not a support case. Somebody who needed help had
+            // nowhere obvious to go.
+            WorkspaceRow(
+              title: 'Getting help from Orchestrate',
+              detail: 'Open a support request, and see the ones you have '
+                  'already opened.',
+              onTap: () => context.go('/client/support'),
+              action: const Icon(Icons.chevron_right,
+                  size: 18, color: Ws.inkSubtle),
+            ),
             WorkspaceRow(
               title: 'What you are on, and what it costs',
               detail: 'Plan, subscription state and billing documents.',
