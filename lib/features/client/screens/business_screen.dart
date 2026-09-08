@@ -79,7 +79,21 @@ class _BusinessScreenState extends State<BusinessScreen> {
 
     if (!mounted) return;
     setState(() {
-      _profile = results[0];
+      // THE HUB WAS READING THE ENVELOPE, NOT THE PROFILE.
+      //
+      // `/client/business-identity` answers { profile: {...}, sections: [...] }.
+      // Business identity unwraps it; this surface did not, so `legalName` and
+      // `displayName` were read off the envelope and were always null. The
+      // first thing an operator sees on Business said the business had no
+      // trading name and no legal name — in red, as a problem — while Business
+      // identity one tap away showed both set. Found on a Pixel by opening the
+      // two surfaces in sequence, which is the only way this shows up: the
+      // widget code reads correctly, it is the shape underneath that differs.
+      final identity = results[0];
+      final nested = identity == null ? null : identity['profile'];
+      _profile = nested is Map
+          ? Map<String, dynamic>.from(nested)
+          : identity;
       _sending = results[1];
       _loading = false;
     });
