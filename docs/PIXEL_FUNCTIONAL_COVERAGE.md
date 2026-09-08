@@ -116,3 +116,35 @@ question, not a code one.
 `client.legalName` reads "Aura Platform LLC" — SAME VALUE, unambiguous
 duplicate, converged onto Business identity with nothing overwritten. The
 compliance footer was empty, so no address conflict existed to resolve.
+
+## Ownership correction — verified on the Pixel
+
+| Requirement | Result | Evidence |
+|---|---|---|
+| Account & security owns trusted devices | **PASS** — "WHERE YOU ARE SIGNED IN" band renders the real device list with Revoke | Screens 71, 72 |
+| Revoke affects only the intended device | **PASS** — the targeted row flipped to Inactive and lost its Revoke; every other device stayed Active, including the current session | Screens 73, 74 |
+| Revoke ≠ delete account ≠ withdraw authority | **PASS** — still signed in, account intact, authority untouched, and the surface says so in words | Screen 76 |
+| Inactive devices offer no Revoke | **PASS** — you cannot end what has already ended | Screen 73 |
+| Devices are distinguishable | **PASS after fix** — every device was named "Current device"; new sign-ins carry a real name and rows now show trusted/expiry dates | Screens 71 → 72 |
+| Workspace settings is preferences only | **PASS** — no devices, no readiness, no business name, no signature; states plainly that it holds no preferences yet | Screens 77, 78 |
+| Workspace settings has a return | **PASS after fix** — breadcrumb "< Account / Workspace settings"; it previously had none | Screen 77 |
+| Signature sits with communication | **PASS** — rendered on Mailbox and sending | Screens 82, 83 |
+| Mailbox states its verdict once | **PASS after fix** — the duplicate banner is gone | Screen 80 |
+| The chain row no longer asserts a false cause | **PASS after fix** — "Everything above is in place, so the reason is not the mail setup" | Screen 83 |
+| Visible return = system Back | **PASS after fix** — the account frame hardcoded Today while system Back went to the semantic parent; both now ask the map | Screen 75 |
+| Bottom bar honest on account surfaces | **PASS** — not drawn where none of its four destinations is current | Screen 77 |
+
+### Not verifiable on the device yet — backend not deployed
+
+The client changes ship in the APK. These are committed and test-green but run
+on Railway, which has not been deployed, so the device still shows the old
+behaviour:
+
+- the entitlement blocker branch, so Mailbox still reads
+  "Next: Capture the correlationId and contact support"
+- the postal-address refusal naming Business identity
+- the retired signature business-name writer
+- the Registered address read/write path on Business identity
+
+Deploying production is a founder decision and was not requested, so nothing
+was pushed.
