@@ -53,7 +53,10 @@ void main() {
       'client_branding_screen': 'branding',
       'client_billing_screen': 'billing',
       'client_account_screen': 'account',
-      'client_settings_screen': 'settings',
+      // Workspace settings is absent on purpose. It fetched six things to
+      // render readiness, billing, records and a signature it did not own;
+      // after the ownership correction it fetches nothing at all, so there
+      // is no request to remember and nothing that can blink.
       'client_business_identity_screen': 'representation',
       'client_mailbox_screen': 'mailbox',
     };
@@ -71,7 +74,6 @@ void main() {
     for (final file in <String>[
       'client_billing_screen',
       'client_account_screen',
-      'client_settings_screen',
       'client_business_identity_screen',
       'client_mailbox_screen',
     ]) {

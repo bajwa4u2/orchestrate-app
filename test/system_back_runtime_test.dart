@@ -46,6 +46,13 @@ void main() {
     ClientCapabilities.instance.seed(null, error: 'not asked in this test');
   }
 
+  /// Screens fetch as soon as they build and every request fails in a test
+  /// binding, so more than one exception can be pending. Taking exactly one
+  /// left the rest to fail the test for the wrong reason.
+  void drain(WidgetTester tester) {
+    while (tester.takeException() != null) {}
+  }
+
   String where(GoRouter r) =>
       r.routerDelegate.currentConfiguration.uri.path;
 
@@ -55,19 +62,19 @@ void main() {
     final r = router;
     await tester.pumpWidget(MaterialApp.router(routerConfig: r));
     await tester.pump();
-    tester.takeException();
+    drain(tester);
 
     r.go('/client/settings');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    tester.takeException();
+    drain(tester);
     expect(where(r), '/client/settings');
 
     // The same call the engine makes when Android delivers Back.
     final handled = await tester.binding.handlePopRoute();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    tester.takeException();
+    drain(tester);
 
     expect(
       handled,
@@ -88,17 +95,17 @@ void main() {
     final r = router;
     await tester.pumpWidget(MaterialApp.router(routerConfig: r));
     await tester.pump();
-    tester.takeException();
+    drain(tester);
 
     r.go('/pricing');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    tester.takeException();
+    drain(tester);
 
     final handled = await tester.binding.handlePopRoute();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    tester.takeException();
+    drain(tester);
 
     expect(handled, isTrue);
     expect(where(r), '/');

@@ -267,10 +267,12 @@ class ClientPortalRepository {
   /// Persist the governed outbound signature. Each field is optional;
   /// passing all nulls clears the signature. The backend sanitizes
   /// every field (CR/LF/NUL stripped, length capped) before storage.
+  /// businessName is deliberately absent. Business identity owns the legal
+  /// and trading names; accepting one here made the signature a second writer
+  /// of the same fact, and the two were free to drift apart.
   Future<Map<String, dynamic>> updateSignature({
     String? displayName,
     String? role,
-    String? businessName,
     String? phone,
     String? websiteUrl,
     String? schedulingUrl,
@@ -282,7 +284,6 @@ class ClientPortalRepository {
       body: {
         'displayName': displayName,
         'role': role,
-        'businessName': businessName,
         'phone': phone,
         'websiteUrl': websiteUrl,
         'schedulingUrl': schedulingUrl,

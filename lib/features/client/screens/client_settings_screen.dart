@@ -1,16 +1,30 @@
-import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
-import 'package:orchestrate_app/data/repositories/client/client_account_repository.dart';
-import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
-import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
-import 'package:orchestrate_app/features/client/widgets/blocker_resolution_card.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
-import 'package:orchestrate_app/features/client/widgets/signature_identity_card.dart';
 
+/// WORKSPACE SETTINGS, REDUCED TO WHAT IT ACTUALLY OWNS.
+///
+/// This screen held nine panels and, by ownership, none of them were its own.
+/// Business readiness belonged to the Business hub, business naming to
+/// Business identity, billing to Plan and billing, records to Records, the
+/// signature to Mailbox and sending, and a person's trusted devices to Account
+/// and security — which had itself been reduced to three links pointing
+/// elsewhere while the real personal security controls sat here, on a page the
+/// product describes as preferences.
+///
+/// Controls accumulate on a screen like this because it is the one nobody
+/// argues about. That is not ownership, and it cost the estate a great deal:
+/// two writers for the business name, a compliance footer nobody could find
+/// from the refusal that named it, and a security surface with no security.
+///
+/// What remains is small, and the page is deliberately not padded to disguise
+/// that. It says where the things people arrive looking for actually live,
+/// because pointing at an owner is a legitimate job and reproducing one is not.
+/// If real workspace preferences are introduced later, this is where they
+/// belong — and they will be the first thing this screen has ever owned.
 class ClientSettingsScreen extends StatefulWidget {
   const ClientSettingsScreen({super.key});
 
@@ -19,431 +33,138 @@ class ClientSettingsScreen extends StatefulWidget {
 }
 
 class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
-  final ClientAccountRepository _accountRepository = ClientAccountRepository();
-  final ClientBillingRepository _billingRepository = ClientBillingRepository();
-  final ClientPortalRepository _portalRepository = ClientPortalRepository();
   final AuthRepository _authRepository = AuthRepository();
-  late Future<_SettingsData> _future;
   bool _signingOut = false;
-  bool _revokingDevice = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = ScreenMemory.keep('settings', _load());
-  }
-
-  Future<_SettingsData> _load() async {
-    final results = await Future.wait<dynamic>([
-      _accountRepository.fetchClientProfile(),
-      _billingRepository.fetchSubscription(),
-      _portalRepository.fetchRepresentationAuth(),
-      _portalRepository.fetchOutreach(),
-      _portalRepository.fetchRecords(),
-      _authRepository.fetchTrustedDevices(),
-    ]);
-    return _SettingsData(
-      profile: asMap(results[0]),
-      subscription: asMap(results[1]),
-      auth: asMap(results[2]),
-      outreach: asMap(results[3]),
-      records: asMap(results[4]),
-      trustedDevices: asMap(results[5]),
-    );
-  }
-
-  void _retry() {
-    setState(() => _future = ScreenMemory.keep('settings', _load()));
-  }
 
   Future<void> _signOut() async {
     setState(() => _signingOut = true);
     try {
       await _authRepository.logout();
     } catch (_) {
-      // Local session cleanup still completes sign out if the network call fails.
+      // Local session cleanup still completes sign out if the network call
+      // fails. Being unable to reach the server must not strand somebody
+      // signed in on a machine they are trying to leave.
     } finally {
       await AuthSessionController.instance.clear();
       if (mounted) context.go('/auth/login');
     }
   }
 
-  Future<void> _revokeDevice(String deviceId) async {
-    setState(() => _revokingDevice = true);
-    try {
-      await _authRepository.revokeTrustedDevice(deviceId);
-      await AuthSessionController.instance.clearTrustedDeviceToken(
-        surface: 'client',
-      );
-      _retry();
-    } finally {
-      if (mounted) setState(() => _revokingDevice = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<_SettingsData>(
-      future: _future,
-      // What this screen was last told. Returning to it paints that
-      // immediately rather than blanking; the request still goes out,
-      // and its answer replaces this one underneath.
-      initialData: ScreenMemory.recall<_SettingsData>('settings'),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData && !snapshot.hasError) {
-          return const ClientLoadingView(label: 'Loading settings');
-        }
-        if (snapshot.hasError && !snapshot.hasData) {
-          return ClientErrorView.fromError(
-            snapshot.error,
-            title: 'Settings are temporarily unavailable',
-            onRetry: _retry,
-          );
-        }
-        final data = snapshot.data!;
-        final session = AuthSessionController.instance;
-        final profile = asMap(data.profile['profile']).isNotEmpty
-            ? asMap(data.profile['profile'])
-            : data.profile;
-        final readiness = asMap(data.outreach['readiness']);
-        final mailbox = asMap(data.outreach['mailbox']);
-        final billingDocs = asMap(data.records['billingDocuments']);
-        final trustedDevices = asList(data.trustedDevices['devices']);
-        final setupComplete = session.hasSetupCompleted;
-        final authorized = data.auth['authorized'] == true;
-        final blockers = asList(readiness['blockers']);
+    final session = AuthSessionController.instance;
 
-        return ClientPage(
-          eyebrow: 'Settings',
-          title: readText(profile, 'displayName',
-              fallback: session.workspaceName.isEmpty
-                  ? 'Client workspace'
-                  : session.workspaceName),
-          subtitle:
-              'Use settings to resolve account, setup, billing, and permission items that affect service readiness.',
-          banner: _settingsBanner(
-            setupComplete: setupComplete,
-            authorized: authorized,
-            blockers: blockers,
-          ),
-          actions: [
-            if (!setupComplete)
-              FilledButton.icon(
-                onPressed: () => context.go('/client/setup'),
-                icon: const Icon(Icons.fact_check_outlined, size: 18),
-                label: const Text('Complete setup'),
-              )
-            else
-              FilledButton.icon(
-                onPressed: () => context.go('/client/account'),
-                icon: const Icon(Icons.manage_accounts_outlined, size: 18),
-                label: const Text('Edit profile'),
-              ),
-            TextButton.icon(
-              onPressed: _signingOut ? null : _signOut,
-              icon: _signingOut
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.logout, size: 18),
-              label: Text(_signingOut ? 'Signing out' : 'Sign out'),
-            ),
-          ],
+    return ClientPage(
+      eyebrow: 'Settings',
+      title: 'Workspace settings',
+      // No readiness verdict here any more. This page used to open with a
+      // banner about setup, permissions and blockers — a fourth opinion on a
+      // question the Business hub decides.
+      subtitle: 'How this workspace behaves. What the business is, what it '
+          'can do, and where you are signed in are each decided elsewhere.',
+      actions: [
+        TextButton.icon(
+          onPressed: _signingOut ? null : _signOut,
+          icon: _signingOut
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.logout, size: 18),
+          label: Text(_signingOut ? 'Signing out' : 'Sign out'),
+        ),
+      ],
+      children: [
+        ClientPanel(
+          title: 'Where things are configured',
+          subtitle: 'This workspace has no preferences of its own yet. What '
+              'people usually arrive here looking for is owned elsewhere, and '
+              'this is where.',
           children: [
-            ClientMetricStrip(metrics: [
-              // Truthful setup state: "Complete" is only honest when no
-              // downstream readiness items are pending. With blockers
-              // present, the setup record exists but operational
-              // readiness is not actually complete.
-              ClientMetric(
-                'Setup',
-                !session.hasSetupCompleted
-                    ? 'Incomplete'
-                    : blockers.isEmpty && authorized
-                        ? 'Recorded'
-                        : 'Recorded · readiness pending',
+            ClientInfoRow(
+              title: 'How this business is named and reached',
+              primary: 'Legal name, trading name, website, postal address '
+                  'and market.',
+              trailing: TextButton(
+                onPressed: () => context.go('/client/representation'),
+                child: const Text('Business identity'),
               ),
-              ClientMetric(
-                  'Billing',
-                  titleCase(readText(data.subscription, 'status',
-                      fallback: session.subscriptionStatus))),
-              ClientMetric(
-                  'Authorization',
-                  data.auth['authorized'] == true
-                      ? 'Recorded'
-                      : 'Not recorded'),
-              ClientMetric('Mailbox',
-                  mailbox['ready'] == true ? 'Ready' : 'Not ready'),
-            ]),
-            const SizedBox(height: 18),
-            // ── WHAT THIS SCREEN IS ACTUALLY FOR ─────────────────────
-            //
-            // Readiness led fourth, below three panels restating things this
-            // screen does not own: business identity, billing and security
-            // each have a home, and repeating them here is what made Settings
-            // read as the miscellaneous bucket everything lands in.
-            //
-            // The restatements are kept — seeing subscription state beside a
-            // blocker is genuinely useful — but they now say where they are
-            // owned, so somebody who wants to CHANGE one knows where to go
-            // instead of hunting for an edit control that was never here.
-            ClientPanel(
-              title: 'Permissions and readiness',
-              subtitle:
-                  'Each item below names what is blocked, who owns it, and the path to resolve it.',
-              children: [
-                BlockerResolutionList(
-                  blockers: blockers,
-                  authorized: authorized,
-                  authAcceptedAt: asMap(data.auth['latest'])['acceptedAt'],
-                  onReturned: _retry,
-                ),
-              ],
             ),
-            const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Account',
-              subtitle:
-                  'Shown here for context. Changed in Business identity.',
-              children: [
-                ClientInfoRow(
-                  title: readText(profile, 'legalName',
-                      fallback: readText(profile, 'displayName')),
-                  primary: [
-                    readText(profile, 'primaryEmail', fallback: session.email),
-                    readText(profile, 'websiteUrl'),
-                    readText(profile, 'bookingUrl'),
-                  ].where((part) => part.isNotEmpty).join(' · '),
-                  secondary: [
-                    readText(profile, 'primaryTimezone'),
-                    readText(profile, 'currencyCode'),
-                  ].where((part) => part.isNotEmpty).join(' · '),
-                ),
-              ],
+            ClientInfoRow(
+              title: 'How this business speaks in its outbound',
+              primary: 'Sending mailbox, signature, and what has to be true '
+                  'before anything can leave.',
+              trailing: TextButton(
+                onPressed: () => context.go('/client/infrastructure'),
+                child: const Text('Mailbox and sending'),
+              ),
             ),
-            const SizedBox(height: 18),
-            const SignatureIdentityCard(),
-            const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Setup',
-              subtitle:
-                  'Setup controls whether targeting and service preferences are recorded. Operational readiness is reported separately below.',
-              children: [
-                ClientInfoRow(
-                  title: 'Setup state',
-                  primary: !session.hasSetupCompleted
-                      ? 'Setup is incomplete.'
-                      : (blockers.isEmpty && authorized)
-                          ? 'Setup is recorded and no readiness blockers are pending.'
-                          : 'Setup is recorded; operational readiness is still pending below.',
-                  secondary: session.hasSetupCompleted
-                      ? 'Targeting and service preferences are available. Dispatch eligibility is gated by the readiness items below, not by setup alone.'
-                      : 'Finish setup before downstream readiness can be evaluated.',
-                ),
-              ],
+            ClientInfoRow(
+              title: 'Where you are signed in',
+              primary: 'Trusted devices, and ending one. These were on this '
+                  'page; a session is not a workspace preference.',
+              trailing: TextButton(
+                onPressed: () => context.go('/account/security'),
+                child: const Text('Account & security'),
+              ),
             ),
-            const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Billing',
-              subtitle:
-                  'Billing state determines whether service can remain active. '
-                  'Shown here for context; changed in Account.',
-              children: [
-                ClientInfoRow(
-                  title: 'Subscription',
-                  // Not the plan the session remembers someone looking at in
-                  // the funnel — that is a browsing history, not a
-                  // subscription, and it read as one directly above the status
-                  // that contradicted it.
-                  primary: readText(data.subscription, 'displayPlanLabel',
-                      fallback: 'Not set'),
-                  secondary:
-                      'Status: ${titleCase(readText(data.subscription, 'status', fallback: session.subscriptionStatus))}',
-                ),
-              ],
+            ClientInfoRow(
+              title: 'Whether this business can act',
+              primary: 'Readiness, and whatever is blocking it. Stated once, '
+                  'where it is decided.',
+              trailing: TextButton(
+                onPressed: () => context.go('/client/business'),
+                child: const Text('Business'),
+              ),
             ),
-            const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Security',
-              subtitle:
-                  'Trusted devices skip the email code until they expire or '
-                  'are revoked. Shown here for context; managed in Account.',
-              children: trustedDevices.isEmpty
-                  ? const [
-                      ClientInfoRow(
-                        title: 'Trusted devices',
-                        primary: 'No trusted devices are recorded yet.',
-                        secondary:
-                            'After verifying an email code, you can trust this device for 60 days.',
-                      ),
-                    ]
-                  : [
-                      for (final raw in trustedDevices)
-                        _TrustedDeviceRow(
-                          device: asMap(raw),
-                          busy: _revokingDevice,
-                          onRevoke: _revokeDevice,
-                        ),
-                    ],
-            ),
-            const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Record availability',
-              children: [
-                ClientInfoRow(
-                  title: 'Service and billing records',
-                  primary:
-                      '${asList(data.records['agreements']).length} agreements · ${asList(billingDocs['invoices']).length} invoices · ${asList(billingDocs['statements']).length} statements',
-                ),
-                ClientInfoRow(
-                  title: 'Source/import records',
-                  primary:
-                      '${asList(asMap(data.records['sourceRecords'])['imports']).length} import batches',
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            ClientPanel(
-              title: 'Legal',
-              subtitle:
-                  'The policies that govern how Orchestrate handles your data and service.',
-              children: [
-                ClientInfoRow(
-                  title: 'Privacy policy',
-                  primary:
-                      'How Orchestrate collects, uses, and protects workspace data.',
-                  trailing: TextButton(
-                    onPressed: () => context.push('/legal/privacy'),
-                    child: const Text('Open'),
-                  ),
-                ),
-                ClientInfoRow(
-                  title: 'Terms of service',
-                  primary:
-                      'The agreement that governs use of the Orchestrate service.',
-                  trailing: TextButton(
-                    onPressed: () => context.push('/legal/terms'),
-                    child: const Text('Open'),
-                  ),
-                ),
-              ],
+            ClientInfoRow(
+              title: 'What you are on, and what it costs',
+              primary: 'Plan, subscription state and billing documents.',
+              trailing: TextButton(
+                onPressed: () => context.go('/account/plan'),
+                child: const Text('Plan & billing'),
+              ),
             ),
           ],
-        );
-      },
-    );
-  }
-}
-
-ClientStatusBanner _settingsBanner({
-  required bool setupComplete,
-  required bool authorized,
-  required List<dynamic> blockers,
-}) {
-  if (!setupComplete) {
-    return const ClientStatusBanner(
-      tone: ClientBannerTone.blocked,
-      title: 'Setup is incomplete',
-      message:
-          'Complete setup before expecting campaign execution. If you do nothing, outreach readiness remains limited.',
-    );
-  }
-  if (!authorized) {
-    return const ClientStatusBanner(
-      tone: ClientBannerTone.warning,
-      title: 'Representation permission is missing',
-      message:
-          'Authorization is required before Orchestrate can send outreach on your behalf.',
-    );
-  }
-  if (blockers.isNotEmpty) {
-    return ClientStatusBanner(
-      tone: ClientBannerTone.warning,
-      title: blockers.length == 1
-          ? '1 readiness item needs attention'
-          : '${blockers.length} readiness items need attention',
-      message:
-          'Review the permission and outreach readiness sections. If you do nothing, service execution may remain blocked.',
-    );
-  }
-  return const ClientStatusBanner(
-    tone: ClientBannerTone.success,
-    title: 'Workspace controls are ready',
-    message:
-        'Account, setup, billing, and permission records are available. Edit profile only when details change.',
-  );
-}
-
-class _SettingsData {
-  const _SettingsData({
-    required this.profile,
-    required this.subscription,
-    required this.auth,
-    required this.outreach,
-    required this.records,
-    required this.trustedDevices,
-  });
-
-  final Map<String, dynamic> profile;
-  final Map<String, dynamic> subscription;
-  final Map<String, dynamic> auth;
-  final Map<String, dynamic> outreach;
-  final Map<String, dynamic> records;
-  final Map<String, dynamic> trustedDevices;
-}
-
-class _TrustedDeviceRow extends StatelessWidget {
-  const _TrustedDeviceRow({
-    required this.device,
-    required this.busy,
-    required this.onRevoke,
-  });
-
-  final Map<String, dynamic> device;
-  final bool busy;
-  final Future<void> Function(String deviceId) onRevoke;
-
-  @override
-  Widget build(BuildContext context) {
-    final active = device['active'] == true;
-    final id = readText(device, 'id');
-    return ClientInfoRow(
-      title: readText(device, 'deviceName', fallback: 'Trusted device'),
-      primary: [
-        active ? 'Active' : 'Inactive',
-        readText(device, 'platform'),
-      ].where((part) => part.isNotEmpty).join(' · '),
-      secondary: [
-        'Created ${dateLabel(device['createdAt'])}',
-        'Last used ${dateLabel(device['lastUsedAt'])}',
-        'Expires ${dateLabel(device['expiresAt'])}',
-        if (device['revokedAt'] != null)
-          'Revoked ${dateLabel(device['revokedAt'])}',
-      ].join(' · '),
-      // REVOKING A DEVICE IS NOT DELETING ACCESS, AND SHOULD NOT LOOK LIKE IT.
-      //
-      // Four different acts get confused here, and this is the mildest of
-      // them: revoking a trusted device is not losing a role, not leaving a
-      // business, and not deleting an account. It means one machine has to
-      // enter an email code again, and trusting it afterwards restores it.
-      //
-      // So no confirmation — ceremony where reversal is trivial trains people
-      // to dismiss the dialogs that matter — but the consequence is stated,
-      // because "Revoke" alone reads more final than it is.
-      trailing: active && id.isNotEmpty
-          ? Tooltip(
-              message:
-                  'This device will need an email code again next time. '
-                  'Trusting it afterwards restores it.',
-              child: TextButton(
-                onPressed: busy ? null : () => onRevoke(id),
-                child: Text(busy ? 'Revoking' : 'Revoke'),
+        ),
+        const SizedBox(height: 18),
+        ClientPanel(
+          title: 'Legal',
+          subtitle: 'The policies that govern how Orchestrate handles your '
+              'data and service.',
+          children: [
+            ClientInfoRow(
+              title: 'Privacy policy',
+              primary:
+                  'How Orchestrate collects, uses, and protects workspace data.',
+              trailing: TextButton(
+                onPressed: () => context.push('/legal/privacy'),
+                child: const Text('Open'),
               ),
-            )
-          : null,
+            ),
+            ClientInfoRow(
+              title: 'Terms of service',
+              primary:
+                  'The agreement that governs use of the Orchestrate service.',
+              trailing: TextButton(
+                onPressed: () => context.push('/legal/terms'),
+                child: const Text('Open'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        // Kept last and stated plainly. Signing out ends this session on this
+        // device; it is not revoking a trusted device, not withdrawing
+        // authority for the business, and not closing an account.
+        ClientInfoRow(
+          title: 'Signed in as',
+          primary: session.email,
+          secondary: 'Signing out ends this session on this device. It does '
+              'not change what the business permits you to do.',
+        ),
+      ],
     );
   }
 }
-

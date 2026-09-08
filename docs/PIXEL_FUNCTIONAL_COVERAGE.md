@@ -82,3 +82,37 @@ inside a screen labelled preferences.
 Recorded rather than restructured. Where each of these belongs is an authority
 decision about the estate, not a defect with an obvious right answer, and moving
 a naming authority is not something to do as a side effect of a device pass.
+
+## Canonical ownership — corrected
+
+Founder decision. Workspace settings had become the screen everything landed
+on, because it was the one nobody argued about. Accumulation is not ownership.
+
+| Fact | Old owner | Canonical owner | Migration | Proof |
+|---|---|---|---|---|
+| Trusted devices, revoke | Workspace settings | **Account & security** | Controls moved; same repository, same endpoints, same revoke semantics | Suite; device owed |
+| Business name (legal, trading) | Business identity **and** the signature card | **Business identity only** | Signature write path retired; renderer resolves the canonical name at render time; stored values left in place, no longer read for this field | `estate_ownership_test` |
+| Postal / compliance address | A free-text "compliance footer" on the signature card | **Business identity** | New Registered address section writes the canonical designated-address record (structured, supersedes, records provenance) — no new table | `estate_ownership_test`; device owed |
+| Outbound signature | Workspace settings | **Mailbox and sending** | Card rendered by Mailbox, beside the readiness that refuses without it | `estate_ownership_test` |
+| Business readiness | Workspace settings restated it | **Business hub** | Metric strip, blocker list, setup and billing panels removed from Settings | `estate_ownership_test` |
+| Records availability | Workspace settings | **Records** | Panel removed | `estate_ownership_test` |
+| Billing state | Workspace settings | **Plan & billing** | Panel removed; Settings points at the owner | `estate_ownership_test` |
+
+Workspace settings now owns: where things are configured (pointers), the legal
+references, and sign-out. It fetches nothing. That is the honest size of what it
+actually owns, and it is deliberately not padded — `screen_memory_test` exempts
+it explicitly, because there is no longer a request to remember.
+
+**Residual, stated rather than guessed.** `resolveComplianceAddress` still
+accepts a signature authored block as a fallback address source when no
+designated address exists. Retiring that fallback outright would newly refuse
+any business whose block happens to be a usable address, and I cannot enumerate
+those without reading other tenants' data. For this business the block is empty
+and the designated record is now the only path, so the authority is single here;
+the fallback remains for anyone already relying on it. Retiring it is a data
+question, not a code one.
+
+**Data check (§11).** `signatureJson.businessName` read "Aura Platform LLC" and
+`client.legalName` reads "Aura Platform LLC" — SAME VALUE, unambiguous
+duplicate, converged onto Business identity with nothing overwritten. The
+compliance footer was empty, so no address conflict existed to resolve.

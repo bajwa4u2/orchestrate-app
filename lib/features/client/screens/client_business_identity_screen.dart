@@ -35,6 +35,18 @@ class _ClientBusinessIdentityScreenState
   // Section editors keep their own controllers so partial saves work
   // without re-typing everything on each load.
   final TextEditingController _legalName = TextEditingController();
+  // THE ADDRESS THIS BUSINESS PUBLISHES.
+  //
+  // Readiness on this very screen refused outbound without one, and the only
+  // field for it in the whole product was a free-text compliance footer on the
+  // signature card in Workspace settings. The gate lived here and the field
+  // lived three surfaces away, which is why the refusal named the wrong place.
+  final TextEditingController _addressLine1 = TextEditingController();
+  final TextEditingController _addressLine2 = TextEditingController();
+  final TextEditingController _addressLocality = TextEditingController();
+  final TextEditingController _addressRegion = TextEditingController();
+  final TextEditingController _addressPostcode = TextEditingController();
+  final TextEditingController _addressCountry = TextEditingController();
   final TextEditingController _displayName = TextEditingController();
   final TextEditingController _websiteUrl = TextEditingController();
   final TextEditingController _industry = TextEditingController();
@@ -64,6 +76,12 @@ class _ClientBusinessIdentityScreenState
   void dispose() {
     for (final c in <TextEditingController>[
       _legalName,
+      _addressLine1,
+      _addressLine2,
+      _addressLocality,
+      _addressRegion,
+      _addressPostcode,
+      _addressCountry,
       _displayName,
       _websiteUrl,
       _industry,
@@ -107,6 +125,13 @@ class _ClientBusinessIdentityScreenState
 
   void _hydrateControllers(Map<String, dynamic> profile, Map<String, dynamic> icp) {
     _legalName.text = readText(profile, 'legalName');
+    final address = asMap(profile['postalAddress']);
+    _addressLine1.text = readText(address, 'line1');
+    _addressLine2.text = readText(address, 'line2');
+    _addressLocality.text = readText(address, 'locality');
+    _addressRegion.text = readText(address, 'region');
+    _addressPostcode.text = readText(address, 'postalCode');
+    _addressCountry.text = readText(address, 'countryCode');
     _displayName.text = readText(profile, 'displayName');
     _websiteUrl.text = readText(profile, 'websiteUrl');
     _industry.text = readText(profile, 'industry');
@@ -324,6 +349,70 @@ class _ClientBusinessIdentityScreenState
               onSave: _savingSection
                   ? null
                   : () => _saveSection({'legalName': _legalName.text.trim()}),
+            ),
+            const SizedBox(height: 16),
+            _IdentitySectionCard(
+              title: 'Registered address',
+              subtitle:
+                  'The address this business publishes on its correspondence. '
+                  'Commercial outbound must carry one by law, so nothing is '
+                  'sent until this is here. Counterparties see it on the '
+                  'footer of what they receive.',
+              guidanceLabel: 'Why this matters',
+              // ignore: sort_child_properties_last
+              child: _FieldRow(children: [
+                _Field(
+                  label: 'Address line 1',
+                  controller: _addressLine1,
+                  required: true,
+                  width: _FieldWidth.full,
+                  affects: 'Carried on every commercial message.',
+                ),
+                _Field(
+                  label: 'Address line 2',
+                  controller: _addressLine2,
+                  required: false,
+                  width: _FieldWidth.full,
+                ),
+                _Field(
+                  label: 'City',
+                  controller: _addressLocality,
+                  required: false,
+                  width: _FieldWidth.medium,
+                ),
+                _Field(
+                  label: 'State or region',
+                  controller: _addressRegion,
+                  required: false,
+                  width: _FieldWidth.medium,
+                ),
+                _Field(
+                  label: 'Postal code',
+                  controller: _addressPostcode,
+                  required: false,
+                  width: _FieldWidth.compact,
+                ),
+                _Field(
+                  label: 'Country code',
+                  controller: _addressCountry,
+                  required: true,
+                  width: _FieldWidth.compact,
+                  affects: 'Two letters, such as US or GB.',
+                ),
+              ]),
+              onSave: _savingSection
+                  ? null
+                  : () => _saveSection({
+                        'postalAddress': {
+                          'line1': _addressLine1.text.trim(),
+                          'line2': _addressLine2.text.trim(),
+                          'locality': _addressLocality.text.trim(),
+                          'region': _addressRegion.text.trim(),
+                          'postalCode': _addressPostcode.text.trim(),
+                          'countryCode':
+                              _addressCountry.text.trim().toUpperCase(),
+                        }
+                      }, message: 'Registered address saved.'),
             ),
             const SizedBox(height: 16),
             _IdentitySectionCard(

@@ -7,6 +7,7 @@ import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/screens/client_authorised_people_screen.dart';
+import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 
 /// THE ACCOUNT LAYER — OUTSIDE THE OPERATIONAL WORKSPACE.
 ///
@@ -170,8 +171,58 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
   }
 }
 
-class _AccountAndSecurity extends StatelessWidget {
+class _AccountAndSecurity extends StatefulWidget {
   const _AccountAndSecurity();
+
+  @override
+  State<_AccountAndSecurity> createState() => _AccountAndSecurityState();
+}
+
+/// THE SECURITY SURFACE THAT HAD NO SECURITY CONTROLS.
+///
+/// This was three links pointing elsewhere, while the personal security
+/// controls — the trusted devices and the revoke action — lived inside
+/// Workspace settings, a screen the product describes as "Preferences for this
+/// workspace". A person's sessions are not a workspace preference, and someone
+/// asking where they are signed in had no reason to look there.
+///
+/// The controls moved here, where the question is asked. Nothing new was
+/// invented to hold them: the same repository, the same endpoints, the same
+/// revoke semantics.
+class _AccountAndSecurityState extends State<_AccountAndSecurity> {
+  final AuthRepository _authRepository = AuthRepository();
+
+  Future<Map<String, dynamic>>? _devices;
+  bool _revoking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  void _load() {
+    // Started outside setState, then assigned inside a block. An arrow body
+    // here returns the assignment's value — a Future — and Flutter asserts on
+    // a setState callback that returns one.
+    final request = _authRepository.fetchTrustedDevices();
+    setState(() {
+      _devices = request;
+    });
+  }
+
+  Future<void> _revoke(String deviceId) async {
+    setState(() => _revoking = true);
+    try {
+      await _authRepository.revokeTrustedDevice(deviceId);
+      await AuthSessionController.instance.clearTrustedDeviceToken(
+        surface: 'client',
+      );
+      _load();
+    } finally {
+      if (mounted) setState(() => _revoking = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,49 +232,48 @@ class _AccountAndSecurity extends StatelessWidget {
       context_: session.email,
       // GROUPED BY WHAT A PERSON IS ACTUALLY ASKING.
       //
-      // These were four rows in a bare column, which made "who am I", "what
-      // may I do for the business" and "how does this workspace behave" read
-      // as one undifferentiated list of settings. They are three different
-      // questions with three different owners, and the middle one is the one
-      // people get wrong.
+      // Four questions with four owners, and the ones people get wrong are the
+      // middle two: being signed in is not authority, and ending a device is
+      // neither of them.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           WorkspaceBand(
             title: 'YOU',
             children: [
-          WorkspaceRow(
-            title: 'Your account',
-            detail: session.fullName.isNotEmpty ? session.fullName : session.email,
-            onTap: () => context.go('/client/account'),
-            action: const Icon(Icons.chevron_right,
-                size: 18, color: Ws.inkSubtle),
-          ),
-          // WHO YOU ARE. Nothing more, and it must not imply more.
-          //
-          // This row used to end "…before you can be recognised as authorised
-          // for the business", which reads as a promise that confirming an
-          // address produces authority. It does not, and cannot. The founder
-          // confirmed his address repeatedly and authority stayed absent —
-          // exactly the loop that sentence sets up.
-          WorkspaceRow(
-            title: 'Email confirmed',
-            detail: session.emailVerified
-                ? 'This address has been confirmed. That establishes who you '
-                    'are, and nothing about what the business permits.'
-                : 'Not confirmed yet. Confirming it establishes who you are.',
-            tone: session.emailVerified ? RowTone.good : RowTone.attention,
-          ),
+              WorkspaceRow(
+                title: 'Your account',
+                detail: session.fullName.isNotEmpty
+                    ? session.fullName
+                    : session.email,
+                onTap: () => context.go('/client/account'),
+                action: const Icon(Icons.chevron_right,
+                    size: 18, color: Ws.inkSubtle),
+              ),
+              // WHO YOU ARE. Nothing more, and it must not imply more.
+              //
+              // This row used to end "…before you can be recognised as
+              // authorised for the business", which reads as a promise that
+              // confirming an address produces authority. It does not.
+              WorkspaceRow(
+                title: 'Email confirmed',
+                detail: session.emailVerified
+                    ? 'This address has been confirmed. That establishes who '
+                        'you are, and nothing about what the business permits.'
+                    : 'Not confirmed yet. Confirming it establishes who you '
+                        'are.',
+                tone: session.emailVerified ? RowTone.good : RowTone.attention,
+              ),
             ],
+          ),
+          _TrustedDevices(
+            devices: _devices,
+            revoking: _revoking,
+            onRevoke: _revoke,
+            onRetry: _load,
           ),
           // WHAT THE COMPANY PERMITS. A separate question with a separate
           // answer, and the only place the resolution actually lives.
-          //
-          // Kept deliberately adjacent to the row above. The two were being
-          // confused because only one of them was ever shown, so a person with
-          // a confirmed address and no authority had nothing to read except a
-          // green tick.
-          // THE BUSINESS, WHICH IS NOT YOU.
           //
           // Its own band, because the distinction is the point. A person with
           // a confirmed address and no authority previously had nothing to
@@ -233,9 +283,10 @@ class _AccountAndSecurity extends StatelessWidget {
             children: [
               WorkspaceRow(
                 title: 'Authority to act for the business',
-                detail: 'Being signed in, and confirmed, is not the same as the '
-                    'business having authorised you to act in its name. That is '
-                    'recorded against the organisation, not against you.',
+                detail: 'Being signed in, and confirmed, is not the same as '
+                    'the business having authorised you to act in its name. '
+                    'That is recorded against the organisation, not against '
+                    'you, and ending a device above does not touch it.',
                 onTap: () => context.go('/account/people'),
                 action: const Icon(Icons.chevron_right,
                     size: 18, color: Ws.inkSubtle),
@@ -247,7 +298,8 @@ class _AccountAndSecurity extends StatelessWidget {
             children: [
               WorkspaceRow(
                 title: 'Workspace settings',
-                detail: 'Preferences for this workspace.',
+                detail: 'How this workspace behaves. Nothing about you or '
+                    'your sign-in is decided there.',
                 onTap: () => context.go('/client/settings'),
                 action: const Icon(Icons.chevron_right,
                     size: 18, color: Ws.inkSubtle),
@@ -256,6 +308,132 @@ class _AccountAndSecurity extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Where this person is signed in, and what they can end.
+class _TrustedDevices extends StatelessWidget {
+  const _TrustedDevices({
+    required this.devices,
+    required this.revoking,
+    required this.onRevoke,
+    required this.onRetry,
+  });
+
+  final Future<Map<String, dynamic>>? devices;
+  final bool revoking;
+  final Future<void> Function(String deviceId) onRevoke;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: devices,
+      builder: (context, snapshot) {
+        final children = <Widget>[];
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          children.add(const WorkspaceRow(
+            title: 'Trusted devices',
+            detail: 'Checking where this account is signed in.',
+          ));
+        } else if (snapshot.hasError) {
+          // AN UNREACHABLE ANSWER IS NOT AN EMPTY ONE.
+          //
+          // Reporting "no trusted devices" when the request failed would tell
+          // somebody their account is trusted nowhere, which is the opposite
+          // of what a failure means.
+          children.add(WorkspaceRow(
+            title: 'Trusted devices could not be read',
+            detail: 'This is not the same as having none. Nothing has changed '
+                'about where you are signed in.',
+            tone: RowTone.attention,
+            action: TextButton(onPressed: onRetry, child: const Text('Retry')),
+          ));
+        } else {
+          final list = (snapshot.data?['devices'] as List?) ?? const [];
+          if (list.isEmpty) {
+            children.add(const WorkspaceRow(
+              title: 'No trusted devices',
+              detail: 'Every sign-in asks for an email code. After entering '
+                  'one you can trust that device for 60 days.',
+            ));
+          } else {
+            for (final raw in list) {
+              children.add(_TrustedDeviceRow(
+                device: Map<String, dynamic>.from(raw as Map),
+                busy: revoking,
+                onRevoke: onRevoke,
+              ));
+            }
+          }
+        }
+
+        return WorkspaceBand(
+          title: 'WHERE YOU ARE SIGNED IN',
+          children: children,
+        );
+      },
+    );
+  }
+}
+
+/// One trusted device, and the one thing that can be done to it.
+class _TrustedDeviceRow extends StatelessWidget {
+  const _TrustedDeviceRow({
+    required this.device,
+    required this.busy,
+    required this.onRevoke,
+  });
+
+  final Map<String, dynamic> device;
+  final bool busy;
+  final Future<void> Function(String deviceId) onRevoke;
+
+  String _text(String key) {
+    final value = device[key];
+    return value == null ? '' : value.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final active = device['active'] == true;
+    final id = _text('id');
+    final name = _text('deviceName');
+    final platform = _text('platform');
+    final lastUsed = _text('lastUsedAt');
+
+    final parts = <String>[
+      active ? 'Active' : 'Inactive',
+      if (platform.isNotEmpty) platform,
+      if (lastUsed.isNotEmpty) 'last used $lastUsed',
+    ];
+
+    return WorkspaceRow(
+      title: name.isEmpty ? 'Trusted device' : name,
+      detail: parts.join(' · '),
+      // ENDING A DEVICE IS NOT DELETING ACCESS, AND MUST NOT LOOK LIKE IT.
+      //
+      // Four acts get confused here, and this is the mildest: it is not losing
+      // a role, not leaving a business, and not deleting an account. It means
+      // one machine has to enter an email code again, and trusting it
+      // afterwards restores it.
+      //
+      // So no confirmation — ceremony where reversal is trivial trains people
+      // to dismiss the dialogs that matter — but the consequence is stated,
+      // because "Revoke" alone reads more final than it is.
+      action: active && id.isNotEmpty
+          ? Tooltip(
+              message: 'This device will need an email code again next time. '
+                  'Trusting it afterwards restores it. Your authority for the '
+                  'business is not affected.',
+              child: TextButton(
+                onPressed: busy ? null : () => onRevoke(id),
+                child: Text(busy ? 'Revoking' : 'Revoke'),
+              ),
+            )
+          : null,
     );
   }
 }

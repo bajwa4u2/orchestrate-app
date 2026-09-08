@@ -14,6 +14,7 @@ import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
 import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:go_router/go_router.dart';
+import 'package:orchestrate_app/features/client/widgets/signature_identity_card.dart';
 
 /// Mailbox is the one infrastructure surface where the client genuinely
 /// owns an action: connecting and verifying the sending identity Orchestrate
@@ -294,6 +295,14 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
               identity: data.operationalIdentity,
               providerAvailability: data.providerAvailability,
             ),
+            const SizedBox(height: 18),
+            // HOW THIS BUSINESS SIGNS OFF, WHERE ITS OUTBOUND IS DECIDED.
+            //
+            // The signature lived in Workspace settings, three surfaces from
+            // the mailbox that sends it and from the readiness that refuses to
+            // send without it. It belongs with communication: this is the page
+            // that owns what leaves the business and what has to be true first.
+            const SignatureIdentityCard(),
             const SizedBox(height: 18),
             _TransportAuthorityPanel(
               clientTransportAuthorized: data.clientTransportAuthorized,

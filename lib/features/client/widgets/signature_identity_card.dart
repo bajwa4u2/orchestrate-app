@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_portal_repository.dart';
+import 'package:go_router/go_router.dart';
 
 /// Workspace signature identity editor.
 ///
@@ -97,7 +98,6 @@ class _SignatureIdentityCardState extends State<SignatureIdentityCard> {
       final data = await _repository.updateSignature(
         displayName: _trimToNull(_displayNameCtrl.text),
         role: _trimToNull(_roleCtrl.text),
-        businessName: _trimToNull(_businessCtrl.text),
         phone: _trimToNull(_phoneCtrl.text),
         websiteUrl: _trimToNull(_websiteCtrl.text),
         schedulingUrl: _trimToNull(_schedulingCtrl.text),
@@ -165,11 +165,21 @@ class _SignatureIdentityCardState extends State<SignatureIdentityCard> {
               hint: 'e.g. Revenue Operations Lead',
             ),
             const SizedBox(height: 10),
-            _formField(
-              context,
-              controller: _businessCtrl,
+            // THE BUSINESS NAME IS READ, NOT WRITTEN, HERE.
+            //
+            // This was an editable field storing its own copy of the name,
+            // beside the legal and trading names Business identity owns. Two
+            // editable truths for one fact, free to drift — and they had: the
+            // Business hub reported no legal name while this field carried one.
+            //
+            // The signature may show the name. It may not be a second writer
+            // of it.
+            _ReadOnlyLine(
               label: 'Business name',
-              hint: 'e.g. Aura Platform',
+              value: _businessCtrl.text,
+              note: 'From Business identity, which owns what this business is '
+                  'called.',
+              onOpen: () => context.go('/client/representation'),
             ),
             const SizedBox(height: 10),
             _formField(
@@ -293,6 +303,50 @@ class _SignatureIdentityCardState extends State<SignatureIdentityCard> {
           vertical: 12,
         ),
       ),
+    );
+  }
+}
+
+
+/// A fact this card shows but does not own.
+class _ReadOnlyLine extends StatelessWidget {
+  const _ReadOnlyLine({
+    required this.label,
+    required this.value,
+    required this.note,
+    required this.onOpen,
+  });
+
+  final String label;
+  final String value;
+  final String note;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: theme.textTheme.labelMedium),
+              const SizedBox(height: 2),
+              Text(
+                value.trim().isEmpty ? 'Not set' : value,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(note, style: theme.textTheme.bodySmall),
+            ],
+          ),
+        ),
+        TextButton(onPressed: onOpen, child: const Text('Open')),
+      ],
     );
   }
 }
