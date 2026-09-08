@@ -13,6 +13,7 @@ import 'package:orchestrate_app/features/client/widgets/smtp_connect_dialog.dart
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
 import 'package:orchestrate_app/core/theme/workspace_theme.dart';
+import 'package:go_router/go_router.dart';
 
 /// Mailbox is the one infrastructure surface where the client genuinely
 /// owns an action: connecting and verifying the sending identity Orchestrate
@@ -1467,6 +1468,18 @@ class _PrimaryStatusCard extends StatelessWidget {
 
   final Map<String, dynamic> snapshot;
 
+  /// Where a named next step actually lives, or null when it is not a place.
+  static String? _destinationFor(String action) {
+    switch (action) {
+      case 'resolve_billing':
+        return '/account/plan';
+      case 'resolve_compliance':
+        return '/client/representation';
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1549,6 +1562,29 @@ class _PrimaryStatusCard extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                       ),
+                      // THE NEXT STEP WAS NAMED AND NOT OFFERED.
+                      //
+                      // This line was text and only text, so the page told an
+                      // operator to go and activate the service from Plan and
+                      // billing and left them to find it — from a surface
+                      // reached through the Business hub, when Plan and billing
+                      // lives behind the avatar in a different layer.
+                      //
+                      // Where the named step is somewhere in the product, it is
+                      // now reachable from the sentence that names it. Where it
+                      // is not a destination — publishing DNS at your own host,
+                      // for instance — the sentence stands alone, because there
+                      // is nothing here to open.
+                      if (_destinationFor(primaryAction) case final route?) ...[
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FilledButton(
+                            onPressed: () => context.go(route),
+                            child: Text(primaryActionLabel),
+                          ),
+                        ),
+                      ],
                     ],
                   ],
                 ),
