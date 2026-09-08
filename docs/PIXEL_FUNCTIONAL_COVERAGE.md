@@ -228,3 +228,50 @@ things live.
   retained records, behind a typed DELETE. Classified as a production actuation
   boundary (§15).
 - **Evidence archive** — no record exists, and none was fabricated to create one.
+
+## Containment scope repair — acquisition stopped governing capability use
+
+The founder asked why sending was blocked when billing and authority were both
+fine. It was neither. `executionActivated` was a literal `false` for every
+client, written when public commercial activation was closed on the reasoning
+that nobody had bought anything — so GOVERNED_EXECUTION was refused
+unconditionally, regardless of grant, state or readiness.
+
+Three questions were being answered by one flag: may we SELL a plan, does this
+client HOLD one, does a held plan INCLUDE a capability. Only the first was meant
+to be closed.
+
+| Gate caller | Class | Disposition |
+|---|---|---|
+| `billing.service.ts` — may a checkout be created | ACQUISITION | kept, still closed |
+| `store-readiness.service.ts` — which store rails are offered | ACQUISITION | kept, still closed |
+| `public-commercial-projection.ts` — what the public site says | UI PRESENTATION | kept, still closed |
+| `commercial-entitlement.service.ts` — `executionActivated` | **CAPABILITY USE** | **repaired** — derived per client |
+
+Inappropriate capability-use dependencies remaining: **0**.
+
+Execution is now derived from the client's own entitlement source.
+`PAID_SUBSCRIPTION`, `INTERNAL_OPERATIONAL` and `LEGACY_GRANTED_ACCESS` confer
+it; `STORE_REVIEW` does not — on its own terms, being a reviewer fixture that
+must not send commercial mail in a real business's name — and neither does
+`NONE`. No client id is special-cased.
+
+`CommercialGrant` carries no `expiresAt`, only `revokedAt`, so an unbounded
+grant runs until somebody with authority ends it.
+
+### Proven on the device after deploy
+
+| Before | After |
+|---|---|
+| "Dispatch blocked · Orchestrate acting on your behalf is not part of what your organisation has activated" | **"Dispatch ready · hello@auraplatform.org · SPF / DKIM / DMARC verified"** |
+| Dispatch eligibility: **Blocked** | Dispatch eligibility: **Eligible — granted** |
+| Business hub: "Nothing can be sent yet" / "Sending is held" | **"Ready to write to counterparties. Sending is configured and working."** |
+| Mailbox offered "Activate it from Plan & billing" | No commercial refusal shown at all |
+
+Two independent surfaces reading the same backend authority agree, so the proof
+reaches the execution decision rather than stopping at UI enablement. Nothing
+was sent to any recipient.
+
+Public commerce remains closed: Plan & billing still offers no purchase path and
+still reads "Internal operational access — granted directly rather than
+purchased, so it does not depend on a billing period".
