@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/core/theme/workspace_theme.dart';
+import 'package:orchestrate_app/core/layout/workspace.dart';
 
 /// WORKSPACE SETTINGS, REDUCED TO WHAT IT ACTUALLY OWNS.
 ///
@@ -82,49 +84,44 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
               'people usually arrive here looking for is owned elsewhere, and '
               'this is where.',
           children: [
-            ClientInfoRow(
+            WorkspaceRow(
               title: 'How this business is named and reached',
-              primary: 'Legal name, trading name, website, postal address '
+              detail: 'Legal name, trading name, website, postal address '
                   'and market.',
-              trailing: TextButton(
-                onPressed: () => context.go('/client/representation'),
-                child: const Text('Business identity'),
-              ),
+              onTap: () => context.go('/client/representation'),
+              action: const Icon(Icons.chevron_right,
+                  size: 18, color: Ws.inkSubtle),
             ),
-            ClientInfoRow(
+            WorkspaceRow(
               title: 'How this business speaks in its outbound',
-              primary: 'Sending mailbox, signature, and what has to be true '
+              detail: 'Sending mailbox, signature, and what has to be true '
                   'before anything can leave.',
-              trailing: TextButton(
-                onPressed: () => context.go('/client/infrastructure'),
-                child: const Text('Mailbox and sending'),
-              ),
+              onTap: () => context.go('/client/infrastructure'),
+              action: const Icon(Icons.chevron_right,
+                  size: 18, color: Ws.inkSubtle),
             ),
-            ClientInfoRow(
+            WorkspaceRow(
               title: 'Where you are signed in',
-              primary: 'Trusted devices, and ending one. These were on this '
+              detail: 'Trusted devices, and ending one. These were on this '
                   'page; a session is not a workspace preference.',
-              trailing: TextButton(
-                onPressed: () => context.go('/account/security'),
-                child: const Text('Account & security'),
-              ),
+              onTap: () => context.go('/account/security'),
+              action: const Icon(Icons.chevron_right,
+                  size: 18, color: Ws.inkSubtle),
             ),
-            ClientInfoRow(
+            WorkspaceRow(
               title: 'Whether this business can act',
-              primary: 'Readiness, and whatever is blocking it. Stated once, '
+              detail: 'Readiness, and whatever is blocking it. Stated once, '
                   'where it is decided.',
-              trailing: TextButton(
-                onPressed: () => context.go('/client/business'),
-                child: const Text('Business'),
-              ),
+              onTap: () => context.go('/client/business'),
+              action: const Icon(Icons.chevron_right,
+                  size: 18, color: Ws.inkSubtle),
             ),
-            ClientInfoRow(
+            WorkspaceRow(
               title: 'What you are on, and what it costs',
-              primary: 'Plan, subscription state and billing documents.',
-              trailing: TextButton(
-                onPressed: () => context.go('/account/plan'),
-                child: const Text('Plan & billing'),
-              ),
+              detail: 'Plan, subscription state and billing documents.',
+              onTap: () => context.go('/account/plan'),
+              action: const Icon(Icons.chevron_right,
+                  size: 18, color: Ws.inkSubtle),
             ),
           ],
         ),
