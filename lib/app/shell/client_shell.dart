@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
-import 'package:orchestrate_app/core/brand/brand_assets.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
@@ -351,12 +350,6 @@ class _ClientShellState extends State<ClientShell> {
     );
   }
 
-  String _currentLabel() {
-    for (final d in _destinations) {
-      if (_isSelected(d)) return d.label;
-    }
-    return 'Orchestrate';
-  }
 }
 
 class _Destination {
@@ -426,30 +419,6 @@ class _Rail extends StatelessWidget {
             // never allowed to be.
             Material(
               color: Colors.transparent,
-              child: InkWell(
-                onTap: () => context.go('/client/today'),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(collapsed ? 14 : 18, 16, 14, 4),
-                  child: Row(
-                    children: [
-                      // Follows the surface it sits on rather than the theme
-                      // it inherits, which is light.
-                      BrandAssets.symbol(context, size: 20, onDark: true),
-                      if (!collapsed) ...[
-                        const SizedBox(width: 9),
-                        Text('Orchestrate',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelMedium
-                                ?.copyWith(
-                                  color: Ws.onFieldMuted,
-                                  letterSpacing: 0.4,
-                                )),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
             ),
 
             // WHOSE BUSINESS AM I OPERATING?
@@ -462,49 +431,67 @@ class _Rail extends StatelessWidget {
             // The mark survives collapse. A rail narrowed to icons still has
             // to say whose workspace it is; losing the name AND the mark left
             // the identity nowhere on a narrow desktop window.
+            // THE BUSINESS OPENS ITS OWN WORKSPACE.
+            //
+            // The rail used to begin with Orchestrate's mark and wordmark, with
+            // the business underneath it — the infrastructure sitting above the
+            // company whose workspace this is. The product mark is gone, and
+            // this block inherits both the top of the rail and the tap-to-home
+            // affordance it used to carry.
+            //
+            // The top padding is larger than the old block's because it is now
+            // the first thing in the rail rather than the second.
             if (collapsed)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(0, 10, 0, 16),
-                child: Center(child: WorkspaceMark(onDark: true)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 22, 0, 18),
+                child: Center(
+                  child: InkWell(
+                    onTap: () => context.go('/client/today'),
+                    child: const WorkspaceMark(onDark: true),
+                  ),
+                ),
               )
             else if (workspaceName.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 10, 14, 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const WorkspaceMark(onDark: true),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            workspaceName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  color: Ws.onField,
-                                  height: 1.2,
-                                ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Commercial workspace',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  color: Ws.onFieldSubtle,
-                                ),
-                          ),
-                        ],
+              InkWell(
+                onTap: () => context.go('/client/today'),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 22, 14, 18),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const WorkspaceMark(onDark: true),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              workspaceName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Ws.onField,
+                                    height: 1.2,
+                                  ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Commercial workspace',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: Ws.onFieldSubtle,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               )
             else

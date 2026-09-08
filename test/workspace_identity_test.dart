@@ -56,6 +56,42 @@ void main() {
     });
   });
 
+  group('the authenticated shell never falls back to Orchestrate', () {
+    // The rail opened with Orchestrate's symbol and wordmark, with the
+    // business whose workspace it is underneath — the infrastructure sitting
+    // above the company. A client must never inherit the product's brand as
+    // their own identity, least of all because their logo is missing.
+    test('the rail carries no product mark or wordmark', () {
+      expect(
+        shell.contains('BrandAssets'),
+        isFalse,
+        reason: 'the product mark must not appear in a client workspace shell',
+      );
+    });
+
+    test('no shell label falls back to the product name', () {
+      // _currentLabel() returned 'Orchestrate' when nothing matched.
+      expect(shell.contains("return 'Orchestrate';"), isFalse);
+    });
+
+    test('a business with no logo falls back to the business, not the product', () {
+      expect(mark.contains('Initial(text: business'), isTrue);
+      expect(mark.contains('Orchestrate'), isFalse);
+    });
+
+    test('no persistent co-branding was added to compensate', () {
+      for (final phrase in ['Powered by', 'Orchestrate workspace']) {
+        expect(shell.contains(phrase), isFalse, reason: phrase);
+      }
+    });
+
+    test('the version row may still name the product', () {
+      // Scoped correctly: this is product attribution in an about/support
+      // context, not tenant identity, and removing it would be dishonest.
+      expect(shell.contains("'Orchestrate \${version!.label}'"), isTrue);
+    });
+  });
+
   group('the shell consumes identity and owns none of it', () {
     test('it reads branding rather than storing a logo', () {
       expect(mark.contains('ClientBrandingRepository'), isTrue);

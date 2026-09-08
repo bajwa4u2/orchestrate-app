@@ -114,7 +114,21 @@ void main() {
     expect(shell, isNot(contains('data: AppTheme.lightTheme')),
         reason: 'inheriting the marketing ThemeData is the drift this '
             'reconstruction exists to end');
-    expect(shell, contains('BrandAssets.symbol'));
+    // THE PRODUCT MARK IS NO LONGER PART OF THIS FRAME.
+    //
+    // This asserted the authenticated shell carried BrandAssets.symbol. The
+    // founder's correction is that a client's workspace belongs to the client:
+    // the rail opened with Orchestrate's mark and wordmark and put the
+    // business underneath, which is the infrastructure sitting above the
+    // company whose workspace it is.
+    //
+    // The convergence this test protects is the THEME and the chrome, not the
+    // branding — and both still hold above. Orchestrate still names itself on
+    // the public site, in auth before a business context exists, and in the
+    // version row.
+    expect(shell, isNot(contains('BrandAssets.symbol')),
+        reason: 'a client workspace shell must lead with the client, not the '
+            'product');
 
     // THE CONTENT PANE STAYS LIGHT. This is the property the original
     // assertion was really protecting: an earlier shell inherited the dark
