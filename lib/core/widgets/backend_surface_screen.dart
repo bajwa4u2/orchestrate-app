@@ -45,7 +45,13 @@ class _BackendSurfaceScreenState extends State<BackendSurfaceScreen> {
   }
 
   void _retry() {
-    setState(() => _future = _load());
+    // An arrow body here evaluates to the assigned value — a Future — and
+    // Flutter asserts on a setState callback that returns one. Started
+    // outside setState, assigned inside a block.
+    final request = _load();
+    setState(() {
+      _future = request;
+    });
   }
 
   @override

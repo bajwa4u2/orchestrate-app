@@ -183,6 +183,30 @@ class _ClientBusinessIdentityScreenState
   /// Said where the person is looking now. An error also stays in the panel,
   /// because a failure has to survive being glanced away from; a success does
   /// not need to persist once it has been seen.
+  /// What to say about an address depends on which source is answering.
+  ///
+  /// A business can satisfy the requirement from the legacy free-text block
+  /// on its signature while having designated no structured address at all.
+  /// Leaving this form empty beside a satisfied gate, with no explanation,
+  /// would read as a bug.
+  String _addressSubtitle(String source) {
+    switch (source) {
+      case 'AUTHORED_BLOCK':
+        return 'Commercial outbound must carry a postal address. Yours is '
+            'currently coming from the free-text block on your signature, '
+            'which still works. Entering it here records it properly, as a '
+            'structured address this business owns.';
+      case 'DESIGNATED':
+        return 'The address this business publishes on its correspondence. '
+            'Counterparties see it on the footer of what they receive. '
+            'Replacing it keeps the previous one on record.';
+      default:
+        return 'Commercial outbound must carry a postal address by law, so '
+            'nothing is sent until this is here. Counterparties see it on '
+            'the footer of what they receive.';
+    }
+  }
+
   Future<void> _saveSection(Map<String, dynamic> patch, {String? message}) async {
     setState(() => _savingSection = true);
     try {
@@ -353,11 +377,7 @@ class _ClientBusinessIdentityScreenState
             const SizedBox(height: 16),
             _IdentitySectionCard(
               title: 'Registered address',
-              subtitle:
-                  'The address this business publishes on its correspondence. '
-                  'Commercial outbound must carry one by law, so nothing is '
-                  'sent until this is here. Counterparties see it on the '
-                  'footer of what they receive.',
+              subtitle: _addressSubtitle(readText(data.profile, 'postalAddressSource')),
               guidanceLabel: 'Why this matters',
               // ignore: sort_child_properties_last
               child: _FieldRow(children: [

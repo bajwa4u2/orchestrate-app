@@ -40,7 +40,15 @@ class _ClientOutreachScreenState extends State<ClientOutreachScreen> {
     return _OperationsData.parse(summary: results[0], outreach: results[1]);
   }
 
-  void _refresh() => setState(() => _future = _load());
+  // An arrow body here evaluates to the assigned value — a Future — and
+  // Flutter asserts on a setState callback that returns one. Started
+  // outside setState, assigned inside a block.
+  void _refresh() {
+    final request = _load();
+    setState(() {
+      _future = request;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

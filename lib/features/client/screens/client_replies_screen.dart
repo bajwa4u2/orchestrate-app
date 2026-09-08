@@ -34,7 +34,13 @@ class _ClientRepliesScreenState extends State<ClientRepliesScreen> {
       ]);
 
   void _retry() {
-    setState(() => _futures = _load());
+    // An arrow body here evaluates to the assigned value — a Future — and
+    // Flutter asserts on a setState callback that returns one. Started
+    // outside setState, assigned inside a block.
+    final request = _load();
+    setState(() {
+      _futures = request;
+    });
   }
 
   @override
