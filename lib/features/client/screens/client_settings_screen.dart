@@ -361,7 +361,9 @@ ClientStatusBanner _settingsBanner({
   if (blockers.isNotEmpty) {
     return ClientStatusBanner(
       tone: ClientBannerTone.warning,
-      title: '${blockers.length} readiness items need attention',
+      title: blockers.length == 1
+          ? '1 readiness item needs attention'
+          : '${blockers.length} readiness items need attention',
       message:
           'Review the permission and outreach readiness sections. If you do nothing, service execution may remain blocked.',
     );

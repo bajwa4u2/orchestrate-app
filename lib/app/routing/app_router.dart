@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/features/auth/screens/client_login_screen.dart';
@@ -236,26 +237,97 @@ class WorkspaceBack {
 
 /// Claims the Android Back gesture for [path] so it goes up instead of out.
 ///
-/// Wrapped around each shell rather than each screen: the shells are what sit
-/// inside the route, which is where PopScope has to be to register.
-class UpBackHandler extends StatelessWidget {
+/// PopScope alone was not enough, and the device proved it twice.
+///
+/// Flutter tells Android whether the app handles Back by calling
+/// `setFrameworkHandlesBack`, and that is computed from the ROOT navigator's
+/// route. PublicShell and AuthShell sit directly in root-navigator pages, so
+/// their PopScope reaches that computation and Back works. ClientShell is a
+/// ShellRoute shell above a NESTED navigator, and its PopScope does not — so
+/// the engine was told the app does not handle Back, and Android closed the
+/// task without ever asking Dart. That is why the first repair, a
+/// BackButtonDispatcher, was never called either: nothing was being delivered
+/// to call it with.
+///
+/// An in-process test cannot see this. `handlePopRoute` reaches the framework
+/// directly, so the workspace passes there and fails on a phone.
+///
+/// So this reports for itself. It states plainly that it handles Back whenever
+/// the surface has somewhere above it, and answers the pop when it arrives.
+/// PopScope stays for the shells where it already works; whichever mechanism
+/// fires first, both resolve to the same parent, and only one can fire per
+/// press.
+class UpBackHandler extends StatefulWidget {
   const UpBackHandler({super.key, required this.path, required this.child});
 
   final String path;
   final Widget child;
 
   @override
+  State<UpBackHandler> createState() => _UpBackHandlerState();
+}
+
+class _UpBackHandlerState extends State<UpBackHandler>
+    with WidgetsBindingObserver {
+  String? get _up => WorkspaceBack.parentOf(widget.path);
+
+  bool? _reported;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Tell the engine whether Back belongs to us on this surface.
+  ///
+  /// AFTER THE FRAME, NOT DURING IT.
+  ///
+  /// The root Navigator calls setFrameworkHandlesBack itself whenever routes
+  /// change, and it runs after initState — so saying this any earlier was
+  /// simply overwritten, and Back went on closing the app. Re-asserted once
+  /// the frame the Navigator was reacting to has finished.
+  ///
+  /// At a landing it stays false on purpose, so Back keeps its real meaning
+  /// and leaves the app rather than trapping somebody on the home surface.
+  void _report() {
+    final handles = _up != null;
+    if (_reported == handles) return;
+    _reported = handles;
+    SystemNavigator.setFrameworkHandlesBack(handles);
+  }
+
+  @override
+  Future<bool> didPopRoute() async {
+    final up = _up;
+    if (up == null) return false; // Nothing above this: let Android leave.
+    if (!mounted) return false;
+    context.go(up);
+    return true;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final up = WorkspaceBack.parentOf(path);
+    final up = _up;
+    // Re-asserted every build, because the Navigator re-decides this for its
+    // own reasons and last writer wins. Guarded so it only reaches the engine
+    // when the answer actually changed.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _report();
+    });
     return PopScope(
-      // Claiming the gesture is the whole point: false is what makes Android
-      // deliver Back to us at all.
       canPop: up == null,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop || up == null) return;
         context.go(up);
       },
-      child: child,
+      child: widget.child,
     );
   }
 }

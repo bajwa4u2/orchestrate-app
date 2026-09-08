@@ -262,7 +262,7 @@ class _AccountAndSecurity extends StatelessWidget {
 
 /// A compact frame with lateral movement between the three account areas.
 /// Not a fourth sidebar — you arrive here from the avatar and leave again.
-class _AccountFrame extends StatelessWidget {
+class _AccountFrame extends StatefulWidget {
   const _AccountFrame({
     required this.title,
     required this.context_,
@@ -272,6 +272,41 @@ class _AccountFrame extends StatelessWidget {
   final String title;
   final String context_;
   final Widget child;
+
+  @override
+  State<_AccountFrame> createState() => _AccountFrameState();
+}
+
+class _AccountFrameState extends State<_AccountFrame> {
+  /// THE CHIP FOR WHERE YOU ARE WAS OFF THE SIDE OF THE SCREEN.
+  ///
+  /// Three chips do not fit across a phone, and the row starts at the left, so
+  /// arriving at Account & security — the third — showed it clipped at the
+  /// screen edge. The row scrolls, so nothing overflowed and nothing looked
+  /// broken; it just did not show you where you were until you dragged it.
+  /// Found on a Pixel.
+  final _selectedChip = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revealSelected());
+  }
+
+  void _revealSelected() {
+    final ctx = _selectedChip.currentContext;
+    if (ctx == null || !mounted) return;
+    Scrollable.ensureVisible(
+      ctx,
+      alignment: 0.5,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+    );
+  }
+
+  String get title => widget.title;
+  String get context_ => widget.context_;
+  Widget get child => widget.child;
 
   @override
   Widget build(BuildContext context) {
@@ -294,15 +329,20 @@ class _AccountFrame extends StatelessWidget {
           child: Row(
             children: [
               for (final a in areas)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: _AreaChip(
-                    label: a.$1,
-                    selected: a.$2.endsWith(title.split(' ').first.toLowerCase()) ||
-                        a.$1 == title,
-                    onTap: () => context.go(a.$2),
-                  ),
-                ),
+                Builder(builder: (context) {
+                  final selected =
+                      a.$2.endsWith(title.split(' ').first.toLowerCase()) ||
+                          a.$1 == title;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: _AreaChip(
+                      key: selected ? _selectedChip : null,
+                      label: a.$1,
+                      selected: selected,
+                      onTap: () => context.go(a.$2),
+                    ),
+                  );
+                }),
             ],
           ),
         ),
@@ -316,7 +356,10 @@ class _AccountFrame extends StatelessWidget {
 
 class _AreaChip extends StatelessWidget {
   const _AreaChip(
-      {required this.label, required this.selected, required this.onTap});
+      {super.key,
+      required this.label,
+      required this.selected,
+      required this.onTap});
 
   final String label;
   final bool selected;

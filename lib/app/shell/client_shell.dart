@@ -117,6 +117,10 @@ class _ClientShellState extends State<ClientShell> {
     ),
   ];
 
+  /// True on the account layer, which no bottom-bar destination represents.
+  bool get _inAccountLayer =>
+      areaOf(widget.currentPath) == WorkspaceArea.account;
+
   bool _isSelected(_Destination d) {
     final path = widget.currentPath;
     if (path == d.path || path.startsWith('${d.path}/')) return true;
@@ -226,7 +230,19 @@ class _ClientShellState extends State<ClientShell> {
               // A ground, not a page. Panels sit on it and are separated by
               // the surface step rather than by borders alone.
               backgroundColor: Ws.canvas,
-              bottomNavigationBar: phone
+              // THE BAR ALWAYS HIGHLIGHTS SOMETHING, SO IT MUST NOT BE
+              // SHOWN WHERE NOTHING IT LISTS IS CURRENT.
+              //
+              // `indexWhere` answers -1 when no destination matches, and the
+              // clamp turned that into 0 — so every account surface, and
+              // Workspace settings with it, told the operator they were on
+              // Today. Found on a Pixel: the bar said Today while the screen
+              // said Account & security.
+              //
+              // The account layer is not one of these four. It is reached from
+              // the avatar and carries its own return, so the honest rendering
+              // is no bar rather than a false one.
+              bottomNavigationBar: phone && !_inAccountLayer
                   ? _BottomBar(
                       destinations: _destinations,
                       isSelected: _isSelected,

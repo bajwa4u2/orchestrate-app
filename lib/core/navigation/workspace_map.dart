@@ -99,6 +99,22 @@ const Map<String, _Surface> _surfaces = {
       _Surface('Security', WorkspaceArea.account, parent: '/account/people'),
   '/client/support':
       _Surface('Support', WorkspaceArea.account, parent: canonicalWorkspaceHome),
+
+  // SURFACES THAT WERE ON NO MAP AT ALL.
+  //
+  // Reached from Account & security, and absent here, so the shell drew them
+  // no return and system Back had no parent to resolve. Workspace settings
+  // opened with no title, no breadcrumb and no way back that did not involve
+  // leaving the app — found by opening it on a Pixel.
+  //
+  // Each returns to the account surface that offers it, which is where a
+  // person came from and what contains it.
+  '/client/settings': _Surface('Workspace settings', WorkspaceArea.account,
+      parent: '/account/security'),
+  '/client/account': _Surface('Your account', WorkspaceArea.account,
+      parent: '/account/security'),
+  '/client/billing': _Surface('Plan and billing', WorkspaceArea.account,
+      parent: '/account/plan'),
 };
 
 /// The area landings. These are destinations in their own right and offer no

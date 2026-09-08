@@ -4,11 +4,31 @@
          in the debug/profile manifests, which do NOT merge into release builds;
          without this line the release AAB has no network access. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!--
+      SYSTEM BACK CLOSED THE APP FROM EVERY WORKSPACE SURFACE.
+
+      On the predictive-back path Android hands Back to Flutter's
+      OnBackInvokedCallback, and Flutter decides from the ROOT navigator
+      whether the framework handles it. The workspace is a ShellRoute above a
+      nested navigator, so that answer came back no and the callback finished
+      the activity — Dart was never asked. Confirmed on a Pixel: the window had
+      callbacks registered, PopScope was in place, an observer was in place,
+      and none of them ran.
+
+      The legacy path routes Back through popRoute into the framework, where
+      the shell's PopScope and observer are both consulted, and it is the path
+      the in-process test exercises and passes on.
+
+      This opts out of predictive back until workspace navigation is
+      restructured to give the root navigator something real to pop. That is
+      the actual fix, and it is a larger change than a back button.
+    -->
     <application
         android:label="Orchestrate"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round">
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:enableOnBackInvokedCallback="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -166,6 +166,21 @@ class TodayState {
     return '';
   }
 
+  /// Whether an alert asks anything of anybody.
+  ///
+  /// Absent means yes: an alert that never stated its intent is treated as
+  /// needing a person, because silently hiding one would be the worse failure.
+  static bool _actionRequired(Map<dynamic, dynamic> alert) {
+    final direct = alert['actionRequired'];
+    if (direct is bool) return direct;
+    final meta = alert['metadataJson'];
+    if (meta is Map) {
+      final nested = meta['actionRequired'];
+      if (nested is bool) return nested;
+    }
+    return true;
+  }
+
   /// Things a person has to decide or do.
   ///
   /// Only OPEN alerts, and only blockers that name what would resolve them. A
@@ -222,6 +237,18 @@ class TodayState {
 
     for (final a in alerts) {
       if ((a['status']?.toString() ?? 'OPEN') != 'OPEN') continue;
+      // AN ALERT THAT SAYS NOTHING IS NEEDED IS NOT SOMETHING THAT NEEDS YOU.
+      //
+      // The backend already decides this and says so: a carried-out refusal is
+      // classified actionRequired false, INFO, with the words "Recorded for
+      // your visibility; nothing is needed from you." This loop read only
+      // `status`, so that item was filed under NEEDS YOU and counted in
+      // "1 thing needs you" — a header and a body contradicting each other on
+      // the first screen of the product. Seen on a Pixel.
+      //
+      // It is not lost by being excluded here; it is reported as what changed,
+      // which is what it is.
+      if (!_actionRequired(a)) continue;
       items.add(TodayItem(
         title: a['title']?.toString() ?? 'Something needs attention',
         detail: a['bodyText']?.toString(),
@@ -324,6 +351,21 @@ class TodayState {
   /// applied in one place and the surface can tell the two apart.
   List<TodayItem> get _everythingChanged {
     final items = <TodayItem>[];
+
+    // Alerts that asked nothing of anybody. They are still real events, and
+    // this is where events that happened belong.
+    for (final a in alerts) {
+      if ((a['status']?.toString() ?? 'OPEN') != 'OPEN') continue;
+      if (_actionRequired(a)) continue;
+      items.add(TodayItem(
+        title: a['title']?.toString() ?? 'Something changed',
+        detail: a['bodyText']?.toString(),
+        meta: _ago(a['createdAt']),
+        severity: a['severity']?.toString(),
+        category: a['category']?.toString(),
+        at: DateTime.tryParse('${a['createdAt'] ?? ''}'),
+      ));
+    }
 
     for (final r in replies.take(6)) {
       final from = r['fromEmail']?.toString() ?? 'Someone';
