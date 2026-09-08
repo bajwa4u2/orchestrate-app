@@ -8,6 +8,8 @@ import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/screens/client_authorised_people_screen.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
+import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 
 /// THE ACCOUNT LAYER — OUTSIDE THE OPERATIONAL WORKSPACE.
 ///
@@ -215,9 +217,17 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
     setState(() => _revoking = true);
     try {
       await _authRepository.revokeTrustedDevice(deviceId);
-      await AuthSessionController.instance.clearTrustedDeviceToken(
-        surface: 'client',
-      );
+      // THIS DEVICE'S OWN TRUST IS NOT CLEARED HERE.
+      //
+      // The old code cleared the local trusted-device token on every revoke,
+      // whichever device was ended — so tidying up a stale sign-in from
+      // another machine made THIS machine ask for an email code next time,
+      // for no reason a person could see.
+      //
+      // The token is a cache and the server is the authority. If the device
+      // just ended was this one, the token is already dead server-side and
+      // the next sign-in asks for a code, which is exactly right. Clearing it
+      // locally only ever broke the other case.
       _load();
     } finally {
       if (mounted) setState(() => _revoking = false);
@@ -404,10 +414,23 @@ class _TrustedDeviceRow extends StatelessWidget {
     final platform = _text('platform');
     final lastUsed = _text('lastUsedAt');
 
+    // SIX ROWS READING 'Current device - Active' AND NOTHING ELSE.
+    //
+    // Every device carried the same hardcoded name, so the list answered
+    // 'where am I signed in?' six identical times and nobody could tell which
+    // Revoke ended which session. New sign-ins now carry a real name; devices
+    // trusted before this still do not, so the dates are shown too — they are
+    // what separates one old row from another.
+    final created = dateLabel(device['createdAt']);
+    final expires = dateLabel(device['expiresAt']);
     final parts = <String>[
       active ? 'Active' : 'Inactive',
       if (platform.isNotEmpty) platform,
-      if (lastUsed.isNotEmpty) 'last used $lastUsed',
+      if (lastUsed.isNotEmpty)
+        'last used ${dateLabel(lastUsed)}'
+      else if (created.isNotEmpty)
+        'trusted $created',
+      if (active && expires.isNotEmpty) 'until $expires',
     ];
 
     return WorkspaceRow(
@@ -500,7 +523,19 @@ class _AccountFrameState extends State<_AccountFrame> {
         WorkspaceHeader(
           title: title,
           context_: context_,
-          onBack: () => context.go('/client/today'),
+          // THE TWO RETURNS DISAGREED.
+          //
+          // This arrow went to Today while Android's Back went to the
+          // semantic parent — People & authority, the roof these three tabs
+          // sit under. Proven on a Pixel: the same gesture meant two things
+          // depending on whether a thumb landed on the screen or the
+          // navigation bar.
+          //
+          // Both now ask the same map, so they cannot drift apart again.
+          onBack: () => context.go(
+            semanticParentOf(GoRouterState.of(context).uri.path) ??
+                canonicalWorkspaceHome,
+          ),
         ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

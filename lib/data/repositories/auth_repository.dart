@@ -1,5 +1,6 @@
 import '../../core/auth/auth_session.dart';
 import '../../core/network/api_client.dart';
+import 'package:orchestrate_app/core/device/this_device.dart';
 
 class AuthRepository {
   AuthRepository({ApiClient? apiClient})
@@ -38,7 +39,7 @@ class AuthRepository {
       'password': password,
       if (trustedDeviceToken.isNotEmpty)
         'trustedDeviceToken': trustedDeviceToken,
-      'deviceName': 'Current device',
+      'deviceName': describeThisDevice(),
     });
     final payload = Map<String, dynamic>.from(json as Map);
     if (payload['requiresEmailCodeChallenge'] != true) {
@@ -57,7 +58,7 @@ class AuthRepository {
       'challengeId': challengeId,
       'code': code,
       'trustDevice': trustDevice,
-      'deviceName': 'Current device',
+      'deviceName': describeThisDevice(),
     });
     final payload = Map<String, dynamic>.from(json as Map);
     final trustedDeviceToken = payload['trustedDeviceToken']?.toString() ?? '';
@@ -138,7 +139,7 @@ class AuthRepository {
       'password': password,
       if (trustedDeviceToken.isNotEmpty)
         'trustedDeviceToken': trustedDeviceToken,
-      'deviceName': 'Current device',
+      'deviceName': describeThisDevice(),
     });
     final payload = Map<String, dynamic>.from(json as Map);
     if (payload['requiresEmailCodeChallenge'] != true) {
@@ -157,7 +158,7 @@ class AuthRepository {
       'challengeId': challengeId,
       'code': code,
       'trustDevice': trustDevice,
-      'deviceName': 'Current device',
+      'deviceName': describeThisDevice(),
     });
     final payload = Map<String, dynamic>.from(json as Map);
     final trustedDeviceToken = payload['trustedDeviceToken']?.toString() ?? '';
@@ -269,7 +270,7 @@ class AuthRepository {
   Future<Map<String, dynamic>> verifyEmail(String token) async {
     final json = await _apiClient.postJson('/auth/email/verify', body: {
       'token': token,
-      'deviceName': 'Current device',
+      'deviceName': describeThisDevice(),
     });
     final payload = json is Map
         ? json.map((k, v) => MapEntry('$k', v))
