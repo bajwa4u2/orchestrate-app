@@ -148,3 +148,44 @@ behaviour:
 
 Deploying production is a founder decision and was not requested, so nothing
 was pushed.
+
+## Workspace identity — business primary
+
+Founder observation: the shell presented the operator where the business should
+lead. Frozen hierarchy: BUSINESS WORKSPACE primary, ACTING HUMAN secondary.
+
+| Surface | Before | After |
+|---|---|---|
+| Phone app bar | Surface name ("Today") + person avatar | **Business mark + trading name**, person still in the account control |
+| Desktop rail | Business name, no mark; nothing when collapsed | Mark beside the name; **mark survives collapse** |
+| Account estate | — | **Person leads**, because there the person is the subject; leaving restores the business |
+| Ownership | — | Shell reads Branding and Business identity, writes neither; logo presence keyed to the business it resolved for, so a second business shows its own mark |
+| No-logo fallback | — | **Business initial, never the operator's** |
+
+The app bar replaced the surface name rather than crowding beside it: every
+screen already states its own name in its heading, its breadcrumb, and the
+selected destination. The app bar was the fourth place saying "Today" and the
+only place that could say whose Today it was.
+
+**A defect of mine inside this fix.** The mark read `assets['logo_primary']`;
+the response names the asset `logo` — `logo_primary` is the asset *type* in the
+URL and upload field. So a business with a working logo got the fallback
+initial. This is the same class as the Business hub envelope defect: assuming a
+payload shape rather than reading the code that already works with it. Both fail
+silently, because a missing key and an absent value are indistinguishable.
+Fixed; a test asserts the shell and the Branding screen read the same key.
+
+## Remaining surfaces — code-level pass while the device was occupied
+
+| Surface | Checked | Result |
+|---|---|---|
+| Records | Payload shape against `/client/records` | **Correct** — `{agreements, billingDocuments:{invoices,receipts,statements,reminders}, authorizations, sourceRecords:{imports}}` matches every read |
+| Branding | Colour save feedback and validation | Hex validated before save; success and error both reported next to the control |
+| Personal account | Profile save | Dialog closes and the surface refreshes from the server — the changed values are the confirmation |
+| Personal account | Delete account | **Exemplary, not executed.** Names permanence, cancellation, sign-out, and is honest that legally-required records are retained. Typed DELETE. Classified as a production actuation boundary per §15 |
+| Whole client estate | Keys read that the backend never emits | 2 of 395, both operator/health, none in the client estate |
+
+The key scan's limit, stated plainly: it finds keys absent *everywhere*, and
+neither defect this session was that shape — `legalName` and `logo_primary` both
+exist in the backend and were read at the wrong *level*. Nesting still has to be
+checked per payload, which is why Records was verified by hand.
