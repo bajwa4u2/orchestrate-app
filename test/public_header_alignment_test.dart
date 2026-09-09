@@ -17,6 +17,8 @@
 /// and measures where things actually land. Two earlier fixes have to survive
 /// it: the wordmark must not lose its last letters, and the buttons must not
 /// run off the edge — so the narrow cases are asserted here too.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:orchestrate_app/app/shell/public_shell.dart';

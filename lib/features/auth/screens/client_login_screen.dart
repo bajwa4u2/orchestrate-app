@@ -1071,43 +1071,32 @@ class _AuthCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // App Store §3.1.1 — no registration / create-workspace
-                // affordance on iOS. New-customer signup lives on the web
-                // platform; the iOS app is operational sign-in only. On
-                // iOS a plain, link-free note directs new users to the web
-                // (no external CTA, no purchase mechanism).
-                if (!isIosAppStorePlatform) ...[
-                  const SizedBox(height: 14),
-                  Center(
-                    child: Wrap(
-                      spacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          'New here?',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        TextButton(
-                          onPressed: () =>
-                              context.go(state._route('/auth/join')),
-                          child: const Text('Create workspace'),
-                        ),
-                      ],
-                    ),
+                // A person can create a workspace here, on every platform.
+                //
+                // iOS used to get a note saying accounts are set up on the web
+                // instead. That was written for §3.1.1 when the app could not
+                // take a payment, so signup led to a web checkout. In-app
+                // purchase is wired now, so the restriction buys nothing and
+                // costs the obvious thing: nobody could start on an iPhone,
+                // App Review included.
+                const SizedBox(height: 14),
+                Center(
+                  child: Wrap(
+                    spacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        'New here?',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            context.go(state._route('/auth/join')),
+                        child: const Text('Create workspace'),
+                      ),
+                    ],
                   ),
-                ] else ...[
-                  const SizedBox(height: 14),
-                  Center(
-                    child: Text(
-                      'New accounts are set up on the Orchestrate web '
-                      'platform. Sign in here once your workspace is active.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.publicMuted,
-                          ),
-                    ),
-                  ),
-                ],
+                ),
               ],
             ],
           ),
@@ -1291,11 +1280,10 @@ class _VerificationView extends StatelessWidget {
                           : 'Resend verification',
                     ),
                   ),
-                  if (!isIosAppStorePlatform)
-                    TextButton(
-                      onPressed: () => context.go(state._route('/auth/join')),
-                      child: const Text('Use another email'),
-                    ),
+                  TextButton(
+                    onPressed: () => context.go(state._route('/auth/join')),
+                    child: const Text('Use another email'),
+                  ),
                 ],
               ),
             ],

@@ -66,7 +66,6 @@ import 'package:orchestrate_app/features/ops_console/ops_jobs_screen.dart';
 import 'package:orchestrate_app/features/ops_console/ops_history_screen.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/platform/billing_gate.dart';
-import 'package:orchestrate_app/core/platform/ios_route_policy.dart';
 import '../../features/feedback/feedback_screen.dart';
 import '../../features/feedback/feedback_queue_screen.dart';
 import 'package:orchestrate_app/features/ops_console/ops_authority_screen.dart';
@@ -401,26 +400,27 @@ GoRouter _buildRouter() {
         (path.startsWith('/ops/') || path.startsWith('/operator/')) &&
             !isOpsAuth;
 
-    // iOS App Store build: operational-workspace-only routing. The entire
-    // customer-acquisition journey — registration, onboarding/setup, plan
-    // & trial selection, subscription activation, and the commercial
-    // marketing funnel — is unreachable. This single branch is the source
-    // of truth for the iOS policy and deliberately bypasses the web
-    // onboarding/subscription gates below. (See [_iosRedirect]; App Store
-    // Guideline 3.1.1.) Web / Android / desktop never enter this branch.
-    if (isIosAppStorePlatform) {
-      return iosRouteRedirect(
-        path: path,
-        isAuthenticated: session.isAuthenticated,
-        surface: session.surface,
-        emailVerified: session.emailVerified,
-        isOperatorArea: isOperatorArea,
-        isOpsAuth: isOpsAuth,
-        isClientAuth: isClientAuth,
-        isVerification: isVerification,
-        isReset: isReset,
-      );
-    }
+    // iOS ROUTES LIKE EVERYWHERE ELSE. THE SPECIAL CASE IS GONE.
+    //
+    // There used to be a branch here that short-circuited everything below on
+    // the App Store binary: registration, setup, plan selection, subscription
+    // and the whole public site were unreachable, and an unauthenticated iOS
+    // visitor resolved to sign-in no matter what they opened.
+    //
+    // It was written for Guideline 3.1.1 at a time when the app could not take
+    // a payment, so any route toward a plan ended at a web checkout — and
+    // sending someone out to pay is the thing 3.1.1 forbids. Blocking the
+    // routes was a blunt way to guarantee nobody could be funnelled there.
+    //
+    // In-app purchase is wired now and the store rail is open, so the reason
+    // has gone. What is left is the cost: a person could not create an account
+    // on iPhone, and an App Reviewer could not either, which is its own
+    // rejection. The product must behave the same everywhere.
+    //
+    // 3.1.1 is still enforced, by the control that actually states it:
+    // `externalPurchaseAllowed` is false in a store build, so no surface
+    // offers an external checkout or a "manage billing on our website" link.
+    // That is narrower and truer than hiding the routes.
 
     if (!session.isAuthenticated) {
       if (isOperatorArea) return '/ops/login';

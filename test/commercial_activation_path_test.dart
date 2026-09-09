@@ -21,8 +21,6 @@ void main() {
   final router = File('lib/app/routing/app_router.dart').readAsStringSync();
   final billing =
       File('lib/features/client/screens/client_billing_screen.dart').readAsStringSync();
-  final iosPolicy =
-      File('lib/core/platform/ios_route_policy.dart').readAsStringSync();
 
   test('a signed-in customer is not redirected away from activation', () {
     // The gate list that bounces an authenticated session home.
@@ -106,16 +104,45 @@ void main() {
     expect(CommercialActivation.fromMap(const {'open': true}).open, isTrue);
   });
 
-  test('one commercial policy governs every rail', () {
-    // Stripe honoured the freeze at the service boundary; the store rails did
-    // not, because rail readiness was a purely technical question. The App
-    // Store rail is the one about to be submitted for review.
+  test('commercial policy is decided per rail, and still decided first', () {
+    // This used to assert ONE flag governed every rail. It did, and that was
+    // right while every rail sold at a price this repository chose.
+    //
+    // A store rail does not. An App Store subscription has no price here to be
+    // wrong — the amount lives in App Store Connect, set by the founder, and
+    // the store will not sell a product that does not exist there. The freeze
+    // was protecting an approval step that the console already is.
+    //
+    // So the two questions separated: may we sell at a price WE set (no), and
+    // may a store sell at a price the FOUNDER set (yes).
     final readiness =
         backendSource('src/commerce-evidence/store-readiness.service.ts');
-    expect(readiness.contains('COMMERCIAL_ACTIVATION_OPEN'), isTrue);
-    final availability = readiness.substring(readiness.indexOf('async availability('));
+    expect(readiness.contains('STORE_RAIL_ACTIVATION_OPEN'), isTrue);
     expect(
-      availability.indexOf('COMMERCIAL_ACTIVATION_OPEN') <
+      readiness.contains('COMMERCIAL_ACTIVATION_OPEN'),
+      isFalse,
+      reason: 'the store rail must not be governed by the direct-sale freeze',
+    );
+
+    // Opening the store rail must not have opened the direct one.
+    final policy =
+        backendSource('src/commercial-policy/commercial-activation.ts');
+    expect(policy.contains('export const COMMERCIAL_ACTIVATION_OPEN = false'),
+        isTrue,
+        reason: 'the unapproved checkout catalog stays closed');
+    expect(policy.contains('export const STORE_RAIL_ACTIVATION_OPEN = true'),
+        isTrue);
+
+    // Stripe still honours the freeze at its own service boundary.
+    final billingService = backendSource('src/billing/billing.service.ts');
+    expect(billingService.contains('if (!COMMERCIAL_ACTIVATION_OPEN)'), isTrue);
+
+    // And policy is still answered before the network, so a closed rail is
+    // never reported as a provider problem.
+    final availability =
+        readiness.substring(readiness.indexOf('async availability('));
+    expect(
+      availability.indexOf('STORE_RAIL_ACTIVATION_OPEN') <
           availability.indexOf('this.googlePlay('),
       isTrue,
       reason: 'a closed policy needs no provider call and is not a provider '
@@ -136,9 +163,32 @@ void main() {
     expect(router.contains('ClientSubscribeScreen(insideWorkspace: true)'), isTrue);
   });
 
-  test('iOS still refuses the external checkout route', () {
-    // App Store 3.1.1. The route being reachable on web must not make it
-    // reachable in the store build, where purchase happens through StoreKit.
-    expect(iosPolicy.contains("'/client/subscribe'"), isTrue);
+  test('iOS reaches activation, and what it finds there is in-app', () {
+    // App Store 3.1.1, restated after the routing policy was retired.
+    //
+    // This used to assert that '/client/subscribe' was UNREACHABLE on iOS.
+    // That was right while the app could not take a payment and the route
+    // ended at a web checkout. It is wrong now, and it was expensive: nobody
+    // could subscribe — or create an account — on an iPhone.
+    //
+    // The rule 3.1.1 actually states is about where the money goes, not which
+    // screens exist. So the route is reachable everywhere, and the screen
+    // offers the store's own purchase while refusing to send anyone out.
+    final gate = File('lib/core/platform/billing_gate.dart').readAsStringSync();
+    expect(
+      gate.contains('bool get externalPurchaseAllowed => !isAppStorePlatform'),
+      isTrue,
+      reason: 'a store build must never route anyone to an external checkout',
+    );
+    expect(
+      gate.contains('bool get inAppPurchaseAllowed => isAppStorePlatform'),
+      isTrue,
+      reason: 'a store build takes the payment through its own store',
+    );
+
+    final subscribePanel = File(
+      'lib/features/client/widgets/store_subscribe_panel.dart',
+    ).readAsStringSync();
+    expect(subscribePanel.contains('if (!inAppPurchaseAllowed)'), isTrue);
   });
 }

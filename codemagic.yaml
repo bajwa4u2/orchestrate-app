@@ -17,6 +17,84 @@
 # com.orchestrateops.app — you do NOT create or upload them by hand.
 
 workflows:
+  # CERTIFY BEFORE YOU SPEND A BUILD NUMBER.
+  #
+  # The TestFlight workflow already runs the simulator step before signing, so
+  # a failure there cannot reach a tester. This exists for a different reason:
+  # it CANNOT submit. No App Store Connect integration, no signing block, no
+  # publishing section. Running it is a decision to find out whether the iOS
+  # binary works, and nothing else.
+  #
+  # A build number is spent even when processing rejects the upload — build 12
+  # was lost that way to ITMS-90683 — so the order is: prove it runs, read the
+  # result, then submit.
+  ios-simulator-certification:
+    name: Orchestrate iOS — simulator certification
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Flutter pub get
+        script: flutter pub get
+      # WHAT THE TOOLCHAIN ACTUALLY IS.
+      #
+      # `xcode: latest` is a request, not a fact. Apple requires builds to be
+      # made with a current iOS SDK, and the only honest way to state which one
+      # we used is to print it out of the machine that used it.
+      - name: Record the toolchain and SDK
+        script: |
+          set -e
+          echo "--- xcode ---"
+          xcodebuild -version
+          echo "--- iOS SDKs available ---"
+          xcodebuild -showsdks | grep -i ios || true
+          echo "--- flutter ---"
+          flutter --version
+          echo "--- version under build ---"
+          grep '^version:' pubspec.yaml
+      - name: Static analysis
+        script: flutter analyze --no-fatal-infos
+      - name: Unit tests
+        script: flutter test
+      # Build the iOS binary without signing. This is the step that proves the
+      # thing compiles for the platform at all, which no Flutter test does.
+      - name: Build unsigned iOS app
+        script: flutter build ios --release --no-codesign
+      - name: iOS certification on a simulator
+        script: |
+          set -e
+          UDID=$(xcrun simctl list devices available | grep -m1 -E 'iPhone [0-9]' | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')
+          if [ -z "$UDID" ]; then
+            echo "No iPhone simulator available - iOS certification SKIPPED."
+            exit 0
+          fi
+          echo "Certifying on simulator $UDID"
+          xcrun simctl boot "$UDID" || true
+          if [ -n "$CERT_TOKEN" ]; then
+            flutter test integration_test -d "$UDID"               --dart-define=CERT_TOKEN="$CERT_TOKEN"
+          else
+            flutter test integration_test -d "$UDID"
+          fi
+      # An iPad is a separate layout, not a bigger iPhone, and App Review will
+      # open it on one. Skips honestly if the runner has no iPad simulator.
+      - name: iPad certification on a simulator
+        script: |
+          set -e
+          UDID=$(xcrun simctl list devices available | grep -m1 -E 'iPad' | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')
+          if [ -z "$UDID" ]; then
+            echo "No iPad simulator available - iPad certification SKIPPED."
+            exit 0
+          fi
+          echo "Certifying on iPad simulator $UDID"
+          xcrun simctl boot "$UDID" || true
+          flutter test integration_test -d "$UDID"
+    artifacts:
+      - build/ios/iphoneos/*.app
+      - /tmp/xcodebuild_logs/*.log
+
   ios-testflight:
     name: Orchestrate iOS — TestFlight
     instance_type: mac_mini_m2
