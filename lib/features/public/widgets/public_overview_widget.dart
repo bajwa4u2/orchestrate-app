@@ -220,6 +220,22 @@ class _BroadcastStripState extends State<_BroadcastStrip>
                   Expanded(
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 220),
+                      // THE OUTGOING LABEL LEAVES BEFORE THE NEXT ONE ARRIVES.
+                      //
+                      // AnimatedSwitcher lays the outgoing and incoming child
+                      // on top of each other for the whole transition, so a
+                      // cross-fade between two texts at the same size and
+                      // position paints them through one another. On a phone
+                      // this strip cycles eight labels in eight seconds, so
+                      // 220ms of overlap is a fifth of the time — "DISPATCH
+                      // 133" and "REPLIES 1" superimposed on the front door,
+                      // which reads as a broken renderer rather than as a
+                      // transition. Seen on a Pixel 9a running the release
+                      // build, not in a simulator.
+                      //
+                      // Threshold(1.0) drops the outgoing child the instant it
+                      // stops being current, so only one label is ever painted.
+                      switchOutCurve: const Threshold(1.0),
                       child: Text(
                         '${widget.nodes[focus].label.toUpperCase()} ${widget.nodes[focus].valueText}',
                         key: ValueKey(widget.nodes[focus].key),
