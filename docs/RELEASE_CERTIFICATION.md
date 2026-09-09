@@ -1,11 +1,13 @@
 # Orchestrate — Release Certification Record
 
-**App:** Orchestrate · **Version:** `0.2.3 (12)` · **Certified:** 2026-09-05
-**Deployed:** backend and web client, 2026-09-05, verified live.
+**App:** Orchestrate · **Version:** `1.0.0 (14)` · **Certified:** 2026-09-09
 
 One record for the whole release. It exists because "it builds" and "it works
 on that platform" are different claims, and because the difference between
 them is where a wasted store cycle comes from.
+
+**Decision: `NOT READY`.** Every remaining blocker is listed at the end with
+its evidence. None of them is a code defect.
 
 ## The words, and what each one means here
 
@@ -14,12 +16,13 @@ INSTALLED, and nothing below claims more than was actually done.
 
 | State | What it means |
 |---|---|
-| **BUILT** | An artifact exists for the platform. |
-| **INSTALLED** | That artifact is on a real target and launches. |
-| **EXERCISED** | A person or a driver moved through the product on it. |
-| **CERTIFIED** | Exercised, and the result was read and judged. |
-| **SUBMITTED** | Handed to a store. Not claimed anywhere in this document. |
-| **IN REVIEW / APPROVED / PUBLICLY AVAILABLE** | Store states. None reached. |
+| **PASS** | Exercised, and the result was read and judged. |
+| **FAIL** | Exercised, and it was wrong. |
+| **EVIDENCE-LIMITED** | Partly proven. The exact limit is named, never rounded up. |
+| **NOT EXECUTED** | Not attempted, with the reason. Never a silent gap. |
+
+**No platform inherits a result from another.** Runtime observation outranks a
+green suite; a test that never reached its assertion is not certification.
 
 ---
 
@@ -27,221 +30,215 @@ INSTALLED, and nothing below claims more than was actually done.
 
 | | |
 |---|---|
-| Marketing version | `0.2.3` — from `pubspec.yaml`, nowhere else |
-| Build number | `12` |
+| Marketing version | `1.0.0` — from `pubspec.yaml`, nowhere else |
+| Build number | `14` |
 | iOS bundle | `com.orchestrateops.app` |
 | Android package | `com.orchestrateops.app` |
-| Windows identity | `AuraPlatformLLC.Orchestrateoperations`, MSIX `0.2.3.0` |
+| Windows identity | `AuraPlatformLLC.Orchestrateoperations`, MSIX `1.0.0.0` |
 | Apple app id (for the Rate link) | `6772025079` |
 | Seller of record | Aura Platform LLC |
 
-The version a person can read in the account menu comes from package metadata
-on every platform — `ReleaseIdentity.load()`, never a constant. Certified on
-Windows and Android by printing it from the running app: `WINDOWS 0.2.3 (12)`
-and `ANDROID 0.2.3 (12) (com.orchestrateops.app)`. On iOS `Info.plist` carries
-`$(FLUTTER_BUILD_NAME)` / `$(FLUTTER_BUILD_NUMBER)`, so the same pubspec is
-the only source.
+### The Windows package version, and the value that was wrong
 
-**Seller identity is not IP ownership.** Aura Platform LLC is the entity that
-holds the store accounts and appears as seller. Nothing in this record makes a
-claim about who owns the product.
+`1.0.14.0` was written first — major/minor carrying the product version, the
+third part carrying the build number, revision zero as the Store requires. The
+release-identity test rejected it.
+
+The rule this repo already holds is that the Windows package states the *same
+version the product does*, which with a zero revision leaves exactly one legal
+value: **`1.0.0.0`**. Monotonic over the distributed `0.2.3.0` because the major
+moved. Verified in the generated `AppxManifest.xml`, not inferred from config:
+
+```xml
+<Identity Name="AuraPlatformLLC.Orchestrateoperations" Version="1.0.0.0"
+          Publisher="CN=3E4027A7-4D4D-4492-B8DE-BBE425E307E5"
+          ProcessorArchitecture="x64" />
+```
+
+**Seller identity is not IP ownership.** Aura Platform LLC holds the store
+accounts and appears as seller. Nothing here claims who owns the product.
+
+---
+
+## Build provenance
+
+| | |
+|---|---|
+| Client release commit | `c180625` |
+| Backend commit deployed | `9cde74b` (Railway, SUCCESS) |
+| Flutter | 3.41.4 stable · Dart 3.11.1 |
+| Android compileSdk / targetSdk | **36 / 36**, read from the AAB manifest |
+| Android minSdk | 24 |
+| Play Billing | **`com.android.billingclient:billing:8.0.0`**, read from the AAB's dependency metadata |
+| Windows package | `1.0.0.0`, read from `AppxManifest.xml` |
+| Codemagic workflow | `ios-testflight`, `xcode: latest`, version from pubspec |
+
+"Build succeeded" is not provenance. Each value above was read out of the
+produced artifact, not out of the configuration that was supposed to produce it.
 
 ---
 
 ## Platform certification
 
-### WEB — CERTIFIED
+### WEB — PASS (public + authenticated, this release's backend)
 
-- 39 client surfaces opened as a signed-in business, at four viewports
-  (1680×1050, 1366×900, 1180×820, 900×1180). Zero page errors; every redirect
-  landed where the IA intends.
-- Chrome and Edge, full round trip: sign in → Today; move through the rail;
-  reload holds the page; sign out returns to the front door; the workspace is
-  gated behind it carrying the destination; signing back in returns to the
-  workspace.
-- Screens were judged from pixels, not from the widget tree. Everything in
-  "What this found" below came out of looking at them.
+Walked in a real browser against production, not route tests.
 
-### WINDOWS — CERTIFIED
+- Public front door, `/account-deletion`, and the legal routes render and are
+  reachable. Every legal/support URL answers.
+- Authenticated workspace: Today, Market, Business all render with real data,
+  correct return paths, no dead ends, no placeholder text, no operator
+  vocabulary leaking into client surfaces.
+- Market reads **"Checked 3 of 1544 areas in your market so far"** — the durable
+  locality pool, surfaced to a person, after a cold backend restart.
 
-- `build/windows/x64/runner/Release/orchestrate_app.exe` — BUILT, INSTALLED
-  (launched, window titled, responding), EXERCISED and CERTIFIED through
-  `integration_test` on the real desktop target.
-- Boots and produces frames; every workspace destination navigates without
-  redirecting; every retired path lands where intended; a business with no plan
-  reaches its workspace; version resolves from package metadata.
+### ANDROID — EVIDENCE-LIMITED
 
-### ANDROID — CERTIFIED (physical device)
+**Artifact PASS.** The AAB was produced and its manifest read directly:
+`versionCode=14`, `versionName=1.0.0`, `targetSdkVersion=36`,
+`compileSdkVersion=36`, `package=com.orchestrateops.app`. The Play requirement
+to target Android 16 / API 36 is met **in the binary**, and Play Billing 8.0.0
+is present in the shipped dependency set — Billing 7 is past its deadline and we
+are not relying on an extension.
 
-- Physical Pixel 9a (`53061JEBF08485`, Android 17 / API 37).
-- Release APK BUILT (61.0 MB, signed from `android/key.properties`) and
-  INSTALLED — `versionName=0.2.3`, `versionCode=12`, `minSdk=24`,
-  `targetSdk=36` read back from the device.
-- EXERCISED and CERTIFIED through `integration_test` on the device itself.
-- **Not** visually certified on the device: the phone was locked, and
-  unlocking it is the founder's action. What ran, ran headlessly against the
-  real Android build.
+**Runtime NOT EXECUTED.** The physical Pixel is in use by another workstream.
+Install/upgrade-from-released, startup, sign-in, navigation, system Back,
+lifecycle/background-resume, network loss/recovery and notification/deep-link
+behaviour are therefore unproven for this build. Prior Pixel evidence covers
+build 13, not build 14, and **build 13 evidence does not transfer**: 60 commits
+land between them, concentrated in exactly the navigation and shell code that
+evidence would need to cover.
 
-### iOS — NOT BUILT
+### iOS / iPadOS — NOT EXECUTED
 
-No iOS artifact exists. Flutter cannot build one on Windows, and this machine
-is Windows. Everything that *can* be prepared without macOS has been; see
-"What is owed before a TestFlight cycle".
+No iOS artifact exists for build 14. Flutter cannot build one on Windows, and
+the Codemagic path needs API credentials that are not present in this
+environment. Nothing about iOS can be inferred from Flutter tests or Android
+behaviour, so nothing is claimed.
+
+The workflow config itself is sound: `xcode: latest`, version and build number
+derived from `pubspec.yaml`, TestFlight submission wired. It has not been run.
+
+### WINDOWS — EVIDENCE-LIMITED
+
+**Package PASS.** MSIX produced from the frozen source revision; identity,
+version, publisher and display names verified in the manifest.
+
+**Runtime NOT EXECUTED.** Clean install, upgrade from the distributed package,
+launch, authentication, window resizing, keyboard operation, high-DPI, network
+loss/recovery and uninstall/reinstall semantics have not been exercised for this
+build.
 
 ---
 
-## Commercial state
+## Store policy
 
-**One policy governs every rail.** `COMMERCIAL_ACTIVATION_OPEN = false`,
-frozen closed by founder decision on 2026-09-04. Stripe honoured it at the
-service boundary; Apple and Google did not, because rail readiness had been
-built as a purely technical question. It now governs all three.
-
-| Rail | State | Why |
+| Requirement | State | Evidence |
 |---|---|---|
-| Stripe (web) | Closed | Commercial policy |
-| Apple App Store | Closed | Commercial policy — the rail itself verifies |
-| Google Play | Closed | Commercial policy — *and* `ACCESS_REFUSED` beneath it |
-
-`VISIBLE_BUT_NONFUNCTIONAL_PURCHASE_PATHS = 0`. Nothing in the product offers a
-purchase that cannot complete. Where a business would have met a checkout, it
-now meets the policy's own words and an invitation to agree terms directly.
-
-Google Play separately answers `401 permissionDenied` from `androidpublisher`:
-the service account authenticates but is not linked to the Play listing. That
-is a founder action (Play Console → Users and permissions, and the Android
-Publisher API enabled for its project). It is currently moot, because policy
-closes the rail anyway.
+| In-app account deletion (Apple + Google) | **PASS** | `Client workspace → Account → Delete account` reaches `POST /clients/me/delete`; the server cancels subscriptions, deletes auth identities, trusted devices and login challenges, tombstones the email and deactivates membership. Real deletion, not deactivation. |
+| External web deletion resource (Google) | **PASS** | `/account-deletion` is public and renders; verified live in a browser. |
+| Privacy / support / legal URLs | **PASS** | All answer; routes mounted and rendering. |
+| Android permissions | **PASS** | `INTERNET` only. Nothing declared that 1.0.0 does not use. |
+| iOS purpose strings | **PASS, and deliberately so** | Camera, photo library and location strings are present because Apple analyses the shipped binary, not our source. Removing them earned **ITMS-90683** and cost a build number. Each string describes the one path that could reach it; the location string says plainly that Orchestrate does not ask for location. Pinned by a test. |
+| App Privacy / Data Safety vs shipped SDKs | **EVIDENCE-LIMITED** | The manifest declares email, name, user id and user content, all linked, none tracking. `in_app_purchase` is now in the graph and purchase evidence is sent to our server for entitlement; whether that obliges a **Purchases** declaration has not been resolved against the shipped behaviour. Flagged, not guessed. |
 
 ---
 
-## What this certification found
+## Billing and entitlement
 
-Defects that only appear when the product is used. Each is fixed, and each has
-a test that fails if it returns.
+The architecture is the one required: the device decides nothing.
 
-1. **Every sign-in landed on the retired home.** `/app/home` — the
-   pre-reconstruction home, rendered inside the new shell with none of its four
-   destinations selected. Reported by the founder; the route sweep could not
-   have found it, because nothing in the current IA links there.
-2. **Signing in without a plan forced checkout.** The router gate had been
-   corrected; the login screen kept its own copy of the decision and overruled
-   it at the one moment that mattered.
-3. **The workspace animated between its own screens.** Every shell route used
-   `builder:`, so the content area slid and faded and the two screens were
-   painted over each other. 63 routes converted to `NoTransitionPage`.
-4. **Today re-fetched and blanked on every visit.** Market and Relationships
-   held their answers across a visit; Today did not.
-5. **Enter did not submit any form.** Sign in, create a workspace, the emailed
-   code, password reset, and the operator screen.
-6. **The account row was a 30 px circle.** The only door to People & authority,
-   Plan & billing, Account & security, feedback and sign out.
-7. **A member could not sign in to their own organisation.** Client resolution
-   matched only by email; anyone added after the founding registration matched
-   nothing, and sign-in answered 500.
-8. **Commercial surfaces contradicted each other.** "Plan: Focused" beside
-   "Status: None"; "Billing review" for a business that never subscribed; a
-   billing portal offered for a subscription that does not exist.
-9. **Platform vocabulary reached customers.** "this tenant", "platform
-   bootstrap transport", `IMAP_SMTP`, `Section: business_identity`,
-   "no client document render endpoint is exposed for this category".
-10. **Navigation promised what did not exist.** A pipeline view, a waiting
-    view, three section anchors nothing reads, and a "Credentials" entry that
-    opened a diagnostic while the real Credentials screen sat unlinked.
-11. **Migration replay did not reproduce production.** Recorded drift, closed
-    with guarded DDL. `/client/market` answered 500 on any environment built
-    from the migration history.
-12. **CI would have failed at its second step.** `flutter analyze` exits
-    non-zero on any issue; twelve lint infos would have stopped the iOS build
-    before the IPA.
+```
+store transaction → verified provider evidence → server-side entitlement
+                  → authenticated principal → capability on every client
+```
+
+`store_purchase.dart` never grants a capability, never writes an entitlement,
+and never believes `purchaseStatus == purchased` on its own. Intent is recorded
+server-side *before* payment, because neither store knows which company a
+person's store account belongs to.
+
+**Proven without store rails (server-side, in suite):**
+
+| | |
+|---|---|
+| One entitlement per organisation, whichever rail took the money | `store-lifecycle` — an Apple ACTIVE and a Google ACTIVE derive the same state through the one function every client reads |
+| An unsigned claim is not a purchase | `store-verifiers` |
+| The signing algorithm is ours to choose, not the payload's | `store-verifiers` — the `alg:none` class of forgery |
+| The trust root is shipped, never supplied by the caller | `store-verifiers` |
+| Purchase binds to an organisation decided before the store | `purchase-binding` |
+| One subscription, one organisation; an already-paying business is not sold to again | `purchase-binding` |
+| Sandbox is never service | `purchase-binding` |
+
+**NOT EXECUTED — needs sandbox rails on real devices:** Apple purchase and
+restore; Google purchase and reconciliation; cancellation/expiry observed end to
+end; pending / payment-interruption; refund and revocation removing entitlement;
+reinstall and re-login retaining access; duplicate provider callbacks proven
+idempotent against the live handler; and the cross-device claim — buying on
+mobile and signing in on Windows or web.
+
+The derivation is shared, so the cross-device property is *structurally* sound.
+That is a different claim from having watched it happen, and it is not upgraded
+here.
 
 ---
 
-## What is owed before a TestFlight cycle
+## Reviewer access
 
-Everything here is a founder action. None of it can be done from this machine.
-
-1. ~~Deploy the backend and the web client.~~ **Done, 2026-09-05.** Both are
-   live and verified: the drift reconciliation migration applied cleanly (every
-   statement a no-op where the object already existed), the reconciled foreign
-   key carries `ON UPDATE CASCADE`, `POST /auth/me` answers, and the live web
-   bundle contains this session's work and none of the copy it replaced.
-
-2. ~~Confirm the App Store Connect record exists~~ **Done.** The record and
-   the Codemagic integration named `Aura Platform LLC` are connected. Two
-   signing failures were spent proving it: the App ID was missing Associated
-   Domains, and then Codemagic reused its own stale stored profile, which had
-   to be re-fetched and the old copy deleted.
-3. ~~Decide the build number.~~ **Done.** `12` was consumed by an upload Apple
-   rejected in processing (ITMS-90683), so `pubspec.yaml` carries `0.2.3+13`.
-   A build number is spent even when the build fails.
-4. ~~Trigger the Codemagic `ios-testflight` workflow.~~ **Done, 2026-09-05.**
-   Build 13 passed analysis, unit tests, simulator certification and signing,
-   and is attached to the 0.2.3 version record in App Store Connect.
-5. ~~App Store Connect metadata.~~ **Done, 2026-09-05**, and it was further
-   out of date than the release notes were. See
-   `store_assets/release_notes/0.2.3.md` for the field-by-field record. Two
-   items were not merely stale but wrong: the App Privacy questionnaire
-   declared two of the four data types the shipped `PrivacyInfo.xcprivacy`
-   declares, and the age rating was 17+ on an `Unrestricted Web Access`
-   answer that no code in this repository supports. Both corrected; the
-   rating is now 4+.
-6. ~~Google Play and Microsoft Store metadata.~~ **Done, 2026-09-05.** Both
-   were staler than the App Store and both were showing a closed commercial
-   offer: Play's screenshots advertised a "15-day start period", and the
-   Microsoft ones carried a "Plan: revenue-precision . Billing: ACTIVE"
-   header over the retired operator shell. Play's Data safety declared two
-   data types and called both ephemeral; it now declares five, none ephemeral.
-   Field-by-field record in `store_assets/release_notes/0.2.3.md`.
-7. **Not owed, despite how it reads:** Partner Center's Credentials grid
-   renders empty, but the reviewer sign-in was given to Microsoft in an
-   earlier submission and is held in their records. That is why submission 7
-   certified. An empty grid here is not a missing credential.
-8. **Optional, and currently moot:** link the Play service account, if Android
-   commerce is ever to open.
+**NOT EXECUTED.** Durable Apple and Google reviewer access for build 14 has not
+been prepared or re-verified. The prior package was built for `0.1.3 (5)`.
+Reviewers must reach billing surfaces and the complete product without founder
+intervention, and no production customer, agreement, payment or reply will be
+fabricated to populate their state.
 
 ---
 
-## Prepared for iOS without macOS
+## Blockers — what actually stands between here and submission
 
-- **All three purpose strings present, and each says what it is for.** They
-  were removed once, on the reasoning that the product uses none of them.
-  Apple rejected the upload (ITMS-90683) because it analyses the *binary*, and
-  `file_picker` links the camera and location frameworks whether or not our
-  code calls them. Photo library, camera and location descriptions are all
-  restored, and pinned by `test/ios_purpose_strings_test.dart`.
-- **`PrivacyInfo.xcprivacy` added and registered in the Xcode project**, so it
-  is copied into the bundle rather than sitting in the folder. No tracking, no
-  tracking domains; email, name, account id and the business's own records,
-  all linked, all for app functionality. The App Store Connect questionnaire
-  now declares the same four types, in the same terms.
-- **`ITSAppUsesNonExemptEncryption`** already declared, so export compliance is
-  not asked at upload.
-- **iOS route policy** keeps the entire acquisition funnel unreachable in the
-  App Store build and refuses `/client/subscribe` — App Store Guideline 3.1.1.
-  Pinned by test.
+1. **iOS build cannot be produced.** No Codemagic credentials in this
+   environment. Without it there is no archive, no SDK verification, no
+   TestFlight build, and no iPhone/iPad evidence. *Authority boundary — needs
+   the founder.*
+2. **Physical Android runtime unavailable.** The Pixel is in use by another
+   workstream. Build 14 has no device evidence, and build 13's does not carry
+   over across 60 commits of navigation and shell change.
+3. **Billing not certified end to end.** Every rail-dependent proof the release
+   requires needs sandbox accounts on real devices.
+4. **Store submissions require interactive console access** to App Store
+   Connect, Play Console and Partner Center.
+5. **App Privacy / Data Safety purchase declaration unresolved** — see above.
+6. **Windows runtime unexercised** for this build.
+
+None of these is a code defect, and none is waiting on further engineering.
 
 ---
+
+## What this release contains
+
+60 client commits since build 13: 73 files, +8840/−1181, concentrated in client
+screens, the shared shell, routing and navigation. Treat it as a substantial
+delta, not a patch.
+
+Fixed during this certification:
+
+- **Public header alignment.** The sign-in / start-setup / menu group sat short
+  of the right edge. `[Flexible, Spacer, Flexible]` — three flex children each
+  defaulting to `flex: 1`, so the spacer absorbed a third of the free space
+  instead of all of it, and a loose Flexible does not return what it does not
+  use. Now measured by a render test: 11px from the frame edge, which is the
+  icon button's own padding.
+- **Market survives a deploy.** See `orchestrate_backend`
+  `docs/` and the commit *"A deploy should not cost us the map"*. Locality
+  expansion has durable authority; a cold start no longer re-asks a shared
+  public service for geography that has not moved.
 
 ## How to reproduce this
 
-The native certification lives in the repository and runs anywhere. The web
-harness — a Playwright driver plus a seeded local instance — is session
-scratch and is described rather than committed, because it carries local
-credentials and a disposable database.
-
 ```
-# Windows and Android — the real application on the real platform
-flutter test integration_test -d windows
-flutter test integration_test -d <android device id>
-
-# With an authenticated session, against a local instance
-flutter test integration_test -d windows \
-  --dart-define=API_BASE_URL=http://localhost:4310/v1 \
-  --dart-define=CERT_TOKEN=<token>
+flutter analyze                       # clean
+flutter test                          # 414 pass
+flutter build appbundle --release     # then read base/manifest from the AAB
+dart run msix:create --store          # then read AppxManifest.xml from the MSIX
 ```
 
-Without `CERT_TOKEN` the platform half still runs and the authenticated half
-skips with a message. It does not invent a verdict — a made-up token is
-answered 401 and the app correctly signs itself out, which would otherwise look
-like a product failure.
+Backend: `npm test` — 208 suites.
