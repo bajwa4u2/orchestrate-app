@@ -323,9 +323,64 @@ class Observation {
       );
 }
 
+/// What Market has actually been able to search.
+///
+/// Exists so an empty list can explain itself. A business seeing nothing must
+/// be able to tell whether we searched and found nobody, could not search, or
+/// do not yet know where its market is.
+class MarketCoverage {
+  const MarketCoverage({
+    required this.discovering,
+    required this.geographyNeedsConfirmation,
+    required this.areasChecked,
+    required this.areasKnown,
+    required this.lastCheckedAt,
+    required this.note,
+  });
+
+  /// Discovery is enabled and running for this market.
+  final bool discovering;
+
+  /// We do not know where this business's market is. Only they can say.
+  final bool geographyNeedsConfirmation;
+
+  final int areasChecked;
+  final int areasKnown;
+  final DateTime? lastCheckedAt;
+
+  /// One sentence in the business's own language. Never connector detail.
+  final String? note;
+
+  /// Has discovery actually looked anywhere yet?
+  bool get hasSearched => areasChecked > 0 || lastCheckedAt != null;
+
+  static const MarketCoverage unknown = MarketCoverage(
+    discovering: false,
+    geographyNeedsConfirmation: false,
+    areasChecked: 0,
+    areasKnown: 0,
+    lastCheckedAt: null,
+    note: null,
+  );
+
+  static MarketCoverage fromJson(Map<String, dynamic>? json) {
+    if (json == null) return unknown;
+    return MarketCoverage(
+      discovering: json['discovering'] == true,
+      geographyNeedsConfirmation: json['geographyNeedsConfirmation'] == true,
+      areasChecked: (json['areasChecked'] as num?)?.toInt() ?? 0,
+      areasKnown: (json['areasKnown'] as num?)?.toInt() ?? 0,
+      lastCheckedAt:
+          DateTime.tryParse(json['lastCheckedAt']?.toString() ?? ''),
+      note: _text(json['note']),
+    );
+  }
+}
+
 class MarketView {
   const MarketView({
     required this.intent,
+    required this.coverage,
     required this.candidates,
     required this.excludedWithoutIdentity,
     required this.excludedArtifacts,
@@ -334,6 +389,10 @@ class MarketView {
   });
 
   final BusinessIntent? intent;
+
+  /// What has actually been searched. An empty market must explain itself.
+  final MarketCoverage coverage;
+
   final List<Candidate> candidates;
 
   /// Counted, not hidden. A Market that silently drops a third of what
@@ -371,6 +430,9 @@ class MarketView {
     return MarketView(
       intent: BusinessIntent.fromJson(
           json['intent'] is Map ? Map<String, dynamic>.from(json['intent'] as Map) : null),
+      coverage: MarketCoverage.fromJson(json['coverage'] is Map
+          ? Map<String, dynamic>.from(json['coverage'] as Map)
+          : null),
       candidates: ((json['candidates'] as List?) ?? const [])
           .whereType<Map>()
           .map((c) => Candidate.fromJson(Map<String, dynamic>.from(c)))

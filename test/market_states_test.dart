@@ -85,9 +85,18 @@ void main() {
     int withoutIdentity = 0,
     int artifacts = 0,
     String? note,
+    MarketCoverage coverage = const MarketCoverage(
+      discovering: true,
+      geographyNeedsConfirmation: false,
+      areasChecked: 3,
+      areasKnown: 15,
+      lastCheckedAt: null,
+      note: 'Checked 3 of 15 areas in your market so far.',
+    ),
   }) =>
       MarketView(
         intent: withIntent,
+        coverage: coverage,
         candidates: candidates,
         excludedWithoutIdentity: withoutIdentity,
         excludedArtifacts: artifacts,
@@ -239,11 +248,91 @@ void main() {
         findsOneWidget);
   });
 
-  testWidgets('8. nobody found yet is a different empty state', (tester) async {
-    ClientMarket.instance.seed(view(const []));
-    await render(tester, 'nobody yet');
+  // AN EMPTY MARKET MUST EXPLAIN ITSELF.
+  //
+  // The old copy here was "Nobody has been found yet", which is true and
+  // useless: it reads as "there is nobody out there", and that is the reading
+  // the founder arrived at. For most of this product's life the real answer
+  // was that discovery could not look, or did not know where to look.
+  //
+  // These four states are different situations, and only the last is a
+  // statement about the world.
 
-    expect(find.textContaining('Nobody has been found yet'), findsOneWidget);
+  testWidgets('8. a market we cannot locate asks the business, not the world',
+      (tester) async {
+    ClientMarket.instance.seed(view(
+      const [],
+      coverage: const MarketCoverage(
+        discovering: true,
+        geographyNeedsConfirmation: true,
+        areasChecked: 0,
+        areasKnown: 0,
+        lastCheckedAt: null,
+        note: null,
+      ),
+    ));
+    await render(tester, 'geography unknown');
+
+    expect(find.textContaining('where your market is'), findsOneWidget);
+    // It must never imply nobody is out there.
+    expect(find.textContaining('Nobody has been found'), findsNothing);
+  });
+
+  testWidgets('8b. discovery not yet started is not an empty market',
+      (tester) async {
+    ClientMarket.instance.seed(view(
+      const [],
+      coverage: const MarketCoverage(
+        discovering: true,
+        geographyNeedsConfirmation: false,
+        areasChecked: 0,
+        areasKnown: 15,
+        lastCheckedAt: null,
+        note: null,
+      ),
+    ));
+    await render(tester, 'searching');
+
+    expect(find.textContaining('Searching your market'), findsOneWidget);
+  });
+
+  testWidgets('8c. paused discovery is a state, not a verdict', (tester) async {
+    ClientMarket.instance.seed(view(
+      const [],
+      coverage: const MarketCoverage(
+        discovering: false,
+        geographyNeedsConfirmation: false,
+        areasChecked: 2,
+        areasKnown: 15,
+        lastCheckedAt: null,
+        note: null,
+      ),
+    ));
+    await render(tester, 'paused');
+
+    expect(find.textContaining('paused'), findsOneWidget);
+  });
+
+  testWidgets('8d. having searched and found nobody says how much was searched',
+      (tester) async {
+    // The only branch that is a claim about the world — and it is bounded by
+    // what was actually checked, so it never claims more than it looked at.
+    ClientMarket.instance.seed(view(
+      const [],
+      coverage: MarketCoverage(
+        discovering: true,
+        geographyNeedsConfirmation: false,
+        areasChecked: 3,
+        areasKnown: 15,
+        lastCheckedAt: DateTime(2026, 9, 9),
+        note: 'Checked 3 of 15 areas in your market so far.',
+      ),
+    ));
+    await render(tester, 'searched, none yet');
+
+    expect(find.textContaining('No businesses matching your market found yet'),
+        findsOneWidget);
+    expect(find.textContaining('3 of 15 areas'), findsOneWidget);
     expect(find.textContaining('has not said what it sells'), findsNothing);
   });
 

@@ -10,6 +10,7 @@ export '../../data/repositories/client/client_market_repository.dart'
         CandidateDepth,
         Certainty,
         MarketCounts,
+        MarketCoverage,
         MarketView,
         Observation,
         PursuitDisposition;

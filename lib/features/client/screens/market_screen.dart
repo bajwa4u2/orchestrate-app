@@ -116,10 +116,16 @@ class _MarketScreenState extends State<MarketScreen> {
       );
     }
 
-    // An empty Market has several truthful shapes and they are not the same
-    // situation. Collapsing them into "no leads yet" would tell a business
-    // that discovery found nothing when in fact they never said what they sell.
+    // AN EMPTY MARKET MUST EXPLAIN ITSELF.
+    //
+    // These are different situations, not one. "Nobody has been found yet"
+    // reads as "there is nobody out there" — and for most of this product's
+    // life the real answer was that discovery could not look, or did not know
+    // where to look. Only one branch below is a statement about the world, and
+    // even that one is bounded by how much has actually been searched.
     if (view.candidates.isEmpty) {
+      final coverage = view.coverage;
+
       if (view.intent == null) {
         return const QuietState(
           message: 'Your business has not said what it sells.',
@@ -127,15 +133,46 @@ class _MarketScreenState extends State<MarketScreen> {
               'against. Business is where that is set.',
         );
       }
+
+      // The one thing only the business can resolve, so it comes first.
+      if (coverage.geographyNeedsConfirmation) {
+        return const QuietState(
+          message: 'We need to know where your market is.',
+          hint: 'Once your business sets the places it sells into, we can '
+              'start looking for businesses there. Business is where that '
+              'is set.',
+        );
+      }
+
       if (view.excludedWithoutIdentity > 0 || view.excludedArtifacts > 0) {
         return QuietState(
           message: 'Nothing found so far could be shown as a company.',
           hint: view.excludedNote ?? '',
         );
       }
-      return const QuietState(
-        message: 'Nobody has been found yet.',
-        hint: 'Counterparties appear here as discovery finds them.',
+
+      if (!coverage.discovering) {
+        return const QuietState(
+          message: 'Discovery is paused for your market.',
+          hint: 'Nothing is being looked for right now.',
+        );
+      }
+
+      if (!coverage.hasSearched) {
+        return const QuietState(
+          message: 'Searching your market.',
+          hint: 'Businesses appear here as they are found.',
+        );
+      }
+
+      // Searched, and genuinely nothing yet. Bounded by what was covered, so
+      // it never claims more than it checked.
+      return QuietState(
+        message: 'No businesses matching your market found yet.',
+        hint: coverage.areasKnown > 0
+            ? '${coverage.areasChecked} of ${coverage.areasKnown} areas in '
+                'your market have been checked so far. Discovery continues.'
+            : 'Discovery continues.',
       );
     }
 
@@ -148,6 +185,17 @@ class _MarketScreenState extends State<MarketScreen> {
       padding: EdgeInsets.zero,
       children: [
         if (view.intent != null) _Intent(intent: view.intent!),
+
+        // Shown alongside results too: a business seeing four companies should
+        // still be able to tell whether that is everything or the beginning.
+        if (view.coverage.note != null && view.coverage.discovering)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+              view.coverage.note!,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
 
         // Where something was actually observed and nobody has formed a view.
         if (review.isNotEmpty)
