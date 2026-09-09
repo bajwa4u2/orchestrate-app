@@ -64,9 +64,10 @@ accounts and appears as seller. Nothing here claims who owns the product.
 
 | | |
 |---|---|
-| Client release commit | `c180625` |
-| Backend commit deployed | `9cde74b` (Railway, SUCCESS) |
-| Flutter | 3.41.4 stable · Dart 3.11.1 |
+| Client release commit | **`725f40f`** |
+| Backend commit deployed | `c8ff0f0` (Railway, SUCCESS) |
+| Flutter | **3.47.2**, framework `d3b14c8769` · Dart 3.13.2 |
+| Toolchain record | `docs/RELEASE_TOOLCHAIN.md` — SDK revision proof, every version, every hash |
 | Android compileSdk / targetSdk | **36 / 36**, read from the AAB manifest |
 | Android minSdk | 24 |
 | Play Billing | **`com.android.billingclient:billing:8.0.0`**, read from the AAB's dependency metadata |
@@ -77,12 +78,21 @@ accounts and appears as seller. Nothing here claims who owns the product.
 
 | Artifact | SHA-256 | Bytes |
 |---|---|---|
-| `app-release.aab` | `0ce8ca0dfef63f11c8e0fbc07d939c05a51cd07675b5011abbc1bca94683cd98` | 48,993,652 |
-| `orchestrate_app.msix` | `8b23477ee6080ea6575c32b30410e95568fb45ece35d309e7163d3fef5b1d2fd` | 16,485,516 |
+| `app-release.aab` | `8cc2db7018412890cf1f2d5f941b616209be958638154b97eda63fdc12f9353c` | 63,228,264 |
+| `orchestrate_app.msix` | `45915bb43bfa48f8aa9d9dd3bde9db9055c3b9ba0951b2bac85d432b4ab34eec` | 15,940,401 |
 
-Both produced from the frozen release source. An earlier AAB was built before
-the header fix landed and was discarded rather than submitted — an artifact that
-does not trace to the release commit is not the release.
+Both built from `725f40f` on the pinned Flutter 3.47.2, from a tree cleaned of
+every prior build product.
+
+**Superseded — `PROVENANCE_SUPERSEDED — DO NOT SUBMIT`:** the AAB
+(`0ce8ca0d…`) and MSIX (`8b23477e…`) built on Flutter 3.41.4. One release built
+by two Flutter toolchains cannot say what produced it. Retained only as
+comparison evidence.
+
+Two further artifacts were discarded rather than recorded: an AAB built before
+the header fix landed, and an AAB built while the Gradle migrator was writing
+`android.builtInKotlin` mid-build. An artifact that cannot be said to match the
+frozen source is not a candidate.
 
 "Build succeeded" is not provenance. Each value above was read out of the
 produced artifact, not out of the configuration that was supposed to produce it.
@@ -105,12 +115,19 @@ Walked in a real browser against production, not route tests.
 
 ### ANDROID — EVIDENCE-LIMITED
 
-**Artifact PASS.** The AAB was produced and its manifest read directly:
+**Artifact PASS.** Built from `725f40f` on the pinned SDK and read directly:
 `versionCode=14`, `versionName=1.0.0`, `targetSdkVersion=36`,
 `compileSdkVersion=36`, `package=com.orchestrateops.app`. The Play requirement
 to target Android 16 / API 36 is met **in the binary**, and Play Billing 8.0.0
-is present in the shipped dependency set — Billing 7 is past its deadline and we
-are not relying on an extension.
+is present in the shipped dependency set — re-verified in this artifact after
+the toolchain move rather than carried over. Signed
+`CN=Orchestrate, O=Aura Platform LLC`, SHA-256
+`1E:91:61:8C:5F:CB:A5:55:00:A1:3C:6C:CA:9E:C4:A3:AB:C5:E4:F0:5C:A5:2A:66:CE:D6:70:53:B2:8C:70:C6`.
+
+The bundle grew 46.7 MB → 60.3 MB across the SDK move. That is entirely
+`BUNDLE-METADATA` — a new `proguard.map` and `libapp.so.sym` symbols for all
+three ABIs — which Play strips and which never reaches a device. Same three
+ABIs; nothing extra ships.
 
 **Runtime NOT EXECUTED.** The physical Pixel is in use by another workstream.
 Install/upgrade-from-released, startup, sign-in, navigation, system Back,
@@ -120,25 +137,46 @@ build 13, not build 14, and **build 13 evidence does not transfer**: 60 commits
 land between them, concentrated in exactly the navigation and shell code that
 evidence would need to cover.
 
-### iOS / iPadOS — NOT EXECUTED
+### iOS / iPadOS — EVIDENCE-LIMITED (simulator certified)
 
-No iOS artifact exists for build 14. Flutter cannot build one on Windows, and
-the Codemagic path needs API credentials that are not present in this
-environment. Nothing about iOS can be inferred from Flutter tests or Android
-behaviour, so nothing is claimed.
+Certified on the Codemagic runner through a workflow that **cannot submit** —
+`ios-simulator-certification` has no App Store Connect integration, no signing
+block and no publishing section.
 
-The workflow config itself is sound: `xcode: latest`, version and build number
-derived from `pubspec.yaml`, TestFlight submission wired. It has not been run.
+| | |
+|---|---|
+| Xcode / iOS SDK | **26.6 (17F113) / 26.5** — read from the runner, not inferred from `xcode: latest` |
+| Flutter / Dart | 3.47.2 / 3.13.2 — same revision as the local release SDK |
+| iPhone simulator | boots, workspace navigates, retired paths land; all tests passed |
+| iPad simulator | same; an iPad is a separate layout and App Review opens one |
+| Version read from the running app | `IOS 1.0.0 (14)` (`com.orchestrateops.app`) |
+
+Apple's minimum is the iOS/iPadOS 26 SDK or later, so 26.5 satisfies that gate.
+
+**NOT EXECUTED:** signed archive, real-device runtime, TestFlight upload. A
+simulator proves the binary runs; it does not prove signing, provisioning, or
+device behaviour, and none of those is claimed here.
 
 ### WINDOWS — EVIDENCE-LIMITED
 
-**Package PASS.** MSIX produced from the frozen source revision; identity,
-version, publisher and display names verified in the manifest.
+**Package PASS.** MSIX produced from `725f40f` on the pinned SDK; identity,
+version, publisher and display names verified in the manifest. Unsigned, which
+is what a Store submission expects — no self-signed development package is used
+as release evidence.
 
-**Runtime NOT EXECUTED.** Clean install, upgrade from the distributed package,
-launch, authentication, window resizing, keyboard operation, high-DPI, network
-loss/recovery and uninstall/reinstall semantics have not been exercised for this
-build.
+**Runtime PASS (unauthenticated).** Re-certified on the real binary after the
+toolchain move: the app boots, the workspace navigates, retired paths land, and
+the version reads `WINDOWS 1.0.0 (14)` from package metadata.
+
+**NOT EXECUTED.** Clean install from this package, upgrade from the distributed
+`0.2.3.0`, authenticated navigation, window resizing, keyboard operation,
+high-DPI, network loss/recovery and uninstall/reinstall semantics. The
+authenticated half of the harness reports `NOT exercised — no CERT_TOKEN`, and
+no token will be minted to turn that into a PASS.
+
+The currently distributed `AuraPlatformLLC.Orchestrateoperations_0.2.3.0` is
+installed on this machine, so upgrade certification is possible once the
+release package is signed.
 
 ---
 
@@ -206,13 +244,16 @@ fabricated to populate their state.
 
 ## Blockers — what actually stands between here and submission
 
-1. **iOS build cannot be produced.** No Codemagic credentials in this
-   environment. Without it there is no archive, no SDK verification, no
-   TestFlight build, and no iPhone/iPad evidence. *Authority boundary — needs
-   the founder.*
+1. **iOS signed archive not produced.** The simulator path is certified
+   (Xcode 26.6, iOS SDK 26.5, iPhone and iPad, `IOS 1.0.0 (14)`), but no signed
+   archive, real-device run or TestFlight upload exists. Superseded from the
+   earlier claim that iOS could not be built at all — it can; the Codemagic
+   session is available.
 2. **Physical Android runtime unavailable.** The Pixel is in use by another
    workstream. Build 14 has no device evidence, and build 13's does not carry
-   over across 60 commits of navigation and shell change.
+   over across 60 commits of navigation and shell change — nor across a Flutter
+   SDK change, which is a second independent reason the old evidence cannot be
+   reused.
 3. **Billing not certified end to end.** Every rail-dependent proof the release
    requires needs sandbox accounts on real devices.
 4. **Store submissions require interactive console access** to App Store
