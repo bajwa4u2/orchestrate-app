@@ -565,11 +565,15 @@ class _ActivationClosedCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Commercial terms',
+          Text('Subscribing',
               style: theme.textTheme.labelLarge
                   ?.copyWith(color: theme.colorScheme.primary)),
           const SizedBox(height: 8),
-          Text('Set with you, not published',
+          // This said "Set with you, not published" — right while no price was
+          // published, and a plain contradiction the day one was. The heading
+          // now describes what is actually closed, and the server's own
+          // sentences below say where subscribing does work.
+          Text('Not open on this rail yet',
               style: theme.textTheme.headlineSmall
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 14),

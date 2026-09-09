@@ -407,7 +407,10 @@ ClientStatusBanner _billingBanner({
       if (!activation.open) {
         return ClientStatusBanner(
           tone: ClientBannerTone.info,
-          title: 'Commercial terms are set directly, not published',
+          // Not "terms are set directly, not published" — the price is
+          // published now, and this banner sits in the same product as the
+          // page that publishes it.
+          title: 'Subscribing by card is not open yet',
           message: '${activation.says} ${activation.resolution} '
               'Identity, sending domain and mailbox transport can be prepared '
               'in the meantime.',
@@ -417,7 +420,8 @@ ClientStatusBanner _billingBanner({
         tone: ClientBannerTone.info,
         title: 'Subscription not yet activated',
         message:
-            'Identity, sending domain, and mailbox transport can be prepared in parallel. Managed execution starts once a plan is activated.',
+            'Identity, sending domain, and mailbox transport can be prepared in '
+            'parallel. Managed execution starts once a subscription is active.',
       );
     default:
       return ClientStatusBanner(
