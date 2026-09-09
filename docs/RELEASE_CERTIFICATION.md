@@ -6,8 +6,22 @@ One record for the whole release. It exists because "it builds" and "it works
 on that platform" are different claims, and because the difference between
 them is where a wasted store cycle comes from.
 
-**Decision: `NOT READY`.** Every remaining blocker is listed at the end with
-its evidence. None of them is a code defect.
+**Decision: `SUBMITTED`.** All three clients are built from one frozen commit on
+one pinned Flutter toolchain, certified on real hardware where hardware exists,
+and handed to their stores. What remains open is listed at the end; none of it
+is a code defect, and one item is a Google account gate no artifact can move.
+
+| Store | State |
+|---|---|
+| App Store | **1.0.0 (14) Waiting for Review** — submitted 2026-09-09 |
+| Google Play | **build 14 sent for review**, closed testing Alpha |
+| Microsoft Store | submitted by the founder |
+
+**Google Play production is not available to this account.** It is a personal
+developer account, so Play requires 12 opted-in testers running a closed test
+for 14 continuous days before production access can be applied for. The console
+reads 8 opted-in and `Apply for production` is disabled. Play production is
+therefore no sooner than 14 days after a 12th tester opts in.
 
 ## The words, and what each one means here
 
