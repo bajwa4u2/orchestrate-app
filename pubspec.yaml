@@ -1,7 +1,7 @@
 name: orchestrate_app
 description: Orchestrate revenue operations application.
 publish_to: 'none'
-version: 0.2.3+13
+version: 1.0.0+14
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -72,7 +72,13 @@ msix_config:
   # different version from a customer on Android running the same code, and
   # support would have chased the wrong build. The fourth part stays 0: the
   # Microsoft Store requires the revision to be zero on submission.
-  msix_version: 0.2.3.0
+  #
+  # 1.0.0+14 maps to 1.0.0.0: the package version carries the PUBLIC product
+  # version, not the build number, and the revision stays 0 as the Store
+  # requires. Monotonic over the distributed 0.2.3.0 because the major moved.
+  # Encoding the build number in the third part was tried and is wrong — it
+  # breaks the rule that Windows must state the same version the product does.
+  msix_version: 1.0.0.0
   store: true
   logo_path: store_assets/source/orchestrate-app-icon-master-1024.png
   capabilities: internetClient

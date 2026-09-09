@@ -19,10 +19,10 @@ class ReleaseIdentity {
     required this.platform,
   });
 
-  /// The marketing version: 0.2.3.
+  /// The marketing version a customer reads, e.g. "1.0.0".
   final String version;
 
-  /// The build number: 12. Increments per upload; the version need not.
+  /// The build number, e.g. "14". Increments per upload; the version need not.
   final String build;
 
   /// The package identity the store knows this by.
@@ -31,7 +31,7 @@ class ReleaseIdentity {
   /// Which client this is, in the words the backend's feedback domain uses.
   final String platform;
 
-  /// What a person reads. "0.2.3 (12)" — the build is in brackets because it is
+  /// What a person reads. "1.0.0 (14)" — the build is in brackets because it is
   /// what support will ask for and what the person will not otherwise know.
   String get label => build.isEmpty ? version : '$version ($build)';
 

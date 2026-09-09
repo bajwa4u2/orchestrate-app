@@ -62,7 +62,7 @@ class _PublicShellState extends State<PublicShell> {
             bottom: false,
             child: Column(
               children: [
-                _PublicHeader(
+                PublicHeader(
                   currentPath: widget.currentPath,
                   onHome: () {
                     if (_publicScrollController.hasClients) {
@@ -160,8 +160,8 @@ class _PublicShellState extends State<PublicShell> {
 /// menu carries all of them including Pricing, which the footer does not. So
 /// this is one button in place of six links rather than a removal of
 /// navigation.
-class _PublicHeader extends StatelessWidget {
-  const _PublicHeader({required this.currentPath, required this.onHome});
+class PublicHeader extends StatelessWidget {
+  const PublicHeader({super.key, required this.currentPath, required this.onHome});
 
   final String currentPath;
   final VoidCallback onHome;
@@ -243,78 +243,54 @@ class _PublicHeader extends StatelessWidget {
 
                 return SizedBox(
                   height: 72,
+                  // THE TRAILING GROUP BELONGS ON THE RIGHT EDGE.
+                  //
+                  // This was `[Flexible(brand), Spacer(), Flexible(actions)]`.
+                  // Three flex children, each with the default flex of 1, so
+                  // the Spacer was handed ONE THIRD of the free space rather
+                  // than absorbing it — and a loose Flexible that uses less
+                  // than its share does not give the remainder back. The
+                  // buttons ended up stranded a few hundred pixels short of
+                  // the right edge on a wide window.
+                  //
+                  // No flex children now, so spaceBetween means what it says:
+                  // first child on the left edge, last on the right. The caps
+                  // keep both earlier fixes intact — the wordmark still scales
+                  // rather than losing its last letters, and the buttons still
+                  // scale rather than running off the edge — while adding up to
+                  // well under the full width so the row cannot overflow.
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // The lockup is wider than the space it is given on a
-                      // narrow window, and a Row does not shrink its child to
-                      // fit — it overflows and paints outside, so the wordmark
-                      // lost its last letters. Scaling down is the only
-                      // response that cannot cut the company name in half.
-                      Flexible(
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth * 0.40,
+                        ),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: brand,
                         ),
                       ),
-                      const Spacer(),
-                      if (tablet) ...[
-                        // The two buttons are a fixed width and the brand was
-                        // the only thing able to give way, so once the brand
-                        // had shrunk as far as it could the row simply ran off
-                        // the right edge and "Sign in" was cut in half by the
-                        // window. Scaling them too means the header cannot
-                        // overflow at any width: everything gets smaller
-                        // together rather than the last item falling off.
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: () => context.go('/auth/login'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppTheme.publicOnDark,
-                                    side: const BorderSide(
-                                      color: Color(0xFF416170),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          AppTheme.radius),
-                                    ),
-                                  ),
-                                  child: const Text('Sign in'),
-                                ),
-                                const SizedBox(width: 10),
-                                FilledButton(
-                                  onPressed: () => context.go('/auth/register'),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: AppTheme.publicAccent,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          AppTheme.radius),
-                                    ),
-                                  ),
-                                  child: const Text('Start setup'),
-                                ),
-                              ],
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (tablet) ...[
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: constraints.maxWidth * 0.45,
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: actions,
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      _PublicMenuButton(currentPath: currentPath),
+                            const SizedBox(width: 8),
+                          ],
+                          _PublicMenuButton(currentPath: currentPath),
+                        ],
+                      ),
                     ],
                   ),
                 );
