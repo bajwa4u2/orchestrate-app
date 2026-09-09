@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/commercial/commercial_model.dart';
 import 'package:orchestrate_app/data/repositories/public_repository.dart';
 
 /// WHAT ORCHESTRATE CHARGES FOR.
 ///
 /// This replaces a page that sold six plans at fixed monthly prices which had
 /// never been approved, disagreed with the amounts stored against real
-/// organisations, and were purchasable through live checkout.
+/// organisations, and were purchasable through live checkout. For a while it
+/// published no amount at all, which was the honest state while three sources
+/// disagreed about the number and none of them was appointed.
 ///
-/// It publishes no amount, and that is the honest state rather than an
-/// omission: pricing is being set with the first customers while the usage
-/// economics are established. What it does publish is the whole model — what a
-/// business pays for, why it is charged to the organisation rather than to each
-/// person, what is included, and what expands. Replacing a price list with
-/// "contact us" would be hiding. This is not that.
+/// There is one answer now, so the page states it: an account costs nothing,
+/// and the one subscription is billed monthly or annually. Two prices, one
+/// product — said in those words, because a page that shows two numbers and
+/// leaves the reader to work out the rest has already taught them the cheaper
+/// one is smaller.
 ///
 /// Every sentence comes from the server's commercial projection. The page adds
 /// no commercial claim of its own, so the public site and the API cannot come
@@ -28,7 +30,7 @@ class CommercialModelScreen extends StatefulWidget {
 }
 
 class _CommercialModelScreenState extends State<CommercialModelScreen> {
-  Map<String, dynamic>? _model;
+  CommercialModel? _model;
   Object? _error;
 
   @override
@@ -39,8 +41,8 @@ class _CommercialModelScreenState extends State<CommercialModelScreen> {
 
   Future<void> _load() async {
     try {
-      final json = await PublicRepository().fetchCommercialModel();
-      if (mounted) setState(() => _model = json);
+      final model = await PublicRepository().fetchPricing();
+      if (mounted) setState(() => _model = model);
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }
@@ -78,13 +80,7 @@ class _CommercialModelScreenState extends State<CommercialModelScreen> {
     );
   }
 
-  Widget _body(TextTheme text, Map<String, dynamic> model) {
-    final dimensions = (model['dimensions'] as List?) ?? const [];
-    final pricing = Map<String, dynamic>.from(
-        (model['pricing'] as Map?) ?? const <String, dynamic>{});
-    final start = Map<String, dynamic>.from(
-        (model['start'] as Map?) ?? const <String, dynamic>{});
-
+  Widget _body(TextTheme text, CommercialModel model) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -105,8 +101,7 @@ class _CommercialModelScreenState extends State<CommercialModelScreen> {
               Text('What Orchestrate costs',
                   style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              Text((model['says'] as String?) ?? '',
-                  style: text.bodyLarge?.copyWith(height: 1.5)),
+              Text(model.says, style: text.bodyLarge?.copyWith(height: 1.5)),
             ],
           ),
         ),
@@ -115,36 +110,58 @@ class _CommercialModelScreenState extends State<CommercialModelScreen> {
 
         // Each part of the model, said as what the customer gets and what it
         // costs them — never as a feature list beside a tick column.
-        for (final dimension in dimensions)
+        for (final dimension in model.dimensions)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _Panel(
-              title: _label(
-                  (dimension as Map)['dimension']?.toString() ?? ''),
-              body: dimension['means']?.toString() ?? '',
+              title: _label(dimension.dimension),
+              body: dimension.means,
             ),
           ),
 
         const SizedBox(height: 12),
 
-        // Where pricing actually stands. Said plainly, in the first person,
-        // because a business deciding whether to talk to us deserves to know
-        // that the number is a conversation rather than a secret.
+        // WHAT IT COSTS.
+        //
+        // Free entry first, and stated as an account rather than as the bottom
+        // of a price ladder. Somebody who has not bought anything has not
+        // failed to do anything, and a zero row sitting under two paid ones
+        // says otherwise however it is worded.
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            border: Border.all(color: AppTheme.publicAccent.withValues(alpha: 0.45)),
+            border: Border.all(
+                color: AppTheme.publicAccent.withValues(alpha: 0.45)),
             borderRadius: BorderRadius.circular(AppTheme.radius),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Early access',
+              Text(model.pricingSays,
                   style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 10),
-              Text(pricing['says']?.toString() ?? '',
-                  style: text.bodyMedium?.copyWith(height: 1.5)),
+              if (model.free.says.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(model.free.says,
+                    style: text.bodyMedium?.copyWith(height: 1.5)),
+              ],
+              const SizedBox(height: 22),
+              // Two cadences of one subscription, side by side. Neither is
+              // marked recommended and neither is styled as the better one:
+              // there is nothing to recommend between them but a preference
+              // about being billed.
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final offer in model.offers) _CadenceCard(offer: offer),
+                ],
+              ),
+              if (model.cadenceMeans.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(model.cadenceMeans,
+                    style: text.bodySmall?.copyWith(height: 1.5)),
+              ],
             ],
           ),
         ),
@@ -153,8 +170,7 @@ class _CommercialModelScreenState extends State<CommercialModelScreen> {
 
         // The invitation is to build a workspace, not to buy. The workspace no
         // longer depends on payment, so the page no longer pretends it does.
-        Text(start['says']?.toString() ?? '',
-            style: text.bodyLarge?.copyWith(height: 1.5)),
+        Text(model.startSays, style: text.bodyLarge?.copyWith(height: 1.5)),
         const SizedBox(height: 16),
         Wrap(
           spacing: 12,
@@ -208,6 +224,44 @@ class _Panel extends StatelessWidget {
           Text(title, style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           Text(body, style: text.bodyMedium?.copyWith(height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
+/// One cadence, priced.
+///
+/// The currency is named rather than left to the dollar sign, which several
+/// countries also use. And the amount is the published US list price — a phone
+/// shows the store's own localized price instead, which is why no purchase
+/// button anywhere in this product reads its number from here.
+class _CadenceCard extends StatelessWidget {
+  const _CadenceCard({required this.offer});
+
+  final CommercialOffer offer;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.publicSurface,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: AppTheme.publicLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(offer.isAnnual ? 'Annual' : 'Monthly',
+              style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          Text('${offer.priceLabel} USD',
+              style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Text(offer.says, style: text.bodySmall?.copyWith(height: 1.4)),
         ],
       ),
     );

@@ -1,5 +1,5 @@
 import '../../core/network/api_client.dart';
-import '../../core/config/pricing_config.dart';
+import '../../core/commercial/commercial_model.dart';
 
 class PublicRepository {
   PublicRepository({ApiClient? apiClient})
@@ -90,14 +90,9 @@ class PublicRepository {
   /// Returned raw rather than parsed into plan objects: there are no plans to
   /// parse. `/public/pricing` used to serve six of them at fixed prices that
   /// nobody had approved, and it now serves the model instead.
-  Future<Map<String, dynamic>> fetchCommercialModel() async {
+  Future<CommercialModel> fetchPricing() async {
     final json = await _apiClient.getJson('/public/pricing');
-    return Map<String, dynamic>.from(json as Map);
-  }
-
-  Future<PricingCatalog> fetchPricing() async {
-    final json = await _apiClient.getJson('/public/pricing');
-    return PricingConfig.fromApi(Map<String, dynamic>.from(json as Map));
+    return CommercialModel.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
   Future<Map<String, dynamic>> submitContact({
