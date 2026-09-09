@@ -33,7 +33,15 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
-      flutter: stable
+      # PINNED, NOT `stable`.
+      #
+      # `stable` is whatever Codemagic had installed on the day, so two builds
+      # of the same commit can be produced by two different SDKs and nothing
+      # records which. That is how a release ends up unable to say what built
+      # it. 3.47.2 is the release toolchain for 1.0.0; the local Android and
+      # Windows builds use the same revision, and "Record the toolchain and
+      # SDK" prints it so the claim is checkable rather than asserted.
+      flutter: 3.47.2
       xcode: latest
       cocoapods: default
     scripts:
@@ -105,7 +113,15 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.orchestrateops.app
-      flutter: stable
+      # PINNED, NOT `stable`.
+      #
+      # `stable` is whatever Codemagic had installed on the day, so two builds
+      # of the same commit can be produced by two different SDKs and nothing
+      # records which. That is how a release ends up unable to say what built
+      # it. 3.47.2 is the release toolchain for 1.0.0; the local Android and
+      # Windows builds use the same revision, and "Record the toolchain and
+      # SDK" prints it so the claim is checkable rather than asserted.
+      flutter: 3.47.2
       xcode: latest
       cocoapods: default
       # NO VARIABLE GROUP.
