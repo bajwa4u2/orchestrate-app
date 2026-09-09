@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/sibling_backend.dart';
+
 /// The Support screen tells people what it attaches. That has to be true.
 ///
 /// It promised the page you were on, and the request omitted sourcePage
@@ -15,9 +17,6 @@ void main() {
       .readAsStringSync();
   final service =
       File('lib/features/support/services/support_service.dart').readAsStringSync();
-  final controller = File(
-    '../orchestrate_backend/src/support/client-support.controller.ts',
-  ).readAsStringSync();
 
   test('the screen still makes the promise', () {
     expect(screen.contains('are attached'), isTrue);
@@ -38,6 +37,8 @@ void main() {
   });
 
   test('the endpoint attaches the identity the screen names', () {
+    final controller =
+        backendSource('src/support/client-support.controller.ts');
     // Person, address, business and plan are attached server-side from the
     // session rather than typed, which is exactly why the screen can promise
     // them. The business name was previously selected out and sent as null.
@@ -55,5 +56,5 @@ void main() {
         reason: 'support intake no longer carries: $field',
       );
     }
-  });
+  }, skip: backendSkipReason);
 }

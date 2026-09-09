@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/sibling_backend.dart';
+
 /// Where each fact is owned, asserted so it cannot drift back.
 ///
 /// Workspace settings had become the screen everything landed on, because it
@@ -26,12 +28,6 @@ void main() {
       read('lib/features/client/screens/client_business_identity_screen.dart');
   final signature =
       read('lib/features/client/widgets/signature_identity_card.dart');
-  final portalService = read(
-      '../orchestrate_backend/src/client-portal/client-portal.service.ts');
-  final humanSignature =
-      read('../orchestrate_backend/src/communication/human-signature.ts');
-  final identityService = read(
-      '../orchestrate_backend/src/business-identity/business-identity.service.ts');
 
   group('Account & security owns personal security', () {
     test('it holds the trusted devices, not a link to them', () {
@@ -91,20 +87,24 @@ void main() {
     });
 
     test('the endpoint does not persist a signature business name', () {
+      final portalService =
+          backendSource('src/client-portal/client-portal.service.ts');
       expect(
         portalService.contains('businessName: sanitizeField'),
         isFalse,
         reason: 'this was the second writer',
       );
-    });
+    }, skip: backendSkipReason);
 
     test('the renderer resolves it from the canonical record', () {
+      final humanSignature =
+          backendSource('src/communication/human-signature.ts');
       expect(humanSignature.contains('canonicalBusinessName'), isTrue);
       expect(
         humanSignature.contains('businessName: str(canonicalBusinessName)'),
         isTrue,
       );
-    });
+    }, skip: backendSkipReason);
   });
 
   group('the postal address is owned where it is judged', () {
@@ -114,8 +114,10 @@ void main() {
     });
 
     test('it writes through the canonical designated-address record', () {
+      final identityService =
+          backendSource('src/business-identity/business-identity.service.ts');
       expect(identityService.contains('designateAddress'), isTrue);
-    });
+    }, skip: backendSkipReason);
   });
 
   group('the signature sits with communication', () {
