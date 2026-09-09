@@ -57,4 +57,58 @@ void main() {
     expect(project.contains('PrivacyInfo.xcprivacy in Resources'), isTrue,
         reason: 'a manifest that is not a build resource is not in the bundle');
   });
+
+  test('shipping a purchase library means declaring purchase data', () {
+    // The manifest listed four data types and not purchases, which was correct
+    // while the app could not take a payment. It became wrong the moment
+    // in_app_purchase shipped: the app hands StoreKit's signed transaction to
+    // our server, and StorePurchaseEvidence keeps the product, the transaction,
+    // the state and the expiry against the paying organisation. Apple's test
+    // for "collect" is transmitting off the device and holding it beyond
+    // servicing the request in real time — an entitlement record is exactly
+    // that, and it is linked to identity.
+    //
+    // The App Store Connect declaration and this file are two statements of the
+    // same fact, made in two places, and they drifted. This ties them together:
+    // if the purchase library is in the graph, the manifest must say so.
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final shipsPurchases = pubspec.contains('in_app_purchase:');
+    final manifest = File('ios/Runner/PrivacyInfo.xcprivacy').readAsStringSync();
+
+    expect(
+      shipsPurchases,
+      isTrue,
+      reason: 'this test assumes the purchase library ships; if it was removed '
+          'on purpose, retire this test rather than weakening it',
+    );
+    expect(
+      manifest.contains('NSPrivacyCollectedDataTypePurchaseHistory'),
+      isTrue,
+      reason: 'in_app_purchase ships in this binary, so the privacy manifest '
+          'must declare purchase history — App Store Connect already does',
+    );
+  });
+
+  test('nothing in the manifest claims tracking', () {
+    // NSPrivacyTracking false, and no individual type marked as tracking.
+    // Orchestrate follows nobody across other companies' apps, and the day
+    // that stops being true it should stop being true here first.
+    final manifest = File('ios/Runner/PrivacyInfo.xcprivacy').readAsStringSync();
+    final trackingKey = manifest.indexOf('<key>NSPrivacyTracking</key>');
+    expect(trackingKey, greaterThan(-1));
+    expect(
+      manifest.substring(trackingKey, trackingKey + 80).contains('<false/>'),
+      isTrue,
+      reason: 'NSPrivacyTracking must be false',
+    );
+    final trackedType = RegExp(
+      r'NSPrivacyCollectedDataTypeTracking</key>\s*<true/>',
+      multiLine: true,
+    );
+    expect(
+      trackedType.hasMatch(manifest),
+      isFalse,
+      reason: 'no collected data type may be marked as used for tracking',
+    );
+  });
 }

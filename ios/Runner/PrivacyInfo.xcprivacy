@@ -61,6 +61,31 @@
 			</array>
 		</dict>
 		<!--
+		  WHAT THE STORE TELLS US ABOUT A PURCHASE, AND WHAT WE KEEP OF IT.
+		  
+		  The app hands StoreKit's signed transaction to our server, which
+		  records the product, the transaction, the original transaction, the
+		  state, the expiry and whether it auto-renews, against the paying
+		  organisation. Apple's test for "collect" is transmitting off the
+		  device and holding it beyond servicing the request in real time, and
+		  that is exactly what an entitlement record is.
+		  
+		  Omitted while this app could not take a payment. It can now, so this
+		  belongs here, and it matches the App Store Connect declaration.
+		-->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!--
 		  The business's own commercial records: its relationships, the
 		  counterparties it imports, the correspondence Orchestrate holds on
 		  its behalf. This is the product.
