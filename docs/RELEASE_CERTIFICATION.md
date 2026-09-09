@@ -73,6 +73,17 @@ accounts and appears as seller. Nothing here claims who owns the product.
 | Windows package | `1.0.0.0`, read from `AppxManifest.xml` |
 | Codemagic workflow | `ios-testflight`, `xcode: latest`, version from pubspec |
 
+### Artifacts
+
+| Artifact | SHA-256 | Bytes |
+|---|---|---|
+| `app-release.aab` | `0ce8ca0dfef63f11c8e0fbc07d939c05a51cd07675b5011abbc1bca94683cd98` | 48,993,652 |
+| `orchestrate_app.msix` | `8b23477ee6080ea6575c32b30410e95568fb45ece35d309e7163d3fef5b1d2fd` | 16,485,516 |
+
+Both produced from the frozen release source. An earlier AAB was built before
+the header fix landed and was discarded rather than submitted — an artifact that
+does not trace to the release commit is not the release.
+
 "Build succeeded" is not provenance. Each value above was read out of the
 produced artifact, not out of the configuration that was supposed to produce it.
 
