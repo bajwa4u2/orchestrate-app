@@ -33,7 +33,7 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
   late final StoreRail _store = widget.store ?? StorePurchase.instance;
 
   StoreOfferings? _offerings;
-  List<ProductDetails> _products = const [];
+  List<_Purchasable> _purchasable = const [];
   Object? _loadError;
   bool _loading = true;
 
@@ -73,9 +73,19 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
     });
     try {
       final offerings = await _repository.fetchOfferings();
+      // BOTH CADENCES, ALWAYS ASKED FOR TOGETHER.
+      //
+      // The store is asked for every product the server named for this rail,
+      // which is now monthly and annual rather than whichever single product
+      // the old model could hold.
+      //
+      // Google returns one ProductDetails per subscription carrying every base
+      // plan, so asking for the subscription id twice is harmless and asking
+      // once would still return both. Apple returns one per product.
       final ids = <String>{
         for (final offering in offerings.offerings)
-          if (offering.productIdFor(_rail) != null) offering.productIdFor(_rail)!,
+          for (final plan in offering.plansFor(_rail))
+            if (plan.productId.isNotEmpty) plan.productId,
       };
       // Asked of the store, not assumed. A product that exists on our side and
       // not in the store is a configuration mistake, and the honest thing is to
@@ -84,7 +94,7 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
       if (!mounted) return;
       setState(() {
         _offerings = offerings;
-        _products = products;
+        _purchasable = _pair(offerings, products);
         _loading = false;
       });
     } catch (error) {
@@ -96,7 +106,41 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
     }
   }
 
-  Future<void> _subscribe(ProductDetails product) async {
+  /// PAIR WHAT THE STORE RETURNED WITH WHAT WE SAY IT IS.
+  ///
+  /// The server names each cadence by the identifiers its rail actually uses:
+  /// on Apple a product id, on Google a subscription id plus a base plan. The
+  /// store returns its own list. Only where the two agree is something offered.
+  ///
+  /// A cadence the store did not return is simply not shown. That is a console
+  /// configuration mistake, and the honest response to it is one fewer button —
+  /// never the other product presented as though it were the one asked for.
+  List<_Purchasable> _pair(StoreOfferings offerings, List<ProductDetails> products) {
+    final paired = <_Purchasable>[];
+    for (final offering in offerings.offerings) {
+      for (final plan in offering.plansFor(_rail)) {
+        for (final product in products) {
+          if (product.id != plan.productId) continue;
+          // Where the rail has base plans, they must match. Where it does not,
+          // the product id already was the cadence.
+          if (plan.basePlanId != null &&
+              basePlanIdOf(product) != plan.basePlanId) {
+            continue;
+          }
+          paired.add(_Purchasable(plan: plan, product: product));
+          break;
+        }
+      }
+    }
+    // Monthly first: the smaller commitment is the easier decision, and the
+    // annual price beside it is then read as a saving rather than a bill.
+    paired.sort((a, b) => a.plan.isAnnual == b.plan.isAnnual
+        ? 0
+        : (a.plan.isAnnual ? 1 : -1));
+    return paired;
+  }
+
+  Future<void> _subscribe(_Purchasable offer) async {
     setState(() {
       _buying = true;
       _message = null;
@@ -109,7 +153,10 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
     try {
       final intent = await _repository.beginPurchase(
         rail: _rail,
-        productId: product.id,
+        productId: offer.product.id,
+        // Reported, not decided. The server will ask Google what was actually
+        // sold and keep both answers.
+        basePlanId: offer.plan.basePlanId,
       );
       if (!intent.ok || intent.intentKey == null) {
         setState(() {
@@ -123,7 +170,7 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
 
       _pendingRail = _rail;
       final opened = await _store.buy(
-        product: product,
+        product: offer.product,
         intentKey: intent.intentKey!,
       );
       if (!opened && mounted) {
@@ -281,7 +328,7 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
       );
     }
 
-    if (_products.isEmpty) {
+    if (_purchasable.isEmpty) {
       return const ClientPanel(
         title: 'Subscription',
         children: [
@@ -297,22 +344,36 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
       subtitle: 'Billed by ${isIosAppStorePlatform ? 'the App Store' : 'Google Play'}, '
           'to your organisation. One subscription covers everyone in it.',
       children: [
-        for (final product in _products) ...[
+        for (final offer in _purchasable) ...[
           ClientInfoRow(
-            title: product.title.isEmpty ? product.id : product.title,
-            // The price is the store's, read at the moment of purchase. It is
-            // never held on our side, because the store is the only place it is
-            // actually charged from.
-            primary: product.price,
-            secondary: product.description,
+            // The cadence, said by us, because it is the one thing on this row
+            // the store cannot be relied on to phrase consistently across
+            // countries. Everything else on the row is the store's own words.
+            title: offer.plan.isAnnual ? 'Annual' : 'Monthly',
+            // The price is the store's, read at the moment of purchase, in the
+            // person's own currency. It is never held on our side and never
+            // written into this file: a hardcoded price is wrong for most of
+            // the world the moment it is typed, and wrong everywhere the day
+            // the price changes.
+            primary: offer.product.price,
+            secondary: offer.product.description,
           ),
           const SizedBox(height: 12),
           FilledButton(
-            onPressed: _buying ? null : () => _subscribe(product),
+            onPressed: _buying ? null : () => _subscribe(offer),
             child: Text(_buying ? 'Working…' : 'Subscribe'),
           ),
           const SizedBox(height: 18),
         ],
+        // SAME PRODUCT, EITHER WAY. Said plainly, because two prices side by
+        // side is the exact place a person expects the cheaper one to be the
+        // lesser product — and here it is not.
+        Text(
+          'Both give your organisation the whole of Orchestrate. The only '
+          'difference is how often you are billed.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
         // Required by both stores, and the right thing anyway: someone who
         // already paid, on another device or before a reinstall, must be able
         // to get their service back without paying twice.
@@ -334,4 +395,16 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
       ],
     );
   }
+}
+
+/// One cadence this device can actually buy right now.
+///
+/// Both halves are required: our catalog's word for what it is, and the store's
+/// own entry for what it costs. Either alone is not enough to put a button on
+/// the screen.
+class _Purchasable {
+  const _Purchasable({required this.plan, required this.product});
+
+  final StorePlan plan;
+  final ProductDetails product;
 }

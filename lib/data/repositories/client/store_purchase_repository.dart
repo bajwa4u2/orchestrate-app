@@ -31,10 +31,18 @@ class StorePurchaseRepository {
   Future<StoreIntent> beginPurchase({
     required String rail,
     required String productId,
+    String? basePlanId,
   }) async {
     final json = await _apiClient.postJson(
       '/client/store/purchase-intent',
-      body: {'rail': rail, 'productId': productId},
+      body: {
+        'rail': rail,
+        'productId': productId,
+        // Sent where the rail has base plans, omitted where it does not. The
+        // server records it as the device's claim and asks the provider itself
+        // what was sold.
+        if (basePlanId != null) 'basePlanId': basePlanId,
+      },
       surface: ApiSurface.client,
     );
     return StoreIntent.fromJson(Map<String, dynamic>.from(json as Map));
@@ -124,28 +132,70 @@ class StoreOfferings {
       );
 }
 
+/// One purchasable cadence on one rail.
+///
+/// The same entitlement either way. `period` is Orchestrate's word for it;
+/// `productId` and `basePlanId` are what the rail needs to be asked, and mean
+/// nothing beyond that.
+class StorePlan {
+  const StorePlan({
+    required this.rail,
+    required this.period,
+    required this.productId,
+    this.basePlanId,
+  });
+
+  /// `APPLE_APP_STORE` or `GOOGLE_PLAY`.
+  final String rail;
+
+  /// `MONTHLY` or `ANNUAL`. Billing cadence, never a tier.
+  final String period;
+
+  final String productId;
+
+  /// Google carries the cadence here, because one Google subscription holds
+  /// several base plans. Null on rails whose product is the cadence.
+  final String? basePlanId;
+
+  bool get isAnnual => period == 'ANNUAL';
+
+  static StorePlan fromJson(Map<String, dynamic> j) => StorePlan(
+        rail: (j['rail'] as String?) ?? '',
+        period: (j['period'] as String?) ?? '',
+        productId: (j['productId'] as String?) ?? '',
+        basePlanId: j['basePlanId'] as String?,
+      );
+}
+
 class StoreOffering {
   const StoreOffering({
     required this.code,
     required this.says,
-    required this.productIds,
+    required this.plans,
   });
 
   final String code;
   final String says;
 
-  /// Keyed by rail: `APPLE_APP_STORE`, `GOOGLE_PLAY`.
-  final Map<String, String> productIds;
+  /// Every cadence on every rail the server named.
+  ///
+  /// This replaced a `Map<rail, productId>`, which could only ever hold one
+  /// product per rail — so annual was not merely unsold, it was unrepresentable
+  /// in the client model. A shape that cannot express the catalog will keep
+  /// being wrong however the catalog is configured.
+  final List<StorePlan> plans;
 
-  String? productIdFor(String rail) => productIds[rail];
+  /// What to ask this rail's store for.
+  List<StorePlan> plansFor(String rail) =>
+      plans.where((p) => p.rail == rail).toList();
 
   static StoreOffering fromJson(Map<String, dynamic> j) => StoreOffering(
         code: (j['code'] as String?) ?? '',
         says: (j['says'] as String?) ?? '',
-        productIds: {
-          for (final entry in (j['productIds'] as Map? ?? const {}).entries)
-            entry.key.toString(): entry.value.toString(),
-        },
+        plans: [
+          for (final raw in (j['plans'] as List? ?? const []))
+            StorePlan.fromJson(Map<String, dynamic>.from(raw as Map)),
+        ],
       );
 }
 

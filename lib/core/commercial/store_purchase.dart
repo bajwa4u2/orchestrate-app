@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
 import '../../data/repositories/client/client_capability_repository.dart';
 import '../platform/billing_gate.dart';
@@ -181,6 +182,27 @@ class StorePurchase implements StoreRail {
     if (!availableOnThisPlatform) return;
     await _store.restorePurchases();
   }
+}
+
+/// WHICH BASE PLAN THE STORE JUST DESCRIBED.
+///
+/// Google models one subscription holding several base plans, and returns one
+/// product entry per offer — two entries carrying the SAME product id, one
+/// monthly and one annual. Nothing in the shared `ProductDetails` distinguishes
+/// them, so a surface that only reads `id` cannot tell the cadences apart and
+/// will show whichever came back first as though it were the only thing sold.
+///
+/// Apple has no equivalent: the product IS the cadence, so this is null there,
+/// and that null is the correct answer rather than missing information.
+///
+/// Read from the store's own response. It is never inferred from price, order
+/// or position — those are all plausible and none of them is evidence.
+String? basePlanIdOf(ProductDetails product) {
+  if (product is! GooglePlayProductDetails) return null;
+  final index = product.subscriptionIndex;
+  final offers = product.productDetails.subscriptionOfferDetails;
+  if (index == null || offers == null || index >= offers.length) return null;
+  return offers[index].basePlanId;
 }
 
 /// What happened, in words a person can read.

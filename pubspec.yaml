@@ -34,6 +34,11 @@ dependencies:
   # decides entitlement — a receipt on a device is a claim, and only what Apple
   # or Google confirms to our own backend is evidence.
   in_app_purchase: ^3.2.0
+  # Direct, deliberately. Google models one subscription holding several
+  # base plans and only this package's type says which one a returned
+  # product entry describes. Without it monthly and annual are two
+  # indistinguishable entries carrying the same id.
+  in_app_purchase_android: ^0.5.0
 
 dev_dependencies:
   # Used only by the product-identity conformance test, which decodes the

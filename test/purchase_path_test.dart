@@ -21,7 +21,7 @@ void main() {
     // cannot verify must not reach the Subscribe button even when the store
     // happily lists products for it.
     expect(
-      panel.indexOf('!availability.live') < panel.indexOf('_products.isEmpty'),
+      panel.indexOf('!availability.live') < panel.indexOf('_purchasable.isEmpty'),
       isTrue,
       reason: 'a dead rail must be caught before anything is offered',
     );
