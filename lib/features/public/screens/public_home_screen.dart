@@ -158,7 +158,7 @@ class _Hero extends StatelessWidget {
           runSpacing: 12,
           children: [
             FilledButton(
-              onPressed: () => context.go('/pricing?trial=15d'),
+              onPressed: () => context.go('/pricing'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.publicText,
                 foregroundColor: Colors.white,
@@ -745,18 +745,29 @@ class _PlansSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ONE SUBSCRIPTION, AND WHAT IS IN IT.
+    //
+    // These were two packages: "Opportunity", and above it "Revenue" —
+    // described as Opportunity plus more. A visitor read a ladder and had to
+    // work out which rung they were on before they could buy anything.
+    //
+    // Both were always the same product. So the two cards now say what a
+    // subscription includes rather than which one to pick, and both lead to
+    // the same page.
     final cards = const [
       _PlanPeek(
-        title: 'Opportunity',
+        title: 'Execution',
         body:
-            'Managed execution scope: signal discovery, qualification, governed dispatch, follow-up continuity, and reply handling.',
-        route: '/pricing?plan=opportunity&trial=15d',
+            'Signal discovery, qualification, governed dispatch, follow-up '
+            'continuity, and reply handling.',
+        route: '/pricing',
       ),
       _PlanPeek(
-        title: 'Revenue',
+        title: 'Revenue continuity',
         body:
-            'Opportunity scope plus revenue continuity: agreements, invoices, statements, reminders, and customer-facing financial records governed alongside execution.',
-        route: '/pricing?plan=revenue&trial=15d',
+            'Agreements, invoices, statements, reminders, and customer-facing '
+            'financial records governed alongside execution.',
+        route: '/pricing',
       ),
     ];
 
@@ -772,12 +783,14 @@ class _PlansSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Pick the scope of managed execution',
+            'What one subscription covers',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 12),
           Text(
-            'Both scopes begin with a 15-day trial. Stripe sets up the subscription first, the trial runs immediately, and monthly billing begins after the trial. The infrastructure is the same across both.',
+            'Both of these are included. There is one subscription for your '
+            'organisation, billed monthly or annually, and creating a '
+            'workspace costs nothing.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.publicMuted,
                 ),

@@ -357,12 +357,6 @@ GoRouter _buildRouter() {
       return '/ops/work';
     }
 
-    final plan = _normalizedPlan(state.uri.queryParameters['plan']) ??
-        session.selectedPlan;
-    final tier = _normalizedTier(state.uri.queryParameters['tier']) ??
-        session.selectedTier;
-    final trial = _normalizedTrial(state.uri.queryParameters['trial']);
-
     final isClientAuth = <String>{
       '/auth/login',
       '/auth/join',
@@ -430,8 +424,7 @@ GoRouter _buildRouter() {
       // visitor can establish access and carry the selected setup context
       // into onboarding.
       if (isSetup || isSubscribe) {
-        return _clientRoute('/auth/register',
-            plan: plan, tier: tier, trial: trial, returnTo: path);
+        return _clientRoute('/auth/register', returnTo: path);
       }
       if (isClientArea || isSetup || isSubscribe) {
         // WHERE THEY WERE TRYING TO GO.
@@ -440,8 +433,7 @@ GoRouter _buildRouter() {
         // workspace died here: you signed in and arrived somewhere generic
         // with no trace of why you had come. An emailed link asking someone
         // to do a specific thing could never land them on it.
-        return _clientRoute('/auth/login',
-            plan: plan, tier: tier, trial: trial, returnTo: path);
+        return _clientRoute('/auth/login', returnTo: path);
       }
       return null;
     }
@@ -458,9 +450,6 @@ GoRouter _buildRouter() {
       if (!session.emailVerified) {
         if (isVerification || isReset) return null;
         return _clientRoute('/auth/verify-email',
-            plan: plan,
-            tier: tier,
-            trial: trial,
             // Sign-in is not always one hop. Carried across each one, or the
             // last hop lands them nowhere in particular.
             returnTo: readReturnTo(state.uri.queryParameters) ?? path);
@@ -479,7 +468,7 @@ GoRouter _buildRouter() {
       };
       if (!session.hasSetupCompleted) {
         if (setupAllowed.contains(path) || isAccountLayer) return null;
-        return _clientRoute('/app/setup', plan: plan, tier: tier, trial: trial);
+        return _clientRoute('/app/setup');
       }
 
       // SUBSCRIPTION IS NOT A DOOR.
@@ -550,10 +539,7 @@ GoRouter _buildRouter() {
         builder: (context, state) => const ClientLoginScreen()),
     GoRoute(
         path: '/auth/join',
-        redirect: (context, state) => _clientRoute('/auth/register',
-            plan: state.uri.queryParameters['plan'],
-            tier: state.uri.queryParameters['tier'],
-            trial: state.uri.queryParameters['trial'])),
+        redirect: (context, state) => _clientRoute('/auth/register')),
     GoRoute(
         path: '/auth/register',
         builder: (context, state) => const ClientLoginScreen(createMode: true)),
@@ -642,9 +628,9 @@ GoRouter _buildRouter() {
             sideActions: [
               ContentAction(
                   label: 'Start 15-Day Trial',
-                  path: '/auth/join?trial=15d',
+                  path: '/auth/join',
                   filled: true),
-              ContentAction(label: 'View Plans', path: '/pricing?trial=15d'),
+              ContentAction(label: 'View Plans', path: '/pricing'),
             ],
             sections: [
               ContentSection(
@@ -696,7 +682,7 @@ GoRouter _buildRouter() {
             sideActions: [
               ContentAction(
                   label: 'Start 15-Day Trial',
-                  path: '/auth/join?trial=15d',
+                  path: '/auth/join',
                   filled: true),
               ContentAction(label: 'Talk to Orchestrate', path: '/contact'),
             ],
@@ -772,7 +758,7 @@ GoRouter _buildRouter() {
             sideActions: [
               ContentAction(
                   label: 'Start 15-Day Trial',
-                  path: '/auth/join?trial=15d',
+                  path: '/auth/join',
                   filled: true),
               ContentAction(
                   label: 'See activation journey', path: '/how-it-works'),
@@ -813,7 +799,7 @@ GoRouter _buildRouter() {
             sideActions: [
               ContentAction(
                   label: 'Start 15-Day Trial',
-                  path: '/auth/join?trial=15d',
+                  path: '/auth/join',
                   filled: true),
               ContentAction(
                   label: 'See how it operates', path: '/how-it-works'),
@@ -1916,43 +1902,18 @@ GoRouter _buildRouter() {
   );
 }
 
-String? _normalizedPlan(String? value) {
-  final text = value?.trim().toLowerCase();
-  if (text == 'opportunity' || text == 'revenue') return text;
-  return null;
-}
 
-String? _normalizedTier(String? value) {
-  final text = value?.trim().toLowerCase();
-  if (text == 'focused') return 'focused';
-  if (text == 'multi' || text == 'multi-market' || text == 'multi_market') {
-    return 'multi';
-  }
-  if (text == 'precision') return 'precision';
-  return null;
-}
-
-String? _normalizedTrial(String? value) {
-  final text = value?.trim().toLowerCase();
-  if (text == '15d') return '15d';
-  return null;
-}
-
-String _clientRoute(String path,
-    {String? plan, String? tier, String? trial, String? returnTo}) {
-  final query = <String, String>{
-    if (plan != null && plan.isNotEmpty) 'plan': plan,
-    if (tier != null && tier.isNotEmpty) 'tier': tier,
-    if (trial != null && trial.isNotEmpty) 'trial': trial,
-  };
-  final destination = withReturnTo(path, returnTo);
-  if (query.isEmpty) return destination;
-  final joiner = destination.contains('?') ? '&' : '?';
-  final encoded = query.entries
-      .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-      .join('&');
-  return '$destination$joiner$encoded';
-}
+/// WHERE A SIGNED-OUT VISITOR IS SENT, AND WHY THEY CAME.
+///
+/// It used to carry three more things through every hop: a plan, a tier and a
+/// trial flag, so a package chosen on the marketing site survived registration
+/// and arrived preselected in setup. There are no packages and there is no
+/// trial, so all three carried a promise the product could not keep.
+///
+/// What still travels is the destination. A person who followed a link asking
+/// them to do a specific thing must land on it after signing in.
+String _clientRoute(String path, {String? returnTo}) =>
+    withReturnTo(path, returnTo);
 
 /// The KIND of screen someone came from, never the path.
 ///

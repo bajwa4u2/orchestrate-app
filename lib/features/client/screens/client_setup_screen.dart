@@ -23,10 +23,8 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
   bool _loading = true;
   bool _saving = false;
   String? _error;
-  String? _trial;
 
   String _planCode = 'opportunity';
-  String _tierCode = 'focused';
   final Set<String> _countryCodes = <String>{};
   final Set<String> _regionCodes = <String>{};
   final List<String> _metroNames = <String>[];
@@ -50,15 +48,20 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
     final session = AuthSessionController.instance;
     final draft = session.setupDraft;
 
-    _planCode = _normalizedLane(uri.queryParameters['plan']) ??
-        _normalizedLane(session.selectedPlan) ??
+    // NO TIER, AND NOTHING READ OFF THE URL.
+    //
+    // Coverage used to be a tier a business picked: one country, several, or
+    // city-level. It gated this screen — the country picker went single-select
+    // on "focused", metros were capped at twelve below "precision" — and the
+    // server refused any setup whose coverage did not match the tier chosen.
+    // So a business describing its real market was told to go back and change
+    // its package first.
+    //
+    // Everything is included in the one product. A business describes where it
+    // operates, and nothing here argues with it.
+    _planCode = _normalizedLane(uri.queryParameters['start']) ??
         _normalizedLane(draft?['serviceType']) ??
         'opportunity';
-    _tierCode = _normalizedTier(uri.queryParameters['tier']) ??
-        _normalizedTier(session.selectedTier) ??
-        _normalizedTier(draft?['scopeMode']) ??
-        'focused';
-    _trial = uri.queryParameters['trial']?.trim().toLowerCase();
 
     try {
       final response = await AuthRepository().fetchClientSetup();
@@ -74,14 +77,6 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
             _normalizedLane(payloadSetup['selectedPlan']?.toString()) ??
             _normalizedLane(payloadSetup['serviceType']?.toString()) ??
             _planCode;
-        _tierCode = _normalizedTier(
-              response['selectedTier']?.toString(),
-            ) ??
-            _normalizedTier(payloadSetup['selectedTier']?.toString()) ??
-            _normalizedTier(payloadSetup['scopeMode']?.toString()) ??
-            _normalizedTier(nestedScope['mode']?.toString()) ??
-            _tierCode;
-
         _industryCode =
             _firstIndustryCode(payloadSetup, sessionDraft) ?? _industryCode;
         _marketNotes.text = _firstNotes(payloadSetup, sessionDraft) ?? '';
@@ -103,7 +98,7 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
           ..clear()
           ..addAll(loadedMetros);
 
-        _applyTierRules();
+        _pruneOrphanedRegions();
         _loading = false;
       });
     } catch (_) {
@@ -121,7 +116,7 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
         _industryCode = _industryCode ?? draft?['industryCode']?.toString();
         _marketNotes.text =
             draft?['marketNotes']?.toString() ?? _marketNotes.text;
-        _applyTierRules();
+        _pruneOrphanedRegions();
         _loading = false;
       });
     }
@@ -147,7 +142,7 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
 
     final draft = <String, dynamic>{
       'serviceType': _planCode,
-      'scopeMode': _tierCode,
+      'scopeMode': _recommendedScopeMode(),
       'countries': _sortedCountryCodes(),
       'regions': _sortedRegionCodes(),
       'metros': List<String>.from(_metroNames),
@@ -166,34 +161,26 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
     try {
       final response = await AuthRepository().saveClientSetup(
         serviceType: _planCode,
-        scopeMode: _tierCode,
+        // WHAT THE COVERAGE IMPLIES, NOT WHAT ANYONE CHOSE.
+        //
+        // The server still validates coverage against a scope mode and refuses
+        // a mismatch. Sending the mode the coverage itself implies makes that
+        // check pass by construction — which is the honest bridge while the
+        // field is retired server-side, and is exactly what it will be deleted
+        // for meaning.
+        scopeMode: _recommendedScopeMode(),
         countries: countries,
         regions: regions,
         metros: metros,
         industries: industries,
         notes: _marketNotes.text.trim(),
-        selectedPlan: _planCode,
-        selectedTier: _tierCode,
       );
 
-      await AuthSessionController.instance.rememberSelection(
-        plan: _planCode,
-        tier: _tierCode,
-      );
       await AuthSessionController.instance.saveSetupDraft(draft);
       await AuthSessionController.instance.applyClientSetupResponse(response);
 
       if (!mounted) return;
-      context.go(
-        Uri(
-          path: '/app/subscribe',
-          queryParameters: {
-            'plan': _planCode,
-            'tier': _tierCode,
-            if (_trial == '15d') 'trial': '15d',
-          },
-        ).toString(),
-      );
+      context.go('/app/subscribe');
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -267,40 +254,36 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
     ];
   }
 
-  void _applyTierRules() {
-    if (_tierCode == 'focused' && _countryCodes.length > 1) {
-      final first = _countryCodes.first;
-      _countryCodes
-        ..clear()
-        ..add(first);
-      _regionCodes.removeWhere((code) => !code.startsWith('$first-'));
-    }
-
-    if (_countryCodes.isNotEmpty) {
-      _regionCodes.removeWhere((code) {
-        final countryCode = code.split('-').first.toUpperCase();
-        return !_countryCodes.contains(countryCode);
-      });
-    } else {
+  /// Keep regions inside the countries that are actually selected.
+  ///
+  /// What is left of a method that also enforced a package: one country under
+  /// "focused", twelve metros unless "precision". Those refused a business's
+  /// real market on the strength of a tier it had picked on a pricing page.
+  void _pruneOrphanedRegions() {
+    if (_countryCodes.isEmpty) {
       _regionCodes.clear();
+      return;
     }
+    _regionCodes.removeWhere((code) {
+      final countryCode = code.split('-').first.toUpperCase();
+      return !_countryCodes.contains(countryCode);
+    });
+  }
 
-    if (_tierCode != 'precision' && _metroNames.length > 12) {
-      _metroNames.removeRange(12, _metroNames.length);
-    }
+  /// The scope mode this coverage amounts to.
+  ///
+  /// Derived, never chosen. It exists only to satisfy a server field that is
+  /// on its way out, and it is computed the same way the server computes its
+  /// own recommendation — so the two cannot disagree.
+  String _recommendedScopeMode() {
+    if (_metroNames.isNotEmpty) return 'precision';
+    if (_countryCodes.length > 1) return 'multi';
+    return 'focused';
   }
 
   void _updatePlan(String value) {
     setState(() {
       _planCode = _normalizedLane(value) ?? 'opportunity';
-      _error = null;
-    });
-  }
-
-  void _updateTier(String value) {
-    setState(() {
-      _tierCode = _normalizedTier(value) ?? 'focused';
-      _applyTierRules();
       _error = null;
     });
   }
@@ -336,22 +319,12 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
     if (_industryCode == null || _industryCode!.isEmpty) {
       return 'Choose your industry before continuing.';
     }
-    if (_tierCode == 'focused' && _countryCodes.length != 1) {
-      return 'Focused coverage covers one country at a time.';
-    }
-    if (_tierCode == 'multi' && _countryCodes.length < 2) {
-      return 'Multi-market coverage should include at least two countries.';
-    }
-    if (_tierCode == 'precision' && _metroNames.isEmpty) {
-      return 'Precision coverage needs at least one city or metro.';
-    }
     return null;
   }
 
   Map<String, String> _buildReviewSummary() {
     return <String, String>{
       'serviceLine': _laneLabel(_planCode),
-      'mode': _tierLabel(_tierCode),
       'countries': _selectedCountryLabels().join(', '),
       'regions': _selectedRegionLabels().join(', '),
       'metros': _metroNames.isEmpty ? 'Not added' : _metroNames.join(', '),
@@ -460,14 +433,9 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
           : LayoutBuilder(
               builder: (context, constraints) {
                 final stacked = constraints.maxWidth < 980;
-                final intro = _SetupIntro(
-                  laneLabel: _laneLabel(_planCode),
-                  tierLabel: _tierLabel(_tierCode),
-                  trial: _trial,
-                );
+                final intro = _SetupIntro(laneLabel: _laneLabel(_planCode));
                 final builder = _BuilderCard(
                   planCode: _planCode,
-                  tierCode: _tierCode,
                   selectedCountries: _selectedCountryLabels(),
                   selectedRegions: _selectedRegionLabels(),
                   selectedMetros: _metroNames,
@@ -477,23 +445,22 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
                   error: _error,
                   saving: _saving,
                   onPlanChanged: _updatePlan,
-                  onTierChanged: _updateTier,
                   onChooseCountries: () async {
                     final result = await showModalBottomSheet<Set<String>>(
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
-                      builder: (context) => _CountryPickerSheet(
-                        selected: _countryCodes,
-                        singleSelect: _tierCode == 'focused',
-                      ),
+                      // Never single-select. A business operating in three
+                      // countries operates in three countries.
+                      builder: (context) =>
+                          _CountryPickerSheet(selected: _countryCodes),
                     );
                     if (result == null || !mounted) return;
                     setState(() {
                       _countryCodes
                         ..clear()
                         ..addAll(result);
-                      _applyTierRules();
+                      _pruneOrphanedRegions();
                       _error = null;
                     });
                   },
@@ -529,7 +496,6 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
                 );
                 final review = _ReviewCard(
                   summary: _buildReviewSummary(),
-                  tierDescription: _tierDescription(_tierCode),
                   canContinue: !_saving,
                 );
 
@@ -566,15 +532,9 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
 }
 
 class _SetupIntro extends StatelessWidget {
-  const _SetupIntro({
-    required this.laneLabel,
-    required this.tierLabel,
-    required this.trial,
-  });
+  const _SetupIntro({required this.laneLabel});
 
   final String laneLabel;
-  final String tierLabel;
-  final String? trial;
 
   @override
   Widget build(BuildContext context) {
@@ -593,9 +553,12 @@ class _SetupIntro extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
-            trial == '15d'
-                ? 'Define your business identity: market, targets, offer context, and representation authorization. Once this is in place, you continue into Stripe to set up the subscription and start the 15-day trial before monthly billing. Orchestrate then handles signal discovery, qualification, and governed execution on top of it.'
-                : 'Define your business identity: market, targets, offer context, and representation authorization. Once this is in place, you continue into Stripe to set up the subscription. Orchestrate then handles signal discovery, qualification, and governed execution on top of it.',
+            // No trial, and no checkout waiting at the end. Setting the
+            // workspace up costs nothing, and saying otherwise here asks for a
+            // commitment before the business has seen anything.
+            'Define your business identity: market, targets, offer context and '
+            'representation authorisation. Orchestrate handles signal '
+            'discovery, qualification and governed execution on top of it.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge
@@ -606,10 +569,7 @@ class _SetupIntro extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _IntroPill(label: 'Scope: $laneLabel'),
-              _IntroPill(label: 'Coverage: $tierLabel'),
-              if (trial == '15d')
-                const _IntroPill(label: '15-day trial selected'),
+              _IntroPill(label: 'Starting with: $laneLabel'),
             ],
           ),
         ],
@@ -621,7 +581,6 @@ class _SetupIntro extends StatelessWidget {
 class _BuilderCard extends StatelessWidget {
   const _BuilderCard({
     required this.planCode,
-    required this.tierCode,
     required this.selectedCountries,
     required this.selectedRegions,
     required this.selectedMetros,
@@ -630,7 +589,6 @@ class _BuilderCard extends StatelessWidget {
     required this.error,
     required this.saving,
     required this.onPlanChanged,
-    required this.onTierChanged,
     required this.onChooseCountries,
     required this.onChooseRegions,
     required this.onAddMetro,
@@ -643,7 +601,6 @@ class _BuilderCard extends StatelessWidget {
   });
 
   final String planCode;
-  final String tierCode;
   final List<String> selectedCountries;
   final List<String> selectedRegions;
   final List<String> selectedMetros;
@@ -652,7 +609,6 @@ class _BuilderCard extends StatelessWidget {
   final String? error;
   final bool saving;
   final ValueChanged<String> onPlanChanged;
-  final ValueChanged<String> onTierChanged;
   final VoidCallback onChooseCountries;
   final VoidCallback? onChooseRegions;
   final ValueChanged<String?> onAddMetro;
@@ -695,62 +651,43 @@ class _BuilderCard extends StatelessWidget {
               _SetupBanner(message: error!, error: true),
               const SizedBox(height: 18),
             ],
-            _SectionTitle(title: '1. What do you want us to handle?'),
+            // WHERE TO START, NOT WHAT YOU GET.
+            //
+            // This was the lane: the half of the package pair that decided
+            // which of two products a business had bought. Both are included
+            // now, so it is asked as an emphasis — it still shapes the first
+            // campaign's objective, and it gates nothing.
+            _SectionTitle(title: '1. Where should we start?'),
             const SizedBox(height: 10),
             _ChoiceGrid(
               children: [
                 _ChoiceCard(
                   title: 'Opportunity',
-                  subtitle: 'Find and reach the right prospects.',
+                  subtitle: 'Start by finding and reaching the right prospects.',
                   selected: planCode == 'opportunity',
                   onTap: () => onPlanChanged('opportunity'),
                 ),
                 _ChoiceCard(
                   title: 'Revenue',
-                  subtitle: 'Handle billing and payment operations.',
+                  subtitle: 'Start with billing and payment operations.',
                   selected: planCode == 'revenue',
                   onTap: () => onPlanChanged('revenue'),
                 ),
               ],
             ),
             const SizedBox(height: 22),
-            _SectionTitle(title: '2. How much market coverage do you need?'),
-            const SizedBox(height: 10),
-            _ChoiceGrid(
-              children: [
-                _ChoiceCard(
-                  title: 'Focused',
-                  subtitle:
-                      'Start governed execution in one market with selected regional coverage.',
-                  selected: tierCode == 'focused',
-                  onTap: () => onTierChanged('focused'),
-                ),
-                _ChoiceCard(
-                  title: 'Multi',
-                  subtitle:
-                      'Expand governed execution across multiple countries and regions.',
-                  selected: tierCode == 'multi',
-                  onTap: () => onTierChanged('multi'),
-                ),
-                _ChoiceCard(
-                  title: 'Precision',
-                  subtitle:
-                      'Tighten governed execution around priority cities and metros.',
-                  selected: tierCode == 'precision',
-                  onTap: () => onTierChanged('precision'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
-            _SectionTitle(title: '3. Where should we operate?'),
+            // THE COVERAGE QUESTION IS GONE.
+            //
+            // "How much market coverage do you need?" was not a question about
+            // the business. It was the tier, asked in the second person, and
+            // the answer then narrowed everything below it: one country only,
+            // twelve metros at most, no advanced controls. A business now says
+            // where it operates and nothing here argues with it.
+            _SectionTitle(title: '2. Where should we operate?'),
             const SizedBox(height: 12),
             _SelectionField(
-              label: tierCode == 'focused'
-                  ? 'Primary country'
-                  : 'Countries to include',
-              helper: tierCode == 'focused'
-                  ? 'Choose one country for this setup.'
-                  : 'Search and select the countries you want covered.',
+              label: 'Countries to include',
+              helper: 'Search and select the countries you want covered.',
               values: selectedCountries,
               buttonLabel: selectedCountries.isEmpty
                   ? 'Choose countries'
@@ -774,10 +711,9 @@ class _BuilderCard extends StatelessWidget {
               suggestions: metroSuggestions,
               onAddMetro: onAddMetro,
               onRemoveMetro: onRemoveMetro,
-              precisionMode: tierCode == 'precision',
             ),
             const SizedBox(height: 22),
-            _SectionTitle(title: '4. Tell us about your business'),
+            _SectionTitle(title: '3. Tell us about your business'),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: industryCode,
@@ -823,12 +759,10 @@ class _BuilderCard extends StatelessWidget {
 class _ReviewCard extends StatelessWidget {
   const _ReviewCard({
     required this.summary,
-    required this.tierDescription,
     required this.canContinue,
   });
 
   final Map<String, String> summary;
-  final String tierDescription;
   final bool canContinue;
 
   @override
@@ -852,7 +786,7 @@ class _ReviewCard extends StatelessWidget {
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
             Text(
-              'Checkout should match the target market and service scope you defined here.',
+              'This is what Orchestrate will operate on.',
               style: Theme.of(context)
                   .textTheme
                   .bodyLarge
@@ -878,7 +812,12 @@ class _ReviewCard extends StatelessWidget {
                   Text('What happens next',
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  Text(tierDescription,
+                  // One sentence, and the same one for everybody. This used to
+                  // describe the coverage tier back to the person who had just
+                  // picked it — three variants of what they had already read.
+                  Text(
+                      'Orchestrate starts finding and qualifying signal in the '
+                      'markets you named, and brings you what needs a decision.',
                       style: Theme.of(context)
                           .textTheme
                           .bodyMedium
@@ -956,11 +895,9 @@ class _AuthorisedPeoplePrompt extends StatelessWidget {
 class _CountryPickerSheet extends StatefulWidget {
   const _CountryPickerSheet({
     required this.selected,
-    required this.singleSelect,
   });
 
   final Set<String> selected;
-  final bool singleSelect;
 
   @override
   State<_CountryPickerSheet> createState() => _CountryPickerSheetState();
@@ -992,10 +929,8 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
     }).toList();
 
     return _PickerSheetScaffold(
-      title: widget.singleSelect ? 'Choose your country' : 'Choose countries',
-      subtitle: widget.singleSelect
-          ? 'Focused coverage works with one country at a time.'
-          : 'Search and select the countries you want covered.',
+      title: 'Choose countries',
+      subtitle: 'Search and select the countries you want covered.',
       search: _search,
       child: ListView.separated(
         itemCount: items.length,
@@ -1011,9 +946,7 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
             subtitle: Text(item.code),
             onChanged: (_) {
               setState(() {
-                if (widget.singleSelect) {
-                  _selected = <String>{item.code};
-                } else if (selected) {
+                if (selected) {
                   _selected.remove(item.code);
                 } else {
                   _selected.add(item.code);
@@ -1186,7 +1119,6 @@ class _MetroField extends StatelessWidget {
     required this.suggestions,
     required this.onAddMetro,
     required this.onRemoveMetro,
-    required this.precisionMode,
   });
 
   final TextEditingController metroInput;
@@ -1194,7 +1126,6 @@ class _MetroField extends StatelessWidget {
   final List<String> suggestions;
   final ValueChanged<String?> onAddMetro;
   final ValueChanged<String> onRemoveMetro;
-  final bool precisionMode;
 
   @override
   Widget build(BuildContext context) {
@@ -1209,16 +1140,12 @@ class _MetroField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            precisionMode
-                ? 'Cities or metros to target'
-                : 'Cities or metros to include',
+            'Cities or metros to include',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            precisionMode
-                ? 'Add the local markets you want covered. Precision coverage requires at least one.'
-                : 'Optional. Add local markets when you want tighter targeting.',
+            'Optional. Add local markets when you want tighter targeting.',
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -1649,27 +1576,6 @@ String _laneLabel(String code) {
   return code == 'revenue' ? 'Revenue' : 'Opportunity';
 }
 
-String _tierLabel(String code) {
-  switch (code) {
-    case 'multi':
-      return 'Multi';
-    case 'precision':
-      return 'Precision';
-    default:
-      return 'Focused';
-  }
-}
-
-String _tierDescription(String code) {
-  switch (code) {
-    case 'multi':
-      return 'Multiple countries and regions with room to expand market coverage from one workspace.';
-    case 'precision':
-      return 'Detailed targeting with city or metro coverage, stronger control over where work should concentrate, and tighter market selection.';
-    default:
-      return 'One country with selected regions for a tighter launch and cleaner market focus.';
-  }
-}
 
 String _humanLabel(String key) {
   switch (key) {

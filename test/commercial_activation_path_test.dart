@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'support/sibling_backend.dart';
-import 'package:orchestrate_app/core/config/pricing_config.dart';
+import 'package:orchestrate_app/core/commercial/commercial_model.dart';
 
 /// A CUSTOMER MUST BE ABLE TO REACH THE CAPABILITY THEY ARE BEING SOLD.
 ///
@@ -98,10 +98,10 @@ void main() {
   test('an older server is assumed to be selling, not shut', () {
     // Direction of the unknown matters: a deploy order where the app ships
     // first must not silently close commerce for everyone.
-    expect(CommercialActivation.fromMap(null).open, isTrue);
-    expect(CommercialActivation.fromMap(const {}).open, isTrue);
-    expect(CommercialActivation.fromMap(const {'open': false}).open, isFalse);
-    expect(CommercialActivation.fromMap(const {'open': true}).open, isTrue);
+    expect(CommercialActivation.fromJson(null).open, isTrue);
+    expect(CommercialActivation.fromJson(const {}).open, isTrue);
+    expect(CommercialActivation.fromJson(const {'open': false}).open, isFalse);
+    expect(CommercialActivation.fromJson(const {'open': true}).open, isTrue);
   });
 
   test('commercial policy is decided per rail, and still decided first', () {

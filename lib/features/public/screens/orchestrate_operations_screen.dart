@@ -209,7 +209,7 @@ class _CrossLinks extends StatelessWidget {
           child: const Text('Pricing'),
         ),
         TextButton(
-          onPressed: () => context.go('/auth/join?trial=15d'),
+          onPressed: () => context.go('/auth/join'),
           child: const Text('Start 15-Day Trial →'),
         ),
       ],

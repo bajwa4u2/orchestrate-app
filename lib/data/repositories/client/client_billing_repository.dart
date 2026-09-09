@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../core/config/pricing_config.dart';
+import '../../../core/commercial/commercial_model.dart';
 import '../../../core/network/api_client.dart';
 
 class ClientBillingRepository {
@@ -69,29 +69,24 @@ class ClientBillingRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
-  Future<PricingCatalog> fetchPricingCatalog() async {
+  Future<CommercialModel> fetchCommercialModel() async {
     final json = await _apiClient.getJson('/public/pricing');
-    return PricingConfig.fromApi(Map<String, dynamic>.from(json as Map));
+    return CommercialModel.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
-  Future<Map<String, dynamic>> createSubscription(
-      String plan, String tier) async {
-    final normalizedPlan = plan.trim().toLowerCase();
-    final normalizedTier = tier.trim().toLowerCase();
-
-    final apiPlan = normalizedPlan == 'revenue' ? 'REVENUE' : 'OPPORTUNITY';
-    final apiTier = switch (normalizedTier) {
-      'precision' => 'PRECISION',
-      'multi' || 'multi-market' || 'multi_market' => 'MULTI',
-      _ => 'FOCUSED',
-    };
-
+  /// Begin a direct checkout at one cadence.
+  ///
+  /// This used to translate a lane and a tier into one of six package codes.
+  /// There is one product, so the only thing left to say is how often to bill —
+  /// and the server refuses anything that is not a cadence rather than picking
+  /// one, because picking decides on a customer's behalf which recurring
+  /// commitment they have just agreed to.
+  Future<Map<String, dynamic>> createSubscription({
+    required String period,
+  }) async {
     final json = await _apiClient.postJson(
       '/billing/subscribe',
-      body: {
-        'plan': apiPlan,
-        'tier': apiTier,
-      },
+      body: {'period': period},
       surface: ApiSurface.client,
     );
     return Map<String, dynamic>.from(json as Map);

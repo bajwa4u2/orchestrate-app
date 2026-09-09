@@ -171,7 +171,7 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
 
         final workspaceName =
             _displayIdentity(profile, fallback: _displayIdentity(client));
-        final planLabel = _resolvedPlanLabel(subscription, session);
+        final planLabel = _resolvedCadenceLabel(subscription);
         final billingStatus = _title(
           _read(subscription, 'status', fallback: session.subscriptionStatus),
         );
@@ -1161,41 +1161,21 @@ String _read(Map<String, dynamic> map, String key, {String fallback = ''}) {
   return text.isEmpty ? fallback : text;
 }
 
-String _resolvedPlanLabel(
-  Map<String, dynamic> subscription,
-  AuthSessionController session,
-) {
-  final explicit = _read(subscription, 'displayPlanLabel');
-  if (explicit.isNotEmpty) return explicit;
-
-  final livePlan = _composePlanLabel(
-    plan: _read(subscription, 'service',
-        fallback: _read(subscription, 'service path')),
-    tier: _read(subscription, 'tier'),
-  );
-  if (livePlan.isNotEmpty) return livePlan;
-
-  // NOT THE SELECTION. The third place this fell back to the plan the session
-  // remembers someone looking at in the funnel — so a business with no
-  // subscription read "Plan: Focused" beside "Subscription standing: None".
-  // What the payment provider holds is a fact; what somebody once clicked is
-  // not, and only one of them may be shown as a plan.
-  final commercial = _composePlanLabel(
-    plan: session.commercialPlan,
-    tier: session.commercialTier,
-  );
-  if (commercial.isNotEmpty) return commercial;
-
-  return 'Not set';
-}
-
-String _composePlanLabel({String? plan, String? tier}) {
-  final normalizedPlan = _title(plan ?? '');
-  final normalizedTier = _title(tier ?? '');
-  if (normalizedPlan.isEmpty && normalizedTier.isEmpty) return '';
-  if (normalizedPlan.isEmpty) return normalizedTier;
-  if (normalizedTier.isEmpty) return normalizedPlan;
-  return '$normalizedPlan · $normalizedTier';
+/// How often this organisation is billed.
+///
+/// This was a plan label, resolved through three fallbacks: the server's
+/// lane-and-tier string, then the same pair read off the session, then the plan
+/// somebody had once clicked in the funnel. The last of those is not a fact
+/// about a business at all, and it produced "Plan: Focused" on accounts with no
+/// subscription and no payment.
+///
+/// There is one product now, so there is no plan to name. What varies is the
+/// cadence, and where none is recorded that is said rather than guessed.
+String _resolvedCadenceLabel(Map<String, dynamic> subscription) {
+  final period = _read(subscription, 'period').toUpperCase();
+  if (period == 'ANNUAL') return 'Billed annually';
+  if (period == 'MONTHLY') return 'Billed monthly';
+  return 'Not billed on a cycle';
 }
 
 String _joinNonEmpty(List<String> values) {

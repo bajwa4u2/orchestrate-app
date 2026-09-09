@@ -1,4 +1,5 @@
 import 'package:orchestrate_app/core/ui/screen_memory.dart';
+import 'package:orchestrate_app/core/commercial/commercial_model.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,7 +13,6 @@ import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart
 import 'package:orchestrate_app/features/client/widgets/store_subscribe_panel.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/config/pricing_config.dart';
 
 class ClientBillingScreen extends StatefulWidget {
   const ClientBillingScreen({super.key});
@@ -47,7 +47,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
       // authority every rail reads. Asked rather than assumed: this page used
       // to offer activation on the strength of "no subscription exists",
       // which is a different fact from "activation is open".
-      _billingRepository.fetchPricingCatalog(),
+      _billingRepository.fetchCommercialModel(),
     ]);
     return _BillingData(
       overview: asMap(results[0]),
@@ -56,7 +56,7 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
       agreements: asList(results[3]),
       statements: asList(results[4]),
       reminders: asList(results[5]),
-      activation: (results[6] as PricingCatalog).activation,
+      activation: (results[6] as CommercialModel).activation,
     );
   }
 
@@ -221,10 +221,18 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
               // directly beside "Status: None" and "No active subscription
               // record" — three cards disagreeing about the same fact, and the
               // only wrong one was the one a person reads first.
-              ClientMetric(
-                  'Plan',
-                  readText(data.subscription, 'displayPlanLabel',
-                      fallback: 'Not set')),
+              // ONE PRODUCT, SO NOTHING TO NAME.
+              //
+              // This read a label the server built out of a lane and a tier,
+              // and where a subscription carried neither it fell back to the
+              // plan the session remembered somebody looking at in the funnel.
+              // So Billing read "Plan: Focused" beside "Status: None" — three
+              // cards disagreeing, and the wrong one read first.
+              //
+              // What a business holds is Orchestrate. How often it is billed is
+              // the only variable, and it is stated as that.
+              ClientMetric('Billing',
+                  _cadenceLabel(data.subscription['period'], status)),
               ClientMetric('Invoices', '${data.invoices.length}'),
               ClientMetric(
                   'Open balance',
@@ -247,13 +255,13 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
                   'above and is what the product acts on.',
               children: [
                 ClientInfoRow(
-                  title: readText(data.subscription, 'displayPlanLabel',
-                      fallback: 'No active subscription record'),
+                  title: status.toUpperCase() == 'NONE'
+                      ? 'No active subscription record'
+                      : 'Orchestrate',
                   primary: 'Status: ${titleCase(status)}',
                   secondary: [
                     'Period start: ${dateLabel(data.subscription['currentPeriodStart'])}',
                     'Period end: ${dateLabel(data.subscription['currentPeriodEnd'])}',
-                    data.subscription['isTrialing'] == true ? 'Trialing' : '',
                   ]
                       .where((item) => !item.endsWith(': ') && item.isNotEmpty)
                       .join(' · '),
@@ -462,4 +470,15 @@ class _BillingData {
   final List<dynamic> statements;
   final List<dynamic> reminders;
   final CommercialActivation activation;
+}
+
+/// How often this organisation is billed, in the words a person would use.
+///
+/// Null on the manual grants, which were never billed on a cycle at all — and
+/// saying so is better than guessing monthly, which is what a default would be.
+String _cadenceLabel(dynamic period, String status) {
+  final value = period?.toString().toUpperCase() ?? '';
+  if (value == 'ANNUAL') return 'Annually';
+  if (value == 'MONTHLY') return 'Monthly';
+  return status.toUpperCase() == 'NONE' ? 'Not set' : 'Not billed on a cycle';
 }

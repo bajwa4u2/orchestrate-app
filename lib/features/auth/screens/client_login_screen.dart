@@ -71,9 +71,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   String? _message;
   String? _error;
-  String? _selectedPlan;
-  String? _selectedTier;
-  String? _selectedTrial;
   String? _verificationEmail;
   Map<String, dynamic>? _pendingChallenge;
   bool _verificationComplete = false;
@@ -117,19 +114,14 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   }
 
   Future<void> _readRouteContext() async {
+    // NOTHING COMMERCIAL IS CARRIED IN.
+    //
+    // A plan, a tier and a trial flag used to be read off the URL here and
+    // remembered on the session, so a package chosen on the marketing site
+    // arrived preselected in setup and was shown back as though the business
+    // held it. None of those exist any more, and a remembered click was never
+    // a commercial fact in the first place.
     final uri = GoRouterState.of(context).uri;
-    _selectedPlan = _normalized(uri.queryParameters['plan']) ??
-        AuthSessionController.instance.selectedPlan;
-    _selectedTier = _normalized(uri.queryParameters['tier']) ??
-        AuthSessionController.instance.selectedTier;
-    _selectedTrial = _normalized(uri.queryParameters['trial']);
-
-    if (_selectedPlan != null || _selectedTier != null) {
-      await AuthSessionController.instance.rememberSelection(
-        plan: _selectedPlan,
-        tier: _selectedTier,
-      );
-    }
 
     if (_isVerification) {
       await _handleVerification(uri);
@@ -186,12 +178,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final stacked = constraints.maxWidth < 940;
-          final intro = _AuthIntro(
-            isJoin: _isJoin,
-            plan: _selectedPlan,
-            tier: _selectedTier,
-            trial: _selectedTrial,
-          );
+          final intro = _AuthIntro(isJoin: _isJoin);
           final form = _AuthCard(state: this);
 
           if (stacked) {
@@ -238,10 +225,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
       );
 
       await AuthSessionController.instance.clear();
-      await AuthSessionController.instance.rememberSelection(
-        plan: _selectedPlan,
-        tier: _selectedTier,
-      );
 
       if (!mounted) return;
       final email = response['email']?.toString().trim();
@@ -418,11 +401,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   Future<void> _completeClientAccess(Map<String, dynamic> response) async {
     final session = AuthSessionController.instance;
-
-    await AuthSessionController.instance.rememberSelection(
-      plan: _selectedPlan,
-      tier: _selectedTier,
-    );
     if (!mounted) return;
 
     // WHERE THEY WERE TRYING TO GO.
@@ -563,12 +541,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     return Uri(
       path: path,
       queryParameters: {
-        if (_selectedPlan != null && _selectedPlan!.isNotEmpty)
-          'plan': _selectedPlan!,
-        if (_selectedTier != null && _selectedTier!.isNotEmpty)
-          'tier': _selectedTier!,
-        if (_selectedTrial != null && _selectedTrial!.isNotEmpty)
-          'trial': _selectedTrial!,
         if (sent) 'sent': '1',
         if (email != null && email.isNotEmpty) 'email': email,
       },
@@ -691,21 +663,12 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 }
 
 class _AuthIntro extends StatelessWidget {
-  const _AuthIntro({required this.isJoin, this.plan, this.tier, this.trial});
+  const _AuthIntro({required this.isJoin});
 
   final bool isJoin;
-  final String? plan;
-  final String? tier;
-  final String? trial;
 
   @override
   Widget build(BuildContext context) {
-    final details = <String>[
-      if (plan != null && plan!.isNotEmpty) 'Plan: ${_label(plan!)}',
-      if (tier != null && tier!.isNotEmpty) 'Tier: ${_label(tier!)}',
-      if (trial == '15d') '15-day trial selected',
-    ];
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(28),
@@ -743,22 +706,17 @@ class _AuthIntro extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             isJoin
-                ? trial == '15d'
-                    ? 'Create your workspace, confirm your email, define your business setup, and continue into Stripe to set up the subscription and start the 15-day trial.'
-                    : 'Create your workspace, confirm your email, define your business setup, and continue into Stripe to set up the subscription.'
-                : 'Sign in to continue where you left off, review your account, and get back to work.',
+                // No trial is mentioned, because there is none. And no payment
+                // is mentioned either: creating a workspace costs nothing, and
+                // leading with a checkout describes a product this one is not.
+                ? 'Create your workspace, confirm your email and define your '
+                    'business setup. Nothing to pay for until you decide to.'
+                : 'Sign in to continue where you left off, review your account, '
+                    'and get back to work.',
             style: Theme.of(
               context,
             ).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
           ),
-          if (details.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [for (final item in details) _Pill(label: item)],
-            ),
-          ],
           const SizedBox(height: 22),
           Container(
             padding: const EdgeInsets.all(18),

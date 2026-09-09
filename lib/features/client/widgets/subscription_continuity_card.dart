@@ -10,11 +10,10 @@ import 'package:orchestrate_app/features/system/widgets/trust_primitives.dart';
 ///
 /// Renders the backend `/billing/subscription` (or workspace overview
 /// subscription) shape:
-///   { status, lane, tier, displayPlanLabel, currentPeriodStart,
-///     currentPeriodEnd, isTrialing, trialEndsAt, trialDays, ... }
+///   { status, offering, period, currentPeriodStart, currentPeriodEnd, ... }
 ///
 /// Reports operational truth at every state:
-///   - what operational lane + execution tier the client is on,
+///   - what the workspace holds, and how often it is billed,
 ///   - the lifecycle state by name (active / trialing / past due /
 ///     paused / canceled / expired / inactive),
 ///   - the operational consequence (what dispatch is doing, what
@@ -44,7 +43,7 @@ class SubscriptionContinuityCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     final state = _resolveState(subscription, session);
-    final identityLabel = _identityLabel(subscription, session);
+    final identityLabel = _identityLabel(subscription);
     final ownerSpec = _ownerSpec(state.kind);
 
     return Container(
@@ -344,25 +343,25 @@ _OwnerSpec _ownerSpec(_LifecycleKind kind) {
   }
 }
 
-String _identityLabel(
-    Map<String, dynamic> subscription, AuthSessionController session) {
-  final display = _readText(subscription, 'displayPlanLabel');
-  if (display.isNotEmpty) return display;
-
-  final lane =
-      _readText(subscription, 'lane', fallback: session.selectedPlan ?? '');
-  final tier =
-      _readText(subscription, 'tier', fallback: session.selectedTier ?? '');
-
-  final laneText = _humanizeLane(lane);
-  final tierText = _humanizeTier(tier);
-
-  if (laneText.isEmpty && tierText.isEmpty) {
-    return 'Lane and tier not yet selected';
+/// WHAT THIS WORKSPACE HOLDS.
+///
+/// It used to be a lane and a tier joined by an arrow, and where the
+/// subscription carried neither it fell back to the pair the session
+/// remembered somebody clicking in the funnel — so a workspace with no
+/// subscription announced a package it had never bought, and one with no
+/// selection at all read "Lane and tier not yet selected", which sounds like
+/// an unfinished task and was not one.
+///
+/// One product. The only thing that varies is the cadence.
+String _identityLabel(Map<String, dynamic> subscription) {
+  switch (_readText(subscription, 'period').toUpperCase()) {
+    case 'ANNUAL':
+      return 'Orchestrate  ·  billed annually';
+    case 'MONTHLY':
+      return 'Orchestrate  ·  billed monthly';
+    default:
+      return 'Orchestrate';
   }
-  if (laneText.isEmpty) return tierText;
-  if (tierText.isEmpty) return laneText;
-  return '$laneText  →  $tierText';
 }
 
 _LifecycleState _resolveState(
@@ -521,16 +520,16 @@ _LifecycleState _resolveState(
           kind: _LifecycleKind.trialing,
           lifecycleLabel: 'Trial active',
           consequence:
-              'Full managed execution runs during the trial. Dispatch, reply ingestion, and readiness all operate under your lane.',
+              'Full managed execution runs during the trial. Dispatch, reply '
+              'ingestion and readiness all operate.',
           timeline: _trialTimelineLabel(trialEnd, periodEnd),
+          // "Expand execution scope" pointed at a bigger package. There is no
+          // bigger package, and there never was one to expand into for anybody
+          // reading this — nobody ever bought one.
           actions: const [
             _ContinuityAction(
               label: 'Open billing',
               route: '/client/billing',
-            ),
-            _ContinuityAction(
-              label: 'Expand execution scope',
-              route: '/client/subscribe',
               filled: true,
             ),
           ],
@@ -621,29 +620,6 @@ String _readText(Map<String, dynamic> map, String key, {String fallback = ''}) {
   return text.isEmpty ? fallback : text;
 }
 
-String _humanizeLane(String value) {
-  switch (value.trim().toLowerCase()) {
-    case 'opportunity':
-      return 'Opportunity';
-    case 'revenue':
-      return 'Revenue';
-  }
-  return '';
-}
-
-String _humanizeTier(String value) {
-  switch (value.trim().toLowerCase()) {
-    case 'focused':
-      return 'Focused';
-    case 'multi':
-    case 'multi-market':
-    case 'multi_market':
-      return 'Multi-Market';
-    case 'precision':
-      return 'Precision';
-  }
-  return '';
-}
 
 String _titleCase(String value) {
   final t = value.trim();

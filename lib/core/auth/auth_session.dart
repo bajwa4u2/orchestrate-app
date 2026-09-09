@@ -31,42 +31,16 @@ class AuthSessionController extends ChangeNotifier {
   String get authNotice => (_session?['authNotice'] as String?) ?? '';
   bool get hasSetupCompleted => (_session?['setupCompleted'] as bool?) ?? false;
 
-  String? get commercialPlan {
-    final value = (_session?['commercialPlan'] as String?)?.trim();
-    if (value == null || value.isEmpty) return null;
-    return _normalizePlan(value);
-  }
-
-  String? get commercialTier {
-    final value = (_session?['commercialTier'] as String?)?.trim();
-    if (value == null || value.isEmpty) return null;
-    return _normalizeTier(value);
-  }
-
-  String? get setupSelectedPlan {
-    final value = ((_session?['setupSelectedPlan'] ?? _session?['selectedPlan'])
-            as String?)
-        ?.trim();
-    if (value == null || value.isEmpty) return null;
-    return _normalizePlan(value);
-  }
-
-  String? get setupSelectedTier {
-    final value = ((_session?['setupSelectedTier'] ?? _session?['selectedTier'])
-            as String?)
-        ?.trim();
-    if (value == null || value.isEmpty) return null;
-    return _normalizeTier(value);
-  }
-
-  String? get selectedPlan => commercialPlan ?? setupSelectedPlan;
-
-  String? get selectedTier => commercialTier ?? setupSelectedTier;
-
-  String? get selectedPlanDisplay => _buildPlanDisplay(
-        plan: commercialPlan ?? setupSelectedPlan,
-        tier: commercialTier ?? setupSelectedTier,
-      );
+  // NO PLAN AND NO TIER.
+  //
+  // The session used to carry four of them: the plan and tier a subscription
+  // was on, and the plan and tier somebody had clicked on the way in. Screens
+  // read whichever was present, so a business with no subscription and no
+  // payment was shown "Plan: Focused" — the package it had once looked at,
+  // rendered as the package it held.
+  //
+  // A remembered click is not a commercial fact. Orchestrate sells one product
+  // and the session does not need to remember which one.
 
   String get subscriptionStatus =>
       (_session?['subscriptionStatus'] as String?) ?? 'none';
@@ -206,28 +180,6 @@ class AuthSessionController extends ChangeNotifier {
           setup['setupCompleted'] == true ||
           client['setupCompleted'] == true ||
           previous['setupCompleted'] == true,
-      'setupSelectedPlan': _normalizePlan(
-        _readString(setup, const ['selectedPlan']) ??
-            _readString(client, const ['setupSelectedPlan', 'selectedPlan']) ??
-            _readString(user, const ['selectedPlan']) ??
-            previous['setupSelectedPlan']?.toString() ??
-            previous['selectedPlan']?.toString(),
-      ),
-      'setupSelectedTier': _normalizeTier(
-        _readString(setup, const ['selectedTier']) ??
-            _readString(client, const ['setupSelectedTier', 'selectedTier']) ??
-            _readString(user, const ['selectedTier']) ??
-            previous['setupSelectedTier']?.toString() ??
-            previous['selectedTier']?.toString(),
-      ),
-      'commercialPlan': _normalizePlan(
-        _readString(commercial, const ['service', 'lane']) ??
-            previous['commercialPlan']?.toString(),
-      ),
-      'commercialTier': _normalizeTier(
-        _readString(commercial, const ['tier']) ??
-            previous['commercialTier']?.toString(),
-      ),
       'subscriptionStatus': (_readString(commercial, const ['status']) ??
               _readString(user, const ['subscriptionStatus']) ??
               _readString(setup, const ['subscriptionStatus']) ??
@@ -303,24 +255,6 @@ class AuthSessionController extends ChangeNotifier {
     }
 
     _session!['setupCompleted'] = client['setupCompleted'] == true;
-    _session!['setupSelectedPlan'] = _normalizePlan(
-      _readString(client, const ['setupSelectedPlan', 'selectedPlan']) ??
-          _session!['setupSelectedPlan']?.toString() ??
-          _session!['selectedPlan']?.toString(),
-    );
-    _session!['setupSelectedTier'] = _normalizeTier(
-      _readString(client, const ['setupSelectedTier', 'selectedTier']) ??
-          _session!['setupSelectedTier']?.toString() ??
-          _session!['selectedTier']?.toString(),
-    );
-    _session!['commercialPlan'] = _normalizePlan(
-      _readString(commercial, const ['service', 'lane']) ??
-          _session!['commercialPlan']?.toString(),
-    );
-    _session!['commercialTier'] = _normalizeTier(
-      _readString(commercial, const ['tier']) ??
-          _session!['commercialTier']?.toString(),
-    );
     _session!['subscriptionStatus'] =
         (_readString(client, const ['subscriptionStatus']) ??
                 _session!['subscriptionStatus'] ??
@@ -336,31 +270,6 @@ class AuthSessionController extends ChangeNotifier {
     _session ??= {};
     _session!['subscriptionStatus'] = status.trim().toLowerCase();
     await _persist();
-  }
-
-  Future<void> rememberSelection({String? plan, String? tier}) async {
-    final normalizedPlan = _normalizePlan(plan);
-    final normalizedTier = _normalizeTier(tier);
-
-    _session ??= {};
-    if (normalizedPlan != null && normalizedPlan.isNotEmpty) {
-      _session!['setupSelectedPlan'] = normalizedPlan;
-      _session!['selectedPlan'] = normalizedPlan;
-    }
-    if (normalizedTier != null && normalizedTier.isNotEmpty) {
-      _session!['setupSelectedTier'] = normalizedTier;
-      _session!['selectedTier'] = normalizedTier;
-    }
-
-    await _persist();
-  }
-
-  Future<void> rememberSelectedPlan(String? plan) async {
-    await rememberSelection(plan: plan);
-  }
-
-  Future<void> rememberSelectedTier(String? tier) async {
-    await rememberSelection(tier: tier);
   }
 
   Future<void> saveSetupDraft(Map<String, dynamic> draft) async {
@@ -425,56 +334,3 @@ String? _readString(Map<String, dynamic> map, List<String> keys) {
   return null;
 }
 
-String? _normalizePlan(String? value) {
-  final text = value?.trim().toLowerCase();
-  if (text == 'opportunity' || text == 'revenue') return text;
-  return null;
-}
-
-String? _normalizeTier(String? value) {
-  final text = value?.trim().toLowerCase();
-  if (text == 'focused') return 'focused';
-  if (text == 'multi' || text == 'multi-market' || text == 'multi_market') {
-    return 'multi';
-  }
-  if (text == 'precision') return 'precision';
-  return null;
-}
-
-String? _buildPlanDisplay({
-  required String? plan,
-  required String? tier,
-}) {
-  final normalizedPlan = _normalizePlan(plan);
-  final normalizedTier = _normalizeTier(tier);
-
-  if (normalizedPlan == null && normalizedTier == null) return null;
-  if (normalizedPlan == null) return _humanizeTier(normalizedTier);
-  if (normalizedTier == null) return _humanizePlan(normalizedPlan);
-
-  return '${_humanizePlan(normalizedPlan)} · ${_humanizeTier(normalizedTier)}';
-}
-
-String _humanizePlan(String? value) {
-  switch (_normalizePlan(value)) {
-    case 'revenue':
-      return 'Revenue';
-    case 'opportunity':
-      return 'Opportunity';
-    default:
-      return 'Not set';
-  }
-}
-
-String _humanizeTier(String? value) {
-  switch (_normalizeTier(value)) {
-    case 'precision':
-      return 'Precision';
-    case 'multi':
-      return 'Multi-Market';
-    case 'focused':
-      return 'Focused';
-    default:
-      return 'Not set';
-  }
-}

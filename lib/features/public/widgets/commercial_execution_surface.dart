@@ -60,7 +60,7 @@ class CommercialHero extends StatelessWidget {
                 runSpacing: 12,
                 children: [
                   FilledButton(
-                    onPressed: () => context.go('/pricing?trial=15d'),
+                    onPressed: () => context.go('/pricing'),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.accent,
                       foregroundColor: const Color(0xFF071311),

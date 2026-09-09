@@ -210,8 +210,6 @@ class AuthRepository {
     List<String> excludeGeo = const [],
     List<String> priorityMarkets = const [],
     String? notes,
-    String? selectedPlan,
-    String? selectedTier,
     Map<String, dynamic>? metadata,
   }) async {
     final json = await _apiClient.postJson(
@@ -228,10 +226,6 @@ class AuthRepository {
         if (excludeGeo.isNotEmpty) 'excludeGeo': excludeGeo,
         if (priorityMarkets.isNotEmpty) 'priorityMarkets': priorityMarkets,
         if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
-        if (selectedPlan != null && selectedPlan.trim().isNotEmpty)
-          'selectedPlan': selectedPlan.trim().toLowerCase(),
-        if (selectedTier != null && selectedTier.trim().isNotEmpty)
-          'selectedTier': selectedTier.trim().toLowerCase(),
         if (metadata != null && metadata.isNotEmpty) 'metadata': metadata,
       },
     );
