@@ -385,7 +385,8 @@ _LifecycleState _resolveState(
         kind: _LifecycleKind.active,
         lifecycleLabel: 'Active',
         consequence:
-            'Managed execution is running. Dispatch, reply ingestion, and the readiness engine are all active under your lane.',
+            'Managed execution is running. Dispatch, reply ingestion and '
+            'the readiness engine are all active.',
         timeline: _renewalTimelineLabel(periodEnd),
         actions: const [
           _ContinuityAction(
@@ -406,7 +407,8 @@ _LifecycleState _resolveState(
         kind: _LifecycleKind.trialing,
         lifecycleLabel: 'Trial active',
         consequence:
-            'Full managed execution runs during the trial. Dispatch, reply ingestion, and readiness all operate under your lane.',
+            'Full managed execution runs during the trial. Dispatch, reply '
+            'ingestion and readiness all operate.',
         timeline: _trialTimelineLabel(trialEnd, periodEnd),
         actions: const [
           _ContinuityAction(
@@ -480,7 +482,9 @@ _LifecycleState _resolveState(
         kind: _LifecycleKind.expired,
         lifecycleLabel: 'Expired',
         consequence:
-            'Dispatch has ended. Reply ingestion continues as long as the mailbox transport remains attached. Reactivating the plan restores managed execution under the same lane + tier.',
+            'Dispatch has ended. Reply ingestion continues as long as the '
+            'mailbox transport remains attached. Subscribing again restores '
+            'managed execution.',
         timeline: '',
         actions: const [
           _ContinuityAction(

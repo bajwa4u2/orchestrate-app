@@ -35,13 +35,17 @@ void main() {
     ));
     await tester.pump();
 
-    // Every mark sits at the same vertical offset: that is what "inline" is,
+    // Every entry sits at the same vertical offset: that is what "inline" is,
     // and it is checked by geometry rather than by asserting a widget type.
+    // One badge and two programme names — see OfficialSupportMarks for why the
+    // two are words rather than logos.
     final marks = find.byType(SizedBox).evaluate().where((e) {
       final box = e.widget as SizedBox;
       return box.height == 42;
     }).toList();
-    expect(marks.length, 3, reason: 'all three support marks must render');
+    expect(marks.length, 3, reason: 'all three support entries must render');
+    expect(find.text('Google for Startups'), findsOneWidget);
+    expect(find.text('AWS Activate'), findsOneWidget);
 
     final tops = marks
         .map((e) => (e.renderObject as RenderBox)

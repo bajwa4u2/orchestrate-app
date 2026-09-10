@@ -156,15 +156,15 @@ class _SupportContextCardState extends State<SupportContextCard> {
                     'unknown',
                 tone: _statusTone(subscription['status']),
               ),
-              if (subscription['lane'] != null)
+              // The lane and tier badges are gone with the packages they
+              // named. The projection stopped sending both, so these rendered
+              // nothing — but a badge that silently never appears is worse
+              // than one that was removed, because the next reader assumes it
+              // is waiting on data.
+              if (subscription['period'] != null)
                 GovernanceBadge(
-                  label: 'lane',
-                  value: subscription['lane'].toString(),
-                ),
-              if (subscription['tier'] != null)
-                GovernanceBadge(
-                  label: 'tier',
-                  value: subscription['tier'].toString(),
+                  label: 'billed',
+                  value: subscription['period'].toString().toLowerCase(),
                 ),
             ],
             if (mailbox != null) ...[

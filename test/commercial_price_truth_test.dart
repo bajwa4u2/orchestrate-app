@@ -106,6 +106,40 @@ void main() {
     expect(model.activation.open, isTrue);
   });
 
+  test('the retired package vocabulary is gone from customer copy', () {
+    // THE DISPATCH LANE IS A DIFFERENT WORD AND IT STAYS.
+    //
+    // `WorkflowLane`, the governance panel's "which lane and lifecycle stage
+    // was applied", and the operation/thread/lane/lifecycle dispatch headers
+    // name a real execution concept. This is only about the commercial lane —
+    // half of the retired lane x tier package pair.
+    //
+    // It survived the data-model removal as hardcoded sentences: a live
+    // workspace read "Managed execution is running under your lane" on the
+    // Plan & billing screen, found on a Pixel after the fields were gone.
+    final offenders = <String>[];
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      final source = entity
+          .readAsStringSync()
+          .split('\n')
+          .where((line) => !line.trimLeft().startsWith('//'))
+          .join('\n');
+      for (final phrase in const [
+        'your lane',
+        'same lane',
+        'lane + tier',
+        'lane and tier',
+        'Opportunity · Focused',
+      ]) {
+        if (source.contains(phrase)) offenders.add('${entity.path}: $phrase');
+      }
+    }
+    expect(offenders, isEmpty,
+        reason: 'a package this product no longer sells must not be described '
+            'to a customer as the thing they are on:\n${offenders.join('\n')}');
+  });
+
   test('no price is written into the client', () {
     // THE RULE THIS FILE EXISTS FOR.
     //

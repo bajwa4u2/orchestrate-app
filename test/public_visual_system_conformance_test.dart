@@ -27,14 +27,49 @@ void main() {
         isNot(contains('Ready to activate revenue automation infrastructure')));
   });
 
-  test('support marks remain governed assets, not text pills', () {
+  /// THIS RULE WAS REVERSED, DELIBERATELY.
+  ///
+  /// It used to require all three support marks to be image assets — "governed
+  /// assets, not text pills" — and it named the two SVG files. That was the
+  /// right instinct aimed at the wrong thing: it defended the presence of two
+  /// files that were never issued to anybody here. The Google file was the
+  /// plain "G" from the Simple Icons set (its own `<title>` says `Google`) and
+  /// the AWS file was an architecture *diagram* icon, `Arch_AWS-Activate_48`,
+  /// on the magenta category tile that icon set uses inside diagrams.
+  ///
+  /// Settled in the Bajwa Writes estate on 2026-09-07 against both companies'
+  /// own published guidance, and applied here on founder instruction for
+  /// parity across the estates. A mark may stand for a programme only if it is
+  /// that programme's authorised mark; where the mark is granted rather than
+  /// published, the programme's name is the authorised representation.
+  ///
+  /// So the rule now runs the other way: the Microsoft badge is real and must
+  /// stay an image, and the other two must be words and must not reach for the
+  /// retired files.
+  test('a mark is used only where a mark was actually issued', () {
     final shell = read('lib/app/shell/public_shell.dart');
     final visuals =
         read('lib/features/public/widgets/execution_visual_chapters.dart');
     expect(shell, contains('OfficialSupportMarks'));
+
+    // Genuine, founder-approved, and provided by Microsoft.
     expect(visuals, contains('microsoft-for-startups-badge.png'));
-    expect(visuals, contains('google-for-startups.svg'));
-    expect(visuals, contains('aws-activate.svg'));
+
+    // Never issued. Neither file may come back, and neither may any other
+    // stand-in reached for under the same name.
+    expect(visuals, isNot(contains('google-for-startups.svg')));
+    expect(visuals, isNot(contains('aws-activate.svg')));
+    expect(File('assets/branding/support/google-for-startups.svg').existsSync(),
+        isFalse);
+    expect(
+        File('assets/branding/support/aws-activate.svg').existsSync(), isFalse);
+
+    // Named in words, and each linked to the programme so a reader can check
+    // the claim at its source.
+    expect(visuals, contains("_SupportWord('Google for Startups'"));
+    expect(visuals, contains("_SupportWord('AWS Activate'"));
+    expect(visuals, contains('https://startup.google.com/'));
+    expect(visuals, contains('https://aws.amazon.com/activate/'));
   });
 
   test('public identity uses the canonical transparent lockup', () {

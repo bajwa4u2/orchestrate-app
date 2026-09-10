@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 
@@ -651,20 +652,43 @@ class _AuthorityRow extends StatelessWidget {
       ]));
 }
 
-/// THE SUPPORT MARKS, ON ONE LINE.
+/// THE THREE PROGRAMME RELATIONSHIPS, EACH LINKED TO THE PROGRAMME ITSELF.
 ///
-/// They were laid out with a `Wrap`, which is a layout that gives up: three
-/// marks at 132 + 110 + 94 with 22 between them need 380 logical pixels, and a
-/// Pixel 9a offers 411 less the band's 56 of padding — 355. Twenty-five pixels
-/// short, so the third mark dropped to a row of its own and the band read as
-/// two supporters and an orphan.
+/// ## Why one carries a mark and two carry their names
 ///
-/// It only shows on a narrow screen, which is why it survived review: every
-/// desktop width fits all three.
+/// Settled in the Bajwa Writes estate on 2026-09-07 against the two companies'
+/// own current documentation, and applied here for parity. A visual mark may
+/// stand for a programme only if it is that programme's authorised mark. The
+/// two files that used to sit here were the plain Google "G" from the Simple
+/// Icons set — its own `<title>` says `Google` — and an AWS *architecture
+/// diagram* icon (`Arch_AWS-Activate_48`) on the magenta category tile that
+/// icon set uses inside diagrams. Neither was ever issued to anybody here.
 ///
-/// A row of endorsements is one row or it is not a row. `FittedBox` scales the
-/// whole set down together when it will not fit, keeping them inline at any
-/// width and keeping their relative sizes — the thing a `Wrap` destroys.
+/// **Microsoft for Startups** — a genuine Microsoft-provided badge, recorded
+/// founder-approved in the company estate for Aura Platform LLC's Founders Hub
+/// participation. It stays.
+///
+/// **Google for Startups** — an official mark exists but is *issued*, not
+/// published. Google's partnership guidance permits a badge only to those who
+/// qualify for partner status, because lesser use "may imply an endorsement
+/// from or affiliation with Google". Plain-text reference is the treatment
+/// Google expressly permits, so that is what this is.
+///
+/// **AWS Activate** — AWS requires the Activate Logo Guidelines to be followed
+/// *and written permission obtained* before the logo is featured. Naming the
+/// Mark without displaying its logo is what AWS permits without approval.
+///
+/// Neither word is a placeholder for an asset we could have fetched. In both
+/// cases the mark is granted rather than downloaded, and until it is granted
+/// the honest representation is the programme's name.
+///
+/// ## And they stay on one line
+///
+/// They were laid out with a `Wrap`, which is a layout that gives up: on a
+/// Pixel 9a the third entry dropped to a row of its own and the band read as
+/// two supporters and an orphan. Every desktop width fits all three, which is
+/// why it survived review and had to be caught on a phone. `FittedBox` scales
+/// the set down together instead, keeping them inline at any width.
 class OfficialSupportMarks extends StatelessWidget {
   const OfficialSupportMarks(
       {super.key, this.alignment = Alignment.centerRight});
@@ -673,53 +697,126 @@ class OfficialSupportMarks extends StatelessWidget {
   final Alignment alignment;
 
   @override
-  Widget build(BuildContext context) => FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: alignment,
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _SupportAsset(
-                'assets/branding/support/microsoft-for-startups-badge.png',
-                'Microsoft for Startups',
-                width: 132),
-            SizedBox(width: 22),
-            _SupportAsset('assets/branding/support/google-for-startups.svg',
-                'Google for Startups',
-                width: 110),
-            SizedBox(width: 22),
-            _SupportAsset(
-                'assets/branding/support/aws-activate.svg', 'AWS Activate',
-                width: 94),
-          ],
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width <= 760;
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: alignment,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _SupportAsset(
+            'assets/branding/support/microsoft-for-startups-badge.png',
+            // The precise relationship, not a vaguer one. The company estate
+            // records it as Founders Hub participation, so a screen reader
+            // gets the exact claim the badge makes.
+            'Microsoft for Startups — Founders Hub member',
+            width: compact ? 110 : 132,
+            href: 'https://www.microsoft.com/en-us/startups/',
+          ),
+          SizedBox(width: compact ? 16 : 26),
+          const _SupportWord('Google for Startups',
+              href: 'https://startup.google.com/'),
+          SizedBox(width: compact ? 16 : 26),
+          const _SupportWord('AWS Activate',
+              href: 'https://aws.amazon.com/activate/'),
+        ],
+      ),
+    );
+  }
+}
+
+/// A programme recognition that opens the programme's own page.
+///
+/// Externally, deliberately. Somebody tapping a programme name in a footer is
+/// checking a claim, not finishing their reading, and taking the window they
+/// were reading in would be the product deciding otherwise for them.
+class _ProgrammeLink extends StatelessWidget {
+  const _ProgrammeLink({required this.href, required this.child});
+  final String href;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => launchUrl(Uri.parse(href),
+              mode: LaunchMode.externalApplication),
+          child: child,
         ),
       );
 }
 
 class _SupportAsset extends StatelessWidget {
-  const _SupportAsset(this.asset, this.label, {required this.width});
+  const _SupportAsset(this.asset, this.label,
+      {required this.width, required this.href});
   final String asset;
   final String label;
   final double width;
+  final String href;
+
   @override
   Widget build(BuildContext context) => Semantics(
-      image: true,
-      label: label,
-      // These are the same governed originals used by the Company estate.
-      // Keep the marks free on the support field; a white wrapper makes them
-      // read as pasted image cards against Orchestrate's closing surface.
-      child: SizedBox(
-          width: width,
-          height: 42,
-          child: asset.endsWith('.svg')
-              ? SvgPicture.asset(asset,
-                  fit: BoxFit.contain, semanticsLabel: label)
-              : Image.asset(asset,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stack) => Text(label,
-                      style: const TextStyle(
-                          fontSize: 9, fontWeight: FontWeight.w700)))));
+        image: true,
+        link: true,
+        label: label,
+        // Kept free on the support field; a white wrapper makes it read as a
+        // pasted image card against Orchestrate's closing surface.
+        child: _ProgrammeLink(
+          href: href,
+          child: SizedBox(
+            width: width,
+            height: 42,
+            child: asset.endsWith('.svg')
+                ? SvgPicture.asset(asset,
+                    fit: BoxFit.contain, semanticsLabel: label)
+                : Image.asset(asset,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stack) => Text(label,
+                        style: const TextStyle(
+                            fontSize: 9, fontWeight: FontWeight.w700))),
+          ),
+        ),
+      );
+}
+
+/// A programme named in words, because its mark is granted and we hold none.
+///
+/// Plain-text reference is the treatment Google's own rules expressly permit to
+/// somebody who is not a badge-qualified partner, and naming an AWS Mark
+/// without displaying its logo is what AWS permits without written approval.
+/// So this is an authorised representation, not a stand-in for one.
+///
+/// Set at the same height as the badge beside it, so the row reads as three
+/// deliberate entries rather than one badge and two gaps.
+class _SupportWord extends StatelessWidget {
+  const _SupportWord(this.label, {required this.href});
+  final String label;
+  final String href;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        link: true,
+        label: label,
+        child: _ProgrammeLink(
+          href: href,
+          child: SizedBox(
+            height: 42,
+            child: Center(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.publicOnDark,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class _Kicker extends StatelessWidget {

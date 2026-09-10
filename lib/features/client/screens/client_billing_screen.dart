@@ -346,7 +346,8 @@ ClientStatusBanner _billingBanner({
         tone: ClientBannerTone.success,
         title: 'Billing is active',
         message:
-            'Managed execution is running under your lane. No billing action is required. $portalHint',
+            'Managed execution is running. No billing action is required. '
+            '$portalHint',
       );
     case 'trialing':
     case 'trial':
@@ -387,7 +388,9 @@ ClientStatusBanner _billingBanner({
         tone: ClientBannerTone.warning,
         title: 'Subscription expired. Dispatch ended.',
         message:
-            'Dispatch has ended. Reply ingestion continues as long as the mailbox transport remains attached. Reactivate the plan to restore managed execution under the same lane and tier.',
+            'Dispatch has ended. Reply ingestion continues as long as the '
+            'mailbox transport remains attached. Subscribing again '
+            'restores managed execution.',
       );
     case 'incomplete':
     case 'incomplete_expired':
