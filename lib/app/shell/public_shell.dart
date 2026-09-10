@@ -408,18 +408,24 @@ class _CommercializationSupportBand extends StatelessWidget {
                           height: 1.35)),
                 ],
               );
-              const marks = OfficialSupportMarks();
               return compact
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [copy, const SizedBox(height: 16), marks])
+                      children: [
+                          copy,
+                          const SizedBox(height: 16),
+                          // Stacked under left-aligned copy, so the marks read
+                          // from the same edge rather than floating right.
+                          const OfficialSupportMarks(
+                              alignment: Alignment.centerLeft),
+                        ])
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                           Expanded(child: copy),
                           const SizedBox(width: 24),
-                          Flexible(child: marks)
+                          const Flexible(child: OfficialSupportMarks())
                         ]);
             },
           ),

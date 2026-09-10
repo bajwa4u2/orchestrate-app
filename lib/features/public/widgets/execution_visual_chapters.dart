@@ -651,25 +651,50 @@ class _AuthorityRow extends StatelessWidget {
       ]));
 }
 
+/// THE SUPPORT MARKS, ON ONE LINE.
+///
+/// They were laid out with a `Wrap`, which is a layout that gives up: three
+/// marks at 132 + 110 + 94 with 22 between them need 380 logical pixels, and a
+/// Pixel 9a offers 411 less the band's 56 of padding — 355. Twenty-five pixels
+/// short, so the third mark dropped to a row of its own and the band read as
+/// two supporters and an orphan.
+///
+/// It only shows on a narrow screen, which is why it survived review: every
+/// desktop width fits all three.
+///
+/// A row of endorsements is one row or it is not a row. `FittedBox` scales the
+/// whole set down together when it will not fit, keeping them inline at any
+/// width and keeping their relative sizes — the thing a `Wrap` destroys.
 class OfficialSupportMarks extends StatelessWidget {
-  const OfficialSupportMarks({super.key});
+  const OfficialSupportMarks(
+      {super.key, this.alignment = Alignment.centerRight});
+
+  /// Right where the band puts the copy on the left; left when it stacks.
+  final Alignment alignment;
+
   @override
-  Widget build(BuildContext context) => Wrap(
-          alignment: WrapAlignment.end,
-          spacing: 22,
-          runSpacing: 16,
-          children: const [
+  Widget build(BuildContext context) => FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: alignment,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
             _SupportAsset(
                 'assets/branding/support/microsoft-for-startups-badge.png',
                 'Microsoft for Startups',
                 width: 132),
+            SizedBox(width: 22),
             _SupportAsset('assets/branding/support/google-for-startups.svg',
                 'Google for Startups',
                 width: 110),
+            SizedBox(width: 22),
             _SupportAsset(
                 'assets/branding/support/aws-activate.svg', 'AWS Activate',
-                width: 94)
-          ]);
+                width: 94),
+          ],
+        ),
+      );
 }
 
 class _SupportAsset extends StatelessWidget {
