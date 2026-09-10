@@ -183,7 +183,12 @@ void main() {
     // The nature of the access is named. Two of Orchestrate's four granted
     // organisations are its own products and one belongs to a Strategic
     // Member; none of them bought anything.
-    expect(find.text('Internal operational access'), findsWidgets);
+    //
+    // Matched on the heading, which is where it is said. This used to match
+    // the source footnote underneath — and passed because the card printed
+    // the same phrase twice, once as the heading and once again below the
+    // reason. The duplicate is gone; the statement is not.
+    expect(find.textContaining('Internal operational access'), findsOneWidget);
     expect(ClientCapabilities.instance.entitlement!.isPayingCustomer, isFalse);
   });
 

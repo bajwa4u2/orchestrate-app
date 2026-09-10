@@ -148,6 +148,20 @@ class EntitlementSummary extends StatefulWidget {
   State<EntitlementSummary> createState() => _EntitlementSummaryState();
 }
 
+/// The source line, unless the heading already said it.
+///
+/// A paid subscription needs no such line at all: "you bought it" is what a
+/// subscription means. A grant does — but only where naming the grant adds
+/// something the heading has not already stated.
+String? _footnoteFor(Entitlement entitlement) {
+  if (entitlement.source == EntitlementSource.paid) return null;
+  final label = entitlement.source.label;
+  final says = entitlement.says;
+  String bare(String v) =>
+      v.trim().toLowerCase().replaceAll(RegExp(r'[.\s]+$'), '');
+  return bare(label) == bare(says) ? null : label;
+}
+
 class _EntitlementSummaryState extends State<EntitlementSummary> {
   @override
   void initState() {
@@ -226,9 +240,13 @@ class _EntitlementSummaryState extends State<EntitlementSummary> {
         _panel(text, entitlement.says, entitlement.because,
             // How the organisation came to be entitled, when it was not bought.
             // A grant is not a subscription and is not presented as one.
-            entitlement.source == EntitlementSource.paid
-                ? null
-                : entitlement.source.label),
+            //
+            // Omitted when it would only repeat the heading. On an internal
+            // grant the server's own sentence IS "Internal operational
+            // access", so the card printed that phrase twice with the reason
+            // sandwiched between — read on a Pixel and again on Windows, and
+            // it reads as a rendering fault rather than as emphasis.
+            _footnoteFor(entitlement)),
 
         const SizedBox(height: 20),
 
