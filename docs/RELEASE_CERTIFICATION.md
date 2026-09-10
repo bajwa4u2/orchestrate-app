@@ -466,3 +466,132 @@ control does not exist.**
 4. Once an item is added to an App Store review submission its review screenshot
    and notes go **read-only**; the only way back is removing the item, which
    un-stages it. Metadata has to be right before staging, not after.
+
+---
+
+# Google Play production unlocked, and 1.0.1 (15) submitted — 2026-09-10
+
+The 1.0.1 record above ends with Play production "not available". It became
+available, and the reason is worth stating precisely because it was not a
+release problem at all.
+
+## The gate was the ACCOUNT TYPE, not the app
+
+Play production was refused with "You don't have access to production yet". That
+is the **personal developer account** rule: an account registered to an
+individual must run a closed test with 12+ testers for 14 continuous days before
+it may apply for production. It has nothing to do with the app's readiness.
+
+**Organization accounts are exempt.** The account was registered to
+`Muhammad Sakhawat` as a Personal account, while the product branding, the
+Microsoft publisher identity (`AuraPlatformLLC.Orchestrateoperations`) and the
+app copyright all said Aura Platform LLC. Two of three stores were on personal
+identities while the products presented as the company.
+
+Converting the account resolved it in one step. Read from the console after:
+
+| Field | Value |
+|---|---|
+| Account type | **Organization** |
+| Organization | **AURA PLATFORM LLC** |
+| Registered address | 25426 Goddard Rd, Taylor 48180-6200, US |
+| Developer name (public) | **Aura Platform LLC** (was `Muhammad Sakhawat`) |
+| Website | `https://company.auraplatform.org/` verified |
+
+Production unlocked for **every app on the account**, not per app — Orchestrate
+and Aura both.
+
+### What the conversion actually required
+
+Google's dialog: a **D-U-N-S number** for the organization, plus a phone and
+email for the public developer profile. **No payment tier removes the testing
+requirement** — it is account type, not money, and both types cost the same.
+
+A D-U-N-S may already exist without ever being applied for; D&B auto-creates
+records for many registered entities. Check `my.dnb.com/lookup` before applying.
+
+**A Google Workspace or Cloud organization does NOT confer a Play organization
+account, and Play accounts cannot be merged.** Verified: `gcloud organizations
+list` returns 0 items for the personal identity and all four GCP projects are
+parentless. They are separate registrations.
+
+## The website should be the COMPANY page, not a product or personal one
+
+Measured, not assumed:
+
+```
+auraplatform.org            200  no title, no description - bare
+www.auraplatform.org        000  does not resolve: no DNS, no TLS
+company.auraplatform.org    200  "Aura Platform LLC - Products"
+bajwa.auraplatform.org      200  "Muhammad Sakhawat Bajwa - Founder..."  PERSONAL
+finance.auraplatform.org    200  "Aura Finance"
+```
+
+The verified website on the account had been `bajwa.auraplatform.org`, which is
+the founder's **personal** bio site. On a profile reading "Aura Platform LLC"
+that is the same individual/company ambiguity the conversion exists to remove.
+Now `company.auraplatform.org`, which already served the right content.
+
+**Open, and outside this session's working set:** the apex serves nothing and
+`www` does not resolve. A Play reviewer, a D&B verifier or an investor typing
+the obvious domain meets a blank page. Pointing apex + www at the company page
+is a small DNS change. Relayed to the peer sessions.
+
+## Orchestrate 15 (1.0.1) — submitted to production
+
+| | |
+|---|---|
+| Track | **Production**, full rollout (100%) |
+| Bundle | 15 (1.0.1), 11 MB, 6s download |
+| Countries | **177** |
+| Release notes | en-US, same text as alpha |
+| State | Sent to Google for review, ~7 days typical |
+
+A brand-new production track has **no countries selected** and refuses to save
+with "No countries or regions have been selected for this track". The country
+picker uses `role="checkbox"` custom elements, not `input[type=checkbox]`, and
+the header control is `aria-label="Select all rows"`.
+
+## Play billing was already correct — verified, not assumed
+
+Read from the Play Developer API before publishing:
+
+```
+orchestrate_platform
+  monthly  ACTIVE  173 regions   US $29.99   GB £26.49   IN ₹3,350
+  annual   ACTIVE  173 regions   US $299.99  GB £264.99  IN ₹33,700
+```
+
+Both base plans ACTIVE and anchored on the frozen prices. **Nothing resembling
+the $0.99 defect Apple carried.** The Play console's subscription list renders
+the "Active base plans" column empty, which is a UI artifact — the API shows
+both plans active. Do not read that column as state.
+
+## Aura 1.4.2 (37) — staged, not submitted
+
+Production track created, bundle 37 attached, release notes copied **verbatim
+from its own alpha track via the API** rather than written by this session,
+which does not know that product's changes. Blocked at country selection: the
+console returned `unexpected error (66A89484)` and the picker then rendered zero
+checkboxes across repeated attempts. The draft survived — `Draft release:
+37 (1.4.2), 0 countries / regions`.
+
+To finish: Aura > Production > Countries / regions > Add countries / regions >
+tick "Select all rows" > Save, then Publishing overview > Submit for review.
+
+**Two things decided by the founder, recorded because they were deliberate:**
+37 was promoted rather than 1.4.3 (38), because 38 is still under certification
+and needs a rebuild — so 38 becomes an update to a live audience rather than a
+first release. And "all countries" was chosen for Aura despite this session
+holding no certification evidence for that product and notes referencing a China
+CallKit jurisdiction gate and an App Store 1.4.1 China rejection.
+
+## A correction owed to the record
+
+While searching for the LLC's registered address this session dismissed
+"25426 Goddard Rd, Taylor, Michigan" as grep noise. It was the LLC's actual
+registered address. It then typed ZIP `48187` into the D&B lookup over a
+pre-filled `48180`; **48180 was correct** — 48187 is the founder's personal
+Canton ZIP. The estate contains no Articles of Organization, EIN, formation date
+or registered agent, which is why the address had to come from the console
+rather than the repositories.
