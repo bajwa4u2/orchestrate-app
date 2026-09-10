@@ -308,3 +308,161 @@ dart run msix:create --store          # then read AppxManifest.xml from the MSIX
 ```
 
 Backend: `npm test` — 208 suites.
+
+---
+
+# Orchestrate 1.0.1 (15) — certification and release record
+
+**App:** Orchestrate · **Version:** `1.0.1 (15)` · **Commit:** `856a53d` · **Date:** 2026-09-10
+
+Supersedes the 1.0.0 (14) record above. Where that document lists six blockers
+"between here and submission", five are now closed and the sixth is stated
+honestly below rather than quietly dropped.
+
+## Where 1.0.1 (15) actually went
+
+Read from the consoles, not from memory.
+
+| Channel | Result |
+|---|---|
+| App Store | **1.0.1 Waiting for Review** — submitted 2026-09-10 05:02, 4 items: iOS App 1.0.1 (15), the Orchestrate Platform subscription group, and both subscriptions |
+| TestFlight | **1.0.1 (15) Complete**, uploaded 03:15 by the Codemagic `ios-testflight` workflow |
+| Google Play | **15 (1.0.1)** on Closed testing (Alpha), status `completed`, full rollout |
+| Google Play production | **not touched, and not available** — the console requires applying for production access; the release service account is scoped to testing tracks and cannot reach production by design |
+| Microsoft Store | submitted by the founder |
+
+1.0.0 (14) was **removed from review** to make way, and now reads
+`Developer Rejected`. That was a deliberate, founder-authorised supersede: it
+forfeited 14's queue position, held since 2026-09-09 13:14.
+
+## Why the release identity is 1.0.1, not 1.0.0
+
+Build 15 carries `CFBundleShortVersionString 1.0.1`, and a build cannot attach
+to an App Store version record whose number differs. 1.0.0 already existed as
+the submitted version, so the marketing version had to move with the build. The
+version record was retitled 1.0.0 → 1.0.1 after 14 was removed.
+
+Checked for consistency across every artifact rather than assumed:
+
+| Surface | Reports |
+|---|---|
+| `pubspec.yaml` | `version: 1.0.1+15`, `msix_version: 1.0.1.0` |
+| Android package | `versionCode=15`, `versionName=1.0.1` (read with `aapt2 dump badging`) |
+| MSIX | `<Identity … Version="1.0.1.0">` (read from `AppxManifest.xml`) |
+| TestFlight | Version 1.0.1, Build (15) |
+| Play alpha | `15 (1.0.1)` |
+| The running app | account menu renders `Orchestrate 1.0.1 (15)` |
+
+No artifact still presents 1.0.0.
+
+## Artifacts, verified from the packages
+
+| Artifact | Size | Verified as |
+|---|---|---|
+| AAB | 60.2 MB | built 02:24 from `856a53d` |
+| APK | 63 MB | `versionCode=15 versionName=1.0.1` |
+| MSIX | 15 MB | `Identity Version="1.0.1.0"` |
+| web | 43 MB | serves, `<title>Orchestrate</title>` |
+| IPA | Codemagic | uploaded to TestFlight, processed Complete |
+
+**Every artifact on disk before this work was build 14** — the AAB and MSIX
+predated the 23:13 build-15 commit, and the APK read `versionCode=14`. Reading
+the version out of the package, rather than trusting a file timestamp, is what
+exposed that.
+
+## Evidence
+
+| Check | Result |
+|---|---|
+| `flutter analyze` | PASS, no issues (57.6s) |
+| Client suite | PASS, **426 tests** |
+| Pixel 9a `53061JEBF08485` | build 15 installed and launched; app reports `Orchestrate 1.0.1 (15)` |
+| Plan & billing on device | correct — the duplicate sentence from 14 is gone |
+| In-app `/pricing` on device | `$29.99 USD` monthly, `$299.99 USD` annual, and the same-subscription note |
+| Support marks on device | Microsoft for Startups badge + **Google for Startups** and **AWS Activate** as word marks |
+| Windows desktop | release built, launched, header and footer render (captured DPI-aware via `PrintWindow`) |
+| iOS simulator certification | PASS on Codemagic, 4m 23s, before signing |
+
+## What device certification found that tests did not
+
+**The subscription card shows a period that ended 5/13/2026 beside
+"Status: Active".** Investigated and **not** reported as a defect: it sits under
+a panel headed *"Subscription record — What the payment provider holds.
+Entitlement is stated above and is what the product acts on."* The framing is
+deliberate and correct. Recorded here because it looks like a defect on a
+screenshot and will be re-found by anyone who does not scroll up.
+
+## Apple subscription catalogue — configured this session
+
+Founder-frozen rule applied throughout: `SUBSCRIPTION_AVAILABILITY = APP_AVAILABILITY`,
+and monthly versus annual is cadence only.
+
+| Field | Monthly | Annual |
+|---|---|---|
+| Product ID | `…platform.monthly` | `…platform.annual` |
+| US price | **$29.99** | **$299.99** |
+| Territories | 175 (= app availability) | 175 |
+| Level | **1** | **1** |
+| Localization | Orchestrate Platform Monthly | Orchestrate Platform Annual |
+| Review screenshot | ✅ 1242×2208 | ✅ same |
+| Review notes | 518 chars | 518 chars |
+
+Other territories were derived by Apple's own price-point system from the US
+base ("Recalculate prices for all countries or regions"), not hand-set:
+Canada $39.99 / $399.99, Europe €29.99, India ₹2,999.
+
+### THE DEFECT THIS SESSION EXISTS TO RECORD
+
+**The monthly subscription was priced at $0.99, not $29.99.** All 175
+territories sat on the $0.99 tier while the app's own pricing page told the
+customer $29.99. Submitting that pair would have had the App Store charging 97%
+less than the published price for a product the binary describes correctly.
+
+It was found by reading the live price out of App Store Connect instead of
+assuming an earlier session had set it. **`$29.99` appeared nowhere on the
+page.** Everything else about the product looked finished, which is exactly why
+it survived that long.
+
+Two secondary gaps found the same way: the annual product had **no availability
+configured at all**, and the monthly was restricted to **1 of 175** territories.
+
+### Why the price could not be fixed for over an hour
+
+The browser was at **~219% page zoom** (viewport 691×371 CSS px,
+`devicePixelRatio` 2.19). At that zoom the **"Edit Price" button is clipped out
+of the Starting Subscription Price dialog entirely** — the dialog renders, is
+readable, and simply has no visible way to change the price. Five approaches
+were tried and reported as a genuine blocker. After the founder reset zoom to
+100%, the button was there and the change took two minutes.
+
+The same zoom is the documented cause of an earlier ASC picker failure in this
+estate. **Check `devicePixelRatio` before concluding an App Store Connect
+control does not exist.**
+
+## Near-misses worth knowing about
+
+- **A `Delete` control adjacent to the build row is the screenshots' "Delete
+  All".** Both carry `aria-label="Delete"`. The build-row one was identified by
+  checking its ancestor text (`Build | BUILD | … | 15 | 1.0.1`) before clicking.
+  A label-only match would have wiped the six app screenshots.
+- **Three processes were listening on port 8899.** A local serve of `build/web`
+  silently lost the port and the page that answered was a peer's *Aura* build.
+  Certifying it would have certified the wrong product. Moved to 8917 and
+  confirmed `<title>Orchestrate</title>` before trusting it.
+- The subscription level control is a react-beautiful-dnd list whose *combine*
+  gesture no synthetic or scripted drag would drive; the founder performed it.
+
+## Still open
+
+1. **Review screenshots are the fallback, not the preference.** They show the
+   in-app pricing screen from build 15 on Android — real, unentitled, both
+   prices, not fabricated — but not the iOS purchase sheet from a sandbox
+   account. No sandbox tester exists, and creating one needs credentials this
+   session will not handle. Prepare one before the next submission.
+2. **Google Play production access** has not been applied for. Alpha is the only
+   live track.
+3. **Billing is not certified end to end.** No purchase has been exercised on a
+   real device against either rail.
+4. Once an item is added to an App Store review submission its review screenshot
+   and notes go **read-only**; the only way back is removing the item, which
+   un-stages it. Metadata has to be right before staging, not after.
