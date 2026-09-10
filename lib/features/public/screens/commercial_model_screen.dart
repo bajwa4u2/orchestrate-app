@@ -138,12 +138,23 @@ class _CommercialModelScreenState extends State<CommercialModelScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // EXPLICIT LIGHT COLOURS, BECAUSE THIS CARD HAS NO FILL.
+              //
+              // Every other panel on this page paints itself white and inherits
+              // the theme's near-black `publicText`. This one is a bordered
+              // outline over the dark page ground, so the same inherited colour
+              // renders near-black on near-black. On a Pixel 9a the heading and
+              // the closing line were invisible — and nothing in the analyzer,
+              // the widget tests or a browser at desktop width said so.
               Text(model.pricingSays,
-                  style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                  style: text.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.publicOnDark)),
               if (model.free.says.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(model.free.says,
-                    style: text.bodyMedium?.copyWith(height: 1.5)),
+                    style: text.bodyMedium?.copyWith(
+                        height: 1.5, color: AppTheme.publicOnDarkMuted)),
               ],
               const SizedBox(height: 22),
               // Two cadences of one subscription, side by side. Neither is
@@ -160,7 +171,8 @@ class _CommercialModelScreenState extends State<CommercialModelScreen> {
               if (model.cadenceMeans.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text(model.cadenceMeans,
-                    style: text.bodySmall?.copyWith(height: 1.5)),
+                    style: text.bodySmall?.copyWith(
+                        height: 1.5, color: AppTheme.publicOnDarkMuted)),
               ],
             ],
           ),
@@ -170,7 +182,10 @@ class _CommercialModelScreenState extends State<CommercialModelScreen> {
 
         // The invitation is to build a workspace, not to buy. The workspace no
         // longer depends on payment, so the page no longer pretends it does.
-        Text(model.startSays, style: text.bodyLarge?.copyWith(height: 1.5)),
+        // Also directly on the dark ground, and also invisible before this.
+        Text(model.startSays,
+            style: text.bodyLarge
+                ?.copyWith(height: 1.5, color: AppTheme.publicOnDark)),
         const SizedBox(height: 16),
         Wrap(
           spacing: 12,
