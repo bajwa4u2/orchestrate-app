@@ -567,7 +567,7 @@ the $0.99 defect Apple carried.** The Play console's subscription list renders
 the "Active base plans" column empty, which is a UI artifact — the API shows
 both plans active. Do not read that column as state.
 
-## Aura 1.4.2 (37) — staged, not submitted
+## Aura 1.4.2 (37) — submitted to Play production
 
 Production track created, bundle 37 attached, release notes copied **verbatim
 from its own alpha track via the API** rather than written by this session,
@@ -576,8 +576,11 @@ console returned `unexpected error (66A89484)` and the picker then rendered zero
 checkboxes across repeated attempts. The draft survived — `Draft release:
 37 (1.4.2), 0 countries / regions`.
 
-To finish: Aura > Production > Countries / regions > Add countries / regions >
-tick "Select all rows" > Save, then Publishing overview > Submit for review.
+**The founder finished it by hand and submitted.** Read back from the Play
+Developer API on 2026-09-10: `production` track holds release `37 (1.4.2)`,
+status `completed`, release notes intact. The public listing still 404s because
+Google's review has not passed — in review is not published, and neither is
+closed testing. Do not describe this track as testing.
 
 **Two things decided by the founder, recorded because they were deliberate:**
 37 was promoted rather than 1.4.3 (38), because 38 is still under certification
@@ -595,3 +598,98 @@ pre-filled `48180`; **48180 was correct** — 48187 is the founder's personal
 Canton ZIP. The estate contains no Articles of Organization, EIN, formation date
 or registered agent, which is why the address had to come from the console
 rather than the repositories.
+
+## Apple rejected 1.0.1 on 3.1.2 — metadata, not the binary
+
+**2026-09-10 07:56**, Apple's automated App Review message on submission
+`71f38f80-901c-4a2c-aeb4-b189b2c90788`:
+
+> The submission offers auto-renewable subscriptions, such as Orchestrate
+> Platform Monthly, Orchestrate Platform Annual, but does not include a
+> functional link to the Terms of Use (EULA) in the app metadata that appears
+> on the app's App Store product page.
+
+Read the whole board before touching anything: only **iOS App 1.0.1 was
+Rejected**. The subscription group and both subscriptions still read *Ready for
+Review* — but Apple's banner says an accepted item cannot be released while any
+item in the submission has an issue, so all four move together.
+
+**Nothing is wrong with build 15.** This is a product-page metadata defect, so
+no rebuild, no new build number, no version bump.
+
+App Information already reads `License Agreement: Apple's Standard License
+Agreement`, which is exactly the case Apple's message covers: with the standard
+EULA the link belongs in the App Description. It was absent — the 1,812-character
+description ended at the ACCOUNT paragraph and never named terms at all.
+
+### The fix, as applied
+
+Appended to the English (U.S.) description of the in-flight 1.0.1 version
+(1,812 → 2,390 characters, saved and re-read from a fresh page load):
+
+```
+SUBSCRIPTION
+
+Orchestrate Platform is an auto-renewing subscription, offered monthly at
+$29.99 and annually at $299.99. Payment is charged to your Apple Account at
+confirmation of purchase. The subscription renews automatically unless
+auto-renew is turned off at least 24 hours before the end of the current
+period, and it can be managed or cancelled in Apple Account settings.
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Service terms: https://orchestrateops.com/legal/terms
+Privacy policy: https://orchestrateops.com/legal/privacy
+```
+
+Both first-party links were opened in a browser before being written into
+metadata, not assumed from the fact that a route exists: `/terms` and
+`/privacy` each 302 to `/legal/...` and render a real document
+("Terms of use", "Privacy policy"). `curl` alone would not have proven this —
+the site is client-rendered and returns a bare shell to a non-JS fetch.
+
+`Privacy Policy URL` on the App Privacy page already read
+`https://orchestrateops.com/legal/privacy`, so the description now agrees with
+the field Apple already holds rather than introducing a second address.
+
+The prices written into the description are the frozen catalogue prices
+(US $29.99 / $299.99), the same ones the app's own pricing page states.
+
+### Resubmitted
+
+**The founder pressed Resubmit to App Review on 2026-09-10**, after the
+description fix was saved and read back. The submission carries the same build
+15 and the same four items; only the product-page metadata changed.
+
+**Confirmed in App Store Connect 2026-09-11.** Submission
+`71f38f80-901c-4a2c-aeb4-b189b2c90788` reads **Waiting for Review**, the
+Unresolved Issues banner is gone, and all four items — app version,
+subscription group, both subscriptions — show *Waiting for Review* together.
+Date Submitted moved 05:02 -> 08:26 on 2026-09-10, which is the resubmission.
+Apple's 07:56 message remains on the record as history, not as an open issue.
+
+### What is actually live on the App Store: 0.2.3, not 1.0.1
+
+Read from Connect's own API, because the version numbering here misleads:
+
+```
+1.0.1   WAITING_FOR_REVIEW      created 2026-09-09   <- build 15, in review
+0.2.3   READY_FOR_SALE                               <- what the public gets
+0.2.1 / 0.2.0 (9) / 0.1.5 (7) / 0.1.4 (6)  older, READY_FOR_SALE
+```
+
+The public App Store lookup agrees: live version **0.2.3**, released
+2026-09-06.
+
+**There is exactly one 1.0.1 record and it is in review. Build 14 never
+shipped.** It was 1.0.0 (14), removed from review to be superseded — which
+left it *Developer Rejected* — and the version record was then retitled
+1.0.0 -> 1.0.1 when build 15 attached, because a build cannot join a version
+record carrying a different number. "1.0.1 (14)" therefore existed as a label
+for a few hours and was pulled; it was never on the store. Anyone reading the
+version history later will see that transition and can easily conclude 14
+shipped. It did not.
+
+Consequence for the release picture: Apple is **one version behind the other
+rails** until 1.0.1 (15) is approved. Play has 1.0.1 live; Microsoft has
+1.0.1.0 published; Apple still serves 0.2.3.
+
