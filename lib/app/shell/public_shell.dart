@@ -879,8 +879,8 @@ const List<_OrchEcosystemEntry> _kOrchEcosystemLinks = <_OrchEcosystemEntry>[
   _OrchEcosystemEntry(
       slug: 'aura', label: 'Aura', url: 'https://auraplatform.org'),
   _OrchEcosystemEntry(
-      slug: 'bajwa-writes',
-      label: 'Bajwa Writes',
+      slug: 'colophon',
+      label: 'Colophon',
       url: 'https://bajwawrites.com'),
   _OrchEcosystemEntry(
       slug: 'founder', label: 'Founder', url: 'https://bajwa.auraplatform.org'),

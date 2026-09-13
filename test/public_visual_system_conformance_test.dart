@@ -89,8 +89,17 @@ void main() {
     );
     expect(footer, contains('const _PublicFooterBottomRow()'));
     expect(shell, contains("slug: 'aura'"));
-    expect(shell, contains("slug: 'bajwa-writes'"));
+    expect(shell, contains("slug: 'colophon'"));
     expect(shell, contains("slug: 'founder'"));
+
+    // The portfolio names the CURRENT products. This footer shipped
+    // "Bajwa Writes" as a live product label until 2026-09-13, and it survived
+    // the estate-wide rename because Orchestrate's home renders on canvas --
+    // the string never appears in served HTML, so an audit that fetches the
+    // page cannot see it. Only a source assertion can.
+    expect(shell, contains("label: 'Colophon'"));
+    expect(shell, isNot(contains('Bajwa Write')),
+        reason: 'the footer names a retired product name as current');
     expect(shell, isNot(contains("slug: 'company'")));
     expect(shell, isNot(contains("slug: 'orchestrate'")));
     expect(shell, isNot(contains('Why Orchestrate exists')));
