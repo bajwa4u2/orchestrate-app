@@ -54,10 +54,12 @@ Target list: `CUSTOMER_ACQUISITION_TARGETS.md` (Tier A 5, Tier B 12, Tier C 9, e
 
 | Firm | Recipient | Stage | Date | Evidence |
 |---|---|---|---|---|
-| A.J. Miller Mechanical | contact@ajmillermechanical.com | TARGET: draft opened in Outlook, not sent | 2026-09-15 | — |
-| Michigan Security Systems | Info@michigancamerasystems.com | TARGET: draft opened in Outlook, not sent | 2026-09-15 | — |
-| Jackson Associates | sales@jacksonassociatesinc.com | TARGET: draft opened in Outlook, not sent | 2026-09-15 | — |
-| Hennessey Engineers | info@hengineers.com | TARGET: draft opened in Outlook, not sent | 2026-09-15 | — |
-| Hutch Paving | info@hutchpaving.com | TARGET: draft opened in Outlook, not sent | 2026-09-15 | — |
+| A.J. Miller Mechanical | contact@ajmillermechanical.com | CONTACTED | sent 2026-09-15 | founder reported sent from msbajwa@auraplatform.org; follow-up window 2026-09-22 to 2026-09-25 if no reply |
+| Michigan Security Systems | Info@michigancamerasystems.com | CONTACTED | sent 2026-09-15 | founder reported sent from msbajwa@auraplatform.org; follow-up window 2026-09-22 to 2026-09-25 if no reply |
+| Jackson Associates | sales@jacksonassociatesinc.com | CONTACTED | sent 2026-09-15 | founder reported sent from msbajwa@auraplatform.org; follow-up window 2026-09-22 to 2026-09-25 if no reply |
+| Hennessey Engineers | info@hengineers.com | CONTACTED | sent 2026-09-15 | founder reported sent from msbajwa@auraplatform.org; follow-up window 2026-09-22 to 2026-09-25 if no reply |
+| Hutch Paving | info@hutchpaving.com | CONTACTED | sent 2026-09-15 | founder reported sent from msbajwa@auraplatform.org; follow-up window 2026-09-22 to 2026-09-25 if no reply |
 
 Stage moves to CONTACTED only when the founder has sent the message (sent date recorded).
+
+Batch 1 counts (2026-09-15): contacted 5 · replied 0 · calls 0 · trying 0 · paying 0.
