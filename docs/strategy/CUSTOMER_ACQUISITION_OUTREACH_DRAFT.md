@@ -80,3 +80,53 @@ Goal: learn, not pitch. Show the demo only if they describe the problem themselv
 Record after each call (in CUSTOMER_ACQUISITION.md pipeline): date, who, current tools, the problem
 in their words, cost of the last mistake if stated, interest level, agreed next step. Quote them;
 do not upgrade interest into commitment.
+
+---
+
+# Batch 2: DRAFT for founder approval (2026-09-16)
+
+Status: **DRAFT. Nothing sent.** Four firms, not five — the route verification in
+`CUSTOMER_ACQUISITION_TARGETS.md` cleared four. Whether four is enough is the founder's call.
+
+## Reconcile the template first — "seventeen" or "nineteen"
+
+§1 above reads **"nineteen years"**. Batch 1 went out saying **"more than seventeen years"** — the
+founder's own wording, and what five firms have now read. Generating Batch 2 from this file
+unchanged would quietly reinstate a number the founder had already changed, and two firms could
+receive different tenures from the same sender.
+
+Nothing here is edited without the founder saying which is right; the drafts below use **"more than
+seventeen years"**, matching what was actually sent. The deck says nineteen (2003–2022), so the
+public materials and the outreach still disagree either way. One decision settles both.
+
+## The opening line for each firm
+
+The mandatory personal detail, and where it comes from. No first name is published for three of the
+four, so those open "Hi," rather than inventing one or writing "Hi there".
+
+| Firm | Recipient | Greeting | Opening detail, and its source |
+|---|---|---|---|
+| Lutz Roofing Company | `info@lutzroofing.com` | Hi, | "I saw Troy awarded you the Police and DPW roof replacements last summer." — Troy council agenda 2025-06-02, ITB-COT 25-16 |
+| Leadhead Construction | `cnewble@leadheadconstruction.com` | Hi Crystal, | "I saw your Proposal N demolition work for the City of Detroit." — firm site; EGLE notification naming her, 2025-01-07 |
+| Hartwell Cement | `lomalley@hartwellcementco.com` | Hi, | "I saw your sidewalk work for Harper Woods." — 2025 award, recorded 09-15 |
+| Royal Roofing Company | `info@royal-roofing.com` | Hi, | "I saw the sheet metal and green roof work on your site — sixty years of it." — royal-roofing.com |
+
+**Royal Roofing deliberately does not open with the Troy bid.** They bid ITB-COT 25-16 and did not
+win it. Opening a cold email by telling an owner you watched them lose a job is a bad first
+sentence, and it also reveals the list was built from a tabulation. Their own site does the work.
+
+**Leadhead's address is on a different domain** to its website (`leadheadconstruction.com` vs
+`leadheadco.com`). That is what the firm publishes. It is used exactly as published.
+
+## Everything else is unchanged
+
+Same body, same signature, same postal address, same opt-out line, same 170-word ceiling, same one
+follow-up 7–10 days out and a "no" stops it. Only the greeting and the first sentence differ per
+firm, exactly as in Batch 1.
+
+## Before Batch 3, a decision the list cannot make
+
+Three of every four qualified firms in this segment publish no email at all. The phone script in §3
+is therefore the main route to most of the market, not the exception — and it has never been used.
+Continuing email-only means working a list selected by who publishes an address, which correlates
+with nothing about fit.

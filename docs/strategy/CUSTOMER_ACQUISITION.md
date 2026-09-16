@@ -63,3 +63,31 @@ Target list: `CUSTOMER_ACQUISITION_TARGETS.md` (Tier A 5, Tier B 12, Tier C 9, e
 Stage moves to CONTACTED only when the founder has sent the message (sent date recorded).
 
 Batch 1 counts (2026-09-15): contacted 5 · replied 0 · calls 0 · trying 0 · paying 0.
+
+## Batch 2 prepared, not sent (2026-09-16)
+
+Batch 1's follow-up window is 2026-09-22 to 09-25, so nothing there is due yet and no reply has been
+reported. The unblocked work was Batch 2, and it is now ready for review.
+
+**Four firms cleared, each with an email the firm itself publishes and a dated public fact to open
+on:** Lutz Roofing (Shelby Twp., awarded Troy's Police/DPW roofs), Leadhead Construction (Detroit,
+Proposal N demolition), Hartwell Cement (Oak Park, Harper Woods sidewalks), Royal Roofing (Orion
+Twp.). Drafts are in `CUSTOMER_ACQUISITION_OUTREACH_DRAFT.md`; verification in
+`CUSTOMER_ACQUISITION_TARGETS.md`. **Nothing is sent. Stage stays TARGET until the founder sends.**
+
+**Two things need the founder, and neither is engineering judgement:**
+
+1. **Four firms, or wait for five?** The Batch 1 gate was five drafts reviewed. Four cleared. Five
+   is not a rule unless it is one.
+2. **"Seventeen" or "nineteen" years?** The draft template says nineteen, Batch 1 was sent saying
+   more than seventeen, the deck says nineteen. Batch 2 drafts follow what was actually sent. One
+   answer fixes the template and the deck together.
+
+**One correction to the record.** Tier B listed `Office@csmmechanical.com` for CSM Mechanical on
+09-15. It cannot be confirmed on the firm's own site today and must not be used. Every other
+broker-sourced address checked this session failed the same way.
+
+**And one finding that should shape Batch 3.** Of nineteen firms checked against their own sites,
+five publish an email address. Email-only outreach therefore reaches about a quarter of this
+segment, and the quarter it reaches is not the better-fitting quarter — publishing an address
+correlates with nothing. The phone script already exists and has never been used.

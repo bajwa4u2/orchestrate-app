@@ -62,3 +62,114 @@ Electrical Insights, Expo Technologies, C&J Electrical, Axonix, AMcomm (won a Fa
 cabling award 2025-11-10, website unverifiable: re-check), Landmark Engineering, Great Lakes
 Contracting Solutions, Century Cement. Residential-leaning: Lakeview Mechanical, Shelby Mechanical,
 MJ White & Son, Superior Excavating, Westborn Electric, Bob Thompson Electric.
+
+## Tier B contact-route verification (2026-09-16)
+
+Every Tier B firm was re-checked against **its own website**, because the missing item for seven of
+the twelve was a contact route rather than fit. Two firms clear; the rest do not, and the reason is
+the same for almost all of them.
+
+**Method note, and the trap it caught.** Web search and the data brokers it surfaces (ZoomInfo,
+RocketReach, ContactOut, D&B, LeadIQ) readily return plausible, well-formed addresses for these
+firms — `Johnf@doublejackelectric.com`, `jmayer@epd-mi.com`, `Melissa@prolineasphalt.com`,
+`logan@csmmechanical.com`, `rmead@rwmead.com`. **None of them appear on the firm's own site.**
+A broker address is not a published address, and using one is the guessed-email failure this list
+forbids, only laundered through a third party. Each entry below was decided on the firm's own page.
+
+### Clears — verified published email, fit already established
+
+| Firm | Published email (firm's own page) | What cleared | Source |
+|---|---|---|---|
+| Hartwell Cement, Oak Park | `lomalley@hartwellcementco.com` | the missing contact route | hartwellcement.com/contact-us |
+| Leadhead Construction, Detroit | `cnewble@leadheadconstruction.com` | contact route **and** recency | leadheadco.com; EGLE asbestos notification naming Crystal Newble, dated 2025-01-07 |
+
+Note on Leadhead: the published address is on `leadheadconstruction.com` while the website is
+`leadheadco.com`. That is what the firm publishes; it is copied exactly and not "corrected".
+Recency is now evidenced twice — the dated EGLE filing, and a reported City of Detroit Proposal N
+award to abate and demolish 125 structures. Named: Crystal Newble (Managing Member), Ira Newble
+(Operations/Project Manager), Tiffany Gentry (Office Manager).
+
+### Does not clear — no email published by the firm (7)
+
+MacDermott Roofing (web form only; leadership now published: Austin Akers, Julia Hicks, David Chene
+Chief Estimator), Double Jack Electric, Electrical Power & Design, Macomb Mechanical, Pro-Line
+Asphalt Paving, Boss Engineering — each publishes a phone and a web form and no address.
+
+**CSM Mechanical is a correction, not just a hold.** This list recorded
+`Office@csmmechanical.com` on 2026-09-15. On re-check that address cannot be confirmed anywhere on
+the firm's own site (`/contact/` and `/contact-us/` both 404; the homepage publishes a phone only),
+and the firm now shows a Fenton HQ with Milford as a second location. Treat the recorded address as
+**unverified** and do not use it.
+
+### Does not clear — fit, not contact
+
+- **Wolverine Low Voltage, Ann Arbor** — `info@wolverinelowvoltage.com` is genuinely published, but
+  the fit evidence did not survive: no government, education or municipal client is named anywhere
+  on the site, no bid or proposal work is claimed, and residential work is prominent. It is the one
+  firm whose size is verified and whose qualification is weakest. Hold.
+
+### Moves to excluded
+
+- **R.W. Mead & Sons, Fraser** — D&B estimates staff at 50–99, above the 5–50 profile, and the 2026
+  acquisition of Rene Vanassche & Sons only pushes it further. An estimate, not a published figure,
+  but it is the only size evidence available and it points one way. Excluded.
+- **Luigi Ferdinandi & Son Cement** — unchanged: no website, phone only, so no verifiable route.
+
+### Where this leaves Batch 2
+
+Two firms have a verified route, not five. The founder's standing gate is five drafts reviewed
+before anything is sent. Closing that gap needs one of three things, and the choice is the
+founder's, not an engineering judgement:
+
+1. **Source three more firms** that publish an address — the same public research method, a new
+   stream. No decision needed; just more work.
+2. **Send to two.** The five-draft gate was set for Batch 1; nothing makes five a permanent rule.
+3. **Use web forms** for the seven blocked firms. This breaks the `mailto:` method — a form is
+   filled by hand, from the firm's page, with no copy in the founder's sent mail and no reply
+   address the founder controls. It also changes what the outreach *is*. Not recommended.
+
+## New candidates sourced from public bid documents (2026-09-16)
+
+Option 1 above needed no decision, so it was done. The method that worked is worth keeping: rather
+than searching for firms and then hunting for evidence that they bid, **read a municipal bid
+tabulation and take the bidders off it**. Every name on one is a firm that demonstrably bids, with
+its city printed next to it, in a document the city published.
+
+Source: **City of Troy ITB-COT 25-16**, Roof Replacements — Police and DPW Buildings, bid opening
+2025-05-15, tabulation and award recommendation in the Troy City Council agenda of 2025-06-02.
+Five bidders, all Southeast Michigan. (The state DTMB bid-result PDFs still return 403, as recorded
+on 09-15; municipal agendas do not.)
+
+| Bidder (as printed) | City | Outcome | Published email | Verdict |
+|---|---|---|---|---|
+| Renova One | Troy | low base bid $347,426 | — | **Excluded.** A portfolio platform of ~a dozen brands across 12 states; acquired Great Lakes Roofing of Troy. "Part of a larger group." |
+| Lutz Roofing Company, Inc. | Shelby Twp. | **awarded**, ~$800,600 | `info@lutzroofing.com` | **Batch 2.** Own contact page; since 2001 |
+| JD Candler Roofing Co. | Sterling Hts. | bid | NO EMAIL | Hold. Also runs Jackson and Battle Creek locations under McDonald |
+| Royal Roofing Co. Inc. | Orion Twp. | bid | `info@royal-roofing.com` | **Batch 2, with a size caution** |
+| Schena Roofing & Sheet Metal Co. Inc. | Chesterfield | bid | — | Already excluded 09-15 (employee-owned) |
+
+Also checked and rejected: **DiLisio Contracting**, Clinton Twp. (Troy concrete slab replacement
+low bidder, 2023) — no email published, and the award is three years old.
+**Restoration Inc., Milford** (named in the same Troy agenda via the Oakland County cooperative
+contract) — no firm of that name can be identified with a verifiable route.
+
+**Size caution on Royal Roofing.** Size is not published, which is the same status as every Tier A
+firm, so it is not disqualifying on its own. But the firm is 60+ years old and a third-party profile
+refers to a full-time safety director overseeing more than eight field inspectors, which points
+above the 5–50 band. Contact it, and ask the size question on the call rather than guessing now.
+
+## Finding: this segment does not publish email addresses
+
+Nineteen firms have now been checked against their own websites. **Five publish an address**
+(Hartwell, Leadhead, Lutz, Royal, Wolverine). The rest publish a phone and a web form, and the
+brokers fill the vacuum with addresses the firms themselves do not show.
+
+This is a fact about the segment, not a gap in the research, and it caps the email-only method at
+roughly a quarter of any list built this way. Two consequences worth putting in front of the
+founder before Batch 3:
+
+1. **The phone script in `CUSTOMER_ACQUISITION_OUTREACH_DRAFT.md` §3 is not a fallback, it is the
+   main route** for three out of four qualified firms. It has never been used.
+2. A list built only from firms that publish an address is **selected for nothing that matters** —
+   publishing an address is not correlated with fit, size or bid activity. Restricting outreach to
+   it silently discards better-fitting firms.
