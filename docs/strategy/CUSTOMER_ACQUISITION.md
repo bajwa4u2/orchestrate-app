@@ -79,9 +79,11 @@ Twp.). Drafts are in `CUSTOMER_ACQUISITION_OUTREACH_DRAFT.md`; verification in
 
 1. **Four firms, or wait for five?** The Batch 1 gate was five drafts reviewed. Four cleared. Five
    is not a rule unless it is one.
-2. **"Seventeen" or "nineteen" years?** The draft template says nineteen, Batch 1 was sent saying
-   more than seventeen, the deck says nineteen. Batch 2 drafts follow what was actually sent. One
-   answer fixes the template and the deck together.
+2. ~~**"Seventeen" or "nineteen" years?**~~ **RESOLVED 2026-09-16: nineteen.** The founder gave
+   the span as October 2003 to October 2022 — nineteen years to the month, exactly. "More than
+   seventeen years" is retired as an understatement. Batch 2 says nineteen; the deck was already
+   right; `company/FOUNDER_PRODUCT_CHRONOLOGY.md` is updated and its correction-owed against the
+   deck is discharged. **Only decision 1 still blocks sending.**
 
 **One correction to the record.** Tier B listed `Office@csmmechanical.com` for CSM Mechanical on
 09-15. It cannot be confirmed on the firm's own site today and must not be used. Every other

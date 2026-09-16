@@ -88,16 +88,21 @@ do not upgrade interest into commitment.
 Status: **DRAFT. Nothing sent.** Four firms, not five — the route verification in
 `CUSTOMER_ACQUISITION_TARGETS.md` cleared four. Whether four is enough is the founder's call.
 
-## Reconcile the template first — "seventeen" or "nineteen"
+## RESOLVED (2026-09-16): nineteen years
 
-§1 above reads **"nineteen years"**. Batch 1 went out saying **"more than seventeen years"** — the
-founder's own wording, and what five firms have now read. Generating Batch 2 from this file
-unchanged would quietly reinstate a number the founder had already changed, and two firms could
-receive different tenures from the same sender.
+The founder gave the span: **October 2003 to October 2022** — nineteen years to the month, exactly.
+So §1 above was already right, and **"more than seventeen years" is retired**: true, but it
+understates a documented tenure by nearly two years, and it is the weaker sentence in a cold email
+besides.
 
-Nothing here is edited without the founder saying which is right; the drafts below use **"more than
-seventeen years"**, matching what was actually sent. The deck says nineteen (2003–2022), so the
-public materials and the outreach still disagree either way. One decision settles both.
+**Batch 2 uses "nineteen years", unchanged from §1.** No per-firm edit is needed for this.
+
+One honest note for the record: Batch 1's five firms read "more than seventeen years". That is a
+fact about what they received, not a wording to preserve. If any of them replies and the tenure
+comes up, nineteen is the correct figure and the difference is not worth raising unprompted.
+
+Canonical source: `company/FOUNDER_PRODUCT_CHRONOLOGY.md`. The Orchestrate `/deck` already said
+nineteen and needs no change; the "correction owed" against it is discharged.
 
 ## The opening line for each firm
 
