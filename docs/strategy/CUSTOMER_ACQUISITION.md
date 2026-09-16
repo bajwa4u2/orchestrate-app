@@ -93,3 +93,33 @@ broker-sourced address checked this session failed the same way.
 five publish an email address. Email-only outreach therefore reaches about a quarter of this
 segment, and the quarter it reaches is not the better-fitting quarter — publishing an address
 correlates with nothing. The phone script already exists and has never been used.
+
+## Batch 2 opened as drafts in Outlook, awaiting founder send (2026-09-16)
+
+Founder decision: **four firms is enough.** The five-draft gate was a Batch 1 gate, not a rule.
+
+Four compose windows were opened in the local new Outlook via `Start-Process mailto:`, the same
+method as Batch 1, and all four were confirmed open by window title. **Nothing is sent. Stages stay
+TARGET until the founder sends and reports it.**
+
+| Firm | To | CC | Subject |
+|---|---|---|---|
+| Lutz Roofing | `info@lutzroofing.com` | `iffat@auraplatform.org` | Quote to payment at Lutz Roofing |
+| Leadhead Construction | `cnewble@leadheadconstruction.com` | `iffat@auraplatform.org` | Quote to payment at Leadhead Construction |
+| Hartwell Cement | `lomalley@hartwellcementco.com` | `iffat@auraplatform.org` | Quote to payment at Hartwell Cement |
+| Royal Roofing | `info@royal-roofing.com` | `iffat@auraplatform.org` | Quote to payment at Royal Roofing |
+
+**New in Batch 2:** `iffat@auraplatform.org` is CC'd on every message, and the body **ends at the
+opt-out line** — no name, title, company, link or postal address, because the Outlook composer
+appends the signature. Bodies are 165–173 words, inside the 170-word target once the signature block
+is counted out. Tenure reads **nineteen years** throughout.
+
+### Three things only the founder can confirm in the composer
+
+1. **From must be `msbajwa@auraplatform.org`.** A `mailto:` link cannot select the sending account;
+   Outlook fills the default. This is the same check Batch 1 needed.
+2. **The signature must carry the business postal address.** US commercial email (CAN-SPAM) requires
+   it, and it was deliberately removed from the body to avoid printing it twice. If the signature
+   does not have it, say so and one line goes back into each body before sending.
+3. **The signature should carry one link.** The template's link lived in the signature block that
+   was removed. If the signature has no link, the mail currently has none.
