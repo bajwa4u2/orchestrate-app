@@ -106,3 +106,73 @@ implementation brief explicitly reserved. Three options, none chosen here:
   continue in parallel.
 - **`hello@orchestrateops.com`** was used as the contact address because it is a live, signed-in
   mailbox. Confirm it is the address you want published, or name another.
+
+---
+
+# 7. SECOND CORRECTION — §3 above was also wrong, and for the same class of reason
+
+Recorded rather than edited away. §3 claimed the rendered home page sells "Governed Revenue
+Automation" and never says "contractor". That copy is real and it is in the repository — but it is
+**dead code**. `_Hero`, `_SystemStrip`, `_JourneySection`, `_CapabilitySection`, `_TruthSection`,
+`_PlansSection` and `_BurdenTransformSection` were defined in `public_home_screen.dart` and **never
+constructed**. `PublicHomeScreen.build` composes an entirely different set of widgets from other
+files. The stale hero had not rendered for some time.
+
+So the file was read twice as though it were the page — first through `curl` (which returns the
+noscript fallback) and then through `grep` (which returns orphaned source). Both times a real
+artefact was mistaken for the live surface. The lesson is narrower than "verify live": **reading the
+source is not reading the page either, unless you have checked what the build method actually
+composes.**
+
+## What the rendered page actually was, verified through the build method
+
+| Surface | Status before this change |
+|---|---|
+| `CommercialHero` | Headline *"Move the work from prospect to complete."* — correct direction. Body framed the whole product as *"the commercial operation behind qualified outbound"* — **outbound elevated above the commercial story.** |
+| `ExecutionGraphChapter` | Already the approved causal path: signal → contactable → executable → delivery → work visible → commercial record issued → payment legible → closes with context |
+| `RevenueRecordsVisual` | *"Agreement, delivery, invoice and payment describe one commercial relationship."* Correct. |
+| `ResponsibleAiVisualChapter` | *"Assistance can accelerate the work without owning the authority."* Doctrine already present. |
+| `RecoveryVisualChapter`, `SignalsVisualChapter` | Capability material, correctly placed below |
+
+**So the page was mostly aligned already.** The defect was real but small: the hero subordinated the
+commercial story to outbound, the signature doctrine lines were absent from the rendered surface, and
+the language was systems language rather than a contractor's.
+
+# 8. FINAL RECORD
+
+**FALSE INITIAL FINDING:** "No conversion path on the rendered site." Wrong — read from the
+`<noscript>` fallback. The rendered page had a contact CTA into PublicInquiry, a diagnostic CTA,
+"Start setup" and all three store links. **Closed as corrected.**
+
+**SECOND FALSE FINDING:** "The rendered home page sells Governed Revenue Automation." Wrong — read
+from orphaned source. **Closed as corrected.**
+
+**ACTUAL FINDING:** The rendered buyer-facing hero framed the product as the operation *behind
+qualified outbound*, placing a capability above the commercial story, while the outreach, deck,
+metadata and noscript all led with opportunity → payment. The signature doctrine lines did not
+appear on the rendered surface, and the page spoke in systems language rather than the buyer's.
+
+**ROOT CAUSE:** The representation correction of 2026-09-15 updated metadata, noscript (`eaba637`)
+and deck (`4e55ba6`) but did not propagate to the rendered public home. Contributing cause: ~975
+lines of orphaned section widgets kept a superseded product story alive in the same file, which is
+what made the surface unreadable to review.
+
+**DECISION (founder, authorized):** Bring the rendered home into alignment with the current approved
+commercial representation. Do not change outreach to match the page, do not split into two offers,
+do not invent a framework, do not remove governed-outbound capability — recompose it as a capability
+layer underneath the commercial story.
+
+**IMPLEMENTED:**
+- `CommercialHero` body recomposed: signature line *"CRM records the relationship. Orchestrate
+  operates it."*; the causal path in plain buyer language (enquiry, estimate, what was agreed, the
+  work, the invoice, the payment, follow-up); the authority doctrine stated plainly — *"Nothing is
+  sent, agreed or billed until a person with that authority approves it. AI creates the leverage. It
+  does not acquire the authority."*; and a capability line beneath naming opportunity discovery,
+  governed outbound under your own verified sending identity, connected mailboxes, replies and
+  follow-up continuity, and evidence.
+- Headline *"Move the work from prospect to complete."* kept — already correct and buyer-facing.
+- CTA relabelled *"See managed execution"* → *"See what it costs"*; destination unchanged (`/pricing`).
+  No new or duplicate CTAs. "Talk to Orchestrate" (PublicInquiry) untouched.
+- **975 lines of orphaned section widgets deleted** from `public_home_screen.dart`, with a comment
+  recording why. No live capability removed; `flutter analyze lib` reports no issues.
+- No outcome claims added. No pricing change.

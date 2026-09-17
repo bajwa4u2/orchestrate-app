@@ -46,12 +46,34 @@ class CommercialHero extends StatelessWidget {
               const SizedBox(height: 18),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 610),
-                child: Text(
-                  'Orchestrate runs the commercial operation behind qualified outbound: readiness, outreach, replies, meetings, delivery and revenue records move through one managed system.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: const Color(0xFFD2E2DF),
-                        height: 1.6,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CRM records the relationship. Orchestrate operates it.',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            height: 1.45,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'One customer relationship, one record: the enquiry, the estimate, what was agreed, the work, the invoice and the payment, with the follow-up attached to all of it. Orchestrate prepares each step. Nothing is sent, agreed or billed until a person with that authority approves it. AI creates the leverage. It does not acquire the authority.',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: const Color(0xFFD2E2DF),
+                            height: 1.6,
+                          ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Underneath it: finding and qualifying opportunity, governed outbound under your own verified sending identity, connected mailboxes, replies and follow-up continuity, and the evidence behind every step.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: const Color(0xFF9FBDB8),
+                            height: 1.55,
+                          ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -65,7 +87,7 @@ class CommercialHero extends StatelessWidget {
                       backgroundColor: AppTheme.accent,
                       foregroundColor: const Color(0xFF071311),
                     ),
-                    child: const Text('See managed execution'),
+                    child: const Text('See what it costs'),
                   ),
                   OutlinedButton(
                     onPressed: onTalk,
