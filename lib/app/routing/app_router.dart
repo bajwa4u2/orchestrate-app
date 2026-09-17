@@ -468,7 +468,18 @@ GoRouter _buildRouter() {
       };
       if (!session.hasSetupCompleted) {
         if (setupAllowed.contains(path) || isAccountLayer) return null;
-        return _clientRoute('/app/setup');
+        // ONE CANONICAL SETUP ROUTE: /client/setup.
+        //
+        // Both paths reached the same screen, and the two halves of the
+        // product disagreed about which to use — this redirect sent people to
+        // /app/setup while Today sent them to /client/setup. Same surface, two
+        // identities, and a walkthrough could not tell anyone where they were.
+        //
+        // /client/setup wins because every other surface a client reaches is
+        // spelled /client/..., and setup is the first one they ever see.
+        // /app/setup is kept as a redirect so existing links, invitation
+        // emails and any saved deep link still resolve.
+        return _clientRoute('/client/setup');
       }
 
       // SUBSCRIPTION IS NOT A DOOR.
@@ -1295,9 +1306,25 @@ GoRouter _buildRouter() {
       path: '/trust-review',
       redirect: (context, state) => '/for-evaluators',
     ),
+    // SETUP IS A FOCUSED FLOW, NOT A WORKSPACE DESTINATION.
+    //
+    // /client/setup used to sit inside the client ShellRoute, so the screen
+    // rendered the workspace nav rail AND its own AuthShell header and footer
+    // at once: two sets of chrome around one form, with the content squeezed
+    // into what was left. Three separate layout overflows fell out of that —
+    // the rail, the header and the industry field — and every person who
+    // reached setup from Today saw them.
+    //
+    // Declared here, outside the shell, exactly where /app/setup was. The
+    // canonical spelling is what changed; the chrome is what it always was.
+    GoRoute(
+        path: '/client/setup',
+        builder: (context, state) => const ClientSetupScreen()),
+    // Compatibility only. /client/setup is canonical; this keeps older links
+    // and any saved deep link resolving rather than 404ing.
     GoRoute(
         path: '/app/setup',
-        builder: (context, state) => const ClientSetupScreen()),
+        redirect: (context, state) => '/client/setup'),
     GoRoute(
         path: '/app/subscribe',
         builder: (context, state) => const ClientSubscribeScreen()),
@@ -1314,10 +1341,6 @@ GoRouter _buildRouter() {
         GoRoute(
             path: '/client/workspace',
             redirect: (context, state) => '/client/today'),
-        GoRoute(
-            path: '/client/setup',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientSetupScreen())),
         // ── THE THREE DESTINATIONS ─────────────────────────────────────
         // Today, Relationships, Business. Everything else is reached by
         // entering the work, or lives in the account layer below.

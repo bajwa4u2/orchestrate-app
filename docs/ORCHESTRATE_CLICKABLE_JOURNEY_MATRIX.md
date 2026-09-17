@@ -26,7 +26,7 @@ status or route registration alone.
 | Public footer | Terms / Privacy / Service agreement | canonical legal routes | Retained; document surfaces |
 | Public footer | Billing / Refunds / Account deletion | canonical legal/account routes | Retained; operational/legal purpose |
 | Public header / pricing CTA | Start setup / trial | `/auth/join` when unauthenticated | Registration carries plan, tier, and trial intent |
-| Direct setup deep link | `/app/setup`, `/client/setup` | `/auth/join` when unauthenticated | Corrected from sign-in to registration-first |
+| Direct setup deep link | `/client/setup` (canonical); `/app/setup` redirects to it | `/auth/join` when unauthenticated | Corrected from sign-in to registration-first; one canonical spelling since 2026-09-17 |
 | Auth | Create workspace | setup continuation | Registration explains verification and setup continuation |
 | Auth | Sign in | intended authenticated destination | Existing-account path; intent preserved by router query context |
 

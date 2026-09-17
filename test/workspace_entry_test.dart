@@ -146,7 +146,8 @@ void main() {
     r.go('/client/market');
     await tester.pump();
       tester.takeException();
-    expect(location(r).startsWith('/app/setup'), isTrue,
+    // /client/setup, not /app/setup: same gate, canonical spelling.
+    expect(location(r).startsWith('/client/setup'), isTrue,
         reason: 'onboarding still gates; checkout no longer does');
   });
 

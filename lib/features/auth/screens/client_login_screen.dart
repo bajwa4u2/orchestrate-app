@@ -424,7 +424,10 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         returnTo != null && returnTo.startsWith('/account');
 
     if (!session.hasSetupCompleted && !destinationIsAccountLayer) {
-      context.go(withReturnTo(_route('/app/setup'), returnTo));
+      // /client/setup is the canonical spelling. This screen said
+      // /app/setup while Today said /client/setup, so two halves of the
+      // product sent people to the same screen under different names.
+      context.go(withReturnTo(_route('/client/setup'), returnTo));
       return;
     }
     // NOT A SUBSCRIPTION GATE, AND NOT THE LEGACY HOME.

@@ -37,7 +37,8 @@ void main() {
     expect(complete.contains("'/app/subscribe'"), isFalse);
     // The gate that stays: Orchestrate cannot present a coherent workspace
     // before it knows what the business is.
-    expect(complete.contains("_route('/app/setup')"), isTrue);
+    // The gate is the same gate; only its spelling was made canonical.
+    expect(complete.contains("_route('/client/setup')"), isTrue);
   });
 
   test('the legacy home and its billing page are retired, not orphaned', () {
@@ -97,8 +98,12 @@ void main() {
 
   /// The screens that stayed are the ones the Business hub actually opens.
   test('the linked /app surfaces are not retired by mistake', () {
+    // /app/setup is deliberately NOT in this list any more. Setup had two
+    // routes to one screen; /client/setup is now the canonical one and
+    // /app/setup redirects to it. The screen is not retired — the second
+    // name for it is.
     for (final kept in <String>['/app/trust', '/app/evidence', '/app/artifacts',
-        '/app/branding', '/app/setup', '/app/subscribe']) {
+        '/app/branding', '/app/subscribe']) {
       final at = router.indexOf("path: '$kept'");
       expect(at, greaterThan(-1), reason: '$kept must exist');
       // builder: or pageBuilder: — the workspace routes were converted to

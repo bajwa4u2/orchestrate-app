@@ -139,6 +139,32 @@ class TodayState {
         'Nothing here is wrong — it is incomplete.';
   }
 
+  /// WHETHER THE PRODUCT ITSELF SAYS THIS BUSINESS IS READY.
+  ///
+  /// Not a second opinion. `/client/execution-eligibility` is the single
+  /// readiness authority in this product, and this reads its answer rather
+  /// than recomposing one out of the pieces — recomposing is precisely how
+  /// two surfaces come to disagree about whether a business can send.
+  ///
+  /// Three buckets mean the preparation is finished: `ready_to_execute`,
+  /// which is dispatch eligibility granted, and the two states reachable
+  /// only through it — `orchestrate_working` and `executing`.
+  ///
+  /// Null, never false, when eligibility did not answer. A business that
+  /// has finished must not be told it has not because a source was down,
+  /// and a business that has not finished must never be told it has.
+  bool? get executionReady {
+    if (unavailable.contains('eligibility')) return null;
+    final bucket = eligibility['bucket'];
+    if (bucket is! String || bucket.isEmpty) return null;
+    const ready = <String>{
+      'ready_to_execute',
+      'orchestrate_working',
+      'executing',
+    };
+    return ready.contains(bucket);
+  }
+
   /// A meeting that is still ahead and that the provider actually holds.
   ///
   /// Both halves matter. A settled meeting is not upcoming, and a meeting the

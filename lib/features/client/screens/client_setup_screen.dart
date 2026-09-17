@@ -180,7 +180,20 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
       await AuthSessionController.instance.applyClientSetupResponse(response);
 
       if (!mounted) return;
-      context.go('/app/subscribe');
+      // SETUP ENDS IN THE WORKSPACE, NOT AT A PRICE.
+      //
+      // This used to route to /app/subscribe, which put a plan screen at the
+      // exact moment the router had just decided the person was allowed in.
+      // The routing was right and the sequencing contradicted it: the
+      // workspace is reached by being authenticated and a member, and
+      // entitlement refuses an ACTION at the capability boundary, never a
+      // PLACE. Landing on a paywall taught the opposite of what the product
+      // does.
+      //
+      // Plans are still one tap away in Account and Billing, and the
+      // eligibility authority still names a subscription blocker when one
+      // genuinely stops execution. Nothing about entitlement changed here.
+      context.go('/client/today');
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -549,16 +562,24 @@ class _SetupIntro extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Activate your revenue execution infrastructure',
+          // WRITTEN FOR THE PERSON WHO JUST SIGNED IN.
+          //
+          // The previous headline was "Activate your revenue execution
+          // infrastructure" — the most abstract sentence in the product, on
+          // the first screen where a new owner has to act. Every other
+          // surface speaks plainly; this one described itself in the language
+          // of its own architecture.
+          Text('Set up your business',
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(
             // No trial, and no checkout waiting at the end. Setting the
             // workspace up costs nothing, and saying otherwise here asks for a
             // commitment before the business has seen anything.
-            'Define your business identity: market, targets, offer context and '
-            'representation authorisation. Orchestrate handles signal '
-            'discovery, qualification and governed execution on top of it.',
+            'Three questions: where to start, where you operate, and what '
+            'business you are in. This is the market Orchestrate will search, '
+            'so answer it as narrowly as your business actually is. You can '
+            'change it later.',
             style: Theme.of(context)
                 .textTheme
                 .bodyLarge

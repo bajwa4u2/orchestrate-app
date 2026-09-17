@@ -170,6 +170,27 @@ class _TodayScreenState extends State<TodayScreen> {
         inFlight.isEmpty &&
         changed.isEmpty &&
         !setupIncomplete) {
+      // AN EMPTY TODAY MEANT TWO OPPOSITE THINGS.
+      //
+      // This screen said the same sentence to a business that had just
+      // finished every step of its setup and to a business that had done
+      // nothing at all. Completion was expressed as the disappearance of a
+      // row, so the moment someone finished looked identical to the moment
+      // before they started, and nothing in the product ever said "you are
+      // ready".
+      //
+      // The readiness authority already knows which of the two this is. Ask
+      // it. When it did not answer, say nothing about readiness rather than
+      // guess — an onboarding signal that is sometimes wrong is worse than
+      // one that is sometimes absent.
+      if (s.executionReady == true) {
+        return const QuietState(
+          message: 'Your setup is complete.',
+          hint: 'Your market and your sending are configured, so Orchestrate '
+              'can act. What it finds, and anything that needs a decision '
+              'from you, will appear here.',
+        );
+      }
       return const QuietState(
         message: 'Nothing needs you right now.',
         hint: 'Work in flight and anything that changes will appear here.',

@@ -229,7 +229,7 @@ Mobile/responsive shell: `ClientShell` is not mobile-ready because the outer lay
 
 Browser refresh/direct URL: GoRouter supports direct route definitions. Static hosting must rewrite all paths to Flutter `index.html`; this audit did not inspect deployment rewrite config. Auth session hydration depends on `SharedPreferences`.
 
-Sign out from every route: shell-rendered `/client/*` routes get the sidebar sign-out. `/app/setup` and `/app/subscribe` are outside the shell and need separate sign-out handling if reachable during incomplete setup/subscription.
+Sign out from every route: shell-rendered `/client/*` routes get the sidebar sign-out. `/client/setup` (canonical since 2026-09-17; `/app/setup` redirects to it) and `/app/subscribe` are outside the shell and need separate sign-out handling if reachable during incomplete setup/subscription. **Still open.** The route moved; the gap did not. Setup is deliberately outside the shell — it carries the AuthShell header and its own setup journey rail, and nesting it in the workspace chrome produced two headers and three layout overflows — so the answer is a sign-out in the AuthShell header, not a shell.
 
 ## E. Prioritized Execution Plan
 

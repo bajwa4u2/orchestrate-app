@@ -7,11 +7,11 @@ than treated as independent visual surfaces.
 | Surface / state | Entry and purpose | Boundary / owner | Next / return | Disposition |
 |---|---|---|---|---|
 | `/`, public route family | Discover commercial execution and choose a path | PublicShell / Class A-D pages | `/product`, `/pricing`, `/auth/join`, `/intake` | CANONICAL |
-| `/auth/login`, `/auth/join`, aliases | Authenticate or create client access while retaining plan/trial intent | AuthShell / focused auth | `/app/setup` or intended return | TRANSFORM |
-| `/auth/verify-email` | Confirm account ownership | AuthShell / verification state | `/app/setup` or sign-in | TRANSFORM |
+| `/auth/login`, `/auth/join`, aliases | Authenticate or create client access while retaining plan/trial intent | AuthShell / focused auth | `/client/setup` or intended return | TRANSFORM |
+| `/auth/verify-email` | Confirm account ownership | AuthShell / verification state | `/client/setup` or sign-in | TRANSFORM |
 | `/auth/reset-password` | Recover account access | AuthShell / recovery state | `/auth/login` | TRANSFORM |
 | `/ops/login`, `/ops/join`, aliases | Operator account entry | AuthShell / operator boundary | `/ops/overview` | TRANSFORM |
-| `/app/setup`, `/client/setup` | Establish market scope and activation inputs | AuthShell + setup journey rail | `/app/subscribe` | TRANSFORM |
+| `/client/setup` (canonical; `/app/setup` redirects) | Establish market scope and activation inputs | AuthShell + setup journey rail, outside the client shell | `/client/today` | TRANSFORM: 2026-09-17 — one canonical route, and setup now ends in the workspace rather than at a plan screen |
 | `/app/subscribe`, `/client/subscribe` | Select execution scope and secure billing continuation | AuthShell + setup journey rail | `/client/overview` after activation | TRANSFORM |
 | `/client/oauth/return` | Render mailbox authorization result and next action | ClientShell / OAuth state | setup or infrastructure | CANONICAL |
 | `/client/overview`, `/app/home` | First operational product entry | ClientShell / converged workspace boundary | workspace navigation | TRANSFORM: operational content remains dense, but the receiving shell now inherits the Orchestrate dark canvas, identity and chrome |
