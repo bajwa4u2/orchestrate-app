@@ -104,8 +104,13 @@ implementation brief explicitly reserved. Three options, none chosen here:
 - No site redesign, no funnel, no testimonials, no claimed customers.
 - No change to the commercial-lead decision; SBDC, accelerator, investor and partnership activity
   continue in parallel.
-- **`hello@orchestrateops.com`** was used as the contact address because it is a live, signed-in
-  mailbox. Confirm it is the address you want published, or name another.
+- **`hello@orchestrateops.com`** is the published fallback contact address. **Confirmed by the
+  founder on 2026-09-16** ("yes hello@ is better") and verified as deliverable rather than assumed:
+  `orchestrateops.com` publishes Zoho MX records (mx.zoho.com / mx2 / mx3) and an SPF policy
+  (`v=spf1 include:zohomail.com ~all`), and the mailbox is signed in. This check was made
+  deliberately — two published applicant addresses bounced this week, one of them on the
+  applicant's own domain, so a contact address is not treated as working until the domain is shown
+  to accept mail.
 
 ---
 
