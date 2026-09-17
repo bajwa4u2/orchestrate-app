@@ -181,3 +181,58 @@ layer underneath the commercial story.
 - **975 lines of orphaned section widgets deleted** from `public_home_screen.dart`, with a comment
   recording why. No live capability removed; `flutter analyze lib` reports no issues.
 - No outcome claims added. No pricing change.
+
+---
+
+# 9. CLOSED — VERIFIED AGAINST A REAL SIGNED-OUT RUNTIME (2026-09-16)
+
+Verified in a fresh Playwright Chromium context — **0 cookies, no profile, genuinely
+unauthenticated**. The founder's operator session was not signed out and was not touched.
+
+**All seven routes load signed out with no unexpected redirect**, desktop (1440×900/1000) and mobile
+(390×844, iOS UA, touch): `/`, `/demo`, `/pricing`, `/how-it-works`, `/product`, `/diagnostics`,
+`/deck`. Critically, **`/` stays at `/`** — the `/ops/work` redirect is operator-only and does not
+fire for a visitor.
+
+**Rendered and visually confirmed on the signed-out home:** the signature line *"CRM records the
+relationship. Orchestrate operates it."*; the causal path in buyer language; the authority doctrine;
+the capability line beneath it; and the state-machine chapter rendering the path as
+**Prospect · Qualify · Agreement · Customer · Delivery · Invoice · Payment · Complete**.
+
+**CTAs exercised, not inferred:** "See what it costs" → `/pricing`. "Start setup" → `/auth/register`.
+"Talk to Orchestrate" → opens the drawer in place. All three store links 200 from a cookie-less
+client. **No authenticated state leaks:** the public header shows "Sign in" and "Start setup"; no
+"Sign out", "Operator" or work-queue content appears anywhere in the signed-out runtime.
+
+**STATUS: CLOSED, VERIFIED.**
+
+## The lesson, kept
+
+**source text ≠ composed UI ≠ rendered runtime.**
+
+This item produced two false findings before a true one, each from a different layer:
+
+1. `curl` returned the `<noscript>` fallback → "there is no conversion path." False.
+2. `grep` returned orphaned source → "the page sells Governed Revenue Automation." False.
+3. Reading the build method gave the real defect: a hero that put a capability above the story.
+4. Only a real unauthenticated browser could prove what a visitor actually gets.
+
+Each layer looked authoritative and each was a genuine artefact in the repository or on the wire.
+None of them was the page. Both false findings are preserved above rather than tidied away.
+
+## Three observations recorded during verification, none a regression
+
+1. **"Talk to Orchestrate" opens a drawer headed "Help & Support", footed "Powered by OpenAI."** The
+   implementation brief asked for "a real conversation path with Muhammad". A buyer pressing the
+   commercial CTA reaches an AI support assistant, framed as help rather than a founder
+   conversation — and it sits directly beneath a hero line reading *"AI creates the leverage. It
+   does not acquire the authority."* Pre-existing, not introduced here, and not verified end to end:
+   **whether a buyer's message reaches a person is unconfirmed.** No test message was sent, because
+   the inquiry record is already polluted by internal tests and another would make it worse.
+2. **"Run the Free Diagnostic" is not on the rendered page.** It existed only in the orphaned hero
+   and went with it. `/diagnostics` is live and reachable directly, but nothing on the home page
+   links to it.
+3. **The public overview publishes live operating figures** — leads 879, opportunities 780, dispatch
+   133, replies 2, meetings 5. These are the company's own outbound activity. A visitor or investor
+   could read them as customer traction. Pre-existing and presumably deliberate, but worth a
+   conscious decision given the standing rule against anything that reads as synthetic traction.
