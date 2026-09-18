@@ -736,12 +736,22 @@ class _BuilderCard extends StatelessWidget {
             const SizedBox(height: 22),
             _SectionTitle(title: '3. Tell us about your business'),
             const SizedBox(height: 12),
+            // isExpanded, because an industry label is longer than a phone.
+            //
+            // Without it the field sizes itself to the selected label's
+            // natural width and overflows by 150 px at 400 px wide — content
+            // that cannot be seen, on the one field of setup that must be
+            // answered. Expanded, the field takes the width it is given and
+            // the label ellipsizes; the open menu is wide, so the full label
+            // is still readable where the choice is actually made.
             DropdownButtonFormField<String>(
               value: industryCode,
+              isExpanded: true,
               items: GlobalSetupOptions.industries
                   .map((industry) => DropdownMenuItem<String>(
                         value: industry.code,
-                        child: Text(industry.label),
+                        child: Text(industry.label,
+                            overflow: TextOverflow.ellipsis),
                       ))
                   .toList(),
               onChanged: onIndustryChanged,
