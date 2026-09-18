@@ -9,7 +9,8 @@ export '../../data/repositories/client/client_capability_repository.dart'
         CapabilityVerdict,
         Entitlement,
         EntitlementSource,
-        EntitlementState;
+        EntitlementState,
+        OwningRail;
 
 /// THE ONE PLACE THE CLIENT APP KNOWS WHAT IT MAY OPERATE.
 ///

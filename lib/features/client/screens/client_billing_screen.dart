@@ -1,5 +1,6 @@
 import 'package:orchestrate_app/core/ui/screen_memory.dart';
 import 'package:orchestrate_app/core/commercial/commercial_model.dart';
+import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,6 +34,15 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
   void initState() {
     super.initState();
     _future = ScreenMemory.keep('billing', _load());
+    // ASKED HERE, NOT ASSUMED FROM ELSEWHERE.
+    //
+    // This screen is reachable by URL and from a Today blocker, not only from
+    // the Account layer that happens to load capabilities on its way in. The
+    // purchase controls are decided by the entitlement, so this screen fetches
+    // it rather than depending on which door somebody came through. `load()`
+    // de-duplicates an in-flight request, so arriving via the Account layer
+    // costs nothing.
+    ClientCapabilities.instance.load().then((_) {}, onError: (Object _) {});
   }
 
   Future<_BillingData> _load() async {
@@ -100,15 +110,44 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
   /// Activation and management are different actions and only one of them is
   /// available at a time. Showing a management portal to a business with no
   /// subscription is offering to manage nothing.
-  bool _hasSubscription(dynamic data) {
-    final record = data.subscription;
-    if (record is! Map) return false;
-    final status = '${record['status'] ?? ''}'.toUpperCase();
-    return status.isNotEmpty && status != 'NONE' && status != 'CANCELED';
-  }
+  /// WHETHER THIS ORGANISATION ALREADY HOLDS THE ONE PLATFORM ENTITLEMENT.
+  ///
+  /// This used to read the Stripe `Subscription` record off `/billing/
+  /// subscription`, which is a row in one rail's table. Apple and Google
+  /// purchases are recorded as store purchase evidence instead, so for an App
+  /// Store subscriber that record is null — and once the web rail opened,
+  /// this screen offered them "Activate a plan" into Stripe Checkout. They
+  /// could have been charged twice for the same entitlement, on two rails.
+  ///
+  /// ONE PLATFORM ENTITLEMENT, MULTIPLE PAYMENT RAILS. The question is whether
+  /// they hold it, not where the row lives, and the entitlement authority
+  /// already answers exactly that — for every rail, plus grants.
+  bool _holdsPlatform() =>
+      ClientCapabilities.instance.entitlement?.state.operating ?? false;
+
+  /// Null until the answer arrives. A client that has not been told must not
+  /// invent a yes OR a no: offering a purchase on an unknown entitlement is
+  /// the defect, and hiding it forever on a failed fetch is a dead end.
+  bool get _entitlementKnown => ClientCapabilities.instance.hasAnswer;
+
+  OwningRail? _owningRail() =>
+      ClientCapabilities.instance.entitlement?.ownedByRail;
 
   @override
   Widget build(BuildContext context) {
+    // THE ANSWER CAN ARRIVE AFTER THIS SCREEN DOES.
+    //
+    // Entitlement is fetched once per session and held. If it is still in
+    // flight when Billing paints, the controls must appear when it lands
+    // rather than on whatever unrelated rebuild happens next — the same
+    // const-subtree defect CommercialBoundary was written to survive.
+    return ListenableBuilder(
+      listenable: ClientCapabilities.instance,
+      builder: (context, _) => _buildBody(context),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
     return FutureBuilder<_BillingData>(
       future: _future,
       // What this screen was last told. Returning to it paints that
@@ -164,8 +203,16 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
             // frozen closed today, so the honest action is the conversation
             // that actually sets terms — not a button whose only destination
             // is a refusal.
+            // NOTHING IS OFFERED UNTIL THE ENTITLEMENT IS KNOWN.
+            //
+            // Both mistakes are available here. Offer a purchase before the
+            // answer arrives and an existing subscriber can buy a second
+            // subscription in the gap; offer nothing after a failed fetch and
+            // somebody who wants to pay has no way to. So the controls wait
+            // for an answer, and the panel below says so.
             if (externalPurchaseAllowed &&
-                !_hasSubscription(data) &&
+                _entitlementKnown &&
+                !_holdsPlatform() &&
                 data.activation.open)
               FilledButton.icon(
                 onPressed: () => context.go('/client/subscribe'),
@@ -173,14 +220,25 @@ class _ClientBillingScreenState extends State<ClientBillingScreen> {
                 label: const Text('Activate a plan'),
               ),
             if (externalPurchaseAllowed &&
-                !_hasSubscription(data) &&
+                _entitlementKnown &&
+                !_holdsPlatform() &&
                 !data.activation.open)
               OutlinedButton.icon(
                 onPressed: () => context.go('/client/support'),
                 icon: const Icon(Icons.forum_outlined, size: 18),
                 label: const Text('Talk to us about commercial terms'),
               ),
-            if (externalPurchaseAllowed && _hasSubscription(data))
+            // MANAGE IT WHERE IT IS BILLED, OR NOT AT ALL.
+            //
+            // The portal is Stripe's, and it can only manage a Stripe
+            // subscription. Offering it to an App Store subscriber sends them
+            // to a page about somebody else's money; offering it to a granted
+            // client fails outright, because a grant never created a Stripe
+            // customer — which is what the four granted production clients
+            // have been seeing.
+            if (externalPurchaseAllowed &&
+                _holdsPlatform() &&
+                _owningRail() == OwningRail.stripe)
               FilledButton.icon(
                 onPressed: _openingPortal ? null : _openPortal,
                 icon: _openingPortal

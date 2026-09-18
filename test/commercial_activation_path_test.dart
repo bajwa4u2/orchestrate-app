@@ -50,13 +50,25 @@ void main() {
   });
 
   test('activation and management are different actions', () {
-    // A business with no subscription is offered activation; one with a
-    // subscription is offered the portal. Never a portal for nothing.
-    expect(billing.contains('bool _hasSubscription'), isTrue);
-    expect(billing.contains('!_hasSubscription(data)'), isTrue);
+    // A business that does not hold the platform is offered activation; one
+    // that does is offered management. Never a portal for nothing.
+    //
+    // WAS ASSERTED AGAINST `_hasSubscription(data)` — a read of the Stripe
+    // `Subscription` record. That is the defect this test now guards against:
+    // Apple and Google purchases are store purchase evidence, not rows in that
+    // table, so an App Store subscriber read as "no subscription" and was
+    // offered "Activate a plan" into Stripe Checkout. Two rails, one
+    // entitlement, two charges.
+    expect(billing.contains('bool _holdsPlatform()'), isTrue);
+    expect(billing.contains('!_holdsPlatform()'), isTrue);
     expect(billing.contains("context.go('/client/subscribe')"), isTrue);
     expect(
-      billing.indexOf('!_hasSubscription(data)') <
+      billing.contains('data.subscription;'),
+      isFalse,
+      reason: 'a Stripe row must not decide whether to sell a second time',
+    );
+    expect(
+      billing.indexOf('!_holdsPlatform()') <
           billing.indexOf('_openingPortal ? null : _openPortal'),
       isTrue,
       reason: 'activation is offered before management, because a new business '
@@ -124,14 +136,28 @@ void main() {
       reason: 'the store rail must not be governed by the direct-sale freeze',
     );
 
-    // Opening the store rail must not have opened the direct one.
+    // TWO SWITCHES, INDEPENDENTLY THROWN.
+    //
+    // This asserted the direct rail was still closed, to prove that opening
+    // the store rail had not opened it. The direct rail opened on 2026-09-18
+    // on its own merits — approved prices, a reconciled Stripe mapping, a live
+    // checkout — so the value no longer carries that meaning. What must stay
+    // true is that neither switch is defined in terms of the other, and that
+    // both stay literal constants no deploy-time env var can move.
     final policy =
         backendSource('src/commercial-policy/commercial-activation.ts');
-    expect(policy.contains('export const COMMERCIAL_ACTIVATION_OPEN = false'),
-        isTrue,
-        reason: 'the unapproved checkout catalog stays closed');
+    expect(
+      RegExp(r'export const COMMERCIAL_ACTIVATION_OPEN = (true|false);')
+          .hasMatch(policy),
+      isTrue,
+      reason: 'the direct gate must stay a literal policy constant',
+    );
     expect(policy.contains('export const STORE_RAIL_ACTIVATION_OPEN = true'),
         isTrue);
+    final direct = RegExp(r'COMMERCIAL_ACTIVATION_OPEN = ([^;]+);')
+        .firstMatch(policy)?.group(1) ?? '';
+    expect(direct.contains('STORE_RAIL_ACTIVATION_OPEN'), isFalse,
+        reason: 'a store price and a price we set are different decisions');
 
     // Stripe still honours the freeze at its own service boundary.
     final billingService = backendSource('src/billing/billing.service.ts');

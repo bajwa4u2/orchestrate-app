@@ -70,6 +70,28 @@ enum EntitlementState {
   bool get operating => this == active || this == paymentIssue;
 }
 
+/// Which rail is charging for this entitlement, when one is.
+///
+/// `null` means nothing is being billed — a grant, or no entitlement at all —
+/// not "we could not tell". Neither store lets an app change a subscription it
+/// did not sell, so a person has to be sent back where they bought it.
+enum OwningRail {
+  stripe('STRIPE', 'card'),
+  apple('APPLE_APP_STORE', 'the App Store'),
+  google('GOOGLE_PLAY', 'Google Play');
+
+  const OwningRail(this.wire, this.where);
+  final String wire;
+  final String where;
+
+  static OwningRail? parse(String? value) {
+    for (final r in OwningRail.values) {
+      if (r.wire == value) return r;
+    }
+    return null;
+  }
+}
+
 class Entitlement {
   const Entitlement({
     required this.state,
@@ -77,6 +99,7 @@ class Entitlement {
     required this.says,
     required this.because,
     required this.isPayingCustomer,
+    this.ownedByRail,
   });
 
   final EntitlementState state;
@@ -87,12 +110,16 @@ class Entitlement {
   final String because;
   final bool isPayingCustomer;
 
+  /// Null when nothing is being billed. See [OwningRail].
+  final OwningRail? ownedByRail;
+
   static Entitlement fromJson(Map<String, dynamic> j) => Entitlement(
         state: EntitlementState.parse(j['state'] as String?),
         source: EntitlementSource.parse(j['source'] as String?),
         says: (j['says'] as String?) ?? '',
         because: (j['because'] as String?) ?? '',
         isPayingCustomer: j['isPayingCustomer'] == true,
+        ownedByRail: OwningRail.parse(j['ownedByRail'] as String?),
       );
 }
 

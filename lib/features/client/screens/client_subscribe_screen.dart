@@ -42,10 +42,30 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
 
   CommercialModel? _model;
 
+  /// THE SAME AUTHORITY THE REST OF THE APP READS.
+  ///
+  /// This screen decides whether to offer a purchase, so it needs the one
+  /// answer about what the organisation already holds — not a second opinion
+  /// assembled from whatever this screen happens to have fetched.
+  final ClientCapabilities _entitlementAuthority = ClientCapabilities.instance;
+
+  void _onEntitlementChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
     _load();
+    _entitlementAuthority.addListener(_onEntitlementChanged);
+    // De-duplicated by `load()`, so arriving from Billing costs nothing.
+    _entitlementAuthority.load().then((_) {}, onError: (Object _) {});
+  }
+
+  @override
+  void dispose() {
+    _entitlementAuthority.removeListener(_onEntitlementChanged);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -116,12 +136,35 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
     // unavailable / Retry", a button that could only ever fail again.
     final activation = model?.activation;
 
+    // ONE PLATFORM ENTITLEMENT, MULTIPLE PAYMENT RAILS.
+    //
+    // Checked before the rail is even considered, because the question is not
+    // "can this rail sell" but "does this organisation already hold it". An
+    // App Store subscriber reaching this screen on the web must not be shown
+    // a monthly and an annual card with Subscribe under them; buying one
+    // would charge them a second time for what Apple already bills them for.
+    //
+    // The store purchase panel has always asked this, through `alreadyActive`.
+    // This screen and Billing asked a Stripe-shaped question instead, which is
+    // the whole of the defect.
+    final entitlement = _entitlementAuthority.entitlement;
+    final holdsPlatform = entitlement?.state.operating ?? false;
+
     final content = _loading
         ? const Padding(
             padding: EdgeInsets.all(40),
             child: CircularProgressIndicator(),
           )
-        : (activation != null && !activation.open)
+        : holdsPlatform
+            ? _AlreadyHeldCard(
+                says: entitlement?.says ?? '',
+                because: entitlement?.because ?? '',
+                ownedByRail: entitlement?.ownedByRail,
+                onBack: () => context.go(
+                    widget.insideWorkspace ? '/client/billing' : '/'),
+                insideWorkspace: widget.insideWorkspace,
+              )
+            : (activation != null && !activation.open)
             ? _ActivationClosedCard(
                 says: activation.says,
                 resolution: activation.resolution,
@@ -131,7 +174,7 @@ class _ClientSubscribeScreenState extends State<ClientSubscribeScreen> {
                     context.go(widget.insideWorkspace ? '/client/billing' : '/'),
                 insideWorkspace: widget.insideWorkspace,
               )
-            : Column(
+                : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── WHAT YOU ALREADY HAVE, BEFORE WHAT YOU COULD BUY ─────
@@ -531,6 +574,79 @@ class _MissingPricingCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
+}
+
+/// WHAT SOMEBODY WHO ALREADY PAYS SHOULD SEE ON A PURCHASE SCREEN.
+///
+/// Not a price list. The entitlement authority's own sentences, and — when a
+/// rail is billing for it — where it is managed, because neither store lets an
+/// app change a subscription it did not sell.
+class _AlreadyHeldCard extends StatelessWidget {
+  const _AlreadyHeldCard({
+    required this.says,
+    required this.because,
+    required this.ownedByRail,
+    required this.onBack,
+    required this.insideWorkspace,
+  });
+
+  final String says;
+  final String because;
+  final OwningRail? ownedByRail;
+  final VoidCallback onBack;
+  final bool insideWorkspace;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final rail = ownedByRail;
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Subscription',
+              style: theme.textTheme.labelLarge
+                  ?.copyWith(color: theme.colorScheme.primary)),
+          const SizedBox(height: 8),
+          Text('Orchestrate is already active',
+              style: theme.textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 14),
+          if (says.isNotEmpty)
+            Text(says, style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
+          if (because.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(because,
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            rail == null
+                // A grant. Nothing is being billed, so there is nothing to
+                // manage and nothing to buy.
+                ? 'There is nothing to pay and nothing to manage.'
+                : rail == OwningRail.stripe
+                    ? 'Billed by card. Manage it from Plan and billing.'
+                    : 'Bought through ${rail.where}. Changes and cancellation '
+                        'happen there — Orchestrate cannot change a subscription '
+                        'it did not sell.',
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+          ),
+          const SizedBox(height: 22),
+          OutlinedButton(
+            onPressed: onBack,
+            child: Text(insideWorkspace ? 'Back to billing' : 'Back'),
+          ),
         ],
       ),
     );
