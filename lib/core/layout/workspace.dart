@@ -475,10 +475,15 @@ class _ToneMark extends StatelessWidget {
 /// Small and plain. A large card announcing that no action is needed is itself
 /// a demand for attention, which is the opposite of what it claims.
 class QuietState extends StatelessWidget {
-  const QuietState({super.key, required this.message, this.hint});
+  const QuietState({super.key, required this.message, this.hint, this.action});
 
   final String message;
   final String? hint;
+
+  /// Where the thing this state is waiting for can actually be done. An empty
+  /// state that names a missing step and offers no way to take it is an
+  /// instruction the reader has to go and find a place for.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -501,6 +506,8 @@ class QuietState extends StatelessWidget {
                   style: text.bodySmall?.copyWith(
                       color: AppTheme.publicMuted.withValues(alpha: 0.8))),
             ),
+          if (action != null)
+            Padding(padding: const EdgeInsets.only(top: 10), child: action!),
         ],
       ),
     );

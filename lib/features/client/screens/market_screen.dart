@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/market/client_market.dart';
 import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/client/widgets/candidate_sheet.dart';
+import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 
 /// MARKET — WHO MAY BE WORTH ENTERING INTO COMMERCIAL RELATIONSHIP WITH.
 ///
@@ -44,6 +46,12 @@ class _MarketScreenState extends State<MarketScreen> {
   void initState() {
     super.initState();
     _market.addListener(_onChanged);
+    // Whether this business may be searched for at all is part of what an
+    // empty Market has to explain, so the commercial answer is asked for here.
+    ClientCapabilities.instance.addListener(_onChanged);
+    unawaited(ClientCapabilities.instance
+        .load()
+        .then<void>((_) {}, onError: (Object _) {}));
     if (!_market.hasAnswer && !_market.isLoading && _market.error == null) {
       // Held, not rethrown. load() has already recorded the error and notified
       // listeners, so _body() renders the failure; rethrowing here does nothing
@@ -58,6 +66,7 @@ class _MarketScreenState extends State<MarketScreen> {
   @override
   void dispose() {
     _market.removeListener(_onChanged);
+    ClientCapabilities.instance.removeListener(_onChanged);
     super.dispose();
   }
 
@@ -126,21 +135,55 @@ class _MarketScreenState extends State<MarketScreen> {
     if (view.candidates.isEmpty) {
       final coverage = view.coverage;
 
+      // A POINTER HAS TO LEAD SOMEWHERE THAT RESOLVES IT.
+      //
+      // This said "Business is where that is set" and offered no way there.
+      // Worse, nothing on Business could set it: intent was read only from a
+      // table no customer-facing screen writes. The server now reads the
+      // offer from Business identity's "Offer / service description", and the
+      // button goes to that field's screen.
       if (view.intent == null) {
-        return const QuietState(
+        return QuietState(
           message: 'Your business has not said what it sells.',
           hint: 'Until it does, there is nothing to judge a counterparty '
-              'against. Business is where that is set.',
+              'against. Describe your offer in Business identity.',
+          action: OutlinedButton(
+            onPressed: () => context.go('/client/representation'),
+            child: const Text('Describe what you sell'),
+          ),
         );
       }
 
       // The one thing only the business can resolve, so it comes first.
+      // Geography is the market setup records, so setup is where it is set.
       if (coverage.geographyNeedsConfirmation) {
-        return const QuietState(
+        return QuietState(
           message: 'We need to know where your market is.',
           hint: 'Once your business sets the places it sells into, we can '
-              'start looking for businesses there. Business is where that '
-              'is set.',
+              'start looking for businesses there.',
+          action: OutlinedButton(
+            onPressed: () => context.go('/client/setup'),
+            child: const Text('Set where you operate'),
+          ),
+        );
+      }
+
+      // NOT SEARCHED BECAUSE IT MAY NOT BE, SAID AS THAT.
+      //
+      // Discovery requires an active plan. Without one the sweep is refused
+      // and records nothing, so the branches below would say "Discovery is
+      // paused" or, once a profile exists, "Searching your market" — forever,
+      // about a search that is not happening. The commercial authority's own
+      // reason and resolution are shown instead, with the way to act on them.
+      if (ClientCapabilities.instance
+              .refusalFor(Capabilities.researchCounterparties) !=
+          null) {
+        return ListView(
+          padding: EdgeInsets.zero,
+          children: const [
+            QuietState(message: 'Your market is not being searched.'),
+            CommercialBoundary(capability: Capabilities.researchCounterparties),
+          ],
         );
       }
 

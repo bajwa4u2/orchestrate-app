@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/data/repositories/client/client_business_identity_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_campaign_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_authority_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
+import 'package:orchestrate_app/core/readiness/standing_conditions.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/features/guidance/guidance_drawer.dart';
 import 'package:orchestrate_app/features/guidance/widgets/why_affordance.dart';
@@ -970,8 +973,59 @@ class _RepresentationAuthPanel extends StatefulWidget {
 
 class _RepresentationAuthPanelState extends State<_RepresentationAuthPanel> {
   final ClientCampaignRepository _campaignRepository = ClientCampaignRepository();
+  final ClientAuthorityRepository _authority = ClientAuthorityRepository();
+  final ClientOutreachRepository _eligibility = ClientOutreachRepository();
   bool _submitting = false;
   String? _error;
+
+  // WHAT AUTHORISING CHANGED, AND WHAT IT DID NOT.
+  //
+  // This said "Authorized. Managed execution can run." the moment the grant
+  // existed. For a workspace without a plan or a mailbox that is false:
+  // authorising representation is one condition of several, and it grants
+  // one thing, communication. So once authorised the panel says what the
+  // grant is, in the authority's own sentence, and lists what is still
+  // required, from the same eligibility answer Today reads.
+  String? _grantMeaning;
+  List<StandingCondition>? _stillRequired;
+  bool _standingUnavailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.authorized) _loadStanding();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RepresentationAuthPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.authorized && !oldWidget.authorized) _loadStanding();
+  }
+
+  Future<void> _loadStanding() async {
+    String? meaning;
+    List<StandingCondition>? remaining;
+    var unavailable = false;
+    try {
+      meaning = (await _authority.fetch()).orchestrateMeaning;
+    } catch (_) {
+      meaning = null;
+    }
+    try {
+      remaining = standingConditionsFrom(
+        await _eligibility.fetchExecutionEligibility(),
+      ).where((c) => !representationConditionCodes.contains(c.code)).toList();
+    } catch (_) {
+      // Unknown is not "nothing left". Said as unknown.
+      unavailable = true;
+    }
+    if (!mounted) return;
+    setState(() {
+      _grantMeaning = (meaning == null || meaning.isEmpty) ? null : meaning;
+      _stillRequired = remaining;
+      _standingUnavailable = unavailable;
+    });
+  }
 
   Future<void> _confirmAndAuthorize() async {
     final accepted = await showDialog<bool>(
@@ -1003,6 +1057,7 @@ class _RepresentationAuthPanelState extends State<_RepresentationAuthPanel> {
       if (!mounted) return;
       setState(() => _submitting = false);
       widget.onAuthorized();
+      _loadStanding();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Representation authorized.')),
       );
@@ -1027,7 +1082,9 @@ class _RepresentationAuthPanelState extends State<_RepresentationAuthPanel> {
           primary: widget.loading
               ? 'Loading…'
               : widget.authorized
-                  ? 'Authorized. Managed execution can run.'
+                  ? (_grantMeaning == null
+                      ? 'Representation authorized.'
+                      : 'Representation authorized. $_grantMeaning')
                   : 'Not yet authorized. Authorization is a one-time client-owned acknowledgement.',
           trailing: widget.authorized
               ? const ClientBadge(label: 'Authorized')
@@ -1046,6 +1103,21 @@ class _RepresentationAuthPanelState extends State<_RepresentationAuthPanel> {
                       : 'Authorize representation'),
                 ),
         ),
+        if (widget.authorized && _standingUnavailable)
+          const ClientInfoRow(
+            title: 'Still required',
+            primary: 'What else is required could not be confirmed right now. '
+                'Today lists it.',
+          )
+        else if (widget.authorized &&
+            _stillRequired != null &&
+            _stillRequired!.isNotEmpty)
+          ClientInfoRow(
+            title: 'Still required before anything is sent',
+            primary: _stillRequired!.map((c) => c.title).join(' · '),
+            secondary: 'Authorizing representation was one condition, not '
+                'all of them. Today shows where each of these is resolved.',
+          ),
         if (_error != null)
           ClientInfoRow(
             title: 'Error',

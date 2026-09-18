@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/layout/workspace.dart';
-import 'package:orchestrate_app/core/network/api_client.dart';
+import 'package:orchestrate_app/core/readiness/standing_conditions.dart';
 import 'package:orchestrate_app/core/theme/workspace_theme.dart';
 import 'package:orchestrate_app/data/repositories/client/client_business_identity_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_outreach_repository.dart';
 
 /// THE BUSINESS BEING OPERATED — NOT A SETTINGS INDEX.
 ///
@@ -39,7 +40,7 @@ class BusinessScreen extends StatefulWidget {
 class _BusinessScreenState extends State<BusinessScreen> {
   final ClientBusinessIdentityRepository _identity =
       ClientBusinessIdentityRepository();
-  final ApiClient _api = ApiClient();
+  final ClientOutreachRepository _eligibility = ClientOutreachRepository();
 
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _sending;
@@ -67,10 +68,18 @@ class _BusinessScreenState extends State<BusinessScreen> {
         _unavailable.add('who this business is');
         return null;
       }),
-      _api
-          .getJson('/client/outbound-email-readiness', surface: ApiSurface.client)
-          .then<Map<String, dynamic>?>(
-              (v) => v is Map ? Map<String, dynamic>.from(v) : null)
+      // THE SAME ANSWER TODAY GIVES.
+      //
+      // This read `/client/outbound-email-readiness`, whose raw blockers carry
+      // no title and no destination. So every condition here was called
+      // "Sending is held" — the plan, the authorisation, the mailbox alike —
+      // and every row opened mailbox settings, including the one about the
+      // plan. Execution eligibility names each condition, explains it and
+      // says where it is resolved, per blocker type, and Today already reads
+      // it. Business now reads the same thing through the same reader.
+      _eligibility
+          .fetchExecutionEligibility()
+          .then<Map<String, dynamic>?>((v) => v)
           .catchError((Object _) {
         _unavailable.add('whether it can send');
         return null;
@@ -110,8 +119,12 @@ class _BusinessScreenState extends State<BusinessScreen> {
     final profile = _profile ?? const <String, dynamic>{};
     final legal = _text(profile['legalName']);
     final trading = _text(profile['displayName']);
-    final ready = _sending?['ready'] == true;
-    final blockers = (_sending?['blockers'] as List?) ?? const [];
+    final conditions = standingConditionsFrom(_sending);
+    const readyBuckets = {'ready_to_execute', 'orchestrate_working', 'executing'};
+    // Ready only when the authority says so AND nothing stands in the way.
+    // An unknown bucket is not ready.
+    final ready =
+        conditions.isEmpty && readyBuckets.contains(_sending?['bucket']);
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -200,19 +213,28 @@ class _BusinessScreenState extends State<BusinessScreen> {
               else ...[
                 WorkspaceRow(
                   title: 'Nothing can be sent yet',
-                  detail: blockers.isEmpty
+                  detail: conditions.isEmpty
                       ? 'Sending is not ready. No reason was reported, which '
                           'is itself worth raising.'
-                      : 'Until this is resolved, no outreach and no reply '
-                          'leaves the business.',
+                      : conditions.length == 1
+                          ? 'Until this is resolved, no outreach and no reply '
+                              'leaves the business.'
+                          : 'Until these are resolved, no outreach and no '
+                              'reply leaves the business.',
                   tone: RowTone.problem,
                 ),
-                for (final b in blockers.whereType<Map>())
+                for (final c in conditions)
                   WorkspaceRow(
-                    title: _text(b['title']) ?? 'Sending is held',
-                    detail: _text(b['reason']) ?? _text(b['message']),
+                    title: c.title,
+                    detail: c.detail,
                     tone: RowTone.problem,
-                    onTap: () => context.go('/client/infrastructure'),
+                    action: c.route == null
+                        ? null
+                        : TextButton(
+                            onPressed: () => context.go(c.route!),
+                            child: Text(c.cta ?? 'Open'),
+                          ),
+                    onTap: c.route == null ? null : () => context.go(c.route!),
                   ),
               ],
             ],

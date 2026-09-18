@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import '../../../core/readiness/standing_conditions.dart';
 
 /// WHAT TODAY IS BUILT FROM.
 ///
@@ -303,50 +304,19 @@ class TodayState {
     // `reason` and `message` are still accepted so an older payload, or the
     // degraded envelope the evaluator emits when it catches its own error,
     // still renders.
-    final blockers = eligibility['blockers'];
-    if (blockers is List) {
-      for (final b in blockers.whereType<Map>()) {
-        final detail = b['detail']?.toString() ??
-            b['reason']?.toString() ??
-            b['message']?.toString();
-        final label = b['label']?.toString() ?? b['title']?.toString();
-        // Nothing to say about it in either field. A blocker that cannot
-        // describe itself is still worth naming, so it appears with the
-        // standing title rather than being dropped.
-        if ((detail == null || detail.isEmpty) &&
-            (label == null || label.isEmpty)) {
-          continue;
-        }
-        // Only an in-app path is offered. An absolute URL, or anything
-        // that is not a route, would send `context.go` somewhere it
-        // cannot resolve — a dead button is worse than no button.
-        final rawRoute = b['resolutionRoute']?.toString();
-        final route = (rawRoute != null && rawRoute.startsWith('/'))
-            ? rawRoute
-            : null;
-        items.add(TodayItem(
-          when: TodayWhen.standing,
-          route: route,
-          cta: b['resolutionCta']?.toString(),
-          title: (label == null || label.isEmpty) ? 'Sending is held' : label,
-          // AN INTERNAL ERROR IS NOT AN ATTENTION ITEM.
-          //
-          // A blocker detail is normally written for the person who has to
-          // act on it. When the backend hits its own defect the detail is a
-          // stack trace instead, and rendering that verbatim shows a client
-          // our source paths and tells them nothing they can do. The item
-          // still appears — something IS held — but it says so honestly and
-          // names who resolves it.
-          detail: detail == null || detail.isEmpty
-              ? null
-              : _looksInternal(detail)
-                  ? 'Sending is held by a fault on our side. Nothing is wrong '
-                      'with your setup, and it needs us rather than you.'
-                  : detail,
-          severity: 'WARNING',
-          category: 'execution',
-        ));
-      }
+    // The name, explanation and destination of each condition come from the
+    // one shared reader, so Today and Business cannot describe the same
+    // blocker differently.
+    for (final c in standingConditionsFrom(eligibility)) {
+      items.add(TodayItem(
+        when: TodayWhen.standing,
+        route: c.route,
+        cta: c.cta,
+        title: c.title,
+        detail: c.detail,
+        severity: 'WARNING',
+        category: 'execution',
+      ));
     }
 
     return orderForToday(items);
@@ -588,24 +558,6 @@ class TodayState {
     return withoutPrefix.isEmpty ? text : '${withoutPrefix[0].toUpperCase()}${withoutPrefix.substring(1)}';
   }
 
-  /// Does this read like our failure rather than the client's situation?
-  static bool _looksInternal(String reason) {
-    const fingerprints = [
-      // '.js:' matters most and was missing. Production runs COMPILED
-      // JavaScript, so a real backend stack trace reads
-      // "/app/dist/src/workers/first_send/first-send.worker.service.js:268" —
-      // exactly the shape seen in the production logs on 2026-09-17. The list
-      // recognised the TypeScript and Dart forms, which are the two that
-      // never reach a deployed client.
-      'invocation in', 'prisma.', 'at Object.', '.ts:', '.js:', '.dart:',
-      'Traceback', 'stack', 'Unhandled', 'internal error',
-      'Exception:', 'Exception at', 'BadRequestException',
-    ];
-    final lower = reason.toLowerCase();
-    return reason.contains('\n') ||
-        reason.length > 400 ||
-        fingerprints.any((f) => lower.contains(f.toLowerCase()));
-  }
 
   static String? _intentLine(String? intent) => switch (intent) {
         'INTERESTED' => 'Positive interest',

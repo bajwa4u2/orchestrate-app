@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/app/shell/auth_shell.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
+import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/data/setup/global_setup_options.dart';
@@ -843,16 +844,7 @@ class _ReviewCard extends StatelessWidget {
                   Text('What happens next',
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  // One sentence, and the same one for everybody. This used to
-                  // describe the coverage tier back to the person who had just
-                  // picked it — three variants of what they had already read.
-                  Text(
-                      'Orchestrate starts finding and qualifying signal in the '
-                      'markets you named, and brings you what needs a decision.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: AppTheme.publicMuted)),
+                  const _WhatHappensNext(),
                 ],
               ),
             ),
@@ -873,9 +865,73 @@ class _ReviewCard extends StatelessWidget {
   }
 }
 
+/// What saving setup starts, said by the authority that decides it.
+///
+/// This was one fixed sentence: "Orchestrate starts finding and qualifying
+/// signal in the markets you named". Since discovery requires an active plan,
+/// that was untrue for every business setting up without one, at the exact
+/// moment it was deciding whether to continue. The sentence now follows the
+/// commercial authority's verdict on RESEARCH_COUNTERPARTIES, and when it is
+/// refused, the authority's own reason and resolution are what is shown.
+class _WhatHappensNext extends StatefulWidget {
+  const _WhatHappensNext();
+
+  @override
+  State<_WhatHappensNext> createState() => _WhatHappensNextState();
+}
+
+class _WhatHappensNextState extends State<_WhatHappensNext> {
+  @override
+  void initState() {
+    super.initState();
+    // A failed load leaves the answer unknown, which build handles by
+    // claiming nothing either way.
+    ClientCapabilities.instance.load().then((_) {}, onError: (Object _) {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context)
+        .textTheme
+        .bodyMedium
+        ?.copyWith(color: AppTheme.publicMuted);
+    return ListenableBuilder(
+      listenable: ClientCapabilities.instance,
+      builder: (context, _) {
+        final caps = ClientCapabilities.instance;
+        if (!caps.hasAnswer) {
+          return Text(
+            'Saving records the market Orchestrate will work in. Today then '
+            'shows anything still required before it can search it.',
+            style: style,
+          );
+        }
+        final refusal = caps.refusalFor(Capabilities.researchCounterparties);
+        if (refusal == null) {
+          return Text(
+            'Orchestrate starts finding and qualifying signal in the markets '
+            'you named, and brings you what needs a decision.',
+            style: style,
+          );
+        }
+        final why = refusal.why ?? '';
+        final resolution = refusal.resolution ?? '';
+        return Text(
+          [
+            'Saving records the market, but searching it does not start yet.',
+            if (why.isNotEmpty) why,
+            if (resolution.isNotEmpty) resolution,
+          ].join(' '),
+          style: style,
+        );
+      },
+    );
+  }
+}
+
 /// Introduced during setup, not enforced by it.
 ///
-/// Discovery and outreach work without this, and gating setup on it would stop
+/// Naming a person is not needed for discovery or outreach, and gating setup on it would stop
 /// a business getting value while it worked out who should be named. What it
 /// gates is agreements and invoices — and someone meeting that limit for the
 /// first time at the moment they need it is the worst possible time to explain
@@ -899,11 +955,15 @@ class _AuthorisedPeoplePrompt extends StatelessWidget {
           Text('Later: who can agree things for the business',
               style: text.titleMedium),
           const SizedBox(height: 8),
+          // This opened with "Discovery and outreach need nothing more from
+          // you." Without a plan, discovery does not run, and outreach also
+          // waits on representation and a mailbox. What those need is said
+          // above, from the commercial authority, and on Today; this prompt
+          // only says what naming a person is for.
           Text(
-            'Discovery and outreach need nothing more from you. Agreements and '
-            'invoices are a different matter: Orchestrate will not act on those '
-            'just because someone is signed in, so a person has to be named as '
-            'authorised first.',
+            'Agreements and invoices need more than a signed-in account: '
+            'Orchestrate will not act on those just because someone is signed '
+            'in, so a person has to be named as authorised first.',
             style: text.bodyMedium?.copyWith(color: AppTheme.publicMuted),
           ),
           const SizedBox(height: 6),
