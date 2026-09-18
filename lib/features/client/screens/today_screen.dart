@@ -52,9 +52,16 @@ class _TodayScreenState extends State<TodayScreen> {
     super.initState();
     _attention.addListener(_onAttentionChanged);
     _today.addListener(_onAttentionChanged);
-    // Asked once, when there is no answer. Returning to Today after leaving it
-    // paints what it already knows.
-    if (!_today.hasAnswer && !_today.isLoading && _today.error == null) {
+    // PAINT WHAT IS KNOWN, AND ASK AGAIN UNDERNEATH.
+    //
+    // This asked only when there was no answer, so returning to Today painted
+    // the old answer and never asked again. A business that had just
+    // authorised representation came back and was still told "Authorization
+    // required" — the server had already dropped the blocker; the screen
+    // simply never went back to it. Found filming Getting Started on a fresh
+    // workspace, 2026-09-18. The cached answer still paints immediately (no
+    // spinner flash); the refresh replaces it when it lands.
+    if (!_today.isLoading) {
       _load();
     }
   }
