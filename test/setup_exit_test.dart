@@ -33,7 +33,8 @@ void main() {
       'token': 'test-token',
       'session': {'surface': 'client', 'clientId': 'c1', 'organizationId': 'o1'},
       'user': {'email': 'capture@example.test', 'emailVerified': true},
-      'setup': {'completed': setupCompleted},
+      // `setupCompleted` is the key the session actually reads.
+      'setup': {'setupCompleted': setupCompleted},
     });
   }
 
