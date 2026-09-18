@@ -125,6 +125,23 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
     if (_isVerification) {
       await _handleVerification(uri);
+      return;
+    }
+
+    // DELETION IS SAID, NOT IMPLIED.
+    //
+    // Deleting the account ended on this screen with nothing on it, identical
+    // to an ordinary sign-out — the one moment a person most needs to know the
+    // act went through. What it says is what deletion does (verified end to
+    // end 2026-09-18): the login is erased, nothing can restore it, and the
+    // same email can start a new workspace, which will be a new one.
+    if (!_isJoin && uri.queryParameters['deleted'] == '1') {
+      setState(() {
+        _message = 'Your account was deleted. Its sign-in and personal '
+            'details were erased, and it cannot be restored. You can use the '
+            'same email to create a new workspace, which starts from nothing.';
+        _error = null;
+      });
     }
   }
 

@@ -118,7 +118,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
 
     if (result == true && mounted) {
       await AuthSessionController.instance.clear();
-      if (mounted) context.go('/auth/login');
+      // Said on arrival, so an irreversible act does not end on a sign-in
+      // screen indistinguishable from any other sign-out.
+      if (mounted) context.go('/auth/login?deleted=1');
     }
   }
 
