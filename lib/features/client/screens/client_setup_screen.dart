@@ -942,10 +942,27 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
   void initState() {
     super.initState();
     _selected = Set<String>.from(widget.selected);
+    // THE FILTER LIVES HERE, SO THE REBUILD HAS TO HAPPEN HERE.
+    //
+    // `build` computes the visible list from `_search.text`. The scaffold that
+    // owns the TextField used to answer a keystroke by marking ITS OWN element
+    // dirty — which rebuilt the scaffold and reused the already-built list it
+    // had been handed. This state never rebuilt, so the list never re-filtered.
+    //
+    // Typing did nothing. You typed "United States", the list still read
+    // Afghanistan, Albania, Algeria, and search looked broken. It appeared to
+    // work only after ticking any checkbox, because that calls setState here
+    // and recomputes the list as a side effect.
+    _search.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _search.removeListener(_onSearchChanged);
     _search.dispose();
     super.dispose();
   }
@@ -1013,10 +1030,27 @@ class _RegionPickerSheetState extends State<_RegionPickerSheet> {
   void initState() {
     super.initState();
     _selected = Set<String>.from(widget.selected);
+    // THE FILTER LIVES HERE, SO THE REBUILD HAS TO HAPPEN HERE.
+    //
+    // `build` computes the visible list from `_search.text`. The scaffold that
+    // owns the TextField used to answer a keystroke by marking ITS OWN element
+    // dirty — which rebuilt the scaffold and reused the already-built list it
+    // had been handed. This state never rebuilt, so the list never re-filtered.
+    //
+    // Typing did nothing. You typed "United States", the list still read
+    // Afghanistan, Albania, Algeria, and search looked broken. It appeared to
+    // work only after ticking any checkbox, because that calls setState here
+    // and recomputes the list as a side effect.
+    _search.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _search.removeListener(_onSearchChanged);
     _search.dispose();
     super.dispose();
   }
@@ -1111,13 +1145,20 @@ class _PickerSheetScaffold extends StatelessWidget {
                               .bodyMedium
                               ?.copyWith(color: AppTheme.publicMuted)),
                       const SizedBox(height: 14),
+                      // No onChanged. The controller is the channel: the
+                      // state that computes the filtered list listens to it
+                      // and rebuilds itself.
+                      //
+                      // What was here marked THIS element dirty, which is a
+                      // stateless scaffold holding an already-built `child`.
+                      // Rebuilding it re-rendered the same list, so every
+                      // keystroke did nothing visible.
                       TextField(
                         controller: search,
                         decoration: const InputDecoration(
                           hintText: 'Search',
                           prefixIcon: Icon(Icons.search),
                         ),
-                        onChanged: (_) => (context as Element).markNeedsBuild(),
                       ),
                     ],
                   ),
