@@ -110,6 +110,53 @@ void main() {
     });
   });
 
+  group('a row that names a problem goes to where it is fixed', () {
+    test('the resolution route and cta are carried, not discarded', () {
+      final state = withBlockers([
+        {
+          'code': 'MAILBOX_MISSING',
+          'label': 'Mailbox missing',
+          'detail': 'No sending mailbox of yours is connected yet.',
+          'resolutionRoute': '/client/mailbox',
+          'resolutionCta': 'Connect a mailbox',
+        },
+      ]);
+      final item = state.needsYou.single;
+      expect(item.route, '/client/mailbox');
+      expect(item.cta, 'Connect a mailbox');
+    });
+
+    test('the three live blockers each carry their own route', () {
+      final state = withBlockers([
+        {'label': 'Authorization required', 'detail': 'x', 'resolutionRoute': '/client/representation', 'resolutionCta': 'Authorize representation'},
+        {'label': 'Readiness blocker', 'detail': 'x', 'resolutionRoute': '/client/operations', 'resolutionCta': 'View operations'},
+        {'label': 'Mailbox missing', 'detail': 'x', 'resolutionRoute': '/client/mailbox', 'resolutionCta': 'Connect a mailbox'},
+      ]);
+      expect(state.needsYou.map((i) => i.route).toList(), [
+        '/client/representation',
+        '/client/operations',
+        '/client/mailbox',
+      ]);
+    });
+
+    test('a blocker with no route stays unclickable rather than guessing', () {
+      final state = withBlockers([
+        {'label': 'Something is held', 'detail': 'No route for this one.'},
+      ]);
+      expect(state.needsYou.single.route, isNull);
+    });
+
+    test('anything that is not an in-app path is refused', () {
+      // context.go cannot resolve an absolute URL, and a dead button is
+      // worse than no button.
+      final state = withBlockers([
+        {'label': 'External', 'detail': 'x', 'resolutionRoute': 'https://example.com/help'},
+        {'label': 'Nonsense', 'detail': 'x', 'resolutionRoute': 'mailbox'},
+      ]);
+      expect(state.needsYou.map((i) => i.route), everyElement(isNull));
+    });
+  });
+
   group('the guard that caused it', () {
     test('an empty blocker list still yields nothing', () {
       expect(withBlockers(const []).needsYou, isEmpty);

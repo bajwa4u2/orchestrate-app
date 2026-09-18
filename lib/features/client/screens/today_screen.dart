@@ -216,6 +216,17 @@ class _TodayScreenState extends State<TodayScreen> {
                 ),
                 onTap: () => context.go('/client/setup'),
               ),
+            // A ROW THAT NAMES A PROBLEM SHOULD GO TO WHERE IT IS FIXED.
+            //
+            // Readiness blockers carry the route that resolves them and the
+            // words for the button. These rows rendered neither, so Today
+            // told somebody their mailbox was missing and then left them to
+            // work out which surface that meant and go and find it — on the
+            // screen whose whole promise is that the work comes to you.
+            //
+            // The onboarding row above has had a Continue button and a tap
+            // target since it was written. The blockers simply never got the
+            // same treatment.
             for (final item in needsYou)
               WorkspaceRow(
                 title: item.title,
@@ -224,6 +235,18 @@ class _TodayScreenState extends State<TodayScreen> {
                 tone: item.severity == 'CRITICAL' || item.severity == 'ERROR'
                     ? RowTone.problem
                     : RowTone.attention,
+                action: item.route == null
+                    ? null
+                    : TextButton(
+                        onPressed: () => context.go(item.route!),
+                        child: Text(
+                          (item.cta == null || item.cta!.isEmpty)
+                              ? 'Open'
+                              : item.cta!,
+                        ),
+                      ),
+                onTap:
+                    item.route == null ? null : () => context.go(item.route!),
               ),
             // Mail that reached this business and could not be placed. One
             // row, leading with what it is and why — never "you have 27".

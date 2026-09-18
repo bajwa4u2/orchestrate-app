@@ -317,8 +317,17 @@ class TodayState {
             (label == null || label.isEmpty)) {
           continue;
         }
+        // Only an in-app path is offered. An absolute URL, or anything
+        // that is not a route, would send `context.go` somewhere it
+        // cannot resolve — a dead button is worse than no button.
+        final rawRoute = b['resolutionRoute']?.toString();
+        final route = (rawRoute != null && rawRoute.startsWith('/'))
+            ? rawRoute
+            : null;
         items.add(TodayItem(
           when: TodayWhen.standing,
+          route: route,
+          cta: b['resolutionCta']?.toString(),
           title: (label == null || label.isEmpty) ? 'Sending is held' : label,
           // AN INTERNAL ERROR IS NOT AN ATTENTION ITEM.
           //
@@ -652,6 +661,8 @@ class TodayItem {
     this.severity,
     this.category,
     this.intent,
+    this.route,
+    this.cta,
     this.at,
     this.when = TodayWhen.happened,
   });
@@ -662,6 +673,19 @@ class TodayItem {
   final String? severity;
   final String? category;
   final String? intent;
+
+  /// WHERE THIS IS FIXED, AND WHAT THE BUTTON SAYS.
+  ///
+  /// Every readiness blocker arrives with `resolutionRoute` and
+  /// `resolutionCta` — the backend has always known where each one is
+  /// resolved. Today discarded both, so a row said "Mailbox missing" and
+  /// led nowhere: the person had to read the sentence, work out which
+  /// surface it meant, and go find it.
+  ///
+  /// Null for items that genuinely have no destination. A row that cannot
+  /// say where to go stays unclickable rather than guessing at one.
+  final String? route;
+  final String? cta;
 
   /// The moment this item is about, in its own sense.
   final DateTime? at;
