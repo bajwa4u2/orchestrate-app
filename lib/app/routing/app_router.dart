@@ -561,27 +561,39 @@ GoRouter _buildRouter() {
     GoRoute(
         path: '/auth/reset-password',
         builder: (context, state) => const ClientLoginScreen(resetMode: true)),
-    GoRoute(path: '/login', redirect: (context, state) => '/auth/login'),
-    GoRoute(path: '/join', redirect: (context, state) => '/auth/join'),
-    GoRoute(path: '/signup', redirect: (context, state) => '/auth/join'),
+    GoRoute(
+        path: '/login',
+        redirect: (context, state) => _alias(state, '/auth/login')),
+    GoRoute(
+        path: '/join',
+        redirect: (context, state) => _alias(state, '/auth/join')),
+    GoRoute(
+        path: '/signup',
+        redirect: (context, state) => _alias(state, '/auth/join')),
     GoRoute(
         path: '/forgot-password',
-        redirect: (context, state) => '/auth/reset-password'),
+        redirect: (context, state) => _alias(state, '/auth/reset-password')),
     GoRoute(
         path: '/reset-password',
-        redirect: (context, state) => '/auth/reset-password'),
+        redirect: (context, state) => _alias(state, '/auth/reset-password')),
     GoRoute(
         path: '/verify-email',
-        redirect: (context, state) => '/auth/verify-email'),
-    GoRoute(path: '/client/login', redirect: (context, state) => '/auth/login'),
-    GoRoute(path: '/client/join', redirect: (context, state) => '/auth/join'),
-    GoRoute(path: '/client/signup', redirect: (context, state) => '/auth/join'),
+        redirect: (context, state) => _alias(state, '/auth/verify-email')),
+    GoRoute(
+        path: '/client/login',
+        redirect: (context, state) => _alias(state, '/auth/login')),
+    GoRoute(
+        path: '/client/join',
+        redirect: (context, state) => _alias(state, '/auth/join')),
+    GoRoute(
+        path: '/client/signup',
+        redirect: (context, state) => _alias(state, '/auth/join')),
     GoRoute(
         path: '/client/verify-email',
-        redirect: (context, state) => '/auth/verify-email'),
+        redirect: (context, state) => _alias(state, '/auth/verify-email')),
     GoRoute(
         path: '/client/reset-password',
-        redirect: (context, state) => '/auth/reset-password'),
+        redirect: (context, state) => _alias(state, '/auth/reset-password')),
     GoRoute(path: '/operator', redirect: (context, state) => '/ops/overview'),
     GoRoute(
         path: '/app/command', redirect: (context, state) => '/ops/overview'),
@@ -1937,6 +1949,29 @@ GoRouter _buildRouter() {
 /// them to do a specific thing must land on it after signing in.
 String _clientRoute(String path, {String? returnTo}) =>
     withReturnTo(path, returnTo);
+
+/// AN ALIAS MUST CARRY THE QUERY IT WAS GIVEN.
+///
+/// Eleven auth aliases redirected with a bare string — `/client/verify-email`
+/// to `/auth/verify-email`, and so on — which silently discarded the query.
+///
+/// That is not cosmetic. The backend emails confirmation links to
+/// `/client/verify-email?token=...`; the redirect dropped the token, and the
+/// destination reads `?token` to call `verifyEmail`. So **every emailed
+/// verification link landed on a screen with nothing to verify**, and the
+/// person saw the same "Confirm your email" prompt that sent them there.
+/// Password-reset links lost their token the same way, and `returnTo` — the
+/// whole point of a deep link into the workspace — died on every `/login`,
+/// `/join` and `/signup` alias.
+///
+/// Found on 2026-09-17 by clicking a real confirmation link from a real
+/// mailbox. It could not be found any other way: the token only exists in
+/// mail, so no amount of clicking inside the app reaches this path.
+String _alias(GoRouterState state, String destination) {
+  final query = state.uri.query;
+  if (query.isEmpty) return destination;
+  return '$destination?$query';
+}
 
 /// The KIND of screen someone came from, never the path.
 ///
