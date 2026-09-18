@@ -72,10 +72,16 @@ void main() {
       isTrue,
       reason: 'a refresh must not blank the screen',
     );
-    // And returning does not re-ask.
+    // And returning asks again UNDERNEATH what is painted. This used to pin
+    // "returning does not re-ask", which kept a stale answer on screen for
+    // good: a business that had just authorised representation was still
+    // told "Authorization required". No flash either way — the spinner rule
+    // above is what prevents that.
     expect(
       screen.contains('if (!_today.hasAnswer && !_today.isLoading'),
-      isTrue,
+      isFalse,
+      reason: 'a cached Today must not be the last word',
     );
+    expect(screen.contains('if (!_today.isLoading) {'), isTrue);
   });
 }
