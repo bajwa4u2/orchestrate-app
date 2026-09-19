@@ -416,7 +416,16 @@ class _ClientSetupScreenState extends State<ClientSetupScreen> {
   List<String> _metroSuggestions() {
     final suggestions = <String>{};
     for (final countryCode in _sortedCountryCodes()) {
-      for (final region in GlobalSetupOptions.regionsForCountry(countryCode)) {
+      final all = GlobalSetupOptions.regionsForCountry(countryCode);
+      // "SUGGESTIONS FROM SELECTED MARKETS" MEANS THE SELECTED ONES.
+      //
+      // This offered every city-type subdivision of the whole country, so a
+      // business that chose Michigan was offered "District of Columbia" --
+      // a federal district nowhere near its market. Once regions are chosen
+      // in a country, only those regions are candidates. A country with no
+      // regions chosen still offers its city-type subdivisions.
+      final chosen = all.where((r) => _regionCodes.contains(r.code)).toList();
+      for (final region in chosen.isEmpty ? all : chosen) {
         final type = region.type.toLowerCase();
         if (type.contains('city') ||
             type.contains('municipality') ||
