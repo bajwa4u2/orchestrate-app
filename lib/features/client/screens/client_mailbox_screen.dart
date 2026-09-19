@@ -584,7 +584,15 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
     final hasMailbox = clientTransportAuthorized ||
         (mailbox.isNotEmpty && mailboxIsClientOwned && !mailboxIsPlatformBootstrap);
     final connectedFlag = readText(mailbox, 'connected').toLowerCase() == 'true';
-    final verifiedFlag = readText(mailbox, 'verified').toLowerCase() == 'true';
+    // SENDING IDENTITY IS THE DOMAIN'S DNS, NOT THE MAILBOX'S FLAG.
+    //
+    // This step read `dnsVerified || mailbox.verified`. The mailbox flag says
+    // the mailbox was verified; it says nothing about SPF / DKIM / DMARC. So a
+    // workspace whose domain had not verified was told its records "all
+    // matched at the last DNS check" directly under a banner saying DNS
+    // verification had not completed. Found on the packaged Windows 1.0.2
+    // build against a real workspace. Personal mailboxes never reach this
+    // chain (they get their own panel), so the domain is the only question.
     final dnsVerified = sendingDomain['ready'] == true;
 
     final identitySteps = <_IdentityStep>[
@@ -629,13 +637,13 @@ class _ClientMailboxScreenState extends State<ClientMailboxScreen> {
       ),
       _IdentityStep(
         label: 'Sending identity verified (SPF / DKIM / DMARC)',
-        complete: dnsVerified || verifiedFlag,
-        badge: (dnsVerified || verifiedFlag)
+        complete: dnsVerified,
+        badge: dnsVerified
             ? 'Verified'
             : domainAttached
                 ? 'DNS pending'
                 : 'Waiting for domain',
-        description: (dnsVerified || verifiedFlag)
+        description: dnsVerified
             ? 'SPF, DKIM, and DMARC all matched at the last DNS check.'
             : domainAttached
                 ? 'Publish the SPF / DKIM / DMARC records shown in the Sending domain panel above, then check verification.'

@@ -210,13 +210,28 @@ class _BusinessScreenState extends State<BusinessScreen> {
                   detail: 'Sending is configured and working.',
                   tone: RowTone.good,
                 )
+              else if (conditions.isEmpty)
+                // NOT READY WITH NOTHING TO RESOLVE IS STILL AN ANSWER.
+                //
+                // Blockers come from setup, authorisation and the mailbox. The
+                // bucket also depends on the campaign and on what has been
+                // sent, so a workspace with every gate green and no active
+                // campaign is not ready and has no blocker. This row said "No
+                // reason was reported" there, found on the packaged Windows
+                // build of 1.0.2 against a real workspace. The evaluator does
+                // say why, in its headline and description, which this now
+                // shows.
+                WorkspaceRow(
+                  title: _text(_sending?['headline']) ?? 'Not sending yet',
+                  detail: _text(_sending?['description']) ??
+                      'Orchestrate did not say why sending is not ready. That '
+                          'is a gap on our side, not in your setup.',
+                  tone: RowTone.neutral,
+                )
               else ...[
                 WorkspaceRow(
                   title: 'Nothing can be sent yet',
-                  detail: conditions.isEmpty
-                      ? 'Sending is not ready. No reason was reported, which '
-                          'is itself worth raising.'
-                      : conditions.length == 1
+                  detail: conditions.length == 1
                           ? 'Until this is resolved, no outreach and no reply '
                               'leaves the business.'
                           : 'Until these are resolved, no outreach and no '
