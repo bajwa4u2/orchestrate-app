@@ -326,9 +326,9 @@ class _ClientAccountScreenState extends State<ClientAccountScreen> {
                       _RowData(
                         title: 'Delete account',
                         primary:
-                            'Permanently delete your account and personal data. This cannot be undone.',
+                            'Permanently delete your sign-in and personal profile. This cannot be undone.',
                         secondary:
-                            'Active subscriptions are canceled and you are signed out. Records required for legal, tax, or billing obligations are retained only as long as the law requires.',
+                            'Active subscriptions are canceled and you are signed out. Business records are kept, including who authorized Orchestrate to act for the business and who accepted agreements, with that person\'s name and email.',
                         actionLabel: 'Delete account',
                         onTap: _showDeleteDialog,
                       ),
@@ -771,11 +771,13 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
-              'This permanently deletes your account and personal data. It cannot '
-              'be undone. Any active subscription is canceled and you will be '
-              'signed out. Records we are legally required to keep (for tax, '
-              'billing, or fraud prevention) are retained only for as long as the '
-              'law requires.',
+              'This permanently deletes your sign-in and personal profile. It '
+              'cannot be undone. Any active subscription is canceled and you will '
+              'be signed out. Some records are kept after deletion: the '
+              'business\'s workspace records, and the record of who authorized '
+              'Orchestrate to act for the business or accepted an agreement, '
+              'including that person\'s name and email. The Account deletion page '
+              'lists what is kept.',
               style: Theme.of(context)
                   .textTheme
                   .bodyLarge

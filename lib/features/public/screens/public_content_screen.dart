@@ -888,12 +888,12 @@ PublicContentScreen buildRetentionPolicyScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',
       title: 'Data retention and deletion',
       subtitle:
-          'Records are retained only as long as required to operate the service, meet legal obligations, and preserve the audit trail. This document names the retention windows and deletion paths.',
+          'Records are retained to operate the service, meet legal obligations, and preserve the audit trail. This document names what is retained and the deletion paths.',
       sections: [
         ContentSection(
           title: 'Operational records',
           body:
-              'Account profiles, workspace state, business identity, representation authorization, mailboxes, sending domains, dispatched messages, replies, meetings, and invoices are retained for the active life of the account and a defined post-termination window required for dispute resolution, financial accountability, and audit traceability.',
+              'Account profiles, workspace state, business identity, representation authorization, mailboxes, sending domains, dispatched messages, replies, meetings, and invoices are retained for the active life of the account and after termination for dispute resolution, financial accountability, and audit traceability. No fixed post-termination period is currently set.',
         ),
         ContentSection(
           title: 'Mailbox credentials',
@@ -913,7 +913,7 @@ PublicContentScreen buildRetentionPolicyScreen() => const PublicContentScreen(
         ContentSection(
           title: 'Account deletion',
           body:
-              'Account deletion requests are honored per the Account deletion page. Eligible profile data, workspace access, and user-provided account data are deleted. A limited set of records may be retained where required for billing accountability, fraud prevention, audit logs, legal compliance, dispute resolution, or unpaid balances.',
+              'Account deletion requests are honored per the Account deletion page. Sign-in, profile data and workspace access are deleted. Some records are kept after deletion, as listed on the Account deletion page, for billing accountability, fraud prevention, audit logs, legal compliance, dispute resolution, or unpaid balances.',
         ),
       ],
     );

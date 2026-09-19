@@ -10,8 +10,8 @@ import 'package:orchestrate_app/features/auth/screens/client_login_screen.dart';
 /// what happened, in the product's actual semantics: erased, not restorable,
 /// and the email may start a NEW workspace.
 void main() {
-  const notice = 'Your account was deleted. Its sign-in and personal details '
-      'were erased, and it cannot be restored. You can use the same email to '
+  const notice = 'Your account was deleted. Its sign-in and profile were '
+      'erased, and it cannot be restored. You can use the same email to '
       'create a new workspace, which starts from nothing.';
 
   Future<void> open(WidgetTester tester, String location) async {

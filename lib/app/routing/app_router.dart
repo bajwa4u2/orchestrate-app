@@ -1036,13 +1036,14 @@ GoRouter _buildRouter() {
               ContentSection(
                 title: 'What may be retained',
                 body:
-                    'Some records may be retained for a limited period where required for billing, security, fraud prevention, audit logs, legal compliance, dispute resolution, or unpaid balances.',
+                    'Some records are kept after the account is deleted, for billing, security, audit, legal compliance, dispute resolution, or unpaid balances. No fixed retention period is currently set for them.',
                 points: [
+                  'the record of who authorized Orchestrate to act for the business, including that person\'s name and email',
+                  'agreement acceptance records, including the accepting person\'s name and email',
+                  'the business\'s workspace records: organization, legal name, address, business profile and market data',
+                  'records of commercial access granted to the business',
                   'billing records',
-                  'security/audit logs',
-                  'fraud prevention records',
-                  'legal/compliance records',
-                  'records required to resolve active disputes or unpaid balances',
+                  'security and audit logs',
                 ],
               ),
               ContentSection(

@@ -137,9 +137,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     // same email can start a new workspace, which will be a new one.
     if (!_isJoin && uri.queryParameters['deleted'] == '1') {
       setState(() {
-        _message = 'Your account was deleted. Its sign-in and personal '
-            'details were erased, and it cannot be restored. You can use the '
-            'same email to create a new workspace, which starts from nothing.';
+        _message = 'Your account was deleted. Its sign-in and profile were '
+            'erased, and it cannot be restored. You can use the same email to '
+            'create a new workspace, which starts from nothing.';
         _error = null;
       });
     }

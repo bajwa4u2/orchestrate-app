@@ -1,5 +1,21 @@
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 
+# THE WEB IS BUILT ON THE RELEASE TOOLCHAIN, NOT ON WHATEVER "stable" IS TODAY.
+#
+# `cirruslabs/flutter:stable` floated: on 2026-09-19 it carried Flutter 3.44.0
+# while every native release is built on 3.47.2 (docs/RELEASE_TOOLCHAIN.md), so
+# the same commit reached the web and the stores through two different SDKs.
+# No 3.47.2 image is published, so the image's SDK checkout is moved to the tag
+# and the revision is asserted: a tag that ever pointed elsewhere fails the build
+# instead of shipping silently.
+ARG FLUTTER_RELEASE=3.47.2
+ARG FLUTTER_REVISION=d3b14c876900e553bc736ca19295fc09e3853e8e
+RUN git config --global --add safe.directory '*' \
+ && git -C "$FLUTTER_ROOT" fetch --depth 1 origin "refs/tags/$FLUTTER_RELEASE:refs/tags/$FLUTTER_RELEASE" \
+ && git -C "$FLUTTER_ROOT" -c advice.detachedHead=false checkout "$FLUTTER_RELEASE" \
+ && test "$(git -C "$FLUTTER_ROOT" rev-parse HEAD)" = "$FLUTTER_REVISION" \
+ && flutter --version
+
 WORKDIR /app
 
 COPY pubspec.yaml pubspec.lock ./
