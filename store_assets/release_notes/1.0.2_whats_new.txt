@@ -1,0 +1,8 @@
+Clearer setup, and a truer picture of where your business stands.
+
+- Setup explains each step and suggests cities from the regions you chose.
+- Today shows what still needs you and refreshes when you return.
+- See what Orchestrate may and may not do for you, and what is still required before anything is sent.
+- Account deletion says plainly what is erased and what is kept.
+- Your plan reads the same everywhere, however you subscribed.
+- Fixes to verification links, navigation and sign-out.
