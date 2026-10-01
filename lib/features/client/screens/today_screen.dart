@@ -11,6 +11,7 @@ import 'package:orchestrate_app/core/today/client_today.dart';
 import 'package:orchestrate_app/core/today/yes_count.dart';
 import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/data/repositories/client/client_attention_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_authority_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_money_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_today_repository.dart';
 
@@ -42,6 +43,8 @@ class _YesCard {
     this.detail,
     this.reached,
     this.eyebrow,
+    this.figure,
+    this.primaryIsMoney = false,
     required this.primary,
     required this.onPrimary,
     this.secondary,
@@ -55,6 +58,12 @@ class _YesCard {
   /// Position on the path to paid; null when this is not about a customer.
   final int? reached;
   final String? eyebrow;
+
+  /// An amount, shown green because it is money.
+  final String? figure;
+
+  /// An invoice's approval is a money act, and its button says so in green.
+  final bool primaryIsMoney;
   final String primary;
   final VoidCallback onPrimary;
   final String? secondary;
@@ -66,6 +75,8 @@ class _TodayScreenState extends State<TodayScreen> {
   final ClientAttention _attention = ClientAttention.instance;
   final ClientMarket _market = ClientMarket.instance;
   final _money = ClientMoneyRepository();
+  final _authority = ClientAuthorityRepository();
+  List<WaitingDecision> _waiting = const [];
   MoneyView? _moneyView;
   bool _moneyKnown = false;
   final Set<String> _deciding = {};
@@ -102,6 +113,9 @@ class _TodayScreenState extends State<TodayScreen> {
       _today.refresh().then((_) {}).catchError((_) {}),
       _attention.refresh().then((_) {}).catchError((_) {}),
       _market.refresh().then((_) {}).catchError((_) {}),
+      _authority.waiting().then((w) {
+        _waiting = w;
+      }).catchError((_) {}),
       _money.fetch().then((m) {
         _moneyView = m;
         _moneyKnown = true;
@@ -110,6 +124,36 @@ class _TodayScreenState extends State<TodayScreen> {
       }),
     ]);
     if (mounted) setState(() {});
+  }
+
+  /// A decision on an agreement or invoice that stopped at the owner's limit.
+  Future<void> _decideWaiting(WaitingDecision w, bool approve) async {
+    setState(() {
+      _deciding.add(w.id);
+      _decisionFailure = null;
+    });
+    try {
+      final result = await _authority.decide(w.id, approve: approve);
+      if (!mounted) return;
+      final says = (result['message'] ?? result['reason'] ?? '').toString();
+      if (result['ok'] == true) {
+        setState(() => _waiting = _waiting.where((x) => x.id != w.id).toList());
+        if (says.isNotEmpty) {
+          ScaffoldMessenger.maybeOf(context)
+              ?.showSnackBar(SnackBar(content: Text(says)));
+        }
+      } else {
+        setState(() => _decisionFailure =
+            says.isEmpty ? 'That decision was not recorded.' : says);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _decisionFailure =
+            'Your decision could not be recorded just now. Try again in a moment.');
+      }
+    } finally {
+      if (mounted) setState(() => _deciding.remove(w.id));
+    }
   }
 
   Future<void> _decide(Candidate c, PursuitDisposition d) async {
@@ -137,6 +181,54 @@ class _TodayScreenState extends State<TodayScreen> {
   List<_YesCard> _cards() {
     final cards = <_YesCard>[];
     final session = AuthSessionController.instance;
+    // Agreements and invoices waiting at the owner's limit come first: they
+    // are the decisions closest to money.
+    for (final w in _waiting) {
+      final busy = _deciding.contains(w.id);
+      final named = (w.counterparty ?? '').trim().isNotEmpty;
+      cards.add(_YesCard(
+        name: named ? w.counterparty! : w.whatIsWaiting,
+        // Where it sits on the path: a first note is the Wrote step, a
+        // proposal is Agree, an invoice is Invoice.
+        reached: w.isNote ? 1 : w.isAgreement ? 3 : w.isInvoice ? 4 : null,
+        eyebrow: 'WAITING FOR YOUR YES',
+        figure: w.valueCents == null
+            ? null
+            : moneyLabel(w.valueCents!, currencyCode: w.currencyCode ?? 'USD'),
+        ask: !w.youCanDecide
+            ? w.whoCanDecide
+            : w.isNote
+                ? 'Send this first note?'
+                : w.isAgreement
+                    ? 'Send the proposal?'
+                    : w.isInvoice
+                        ? 'Send the invoice?'
+                        : named
+                            ? w.whatIsWaiting
+                            : 'Approve just this one?',
+        detail: w.isNote && (w.draftSubject ?? '').isNotEmpty
+            ? '"${w.draftSubject}"  ${w.draftBody ?? ''}'
+            : w.whyItStopped,
+        primaryIsMoney: w.isInvoice && w.youCanDecide,
+        primary: !w.youCanDecide
+            ? 'Who can decide'
+            : busy
+                ? 'Saving…'
+                : w.isNote
+                    ? 'Approve and send'
+                    : w.isInvoice
+                        ? 'Approve and invoice'
+                        : 'Approve',
+        onPrimary: !w.youCanDecide
+            ? () => context.go('/account/people')
+            : busy
+                ? () {}
+                : () => _decideWaiting(w, true),
+        secondary: w.youCanDecide ? 'Hold' : null,
+        onSecondary:
+            w.youCanDecide && !busy ? () => _decideWaiting(w, false) : null,
+      ));
+    }
     if (!session.hasSetupCompleted) {
       cards.add(_YesCard(
         name: 'Your business',
@@ -365,6 +457,10 @@ class _Card extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Ob.name(21)),
             ),
+            if (card.figure != null) ...[
+              const SizedBox(width: 10),
+              MoneyText(card.figure!),
+            ],
           ]),
           const SizedBox(height: 14),
           if (card.reached != null)
@@ -384,6 +480,9 @@ class _Card extends StatelessWidget {
           Row(children: [
             Expanded(
               child: FilledButton(
+                style: card.primaryIsMoney
+                    ? FilledButton.styleFrom(backgroundColor: Ob.money)
+                    : null,
                 onPressed: card.onPrimary,
                 child: Text(card.primary, overflow: TextOverflow.ellipsis),
               ),

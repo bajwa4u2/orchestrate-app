@@ -20,6 +20,38 @@ class ClientAuthorityRepository {
 
   final ApiClient _apiClient;
 
+  /// What is waiting on a person's decision (DD-26 stage 2: Today's
+  /// yes-cards). Agreements and invoices outside the delegated limits stop
+  /// here as authority requests; the server says, per item, whether the
+  /// reader may decide it, so a button is never shown to someone whose
+  /// decision would be refused.
+  Future<List<WaitingDecision>> waiting() async {
+    final json = await _apiClient.getJson(
+      '/client/authority/waiting',
+      surface: ApiSurface.client,
+    );
+    final items = (json is Map ? json['items'] : null) as List? ?? const [];
+    return [
+      for (final raw in items)
+        WaitingDecision.fromJson(Map<String, dynamic>.from(raw as Map)),
+    ];
+  }
+
+  /// Decide one waiting item: approve just this one, or hold it. The answer
+  /// carries the server's own sentence about what the decision means.
+  Future<Map<String, dynamic>> decide(String requestId,
+      {required bool approve, String? note}) async {
+    final json = await _apiClient.postJson(
+      '/client/authority/waiting/$requestId/decide',
+      surface: ApiSurface.client,
+      body: {
+        'outcome': approve ? 'ONE_TIME' : 'REFUSED',
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   /// Standing authority: the business, this person, and Orchestrate.
   Future<AuthorityProjection> fetch() async {
     final json = await _apiClient.getJson(
@@ -499,5 +531,63 @@ class AuthorityRefusal {
         code: (json['code'] as String?) ?? 'REFUSED',
         why: (json['why'] as String?) ?? '',
         resolution: (json['resolution'] as String?) ?? '',
+      );
+}
+
+/// One item waiting on a decision, in the server's words.
+class WaitingDecision {
+  const WaitingDecision({
+    required this.id,
+    required this.whatIsWaiting,
+    required this.whyItStopped,
+    required this.whoCanDecide,
+    required this.youCanDecide,
+    required this.waitingSince,
+    this.subjectType,
+    this.counterparty,
+    this.valueCents,
+    this.currencyCode,
+    this.draftSubject,
+    this.draftBody,
+  });
+
+  /// OUTREACH_MESSAGE, or the agreement / invoice subject. Null from a server
+  /// that does not say yet; the card then speaks only in the server's words.
+  final String? subjectType;
+  final String? counterparty;
+  final int? valueCents;
+  final String? currencyCode;
+  final String? draftSubject;
+  final String? draftBody;
+
+  bool get isNote => subjectType == 'OUTREACH_MESSAGE';
+  bool get isInvoice => (subjectType ?? '').contains('INVOICE');
+  bool get isAgreement => (subjectType ?? '').contains('AGREEMENT');
+
+  final String id;
+  final String whatIsWaiting;
+  final String whyItStopped;
+  final String whoCanDecide;
+  final bool youCanDecide;
+  final DateTime? waitingSince;
+
+  static WaitingDecision fromJson(Map<String, dynamic> j) => WaitingDecision(
+        id: (j['id'] ?? '').toString(),
+        whatIsWaiting: (j['whatIsWaiting'] ?? '').toString(),
+        whyItStopped: (j['whyItStopped'] ?? '').toString(),
+        whoCanDecide: (j['whoCanDecide'] ?? '').toString(),
+        youCanDecide: j['youCanDecide'] == true,
+        waitingSince: DateTime.tryParse(j['waitingSince']?.toString() ?? ''),
+        subjectType: j['subjectType']?.toString(),
+        counterparty: j['counterparty']?.toString(),
+        valueCents: (j['valueCents'] as num?)?.toInt() ??
+            ((j['invoice'] is Map ? (j['invoice'] as Map)['totalCents'] : null)
+                    as num?)
+                ?.toInt(),
+        currencyCode: j['currencyCode']?.toString(),
+        draftSubject:
+            j['draft'] is Map ? (j['draft'] as Map)['subject']?.toString() : null,
+        draftBody:
+            j['draft'] is Map ? (j['draft'] as Map)['body']?.toString() : null,
       );
 }
