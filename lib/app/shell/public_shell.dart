@@ -446,59 +446,39 @@ class _CommercializationSupportBand extends StatelessWidget {
   }
 }
 
+/// The footer: two quiet lines (founder, 2026-10-01).
+///
+/// The header already names Orchestrate, so the footer carries no brand
+/// block, and three uneven columns of 3, 3 and 5 links left empty space under
+/// two of them. So it is one line of where to go, policies at its end, and
+/// one line of who supports and makes it. Billing and account deletion are
+/// one tap away through All policies; both addresses still work directly.
 class _PublicFooter extends StatelessWidget {
   const _PublicFooter();
 
   @override
   Widget build(BuildContext context) {
-    final groups = [
-      _FooterGroup(
-        title: 'Orchestrate',
-        links: [
-          _FooterLink(
-              label: 'One customer, start to paid',
-              onTap: () => context.push('/how-it-works')),
-          _FooterLink(label: 'Pricing', onTap: () => context.push('/pricing')),
-          _FooterLink(
-              label: 'Check your domain',
-              onTap: () => context.push('/diagnostics?focus=dns-readiness')),
-        ],
-      ),
-      _FooterGroup(
-        title: 'Company',
-        links: [
-          _FooterLink(label: 'About', onTap: () => context.push('/about')),
-          _FooterLink(label: 'Trust', onTap: () => context.push('/trust')),
-          _FooterLink(label: 'Contact', onTap: () => context.push('/contact')),
-        ],
-      ),
-      _FooterGroup(
-        title: 'Policies',
-        links: [
-          _FooterLink(
-              label: 'Terms', onTap: () => context.push('/legal/terms')),
-          _FooterLink(
-              label: 'Privacy', onTap: () => context.push('/legal/privacy')),
-          _FooterLink(
-              label: 'Billing and refunds',
-              onTap: () => context.push('/legal/billing')),
-          _FooterLink(
-              label: 'Account deletion',
-              onTap: () => context.push('/account-deletion')),
-          _FooterLink(
-              label: 'All policies', onTap: () => context.push('/legal')),
-        ],
-      ),
-    ];
-    final brand = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+    Widget link(String label, String path) => _FooterLink(
+        label: label, onTap: () => context.push(path));
+    final site = Wrap(
+      spacing: 28,
+      runSpacing: 4,
       children: [
-        BrandAssets.operatorLockup(context,
-            symbolSize: 24, fontSize: 20, color: Ob.ink),
-        const SizedBox(height: 10),
-        Text('New customers, followed through to paid.',
-            style: Ob.body(14, color: Ob.inkMuted)),
+        link('One customer, start to paid', '/how-it-works'),
+        link('Pricing', '/pricing'),
+        link('Trust', '/trust'),
+        link('About', '/about'),
+        link('Contact', '/contact'),
+        link('Check your domain', '/diagnostics?focus=dns-readiness'),
+      ],
+    );
+    final policies = Wrap(
+      spacing: 20,
+      runSpacing: 4,
+      children: [
+        link('Terms', '/legal/terms'),
+        link('Privacy', '/legal/privacy'),
+        link('All policies', '/legal'),
       ],
     );
     return Container(
@@ -513,43 +493,26 @@ class _PublicFooter extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(height: 1, color: Ob.line),
-              const SizedBox(height: 32),
+              const SizedBox(height: 18),
               LayoutBuilder(builder: (context, constraints) {
                 if (constraints.maxWidth >= 920) {
                   return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(width: 300, child: brand),
-                      const SizedBox(width: 40),
-                      for (var i = 0; i < groups.length; i++) ...[
-                        Expanded(child: groups[i]),
-                        if (i != groups.length - 1) const SizedBox(width: 24),
-                      ],
+                      Expanded(child: site),
+                      const SizedBox(width: 24),
+                      policies,
                     ],
                   );
                 }
-                final columnWidth = ((constraints.maxWidth - 20) / 2)
-                    .clamp(0, double.infinity)
-                    .toDouble();
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    brand,
-                    const SizedBox(height: 26),
-                    Wrap(
-                      spacing: 20,
-                      runSpacing: 24,
-                      children: [
-                        for (final g in groups)
-                          SizedBox(width: columnWidth, child: g),
-                      ],
-                    ),
-                  ],
+                  children: [site, const SizedBox(height: 10), policies],
                 );
               }),
-              const SizedBox(height: 28),
+              const SizedBox(height: 14),
               Container(height: 1, color: Ob.line),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               LayoutBuilder(builder: (context, constraints) {
                 if (constraints.maxWidth >= 920) {
                   return const Row(
@@ -557,7 +520,7 @@ class _PublicFooter extends StatelessWidget {
                     children: [
                       Expanded(child: _CommercializationSupportBand()),
                       SizedBox(width: 24),
-                      Flexible(child: _PublicFooterBottomRow()),
+                      _PublicFooterBottomRow(),
                     ],
                   );
                 }
@@ -612,8 +575,8 @@ class _FooterLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -808,55 +771,38 @@ class _PublicFooterBottomRow extends StatelessWidget {
 
   static const String _kCurrentSlug = 'orchestrate';
 
+  // One line: the company, then the other products (DD-26 F1).
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 720;
-        final lockup = _lockup();
-        const links = _OrchEcosystemLinkRow(currentSlug: _kCurrentSlug);
-        if (wide) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              lockup,
-              const Spacer(),
-              // Bound the link Wrap's width so it wraps onto additional rows
-              // instead of overflowing the Row at narrower "wide" widths
-              // (e.g. the 800px test surface). Without this the Wrap is given
-              // unbounded width and lays every link on one line.
-              Flexible(child: links),
-            ],
-          );
-        }
+    final company = InkWell(
+      onTap: () => _orchOpenExternal(_kOrchCompanyUrl),
+      child: Text('A product of Aura Platform LLC',
+          style: Ob.body(13, color: Ob.inkMuted)),
+    );
+    return LayoutBuilder(builder: (context, constraints) {
+      // On a phone the company and the products take a line each, so no
+      // line ever ends on a dangling dot.
+      if (constraints.maxWidth < 520) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            lockup,
-            const SizedBox(height: 10),
-            links,
+            company,
+            const SizedBox(height: 6),
+            const _OrchEcosystemLinkRow(currentSlug: _kCurrentSlug),
           ],
         );
-      },
-    );
-  }
-
-  Widget _lockup() {
-    return InkWell(
-      onTap: () => _orchOpenExternal(_kOrchCompanyUrl),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          // The brand leads the footer above; here only the company.
-          children: [
-            Text('A product of Aura Platform LLC.',
-                style: Ob.body(13, color: Ob.inkMuted)),
-          ],
-        ),
-      ),
-    );
+      }
+      return Wrap(
+        spacing: 14,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          company,
+          Text('·', style: Ob.body(13, color: Ob.inkFaint)),
+          const _OrchEcosystemLinkRow(currentSlug: _kCurrentSlug),
+        ],
+      );
+    });
   }
 }
 

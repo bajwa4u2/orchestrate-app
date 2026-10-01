@@ -106,8 +106,10 @@ void main() {
     expect(shell, isNot(contains("slug: 'orchestrate'")));
     expect(shell, isNot(contains('Why Orchestrate exists')));
     expect(shell, isNot(contains('How Orchestrate operates')));
-    expect(shell, contains('final columnWidth'));
-    expect(shell, contains('spacing: 20'));
+    // Founder 2026-10-01: two lines of links, no columns, so nothing leaves
+    // empty space under an uneven column; the lines wrap on a phone.
+    expect(shell, contains('final site = Wrap('));
+    expect(shell, contains('final policies = Wrap('));
   });
 
   test('public shell has one explicit scroll owner', () {
@@ -239,9 +241,9 @@ void main() {
     final shell = read('lib/app/shell/public_shell.dart');
     final contract = read('docs/ORCHESTRATE_CLICKABLE_JOURNEY_MATRIX.md');
     // DD-26: the footer names only pages in the new design.
-    expect(shell, contains("label: 'One customer, start to paid'"));
-    expect(shell, contains("label: 'Check your domain'"));
-    expect(shell, contains("label: 'All policies'"));
+    expect(shell, contains("link('One customer, start to paid'"));
+    expect(shell, contains("link('Check your domain'"));
+    expect(shell, contains("link('All policies'"));
     expect(shell, contains("focus=dns-readiness"));
     expect(shell, isNot(contains("label: 'Product'")));
     expect(shell, isNot(contains("label: 'Signals and sourcing'")));
@@ -257,7 +259,8 @@ void main() {
     expect(shell, contains('jumpTo(0)'));
     // DD-26: every policy stays one tap away through the policies index.
     expect(shell, contains("'/legal'"));
-    expect(shell, contains("'/account-deletion'"));
+    // Account deletion is reached through the policies index.
+    expect(shell, contains("link('All policies', '/legal')"));
     expect(shell, isNot(contains("label: 'Acceptable use'")));
     expect(diagnostics, contains("focus == 'dns-readiness'"));
     expect(diagnostics, contains('Scrollable.ensureVisible'));
