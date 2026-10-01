@@ -10,7 +10,8 @@ void main() {
     final register = read('docs/ORCHESTRATE_PUBLIC_VISUAL_SURFACE_REGISTER.md');
     expect(shell, contains('class PublicShell'));
     expect(shell, contains('_CommercialClosingBand'));
-    expect(shell, contains('_CommercializationSupportBand'));
+    // Founder, 1 Oct 2026: startup programmes live on the company site only.
+    expect(shell, isNot(contains('_CommercializationSupportBand')));
     expect(shell, contains('_PublicFooter'));
     expect(shell, contains('backgroundColor: AppTheme.publicCanvas'));
     expect(shell, contains("currentPath != '/intake'"));
@@ -21,55 +22,22 @@ void main() {
     final shell = read('lib/app/shell/public_shell.dart');
     final home = read('lib/features/public/screens/public_home_screen.dart');
     expect(shell, contains('const _CommercialClosingBand()'));
-    expect(shell, contains('const _CommercializationSupportBand()'));
     expect(home, isNot(contains('_ClosingSection')));
     expect(home,
         isNot(contains('Ready to activate revenue automation infrastructure')));
   });
 
-  /// THIS RULE WAS REVERSED, DELIBERATELY.
-  ///
-  /// It used to require all three support marks to be image assets — "governed
-  /// assets, not text pills" — and it named the two SVG files. That was the
-  /// right instinct aimed at the wrong thing: it defended the presence of two
-  /// files that were never issued to anybody here. The Google file was the
-  /// plain "G" from the Simple Icons set (its own `<title>` says `Google`) and
-  /// the AWS file was an architecture *diagram* icon, `Arch_AWS-Activate_48`,
-  /// on the magenta category tile that icon set uses inside diagrams.
-  ///
-  /// Settled in the Bajwa Writes estate on 2026-09-07 against both companies'
-  /// own published guidance, and applied here on founder instruction for
-  /// parity across the estates. A mark may stand for a programme only if it is
-  /// that programme's authorised mark; where the mark is granted rather than
-  /// published, the programme's name is the authorised representation.
-  ///
-  /// So the rule now runs the other way: the Microsoft badge is real and must
-  /// stay an image, and the other two must be words and must not reach for the
-  /// retired files.
-  test('a mark is used only where a mark was actually issued', () {
+  test('no product shows startup programme marks', () {
     final shell = read('lib/app/shell/public_shell.dart');
     final visuals =
         read('lib/features/public/widgets/execution_visual_chapters.dart');
-    expect(shell, contains('OfficialSupportMarks'));
-
-    // Genuine, founder-approved, and provided by Microsoft.
-    expect(visuals, contains('microsoft-for-startups-badge.png'));
-
-    // Never issued. Neither file may come back, and neither may any other
-    // stand-in reached for under the same name.
-    expect(visuals, isNot(contains('google-for-startups.svg')));
-    expect(visuals, isNot(contains('aws-activate.svg')));
-    expect(File('assets/branding/support/google-for-startups.svg').existsSync(),
-        isFalse);
-    expect(
-        File('assets/branding/support/aws-activate.svg').existsSync(), isFalse);
-
-    // Named in words, and each linked to the programme so a reader can check
-    // the claim at its source.
-    expect(visuals, contains("_SupportWord('Google for Startups'"));
-    expect(visuals, contains("_SupportWord('AWS Activate'"));
-    expect(visuals, contains('https://startup.google.com/'));
-    expect(visuals, contains('https://aws.amazon.com/activate/'));
+    for (final source in [shell, visuals]) {
+      expect(source, isNot(contains('OfficialSupportMarks')));
+      expect(source, isNot(contains('Microsoft for Startups')));
+      expect(source, isNot(contains('Google for Startups')));
+      expect(source, isNot(contains('AWS Activate')));
+    }
+    expect(Directory('assets/branding/support').existsSync(), isFalse);
   });
 
   test('public identity uses the canonical transparent lockup', () {

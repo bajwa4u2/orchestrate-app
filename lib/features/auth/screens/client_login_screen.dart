@@ -1112,86 +1112,84 @@ class _EmailCodeView extends StatelessWidget {
   }
 }
 
+/// One focused card on paper, the same for every step that is not the
+/// sign-in form itself (DD-27). The header already carries the brand, so the
+/// card does not repeat the logo.
+class _AuthPanel extends StatelessWidget {
+  const _AuthPanel({required this.title, required this.lead, required this.children});
+  final String title;
+  final String lead;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthShell(
+      maxContentWidth: 520,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(28, 30, 28, 24),
+        decoration: BoxDecoration(
+          color: Ob.card,
+          borderRadius: BorderRadius.circular(Ob.radiusPanel),
+          boxShadow: Ob.liftLow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ObHeadline(title, size: 32),
+            const SizedBox(height: 10),
+            Text(lead, style: Ob.body(16)),
+            const SizedBox(height: 22),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _VerificationView extends StatelessWidget {
   const _VerificationView({required this.state});
   final _ClientLoginScreenState state;
 
   @override
   Widget build(BuildContext context) {
-    return AuthShell(
-      maxContentWidth: 620,
-      child: Card(
-        elevation: 0,
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
-          side: const BorderSide(color: AppTheme.publicLine),
+    final done = state._verificationComplete;
+    final canResend = state._verificationEmail != null;
+    return _AuthPanel(
+      title: done ? 'Your email is confirmed.' : 'Confirm your email.',
+      lead: done
+          ? 'Sign in to carry on where you left off.'
+          : canResend
+              ? 'Open the email we sent to ${state._verificationEmail} and type the '
+                  'code, or open its link.'
+              : 'Open the email we sent and type the code, or open its link. If it '
+                  'has expired, sign in and we will send a new one.',
+      children: [
+        if (state._error != null)
+          _Banner(message: state._error!, error: true)
+        else if (state._message != null)
+          _Banner(message: state._message!, error: false),
+        FilledButton(
+          onPressed: () => context.go(state._route('/auth/login')),
+          child: const Text('Sign in'),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BrandAssets.operatorLockup(
-                context,
-                symbolSize: 28,
-                fontSize: 22,
-                color: AppTheme.publicText,
+        if (!done) ...[
+          const SizedBox(height: 12),
+          Wrap(spacing: 6, runSpacing: 4, children: [
+            if (canResend)
+              TextButton(
+                onPressed: state._resendingVerification || state._busy
+                    ? null
+                    : state.resendVerification,
+                child: Text(state._resendingVerification ? 'Sending…' : 'Send a new email'),
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Confirm your email',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                state._verificationComplete
-                    ? 'Your email is confirmed. Sign in to continue.'
-                    : 'Open the email we sent and confirm the address tied to this workspace.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.publicMuted,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              if (state._message != null)
-                _Banner(message: state._message!, error: false),
-              if (state._error != null)
-                _Banner(message: state._error!, error: true),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  FilledButton(
-                    onPressed: () => context.go(state._route('/auth/login')),
-                    child: const Text('Go to sign in'),
-                  ),
-                  OutlinedButton(
-                    onPressed: state._verificationEmail == null ||
-                            state._resendingVerification ||
-                            state._busy
-                        ? null
-                        : state.resendVerification,
-                    child: Text(
-                      state._resendingVerification
-                          ? 'Sending...'
-                          : 'Resend verification',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => context.go(state._route('/auth/join')),
-                    child: const Text('Use another email'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+            TextButton(
+              onPressed: () => context.go(state._route('/auth/register')),
+              child: const Text('Use another email'),
+            ),
+          ]),
+        ],
+      ],
     );
   }
 }
@@ -1202,86 +1200,45 @@ class _ResetView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AuthShell(
-      maxContentWidth: 620,
-      child: Card(
-        elevation: 0,
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
-          side: const BorderSide(color: AppTheme.publicLine),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BrandAssets.operatorLockup(
-                context,
-                symbolSize: 28,
-                fontSize: 22,
-                color: AppTheme.publicText,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Create a new password',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Use the secure link from your email to set a new password for this workspace.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.publicMuted,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              if (state._message != null)
-                _Banner(message: state._message!, error: false),
-              if (state._error != null)
-                _Banner(message: state._error!, error: true),
-              _Field(
-                controller: state._resetPassword,
-                label: 'New password',
-                obscure: state._obscureResetPassword,
-                onSubmitted: state._busy ? null : state.submitReset,
-                suffixIcon: IconButton(
-                  onPressed: () => state.setState(
-                    () => state._obscureResetPassword =
-                        !state._obscureResetPassword,
-                  ),
-                  icon: Icon(
-                    state._obscureResetPassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  FilledButton(
-                    onPressed: state._busy ? null : state.submitReset,
-                    child: Text(
-                      state._busy ? 'Updating password...' : 'Update password',
-                    ),
-                  ),
-                  OutlinedButton(
-                    onPressed: () => context.go(state._route('/auth/login')),
-                    child: const Text('Back to sign in'),
-                  ),
-                ],
-              ),
-            ],
+    return _AuthPanel(
+      title: 'Choose a new password.',
+      lead: 'At least 8 characters. Then sign in with it.',
+      children: [
+        if (state._error != null)
+          _Banner(message: state._error!, error: true)
+        else if (state._message != null)
+          _Banner(message: state._message!, error: false),
+        _Field(
+          controller: state._resetPassword,
+          label: 'New password',
+          autofocus: true,
+          obscure: state._obscureResetPassword,
+          onSubmitted: state._busy ? null : state.submitReset,
+          suffixIcon: IconButton(
+            onPressed: () => state.setState(
+              () => state._obscureResetPassword = !state._obscureResetPassword,
+            ),
+            icon: Icon(
+              state._obscureResetPassword
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
           ),
         ),
-      ),
+        const SizedBox(height: 18),
+        FilledButton(
+          onPressed: state._busy ? null : state.submitReset,
+          child: Text(state._busy ? 'Saving…' : 'Save new password'),
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: () => context.go(state._route('/auth/login')),
+            child: const Text('Back to sign in'),
+          ),
+        ),
+      ],
     );
   }
 }

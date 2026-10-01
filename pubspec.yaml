@@ -59,7 +59,6 @@ flutter:
   assets:
     - assets/branding/logo/
     - assets/branding/icons/
-    - assets/branding/support/
     - assets/fonts/OFL-Newsreader.txt
     - assets/fonts/OFL-PublicSans.txt
     - assets/fonts/OFL-JetBrainsMono.txt

@@ -81,94 +81,41 @@ void main() {
   String location(GoRouter r) =>
       r.routerDelegate.currentConfiguration.uri.toString();
 
+  // DD-27: a mailbox connection belongs to setup's email step, which shows
+  // the outcome in plain words; only Google Contacts keeps its own card.
   group('the destination the backend now redirects to', () {
-    testWidgets('a successful Google connect renders the success state',
+    testWidgets('a successful Google connect returns to the email step',
         (tester) async {
-      // Exactly what appReturnUrl() produces for a completed Google callback.
       final r = await open(
         tester,
         '/client/oauth/return?status=success&provider=google'
         '&email=capture%40example.test&mailboxId=mbx_123',
       );
-
-      expect(location(r).startsWith('/client/oauth/return'), isTrue,
-          reason: 'the return must not be redirected away from its own screen');
-      expect(find.text('Authorization complete'), findsOneWidget);
-      // The connected mailbox is named back to the person — the whole point of
-      // returning here rather than to the home page.
-      expect(find.text('Connected mailbox'), findsOneWidget);
-      expect(find.text('Google Workspace'), findsWidgets);
-      expect(find.text('mbx_123'), findsOneWidget);
-      expect(find.text('Continue to Infrastructure'), findsOneWidget);
+      final at = Uri.parse(location(r));
+      expect(at.path, '/client/setup');
+      expect(at.queryParameters['step'], 'email');
+      expect(at.queryParameters['oauth'], 'success');
     });
 
-    testWidgets('a declined consent explains itself and offers a way back',
+    testWidgets('a declined consent returns to the email step with its reason',
         (tester) async {
-      await open(
+      final r = await open(
         tester,
         '/client/oauth/return?status=error&provider=google&reason=access_denied',
       );
-
-      expect(find.text('Authorization did not complete'), findsOneWidget);
-      expect(
-        find.textContaining('The consent screen was declined'),
-        findsOneWidget,
-        reason: 'the provider reason is translated, not echoed raw',
-      );
-      expect(find.text('Open Infrastructure'), findsWidgets);
+      final at = Uri.parse(location(r));
+      expect(at.path, '/client/setup');
+      expect(at.queryParameters['oauth'], 'error');
+      expect(at.queryParameters['reason'], 'access_denied');
     });
 
-    testWidgets('a failed exchange says nothing was stored', (tester) async {
-      await open(
-        tester,
-        '/client/oauth/return?status=error&provider=google'
-        '&reason=oauth_callback_failed',
-      );
-
-      expect(
-        find.textContaining('Orchestrate has not stored anything'),
-        findsOneWidget,
-        reason:
-            'a person must be able to tell a failed connect from a silent one',
-      );
-    });
-
-    testWidgets('the contacts variant is a read source, not a sending transport',
-        (tester) async {
-      // Google Contacts shares this return URL. Describing it as a transport
-      // would be the same collapse of two concepts the authentication/mailbox
-      // record exists to prevent.
+    testWidgets('the contacts variant keeps its own card', (tester) async {
       await open(
         tester,
         '/client/oauth/return?status=success&provider=google_contacts',
       );
-
-      expect(find.text('Go to Relationships'), findsOneWidget);
-      expect(find.text('Continue to Infrastructure'), findsNothing);
-      expect(find.textContaining('Google Contacts is authorized'), findsWidgets);
-    });
-
-    testWidgets('arriving with no parameters does not claim a result',
-        (tester) async {
-      // The old configuration could land somebody here bare. It must read as
-      // neither success nor failure.
-      await open(tester, '/client/oauth/return');
-
-      expect(find.text('No OAuth result on this URL'), findsOneWidget);
-      expect(find.text('Authorization complete'), findsNothing);
-      expect(find.text('Connected mailbox'), findsNothing);
-    });
-  });
-
-  group('the destination production used to have', () {
-    testWidgets('the app root does not render an OAuth result', (tester) async {
-      // What production actually did: a bare origin plus the query string.
-      // Nothing there reads these parameters, which is why the return was
-      // unreadable even before the host failed to resolve.
-      await open(tester, '/?status=success&provider=google');
-
-      expect(find.text('Authorization complete'), findsNothing);
-      expect(find.text('Connected mailbox'), findsNothing);
+      expect(find.text('Google Contacts is connected.'), findsOneWidget);
+      expect(find.text('Go to Customers'), findsOneWidget);
     });
   });
 }

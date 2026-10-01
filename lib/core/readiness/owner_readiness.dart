@@ -17,7 +17,11 @@ class OwnerStep {
     required this.cta,
     required this.route,
     required this.done,
+    this.waiting = false,
   });
+
+  /// Being checked on our side: shown, but not something that needs a yes.
+  final bool waiting;
 
   final String key;
   final String title;
@@ -29,7 +33,10 @@ class OwnerStep {
 
 /// The four steps in the order an owner meets them, or an empty list when the
 /// server did not send its chain (unknown is never shown as open or done).
-List<OwnerStep> ownerStepsFrom(Object? eligibility) {
+///
+/// [authority] is `/client/representative`'s `organizationalAuthority.state`
+/// (ESTABLISHED | UNDER_REVIEW | NOT_ESTABLISHED), when known.
+List<OwnerStep> ownerStepsFrom(Object? eligibility, {String? authority}) {
   if (eligibility is! Map) return const [];
   final chain = eligibility['chain'];
   if (chain is! List) return const [];
@@ -37,6 +44,13 @@ List<OwnerStep> ownerStepsFrom(Object? eligibility) {
     for (final layer in chain.whereType<Map>())
       if (layer['state'] == 'ready') '${layer['key']}',
   };
+  final blockers = eligibility['blockers'];
+  final codes = <String>{
+    if (blockers is List)
+      for (final b in blockers.whereType<Map>()) '${b['code']}',
+  };
+  // A connected mailbox that can no longer send is still the email step.
+  final mailboxTrouble = codes.any(mailboxProblemCodes.contains);
   return [
     OwnerStep(
       key: 'plan',
@@ -47,20 +61,25 @@ List<OwnerStep> ownerStepsFrom(Object? eligibility) {
       done: ready.contains('subscription'),
     ),
     OwnerStep(
-      key: 'permission',
-      title: 'Give your permission',
-      line: 'Orchestrate writes in your name only after you say yes.',
-      cta: 'Give permission',
+      key: 'act',
+      title: 'Who acts for this business',
+      line: authority == 'UNDER_REVIEW'
+          ? 'Checking your document. Nothing is needed from you.'
+          : 'You, your registration document, and your yes.',
+      cta: authority == 'UNDER_REVIEW' ? 'See where it stands' : 'Finish this step',
       route: '/client/setup?step=permission',
-      done: ready.contains('representation'),
+      done: ready.contains('representation') && authority == 'ESTABLISHED',
+      waiting: authority == 'UNDER_REVIEW',
     ),
     OwnerStep(
       key: 'email',
       title: 'Connect your email',
-      line: 'Notes go out from your address. Replies land in your inbox.',
-      cta: 'Connect email',
+      line: mailboxTrouble
+          ? 'Your email needs connecting again before notes can go out.'
+          : 'Notes go out from your address. Replies land in your inbox.',
+      cta: mailboxTrouble ? 'Reconnect email' : 'Connect email',
       route: '/client/setup?step=email',
-      done: ready.contains('sending_transport'),
+      done: ready.contains('sending_transport') && !mailboxTrouble,
     ),
     OwnerStep(
       key: 'domain',
@@ -84,6 +103,18 @@ const ownerStepBlockerCodes = <String>{
   'REPRESENTATION_AUTH_REQUIRED',
   'MAILBOX_MISSING',
   'SENDING_IDENTITY_UNVERIFIED',
+  ...mailboxProblemCodes,
+};
+
+/// A mailbox that is connected but cannot send: the email card speaks for it.
+const mailboxProblemCodes = <String>{
+  'MAILBOX_DISCONNECTED',
+  'MAILBOX_CREDENTIAL_MISSING',
+  'MAILBOX_UNVERIFIED',
+  'MAILBOX_NOT_READY',
+  'MAILBOX_BLOCKED',
+  'MAILBOX_ACTIVATION_FAILED',
+  'MAILBOX_PROVIDER_ERROR',
 };
 
 /// Where a remaining condition is resolved, in today's screens. The server

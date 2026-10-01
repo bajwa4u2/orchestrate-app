@@ -426,26 +426,6 @@ class _CommercialClosingBand extends StatelessWidget {
       );
 }
 
-/// The programmes Orchestrate is built with: one quiet line inside the
-/// footer, not a band of its own.
-class _CommercializationSupportBand extends StatelessWidget {
-  const _CommercializationSupportBand();
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 14,
-      runSpacing: 6,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        Text('Supported by', style: Ob.body(13, color: Ob.inkMuted)),
-        const OfficialSupportMarks(
-            alignment: Alignment.centerLeft, onPaper: true),
-      ],
-    );
-  }
-}
-
 /// The footer: two quiet lines (founder, 2026-10-01).
 ///
 /// The header already names Orchestrate, so the footer carries no brand
@@ -513,26 +493,9 @@ class _PublicFooter extends StatelessWidget {
               const SizedBox(height: 14),
               Container(height: 1, color: Ob.line),
               const SizedBox(height: 14),
-              LayoutBuilder(builder: (context, constraints) {
-                if (constraints.maxWidth >= 920) {
-                  return const Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(child: _CommercializationSupportBand()),
-                      SizedBox(width: 24),
-                      _PublicFooterBottomRow(),
-                    ],
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    _CommercializationSupportBand(),
-                    SizedBox(height: 12),
-                    _PublicFooterBottomRow(),
-                  ],
-                );
-              }),
+              // Founder, 1 Oct 2026: startup programmes appear on the company
+              // site only, never in a product.
+              const _PublicFooterBottomRow(),
             ],
           ),
         ),

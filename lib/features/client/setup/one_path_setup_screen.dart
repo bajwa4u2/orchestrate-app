@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -18,6 +19,7 @@ import '../../../data/repositories/client/client_business_identity_repository.da
 import '../../../data/repositories/client/client_campaign_repository.dart';
 import '../../../data/repositories/client/client_mailbox_repository.dart';
 import '../../../data/repositories/client/client_outreach_repository.dart';
+import '../../../data/repositories/client/client_representative_repository.dart';
 import '../../../data/setup/buyer_suggestions.dart';
 import '../../../data/setup/global_setup_options.dart';
 import '../screens/client_setup_screen.dart' show metroSuggestionsFor;
@@ -49,7 +51,9 @@ import '../widgets/smtp_connect_dialog.dart';
 /// Every state shown here is read from the server: the business identity,
 /// the setup record, the mailbox snapshot, the sending domain and execution
 /// eligibility. Nothing is inferred to look finished.
-enum SetupStep { business, want, offer, email, permission, plan, ready }
+// DD-27: "permission" is now the last step, "Who acts for this business"; the
+// name stays so older links and drafts keep working.
+enum SetupStep { business, want, offer, email, plan, permission, ready }
 
 extension on SetupStep {
   String get key => name;
@@ -59,8 +63,8 @@ extension on SetupStep {
         'Who you want',
         'What you offer',
         'Your email',
-        'Your permission',
         'Your plan',
+        'Who acts for it',
         'Ready',
       ][index];
   String get subtitle => const [
@@ -68,13 +72,14 @@ extension on SetupStep {
         'Buyers and where they are',
         'One sentence, in your words',
         'Where notes are sent from',
-        'Orchestrate may write for you',
         'Only when you want to send',
+        'You, your document, your yes',
         '',
       ][index];
 }
 
 SetupStep? _stepFromKey(String? key) {
+  if (key == 'act') return SetupStep.permission;
   for (final s in SetupStep.values) {
     if (s.key == key) return s;
   }
@@ -86,7 +91,7 @@ enum StepState { todo, done, waiting }
 
 class OnePathSetupScreen extends StatefulWidget {
   const OnePathSetupScreen(
-      {super.key, this.initialStep, this.oauthStatus, this.oauthReason});
+      {super.key, this.initialStep, this.oauthStatus, this.oauthReason, this.checkoutStatus});
 
   /// From `?step=`; when absent the first unfinished step opens.
   final String? initialStep;
@@ -94,6 +99,9 @@ class OnePathSetupScreen extends StatefulWidget {
   /// Set when a mailbox sign-in started here has just come back.
   final String? oauthStatus;
   final String? oauthReason;
+
+  /// `success` or `canceled`, set by Stripe's return to the plan step.
+  final String? checkoutStatus;
 
   /// A test seam, so every step can be rendered and read as a person would
   /// see it: the seven answers `_load` would otherwise fetch, in its order
@@ -112,6 +120,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   final _mailbox = ClientMailboxRepository();
   final _outreach = ClientOutreachRepository();
   final _campaign = ClientCampaignRepository();
+  final _representative = ClientRepresentativeRepository();
 
   bool _loading = true;
   String? _loadFailure;
@@ -154,8 +163,19 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   List<Map<String, dynamic>> _providers = const [];
   CommercialModel? _pricing;
 
+  // Last step: who acts for this business.
+  Map<String, dynamic> _representativeState = const {};
+  Map<String, dynamic>? _document;
+  final Set<String> _actAreas = {'COMMUNICATION', 'CONTRACTUAL', 'FINANCIAL'};
+  List<int>? _pickedBytes;
+  String? _pickedName;
+
   /// The cadence picked on the plan step; monthly until the owner picks.
   String _cadence = 'MONTHLY';
+
+  /// Back from a paid checkout and waiting for the payment to be recorded.
+  bool _awaitingPayment = false;
+  Timer? _paymentPoll;
   bool _setupCompleted = false;
   bool _planDeferred = false;
   Timer? _domainPoll;
@@ -174,6 +194,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   @override
   void dispose() {
+    _paymentPoll?.cancel();
     _domainPoll?.cancel();
     _draftTimer?.cancel();
     for (final c in [
@@ -218,6 +239,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             .fetchCommercialModel()
             .then<CommercialModel?>((m) => m)
             .catchError((_) => null),
+        _representative.fetchCurrent().catchError((_) => <String, dynamic>{}),
+        _representative.documentStatus().catchError((_) => <String, dynamic>{}),
       ]);
       if (!mounted) return;
       final rawProfile = _map(results[0]);
@@ -240,6 +263,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         _setupCompleted = session.hasSetupCompleted;
         _planDeferred = draft['planDeferred'] == true;
         _hydrate(profile, setup, draft);
+        if (results.length > 8) {
+          _representativeState = _map(_map(results[7])['readiness']);
+          final doc = _map(results[8])['document'];
+          _document = doc is Map ? _map(doc) : null;
+        }
         _step = _stepFromKey(widget.initialStep) ?? _firstOpenStep();
         if (widget.oauthStatus == 'error') {
           _stepError = _oauthReason(widget.oauthReason);
@@ -249,6 +277,13 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         _loading = false;
       });
       _schedulePollIfWaiting();
+      if (widget.checkoutStatus == 'success' && !_planActive) _awaitPayment();
+      // Back from the provider with an address on the business's own domain:
+      // prepare its records at once rather than asking for another press.
+      if (widget.oauthStatus == 'success' && _emailConnected &&
+          !_personalMailbox && !_domainAttached) {
+        await _attachDomain();
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -357,14 +392,14 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     switch ((raw ?? '').trim()) {
       case 'access_denied':
       case 'user_denied':
-        return 'The sign-in was declined, so nothing was connected. Choose a '
-            'provider to try again.';
+        return 'The sign-in was declined, so nothing was connected. Press '
+            'Continue to try again.';
       case 'missing_code_or_state':
-        return 'The sign-in window closed before it finished. Choose a '
-            'provider to try again.';
+        return 'The sign-in window closed before it finished. Press Continue '
+            'to try again.';
       default:
-        return 'The sign-in did not finish, so nothing was connected. Choose '
-            'a provider to try again.';
+        return 'The sign-in did not finish, so nothing was connected. Press '
+            'Continue to try again.';
     }
   }
 
@@ -468,9 +503,19 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         if (_personalMailbox || _domainReady) return StepState.done;
         return StepState.waiting;
       case SetupStep.permission:
-        return _profile['representationAuthorized'] == true
-            ? StepState.done
-            : StepState.todo;
+        // Done when both records stand: Orchestrate may write for the
+        // business, and the business recognises who decides. Waiting while
+        // the document is checked.
+        final authority = (_map(_representativeState['organizationalAuthority'])['state'] ?? '')
+            .toString();
+        if (_profile['representationAuthorized'] == true && authority == 'ESTABLISHED') {
+          return StepState.done;
+        }
+        if (_profile['representationAuthorized'] == true &&
+            (authority == 'UNDER_REVIEW' || (_document ?? const {}).isNotEmpty)) {
+          return StepState.waiting;
+        }
+        return StepState.todo;
       case SetupStep.plan:
         // Putting the plan off is a choice, not a plan: it waits, never ticks.
         return _planActive
@@ -510,6 +555,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   // ── Navigation ─────────────────────────────────────────────────────
+
+  /// The last step opens only once every step before it is done or waiting.
+  bool get _actUnlocked => SetupStep.values
+      .take(SetupStep.permission.index)
+      .every((s) => _stateOf(s) != StepState.todo);
 
   void _goTo(SetupStep s) {
     setState(() {
@@ -1049,37 +1099,6 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     _schedulePollIfWaiting();
   }
 
-  Future<void> _givePermission() async {
-    setState(() {
-      _busy = true;
-      _stepError = null;
-    });
-    try {
-      await _campaign.acceptRepresentationAuth();
-      final raw = await _identity.fetchProfile();
-      final profile = _map(raw['profile']).isNotEmpty ? _map(raw['profile']) : raw;
-      final elig = await _outreach
-          .fetchExecutionEligibility()
-          .catchError((_) => <String, dynamic>{});
-      if (!mounted) return;
-      setState(() {
-        _profile = {...profile, 'representationAuthorized': true};
-        _eligibility = elig;
-        _busy = false;
-        _markSaved();
-      });
-      _goTo(_next(SetupStep.permission));
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _busy = false;
-        _stepError = _reasonFor(error,
-            fallback: 'Your permission could not be recorded just now. Try '
-                'again in a moment.');
-      });
-    }
-  }
-
   /// Straight from the plan step to secure checkout: no second price page.
   /// A store build sends nobody out to pay, so it opens Billing, where the
   /// store's own purchase sheet lives.
@@ -1121,10 +1140,31 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     }
   }
 
+  /// Stripe has taken the payment; its confirmation reaches us a moment later.
+  /// Ask every few seconds until the plan is on, for up to three minutes.
+  void _awaitPayment() {
+    setState(() => _awaitingPayment = true);
+    var tries = 0;
+    _paymentPoll?.cancel();
+    _paymentPoll = Timer.periodic(const Duration(seconds: 4), (t) async {
+      tries++;
+      final elig = await _outreach
+          .fetchExecutionEligibility()
+          .catchError((_) => <String, dynamic>{});
+      if (!mounted) return t.cancel();
+      setState(() => _eligibility = elig);
+      if (_planActive || tries >= 45) {
+        t.cancel();
+        setState(() => _awaitingPayment = false);
+        if (_planActive) _markSaved();
+      }
+    });
+  }
+
   Future<void> _deferPlan() async {
     setState(() => _planDeferred = true);
     await _writeDraft();
-    _goTo(SetupStep.ready);
+    _goTo(_actUnlocked ? SetupStep.permission : SetupStep.ready);
   }
 
   Future<void> _signOut() async {
@@ -1281,6 +1321,24 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   Widget _gap([double h = 22]) => SizedBox(height: h);
+
+  /// A neutral note: news, not a refusal.
+  Widget _notice(String text) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Ob.track,
+          borderRadius: BorderRadius.circular(Ob.radiusControl),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (_awaitingPayment) ...[
+            const SizedBox(
+                width: 16, height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Ob.ink)),
+            const SizedBox(width: 10),
+          ],
+          Expanded(child: Text(text, style: Ob.body(14.5, color: Ob.ink))),
+        ]),
+      );
 
   Widget _errorLine() => _stepError == null
       ? const SizedBox.shrink()
@@ -1875,29 +1933,142 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     );
   }
 
+  /// WHO ACTS FOR THIS BUSINESS (DD-27): one screen, one submit.
+  ///
+  /// The owner confirms they act for the business in three areas, sends the
+  /// business registration document, and gives Orchestrate permission to
+  /// write in the business's name. One press writes the two separate records
+  /// (who the business recognises; what Orchestrate may do) through their own
+  /// services, exactly as before. The document is then checked; anything
+  /// uncertain goes to a person, never to a refusal.
   Widget _permissionStep(bool phone) {
     final who = AuthSessionController.instance.fullName.trim();
     final business = _text(_profile, 'displayName').isEmpty
         ? 'your business'
         : _text(_profile, 'displayName');
-    final given = _stateOf(SetupStep.permission) == StepState.done;
+    final state = _stateOf(SetupStep.permission);
+    final doc = _map(_document);
+    final sent = doc.isNotEmpty;
+    if (!_actUnlocked) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _head('Who acts for this business.',
+            'This opens once the steps above are done.',
+            phone: phone),
+        _gap(26),
+        ObActions(
+          primary: 'Go to the next open step',
+          onPrimary: () => _goTo(_firstOpenStep()),
+        ),
+      ]);
+    }
+    if (state != StepState.todo) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _head(
+            state == StepState.done
+                ? 'You act for $business.'
+                : 'Checking your document.',
+            state == StepState.done
+                ? 'Your document is confirmed and Orchestrate may write in the '
+                    "business's name, with your approval on each note."
+                : '${(doc['says'] ?? 'We are checking your document.').toString()} You can use the rest '
+                    'of the workspace meanwhile; nothing is sent before this is done.',
+            phone: phone),
+        _gap(),
+        if (sent)
+          ObCard(
+            padding: const EdgeInsets.all(18),
+            child: Row(children: [
+              Icon(state == StepState.done ? Icons.check_circle : Icons.schedule,
+                  color: Ob.ink, size: 22),
+              const SizedBox(width: 12),
+              Expanded(child: Text('${doc['fileName'] ?? 'Your document'}', style: Ob.strong(15))),
+            ]),
+          ),
+        if ((doc['request'] ?? '').toString().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _notice(doc['request'].toString()),
+        ],
+        _gap(26),
+        ObActions(
+          primary: 'Continue',
+          onPrimary: () => _goTo(SetupStep.ready),
+          secondary: 'Back',
+          onSecondary: () => _goTo(SetupStep.plan),
+        ),
+      ]);
+    }
+
+    Widget area(String key, String label, String meaning) {
+      final on = _actAreas.contains(key);
+      return InkWell(
+        borderRadius: BorderRadius.circular(Ob.radiusControl),
+        onTap: _busy
+            ? null
+            : () => setState(() => on ? _actAreas.remove(key) : _actAreas.add(key)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(on ? Icons.check_box : Icons.check_box_outline_blank,
+                size: 22, color: on ? Ob.ink : Ob.inkMuted),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(label, style: Ob.strong(15.5)),
+                const SizedBox(height: 2),
+                Text(meaning, style: Ob.body(14, color: Ob.inkMuted)),
+              ]),
+            ),
+          ]),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _head('Your permission, in plain words.',
-            'Orchestrate writes to businesses in your name. Before it can, a '
-                'named person at your business needs to say yes.',
+        _head('Who acts for this business.',
+            'Orchestrate writes to businesses in your name, so it needs to know '
+                'who may decide for $business. One step, then you are ready.',
             phone: phone),
         _gap(),
+        Text('1. You act for $business in', style: Ob.strong(15)),
+        const SizedBox(height: 4),
+        area('COMMUNICATION', 'Notes', 'Approve what is written to other businesses.'),
+        area('CONTRACTUAL', 'Agreements', 'Approve proposals and agreements.'),
+        area('FINANCIAL', 'Invoices', 'Approve invoices and payment reminders.'),
+        _gap(18),
+        Text('2. Your business registration document', style: Ob.strong(15)),
+        const SizedBox(height: 4),
+        Text(
+            'Articles of organization or incorporation, an annual report, or a '
+            'business name certificate. A PDF or a photo of the page.',
+            style: Ob.body(14, color: Ob.inkMuted)),
+        const SizedBox(height: 10),
+        Row(children: [
+          OutlinedButton.icon(
+            onPressed: _busy ? null : _pickDocument,
+            icon: const Icon(Icons.upload_file, size: 18),
+            label: Text(_pickedName == null ? 'Choose a file' : 'Choose another'),
+          ),
+          const SizedBox(width: 12),
+          if (_pickedName != null)
+            Expanded(
+              child: Text(_pickedName!,
+                  overflow: TextOverflow.ellipsis, style: Ob.strong(14.5)),
+            ),
+        ]),
+        if (_fieldErrors['document'] != null) ...[
+          const SizedBox(height: 6),
+          Text(_fieldErrors['document']!, style: Ob.body(13.5, color: Ob.refused)),
+        ],
+        _gap(18),
+        Text('3. Your permission', style: Ob.strong(15)),
+        const SizedBox(height: 8),
         ObCard(
-          raised: !given,
-          waitingOnYes: !given,
+          waitingOnYes: true,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(given ? 'GIVEN' : 'WAITING FOR YOUR YES',
-                  style: Ob.eyebrow(color: given ? Ob.inkMuted : Ob.yesDeep)),
-              const SizedBox(height: 14),
               Text.rich(TextSpan(style: Ob.body(15.5, color: Ob.ink), children: [
                 const TextSpan(text: 'I allow Orchestrate to find businesses for '),
                 TextSpan(text: business, style: Ob.strong(15.5)),
@@ -1912,32 +2083,104 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                   style: Ob.body(15.5, color: Ob.ink)),
               const SizedBox(height: 16),
               Text(
-                  given
-                      ? 'Given${who.isEmpty ? '' : ' by $who'}.'
-                      : 'Given by ${who.isEmpty ? 'you' : '$who (you)'} when you press the button below.',
+                  'Given by ${who.isEmpty ? 'you' : '$who (you)'} when you press the button below.',
                   style: Ob.body(14, color: Ob.inkMuted)),
             ],
           ),
         ),
         _errorLine(),
         _gap(26),
-        if (given)
-          ObActions(
-            primary: 'Continue',
-            onPrimary: () => _goTo(_next(SetupStep.permission)),
-            secondary: 'Back',
-            onSecondary: () => _goTo(SetupStep.email),
-          )
-        else
-          ObActions(
-            primary: 'I give permission',
-            onPrimary: _givePermission,
-            secondary: 'Someone else should do this',
-            onSecondary: () => context.go('/account/people'),
-            busy: _busy,
-          ),
+        ObActions(
+          primary: 'Confirm and send',
+          onPrimary: _submitAct,
+          secondary: 'Someone else should do this',
+          onSecondary: () => context.go('/account/people'),
+          busy: _busy,
+        ),
       ],
     );
+  }
+
+  Future<void> _pickDocument() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty || !mounted) return;
+    final f = result.files.first;
+    if (f.bytes == null) return;
+    if (f.bytes!.length > 10 * 1024 * 1024) {
+      setState(() => _fieldErrors = {'document': 'That file is over 10 MB. A PDF or a photo of the page is enough.'});
+      return;
+    }
+    setState(() {
+      _pickedBytes = f.bytes;
+      _pickedName = f.name;
+      _fieldErrors = {};
+    });
+  }
+
+  /// One press: send the document, record who acts for the business, and
+  /// record the permission. Each is its own record, written by its own service.
+  Future<void> _submitAct() async {
+    if (_actAreas.isEmpty) {
+      setState(() => _stepError = 'Choose at least one area you act in.');
+      return;
+    }
+    if (_pickedBytes == null) {
+      setState(() => _fieldErrors = {'document': 'Choose your registration document.'});
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _stepError = null;
+      _fieldErrors = {};
+    });
+    try {
+      final uploaded = await _representative.uploadDocument(
+          bytes: _pickedBytes!, fileName: _pickedName ?? 'document.pdf');
+      final current = await _representative.fetchCurrent();
+      final hash = (_map(current['designation'])['hash'] ??
+              _map(current['designation'])['artifactHash'] ??
+              '')
+          .toString();
+      final submitted = await _representative.submit(
+        requested: [
+          for (final a in _actAreas)
+            {'capability': a, 'mayExercise': true, 'mayDelegate': true, 'maySubdelegate': false},
+        ],
+        acknowledgedRepresentation: true,
+        artifactHash: hash,
+        supportingReference: (uploaded['id'] ?? '').toString(),
+        supportingKind: 'REGISTRATION_DOCUMENT',
+      );
+      if (submitted['ok'] == false) {
+        throw StateError((submitted['reason'] ?? 'That could not be recorded just now.').toString());
+      }
+      if (_profile['representationAuthorized'] != true) {
+        await _campaign.acceptRepresentationAuth();
+      }
+      final rep = await _representative.fetchCurrent().catchError((_) => <String, dynamic>{});
+      if (!mounted) return;
+      setState(() {
+        _profile = {..._profile, 'representationAuthorized': true};
+        _representativeState = _map(rep['readiness']);
+        _document = uploaded;
+        _pickedBytes = null;
+        _busy = false;
+        _markSaved();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _stepError = error is StateError
+            ? error.message
+            : _reasonFor(error,
+                fallback: 'That could not be sent just now. Try again in a moment.');
+      });
+    }
   }
 
   Widget _planStep(bool phone) {
@@ -1999,6 +2242,15 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                     'for you now; sending notes begins when you choose a plan.',
             phone: phone),
         _gap(),
+        if (!_planActive && (_awaitingPayment || widget.checkoutStatus != null)) ...[
+          _notice(_awaitingPayment
+              ? 'Payment received. Switching your plan on; this takes a few seconds.'
+              : widget.checkoutStatus == 'success'
+                  ? 'Your payment has not reached us yet. It can take a minute; '
+                      'this page will show it when it does. Nothing more is needed from you.'
+                  : 'Checkout was closed before paying. Nothing was charged.'),
+          const SizedBox(height: 16),
+        ],
         if (!_planActive && _offers.isNotEmpty) ...[
           const EarlyPriceLine(),
           const SizedBox(height: 14),
@@ -2019,9 +2271,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         if (_planActive)
           ObActions(
             primary: 'Continue',
-            onPrimary: () => _goTo(SetupStep.ready),
+            onPrimary: () => _goTo(_next(SetupStep.plan)),
             secondary: 'Back',
-            onSecondary: () => _goTo(SetupStep.permission),
+            onSecondary: () => _goTo(SetupStep.email),
           )
         else
           ObActions(
@@ -2175,11 +2427,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         );
       case SetupStep.permission:
         return _SideCard(
-          label: 'IF SOMEONE ELSE SHOULD SAY YES',
+          label: 'IF SOMEONE ELSE ACTS FOR IT',
           children: [
             Text('Invite the owner or a director to this workspace. Everything '
-                'you filled in stays as it is; they sign in and give '
-                'permission on this step.',
+                'you filled in stays as it is; they sign in and finish this '
+                'step.',
                 style: Ob.body(15, color: Ob.ink)),
             Align(
               alignment: Alignment.centerLeft,
@@ -2270,7 +2522,14 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           }
           return '$_mailboxAddress connected';
         case SetupStep.permission:
-          return _stateOf(s) == StepState.done ? 'Given' : 'Not given yet';
+          final st = _stateOf(s);
+          return st == StepState.done
+              ? 'Confirmed'
+              : st == StepState.waiting
+                  ? 'Checking your document'
+                  : _actUnlocked
+                      ? 'Not done yet'
+                      : 'Opens when the steps above are done';
         case SetupStep.plan:
           return _planActive
               ? 'Active'
@@ -2733,7 +2992,9 @@ class _RailRow extends StatelessWidget {
                               ? step.subtitle
                               : step == SetupStep.plan
                                   ? 'Later, when you want to send'
-                                  : 'Domain check running on its own',
+                                  : step == SetupStep.permission
+                                      ? 'Checking your document'
+                                      : 'Domain check running on its own',
                           style: Ob.body(12.5, color: Ob.inkMuted)),
                     ],
                   ],

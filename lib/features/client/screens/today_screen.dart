@@ -14,6 +14,7 @@ import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/data/repositories/client/client_attention_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_authority_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_money_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_representative_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_today_repository.dart';
 
 /// TODAY (DD-26, board S07): "N things need your yes."
@@ -40,6 +41,7 @@ class TodayScreen extends StatefulWidget {
 class _YesCard {
   const _YesCard({
     this.done = false,
+    this.waiting = false,
     required this.name,
     required this.ask,
     this.detail,
@@ -55,6 +57,9 @@ class _YesCard {
 
   /// One of the four owner steps, already done: shown quietly, no button.
   final bool done;
+
+  /// Being checked on our side: shown, not counted as needing a yes.
+  final bool waiting;
   final String name;
   final String ask;
   final String? detail;
@@ -80,6 +85,9 @@ class _TodayScreenState extends State<TodayScreen> {
   final ClientMarket _market = ClientMarket.instance;
   final _money = ClientMoneyRepository();
   final _authority = ClientAuthorityRepository();
+  final _representative = ClientRepresentativeRepository();
+  /// Whether the business recognises who decides for it (who acts card).
+  String? _actsState;
   List<WaitingDecision> _waiting = const [];
   MoneyView? _moneyView;
   bool _moneyKnown = false;
@@ -119,6 +127,11 @@ class _TodayScreenState extends State<TodayScreen> {
       _market.refresh().then((_) {}).catchError((_) {}),
       _authority.waiting().then((w) {
         _waiting = w;
+      }).catchError((_) {}),
+      _representative.fetchCurrent().then((r) {
+        final readiness = r['readiness'];
+        final org = readiness is Map ? readiness['organizationalAuthority'] : null;
+        _actsState = org is Map ? org['state']?.toString() : null;
       }).catchError((_) {}),
       _money.fetch().then((m) {
         _moneyView = m;
@@ -246,12 +259,13 @@ class _TodayScreenState extends State<TodayScreen> {
     // All four stay in view until all four are done, so the owner sees how
     // far they are; a done one is quiet and has no button.
     final steps = session.hasSetupCompleted
-        ? ownerStepsFrom(_today.state?.eligibility)
+        ? ownerStepsFrom(_today.state?.eligibility, authority: _actsState)
         : const <OwnerStep>[];
     final allDone = steps.every((s) => s.done);
     for (final step in allDone ? const <OwnerStep>[] : steps) {
       cards.add(_YesCard(
         done: step.done,
+        waiting: step.waiting,
         name: step.title,
         ask: '',
         detail: step.line,
@@ -259,9 +273,12 @@ class _TodayScreenState extends State<TodayScreen> {
         onPrimary: () => context.go(step.route),
       ));
     }
+    final seen = <String>{};
     for (final item in _today.state?.needsYou ?? const <TodayItem>[]) {
       // Already a card above, in fewer words.
       if (ownerStepBlockerCodes.contains(item.code)) continue;
+      // The same condition reported twice is one thing to do.
+      if (!seen.add('${item.title}|${item.detail ?? ''}')) continue;
       final meeting = item.category == 'meeting';
       cards.add(_YesCard(
         name: item.title,
@@ -337,11 +354,11 @@ class _TodayScreenState extends State<TodayScreen> {
     // Published for the rail's amber count beside Today.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_today.hasAnswer) {
-        todayYesCount.value = cards.where((c) => !c.done).length;
+        todayYesCount.value = cards.where((c) => !c.done && !c.waiting).length;
       }
     });
     // A done owner step is on screen but is not something that needs a yes.
-    final n = cards.where((c) => !c.done).length;
+    final n = cards.where((c) => !c.done && !c.waiting).length;
     final shownCount = cards.length;
     final lead = n < _words.length ? _words[n] : '$n things';
     final now = DateTime.now();
@@ -400,7 +417,8 @@ class _TodayScreenState extends State<TodayScreen> {
               // Four cards fill two rows of two (or one row of four), never
               // three and one left alone.
               if (cols == 3 && shownCount == 4) cols = c.maxWidth >= 1240 ? 4 : 2;
-              final shown = cards.take(cols == 1 ? 6 : (cols == 4 ? 4 : cols * 2)).toList();
+              // Every card up to six; a seventh waits behind the note below.
+              final shown = cards.take(6).toList();
               // Cards in a row share one height, so their buttons line up.
               return Column(children: [
                 for (var r = 0; r < shown.length; r += cols) ...[
@@ -420,9 +438,9 @@ class _TodayScreenState extends State<TodayScreen> {
                 ],
               ]);
             }),
-          if (n > 6) ...[
+          if (shownCount > 6) ...[
             const SizedBox(height: 12),
-            Text('${n - 6} more waiting. Decide on these first and the rest '
+            Text('${shownCount - 6} more waiting. Decide on these first and the rest '
                 'move up.',
                 style: Ob.body(14, color: Ob.inkMuted)),
           ],

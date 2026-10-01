@@ -14,14 +14,25 @@ void main() {
 
   test('a new workspace has all four owner steps open, in order', () {
     final steps = ownerStepsFrom(chain({'setup'}));
-    expect(steps.map((s) => s.key), ['plan', 'permission', 'email', 'domain']);
+    expect(steps.map((s) => s.key), ['plan', 'act', 'email', 'domain']);
     expect(steps.every((s) => !s.done), isTrue);
   });
 
   test('each step reads its own layer of the server chain', () {
-    final steps = ownerStepsFrom(chain({'representation', 'trust'}));
+    final steps = ownerStepsFrom(chain({'representation', 'trust'}), authority: 'ESTABLISHED');
     final done = {for (final s in steps) s.key: s.done};
-    expect(done, {'plan': false, 'permission': true, 'email': false, 'domain': true});
+    expect(done, {'plan': false, 'act': true, 'email': false, 'domain': true});
+    // Permission alone is not enough: the business must recognise who decides.
+    final pending = ownerStepsFrom(chain({'representation'}), authority: 'UNDER_REVIEW');
+    expect(pending.firstWhere((s) => s.key == 'act').done, isFalse);
+  });
+
+  test('a connected mailbox that cannot send keeps the email card open', () {
+    final e = chain({'sending_transport'});
+    e['blockers'] = [{'code': 'MAILBOX_CREDENTIAL_MISSING'}];
+    final email = ownerStepsFrom(e).firstWhere((s) => s.key == 'email');
+    expect(email.done, isFalse);
+    expect(email.cta, 'Reconnect email');
   });
 
   test('an unanswered chain shows nothing rather than guessing', () {

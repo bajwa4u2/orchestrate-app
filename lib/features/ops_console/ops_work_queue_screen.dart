@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'ops_console_repository.dart';
 import 'ops_empty_state.dart';
@@ -280,7 +281,15 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
           if (reason != null) reasonField: reason,
         });
       } else {
-        await _repo.rawGet(endpoint);
+        final result = await _repo.rawGet(endpoint);
+        // A link the server hands back (a document to look at) opens in a new
+        // tab; looking decides nothing, so the case stays where it is.
+        final open = result['openUrl'];
+        if (open is String && open.isNotEmpty) {
+          await launchUrl(Uri.parse(open), mode: LaunchMode.externalApplication);
+          if (mounted) setState(() => _action.remove(caseId));
+          return;
+        }
       }
       if (!mounted) return;
       setState(() => _action[caseId] =

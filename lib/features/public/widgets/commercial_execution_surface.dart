@@ -463,36 +463,3 @@ class ExecutionCapabilityGrid extends StatelessWidget {
   }
 }
 
-class CommercialSupportBand extends StatelessWidget {
-  const CommercialSupportBand({super.key});
-  @override
-  Widget build(BuildContext context) => Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-          color: const Color(0xFFE6F4F1),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFB5D8D0))),
-      child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          runSpacing: 16,
-          children: [
-            const SizedBox(
-                width: 520,
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Built in a commercialization environment.',
-                          style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.publicText)),
-                      SizedBox(height: 7),
-                      Text(
-                          'Aura Platform builds and operates Orchestrate with support from programs that help early products become durable businesses.',
-                          style: TextStyle(
-                              color: AppTheme.publicMuted, height: 1.5))
-                    ])),
-            const OfficialSupportMarks()
-          ]));
-}

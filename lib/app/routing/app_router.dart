@@ -1044,7 +1044,8 @@ GoRouter _buildRouter() {
         builder: (context, state) => OnePathSetupScreen(
             initialStep: state.uri.queryParameters['step'],
             oauthStatus: state.uri.queryParameters['oauth'],
-            oauthReason: state.uri.queryParameters['reason'])),
+            oauthReason: state.uri.queryParameters['reason'],
+            checkoutStatus: state.uri.queryParameters['checkout'])),
     // Compatibility only. /client/setup is canonical; this keeps older links
     // and any saved deep link resolving rather than 404ing.
     GoRoute(
@@ -1158,16 +1159,13 @@ GoRouter _buildRouter() {
               if ((q['provider'] ?? '').toLowerCase() == 'google_contacts') {
                 return null;
               }
-              final draft = AuthSessionController.instance.setupDraft;
-              final onePath = draft?['onePath'];
-              if (onePath is Map && onePath['returnToSetup'] == true) {
-                return Uri(path: '/client/setup', queryParameters: {
-                  'step': 'email',
-                  if ((q['status'] ?? '').isNotEmpty) 'oauth': q['status']!,
-                  if ((q['reason'] ?? '').isNotEmpty) 'reason': q['reason']!,
-                }).toString();
-              }
-              return null;
+              // DD-27: every mailbox connection belongs to the email step,
+              // wherever it was started from.
+              return Uri(path: '/client/setup', queryParameters: {
+                'step': 'email',
+                if ((q['status'] ?? '').isNotEmpty) 'oauth': q['status']!,
+                if ((q['reason'] ?? '').isNotEmpty) 'reason': q['reason']!,
+              }).toString();
             },
             pageBuilder: (context, state) =>
             NoTransitionPage(child: OAuthReturnScreen(

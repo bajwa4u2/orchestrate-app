@@ -65,6 +65,38 @@ class ClientRepresentativeRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  /// Send the business registration document (PDF, JPEG or PNG, up to 10 MB).
+  Future<Map<String, dynamic>> uploadDocument({
+    required List<int> bytes,
+    required String fileName,
+  }) async {
+    final lower = fileName.toLowerCase();
+    final type = lower.endsWith('.pdf')
+        ? 'application/pdf'
+        : lower.endsWith('.png')
+            ? 'image/png'
+            : 'image/jpeg';
+    final json = await _apiClient.postMultipart(
+      '/client/representative/document',
+      fileBytes: bytes,
+      filename: fileName,
+      fieldName: 'file',
+      contentType: type,
+      surface: ApiSurface.client,
+      timeout: const Duration(seconds: 90),
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  /// Where the latest registration document stands; `document` is null when none.
+  Future<Map<String, dynamic>> documentStatus() async {
+    final json = await _apiClient.getJson(
+      '/client/representative/document',
+      surface: ApiSurface.client,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   /// Send the confirmation email again.
   ///
   /// Exists because a refusal that says "confirm your email" and offers no way
