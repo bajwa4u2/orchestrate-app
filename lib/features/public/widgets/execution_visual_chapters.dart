@@ -691,10 +691,13 @@ class _AuthorityRow extends StatelessWidget {
 /// the set down together instead, keeping them inline at any width.
 class OfficialSupportMarks extends StatelessWidget {
   const OfficialSupportMarks(
-      {super.key, this.alignment = Alignment.centerRight});
+      {super.key, this.alignment = Alignment.centerRight, this.onPaper = false});
 
   /// Right where the band puts the copy on the left; left when it stacks.
   final Alignment alignment;
+
+  /// Drawn small and in ink for the paper footer (DD-26 F1).
+  final bool onPaper;
 
   @override
   Widget build(BuildContext context) {
@@ -712,15 +715,15 @@ class OfficialSupportMarks extends StatelessWidget {
             // records it as Founders Hub participation, so a screen reader
             // gets the exact claim the badge makes.
             'Microsoft for Startups — Founders Hub member',
-            width: compact ? 110 : 132,
+            width: onPaper ? 92 : (compact ? 110 : 132),
             href: 'https://www.microsoft.com/en-us/startups/',
           ),
           SizedBox(width: compact ? 16 : 26),
-          const _SupportWord('Google for Startups',
-              href: 'https://startup.google.com/'),
+          _SupportWord('Google for Startups',
+              href: 'https://startup.google.com/', onPaper: onPaper),
           SizedBox(width: compact ? 16 : 26),
-          const _SupportWord('AWS Activate',
-              href: 'https://aws.amazon.com/activate/'),
+          _SupportWord('AWS Activate',
+              href: 'https://aws.amazon.com/activate/', onPaper: onPaper),
         ],
       ),
     );
@@ -791,9 +794,10 @@ class _SupportAsset extends StatelessWidget {
 /// Set at the same height as the badge beside it, so the row reads as three
 /// deliberate entries rather than one badge and two gaps.
 class _SupportWord extends StatelessWidget {
-  const _SupportWord(this.label, {required this.href});
+  const _SupportWord(this.label, {required this.href, this.onPaper = false});
   final String label;
   final String href;
+  final bool onPaper;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -806,11 +810,11 @@ class _SupportWord extends StatelessWidget {
             child: Center(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: AppTheme.publicOnDark,
+                style: TextStyle(
+                  color: onPaper ? const Color(0xFF3A4553) : AppTheme.publicOnDark,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8,
+                  letterSpacing: onPaper ? 0.2 : 0.8,
                 ),
               ),
             ),

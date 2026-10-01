@@ -93,6 +93,11 @@ class _PublicShellState extends State<PublicShell> {
                         interactive: true,
                         child: SingleChildScrollView(
                           controller: _publicScrollController,
+                          // One paper ground under the whole page, so no
+                          // seam shows where two painted areas meet at a
+                          // fractional pixel (founder's 125% display).
+                          child: ColoredBox(
+                          color: Ob.paper,
                           child: ConstrainedBox(
                             constraints: BoxConstraints(
                               minWidth: shellWidth,
@@ -155,10 +160,12 @@ class _PublicShellState extends State<PublicShell> {
                                     widget.currentPath != '/contact' &&
                                     !widget.currentPath.startsWith('/legal/'))
                                   const _CommercialClosingBand(),
-                                const _CommercializationSupportBand(),
+                                // DD-26 F1: the supporters are a line in
+                                // the footer now, not a band of their own.
                                 const _PublicFooter(),
                               ],
                             ),
+                          ),
                           ),
                         ),
                       );
@@ -348,135 +355,93 @@ class PublicHeader extends StatelessWidget {
   }
 }
 
+/// THE PAGE'S ENDING, F1 (DD-26 footer, founder 2026-10-01: "f1 is good,
+/// ending white card is too big vertically").
+///
+/// Paper all the way down. The close is one compact white card: a line and
+/// the two next steps, no taller than it needs to be. It paints its own paper
+/// so the page never shows a dark band between content and footer.
 class _CommercialClosingBand extends StatelessWidget {
   const _CommercialClosingBand();
 
   @override
   Widget build(BuildContext context) => Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(top: 28),
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 34),
-        decoration: const BoxDecoration(
-          // DD-26: flat ink, no gradient.
-          gradient: LinearGradient(
-            colors: [Ob.ink, Ob.ink],
-          ),
-        ),
+        color: Ob.paper,
+        padding: const EdgeInsets.fromLTRB(28, 8, 28, 40),
         child: Center(
           child: ConstrainedBox(
             constraints:
                 const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
-            child: LayoutBuilder(builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 760;
-              final copy = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('READY WHEN YOU ARE',
-                      style: TextStyle(
-                          color: Ob.onInkMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.4)),
-                  const SizedBox(height: 10),
-                  Text('Set up free. See who needs you before you pay.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 7),
-                  const Text(
-                      'Orchestrate starts finding businesses as soon as your setup is done.',
-                      style: TextStyle(color: Ob.onInkMuted, height: 1.5)),
-                ],
-              );
-              final action = FilledButton(
-                onPressed: () => context.go('/auth/register'),
-                style: FilledButton.styleFrom(
-                    backgroundColor: Ob.paper,
-                    foregroundColor: Ob.ink),
-                child: const Text('Start with your business'),
-              );
-              return stacked
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [copy, const SizedBox(height: 18), action])
-                  : Row(children: [
-                      Expanded(child: copy),
-                      const SizedBox(width: 24),
-                      action
-                    ]);
-            }),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+              decoration: BoxDecoration(
+                color: Ob.card,
+                borderRadius: BorderRadius.circular(Ob.radiusPanel),
+                boxShadow: Ob.lift,
+              ),
+              child: LayoutBuilder(builder: (context, constraints) {
+                final stacked = constraints.maxWidth < 820;
+                final copy = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Set up free. See who needs you before you pay.',
+                        style: Ob.name(stacked ? 21 : 24)),
+                    const SizedBox(height: 4),
+                    Text(
+                        'Orchestrate starts finding businesses as soon as your '
+                        'setup is done.',
+                        style: Ob.body(14.5)),
+                  ],
+                );
+                final actions = Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton(
+                      onPressed: () => context.go('/auth/register'),
+                      child: const Text('Start with your business'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => context.go('/contact'),
+                      child: const Text('Ask us anything'),
+                    ),
+                  ],
+                );
+                return stacked
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [copy, const SizedBox(height: 14), actions])
+                    : Row(children: [
+                        Expanded(child: copy),
+                        const SizedBox(width: 24),
+                        actions,
+                      ]);
+              }),
+            ),
           ),
         ),
       );
 }
 
+/// The programmes Orchestrate is built with: one quiet line inside the
+/// footer, not a band of its own.
 class _CommercializationSupportBand extends StatelessWidget {
   const _CommercializationSupportBand();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppTheme.publicSupportField,
-        border: Border(
-          top: BorderSide(color: Color(0xFF2A3644)),
-          bottom: BorderSide(color: Color(0xFF2A3644)),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
-      child: Center(
-        child: ConstrainedBox(
-          constraints:
-              const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 760;
-              final copy = const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('SUPPORTED BY',
-                      style: TextStyle(
-                          color: Ob.onInkMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.4)),
-                  SizedBox(height: 8),
-                  Text(
-                      'Orchestrate is built with the support of these programmes.',
-                      style: TextStyle(
-                          color: AppTheme.publicOnDark,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          height: 1.35)),
-                ],
-              );
-              return compact
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                          copy,
-                          const SizedBox(height: 16),
-                          // Stacked under left-aligned copy, so the marks read
-                          // from the same edge rather than floating right.
-                          const OfficialSupportMarks(
-                              alignment: Alignment.centerLeft),
-                        ])
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                          Expanded(child: copy),
-                          const SizedBox(width: 24),
-                          const Flexible(child: OfficialSupportMarks())
-                        ]);
-            },
-          ),
-        ),
-      ),
+    return Wrap(
+      spacing: 14,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text('Supported by', style: Ob.body(13, color: Ob.inkMuted)),
+        const OfficialSupportMarks(
+            alignment: Alignment.centerLeft, onPaper: true),
+      ],
     );
   }
 }
@@ -486,194 +451,126 @@ class _PublicFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final groups = [
+      _FooterGroup(
+        title: 'Orchestrate',
+        links: [
+          _FooterLink(
+              label: 'One customer, start to paid',
+              onTap: () => context.push('/how-it-works')),
+          _FooterLink(label: 'Pricing', onTap: () => context.push('/pricing')),
+          _FooterLink(
+              label: 'Check your domain',
+              onTap: () => context.push('/diagnostics?focus=dns-readiness')),
+        ],
+      ),
+      _FooterGroup(
+        title: 'Company',
+        links: [
+          _FooterLink(label: 'About', onTap: () => context.push('/about')),
+          _FooterLink(label: 'Trust', onTap: () => context.push('/trust')),
+          _FooterLink(label: 'Contact', onTap: () => context.push('/contact')),
+        ],
+      ),
+      _FooterGroup(
+        title: 'Policies',
+        links: [
+          _FooterLink(
+              label: 'Terms', onTap: () => context.push('/legal/terms')),
+          _FooterLink(
+              label: 'Privacy', onTap: () => context.push('/legal/privacy')),
+          _FooterLink(
+              label: 'Billing and refunds',
+              onTap: () => context.push('/legal/billing')),
+          _FooterLink(
+              label: 'Account deletion',
+              onTap: () => context.push('/account-deletion')),
+          _FooterLink(
+              label: 'All policies', onTap: () => context.push('/legal')),
+        ],
+      ),
+    ];
+    final brand = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        BrandAssets.operatorLockup(context,
+            symbolSize: 24, fontSize: 20, color: Ob.ink),
+        const SizedBox(height: 10),
+        Text('New customers, followed through to paid.',
+            style: Ob.body(14, color: Ob.inkMuted)),
+      ],
+    );
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppTheme.publicFooterField,
-        border: Border(top: BorderSide(color: Color(0xFF263B4A))),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
-        child: Center(
-          child: ConstrainedBox(
-            constraints:
-                const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Task #274 — balanced, intentional information architecture.
-                // The footer answers five questions (what Orchestrate is,
-                // how readiness works, the trust posture, legal obligations,
-                // account/billing), each as a comparable column. It is NOT a
-                // complete operational index: the ten detailed operational
-                // trust policies (mailbox access, reply monitoring, AI usage,
-                // credential handling, provider boundaries, suppression,
-                // abuse, retention, deliverability) are surfaced on the
-                // /trust-compliance hub — reachable from the header "Trust"
-                // — rather than as a towering footer column.
-                // DD-26: three columns, every link a page in the new design.
-                // Retired pages redirect, so no old link breaks.
-                final groups = [
-                  _FooterGroup(
-                    title: 'Orchestrate',
-                    links: [
-                      _FooterLink(
-                          label: 'One customer, start to paid',
-                          onTap: () => context.push('/how-it-works')),
-                      _FooterLink(
-                          label: 'Pricing',
-                          onTap: () => context.push('/pricing')),
-                      _FooterLink(
-                          label: 'Check your domain',
-                          onTap: () =>
-                              context.push('/diagnostics?focus=dns-readiness')),
+      color: Ob.paper,
+      padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints:
+              const BoxConstraints(maxWidth: PublicShell._maxFrameWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(height: 1, color: Ob.line),
+              const SizedBox(height: 32),
+              LayoutBuilder(builder: (context, constraints) {
+                if (constraints.maxWidth >= 920) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(width: 300, child: brand),
+                      const SizedBox(width: 40),
+                      for (var i = 0; i < groups.length; i++) ...[
+                        Expanded(child: groups[i]),
+                        if (i != groups.length - 1) const SizedBox(width: 24),
+                      ],
                     ],
-                  ),
-                  _FooterGroup(
-                    title: 'Company',
-                    links: [
-                      _FooterLink(
-                          label: 'About', onTap: () => context.push('/about')),
-                      _FooterLink(
-                          label: 'Trust', onTap: () => context.push('/trust')),
-                      _FooterLink(
-                          label: 'Contact',
-                          onTap: () => context.push('/contact')),
-                    ],
-                  ),
-                  _FooterGroup(
-                    title: 'Policies',
-                    links: [
-                      _FooterLink(
-                          label: 'Terms',
-                          onTap: () => context.push('/legal/terms')),
-                      _FooterLink(
-                          label: 'Privacy',
-                          onTap: () => context.push('/legal/privacy')),
-                      _FooterLink(
-                          label: 'Billing and refunds',
-                          onTap: () => context.push('/legal/billing')),
-                      _FooterLink(
-                          label: 'Account deletion',
-                          onTap: () => context.push('/account-deletion')),
-                      _FooterLink(
-                          label: 'All policies',
-                          onTap: () => context.push('/legal')),
-                    ],
-                  ),
-                ];
-                // Desktop: all five columns share ONE row as flexible
-                // (Expanded) columns, distributed evenly edge-to-edge. They
-                // get narrower as the viewport shrinks instead of a fixed
-                // 208 px column wrapping onto a lonely second row (the bug
-                // that left the 5th column stranded below). The threshold is
-                // the width below which five columns can no longer hold their
-                // longest label on one line; under it they fall back to a
-                // fixed-width wrap (2–3 per row on tablet) and finally a clean
-                // single-column stack on mobile.
-                final wide = constraints.maxWidth >= 920;
-                final groupArea = wide
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (var i = 0; i < groups.length; i++) ...[
-                            Expanded(child: groups[i]),
-                            if (i != groups.length - 1)
-                              const SizedBox(width: 24),
-                          ],
-                        ],
-                      )
-                    : LayoutBuilder(
-                        builder: (context, gridConstraints) {
-                          final columnWidth =
-                              ((gridConstraints.maxWidth - 20) / 2)
-                                  .clamp(0, double.infinity)
-                                  .toDouble();
-                          return Wrap(
-                            alignment: WrapAlignment.start,
-                            spacing: 20,
-                            runSpacing: 28,
-                            children: [
-                              for (final g in groups)
-                                SizedBox(width: columnWidth, child: g),
-                            ],
-                          );
-                        },
-                      );
-                // Reconciled 2026-06-01 — see
-                // docs/ecosystem/FOOTER_RECONCILIATION_2026-06-01.md
-                // in the personal repo. The earlier stacked
-                // institutional band beneath the column groups read
-                // as a second footer. The ecosystem is now a single
-                // bottom-row attribution: the product name over
-                // "A product of Aura Platform LLC." on the left,
-                // canonical five-link continuity on the right.
+                  );
+                }
+                final columnWidth = ((constraints.maxWidth - 20) / 2)
+                    .clamp(0, double.infinity)
+                    .toDouble();
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    LayoutBuilder(
-                      builder: (context, introConstraints) {
-                        final stacked = introConstraints.maxWidth < 620;
-                        final copy = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ORCHESTRATE',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(
-                                    color: AppTheme.publicOnDarkMuted,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 1.5,
-                                  ),
-                            ),
-                            const SizedBox(height: 9),
-                            Text(
-                              'New customers, followed through to paid.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ],
-                        );
-                        const description = Text(
-                          'Finds businesses that need you, writes to them from your own email, and carries each one to an agreement and a paid invoice. You say yes at each step.',
-                          style: TextStyle(
-                              color: AppTheme.publicOnDarkMuted, height: 1.5),
-                        );
-                        return stacked
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  copy,
-                                  const SizedBox(height: 12),
-                                  description
-                                ],
-                              )
-                            : Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(child: copy),
-                                  const SizedBox(width: 28),
-                                  const Expanded(child: description),
-                                ],
-                              );
-                      },
+                    brand,
+                    const SizedBox(height: 26),
+                    Wrap(
+                      spacing: 20,
+                      runSpacing: 24,
+                      children: [
+                        for (final g in groups)
+                          SizedBox(width: columnWidth, child: g),
+                      ],
                     ),
-                    const SizedBox(height: 30),
-                    groupArea,
-                    const SizedBox(height: 24),
-                    Container(height: 1, color: const Color(0xFF263B4A)),
-                    const SizedBox(height: 16),
-                    const _PublicFooterBottomRow(),
                   ],
                 );
-              },
-            ),
+              }),
+              const SizedBox(height: 28),
+              Container(height: 1, color: Ob.line),
+              const SizedBox(height: 16),
+              LayoutBuilder(builder: (context, constraints) {
+                if (constraints.maxWidth >= 920) {
+                  return const Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(child: _CommercializationSupportBand()),
+                      SizedBox(width: 24),
+                      Flexible(child: _PublicFooterBottomRow()),
+                    ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    _CommercializationSupportBand(),
+                    SizedBox(height: 12),
+                    _PublicFooterBottomRow(),
+                  ],
+                );
+              }),
+            ],
           ),
         ),
       ),
@@ -698,11 +595,7 @@ class _FooterGroup extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                height: 1.3,
-              ),
+          style: Ob.strong(14.5),
         ),
         const SizedBox(height: 8),
         ...links,
@@ -724,17 +617,15 @@ class _FooterLink extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: SizedBox(
-          height: 28,
-          child: Align(
-            alignment: Alignment.centerLeft,
+        // Grows with its words: a fixed height clipped longer labels on a
+        // phone ("One customer, start to paid").
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 28),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFFB9C8D6),
-                    fontSize: 13,
-                    height: 1.25,
-                  ),
+              style: Ob.body(14, color: Ob.inkSoft),
             ),
           ),
         ),
@@ -958,25 +849,10 @@ class _PublicFooterBottomRow extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Text(
-              'Orchestrate',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                letterSpacing: 0.2,
-              ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'A product of Aura Platform LLC.',
-              style: TextStyle(
-                color: Color(0xFFB9C8D6),
-                fontSize: 11,
-                height: 1.4,
-              ),
-            ),
+          // The brand leads the footer above; here only the company.
+          children: [
+            Text('A product of Aura Platform LLC.',
+                style: Ob.body(13, color: Ob.inkMuted)),
           ],
         ),
       ),
@@ -997,8 +873,7 @@ class _OrchEcosystemLinkRow extends StatelessWidget {
       children: [
         for (var i = 0; i < _kOrchEcosystemLinks.length; i++) ...[
           if (i > 0)
-            const Text('·',
-                style: TextStyle(color: Color(0xFF6F8796), fontSize: 11)),
+            Text('·', style: Ob.body(13, color: Ob.inkFaint)),
           _OrchEcosystemLink(
             link: _kOrchEcosystemLinks[i],
             currentSlug: currentSlug,
@@ -1018,9 +893,10 @@ class _OrchEcosystemLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCurrent = link.slug == currentSlug;
     final style = TextStyle(
-      color: isCurrent ? Colors.white : const Color(0xFFB9C8D6),
+      fontFamily: Ob.sans,
+      color: isCurrent ? Ob.ink : Ob.inkMuted,
       fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
-      fontSize: 11,
+      fontSize: 13,
       decoration: isCurrent ? TextDecoration.underline : TextDecoration.none,
       decorationColor: AppTheme.publicLine,
       decorationThickness: 1.2,

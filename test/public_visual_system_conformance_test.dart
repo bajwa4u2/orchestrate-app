@@ -88,7 +88,8 @@ void main() {
       shell.indexOf('class _PublicFooter extends'),
       shell.indexOf('class _FooterGroup extends'),
     );
-    expect(footer, contains('const _PublicFooterBottomRow()'));
+    // DD-26 F1: the bottom row sits in a const list beside the supporters.
+    expect(footer, contains('_PublicFooterBottomRow()'));
     expect(shell, contains("slug: 'aura'"));
     expect(shell, contains("slug: 'colophon'"));
     expect(shell, contains("slug: 'founder'"));
