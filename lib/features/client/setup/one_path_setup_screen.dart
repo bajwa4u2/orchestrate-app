@@ -1897,6 +1897,27 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             ),
           )
         else ...[
+          // Who manages this domain's records, and the page to make changes on.
+          if (!_domainReady && _map(_domain['dnsHost'])['name'] != null) ...[
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('Your domain is managed at ${_map(_domain['dnsHost'])['name']}.',
+                    style: Ob.strong(15)),
+                if ((_map(_domain['dnsHost'])['dnsPageUrl'] ?? '').toString().isNotEmpty)
+                  OutlinedButton.icon(
+                    onPressed: () => launchUrl(
+                        Uri.parse(_map(_domain['dnsHost'])['dnsPageUrl'].toString()),
+                        mode: LaunchMode.externalApplication),
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: Text('Open ${_map(_domain['dnsHost'])['name']}'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+          ],
           _RecordsTable(records: records, phone: phone),
           const SizedBox(height: 14),
           if (!_domainReady)
