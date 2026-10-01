@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
 import '../theme/app_theme.dart';
 import '../theme/workspace_theme.dart';
 
@@ -174,7 +175,7 @@ class WorkspaceHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 4, 0, 18),
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 22),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -193,19 +194,17 @@ class WorkspaceHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  title,
-                  style: text.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                  ),
+                // DD-26: a page is named in the serif, as on the boards.
+                Semantics(
+                  header: true,
+                  child: Text(title, style: Ob.display(34)),
                 ),
                 if (context_ != null && context_!.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       context_!,
-                      style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                      style: Ob.body(15, color: Ob.inkMuted),
                     ),
                   ),
               ],
@@ -257,9 +256,8 @@ class WorkspaceBand extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Ws.surface,
-          borderRadius: BorderRadius.circular(Ws.radiusLarge),
-          border: Border.all(color: Ws.hairline),
+          color: Ob.card,
+          borderRadius: BorderRadius.circular(Ob.radiusPanel),
         ),
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,13 +265,9 @@ class WorkspaceBand extends StatelessWidget {
           // The label belongs to the surface it heads, so it sits inside it on
           // a slightly recessed strip rather than floating above it.
           Container(
-            padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
-            decoration: BoxDecoration(
-              color: Ws.surfaceSoft,
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(Ws.radiusLarge)),
-              border: const Border(
-                  bottom: BorderSide(color: Ws.hairline)),
+            padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Ob.line)),
             ),
             child: Row(
             children: [
@@ -286,13 +280,7 @@ class WorkspaceBand extends StatelessWidget {
               // Wrapping rather than ellipsis: these titles are the only label
               // the band has, and half of one is not a heading.
               Flexible(
-                child: Text(
-                  title,
-                  style: text.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                ),
+                child: Text(title, style: Ob.eyebrow()),
               ),
               if (subtitle != null) ...[
                 const SizedBox(width: 8),
@@ -370,11 +358,11 @@ class WorkspaceRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppTheme.radius),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           decoration: BoxDecoration(
             border: _BandScope.of(context)
                 ? null
-                : const Border(bottom: BorderSide(color: Ws.hairline)),
+                : const Border(bottom: BorderSide(color: Ob.line)),
           ),
           // Meta sits beside the title where there is room and underneath it
           // where there is not. It used to be an unconstrained child of this
@@ -404,15 +392,11 @@ class WorkspaceRow extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title,
-                            style: text.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(title, style: Ob.strong(15)),
                         if (detail != null)
                           Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(detail!,
-                                style: text.bodySmall
-                                    ?.copyWith(color: AppTheme.publicMuted)),
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Text(detail!, style: Ob.body(14)),
                           ),
                         if (narrow && metaText != null)
                           Padding(
@@ -453,10 +437,10 @@ class _ToneMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (tone) {
-      RowTone.attention => AppTheme.amber,
-      RowTone.problem => AppTheme.rose,
-      RowTone.good => AppTheme.emerald,
-      RowTone.waiting => AppTheme.publicMuted.withValues(alpha: 0.5),
+      RowTone.attention => Ob.yes,
+      RowTone.problem => Ob.refused,
+      RowTone.good => Ob.ink,
+      RowTone.waiting => Ob.inkFaint,
       RowTone.neutral => Colors.transparent,
     };
     return Container(
@@ -497,14 +481,11 @@ class QuietState extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(message,
-              style: text.bodyMedium?.copyWith(color: AppTheme.publicMuted)),
+          Text(message, style: Ob.name(20)),
           if (hint != null)
             Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(hint!,
-                  style: text.bodySmall?.copyWith(
-                      color: AppTheme.publicMuted.withValues(alpha: 0.8))),
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(hint!, style: Ob.body(14.5)),
             ),
           if (action != null)
             Padding(padding: const EdgeInsets.only(top: 10), child: action!),

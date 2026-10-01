@@ -339,7 +339,7 @@ class ProvenanceChainStrip extends StatelessWidget {
         SelectableText(
           value,
           style: TextStyle(
-            fontFamily: 'monospace',
+            fontFamily: 'JetBrainsMono',
             fontSize: 12,
             color: _gText(context),
           ),
@@ -632,7 +632,7 @@ class _LifecycleStepRow extends StatelessWidget {
                       step.timestamp!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: _gMuted(context),
-                            fontFamily: 'monospace',
+                            fontFamily: 'JetBrainsMono',
                             fontSize: 11.5,
                           ),
                     ),
@@ -1071,7 +1071,7 @@ class SupportDiagnosticStrip extends StatelessWidget {
                     Text(
                       entry.code,
                       style: TextStyle(
-                        fontFamily: 'monospace',
+                        fontFamily: 'JetBrainsMono',
                         fontSize: 11,
                         color: _gMuted(context),
                       ),

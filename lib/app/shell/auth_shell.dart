@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/auth/auth_session.dart';
@@ -48,7 +49,8 @@ class AuthShell extends StatelessWidget {
       child: Theme(
         data: AppTheme.lightTheme,
         child: Scaffold(
-          backgroundColor: AppTheme.publicCanvas,
+          // DD-26: sign-in and sign-up sit on paper (board S05).
+          backgroundColor: Ob.paper,
           body: SafeArea(
             bottom: false,
             child: Column(
@@ -142,8 +144,8 @@ class _AuthShellHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppTheme.publicSecondaryField,
-        border: Border(bottom: BorderSide(color: Color(0xFF2A4A56))),
+        color: Ob.paper,
+        border: Border(bottom: BorderSide(color: Ob.line)),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -181,8 +183,8 @@ class _AuthShellHeader extends StatelessWidget {
                                 context,
                                 symbolSize: compact ? 22 : 28,
                                 fontSize: compact ? 17 : 22,
-                                darkSurface: true,
-                                color: AppTheme.publicOnDark,
+                                darkSurface: false,
+                                color: Ob.ink,
                               ),
                             ),
                           ),
@@ -244,7 +246,7 @@ class _AuthShellExitState extends State<_AuthShellExit> {
       builder: (context, _) {
         final signedIn = AuthSessionController.instance.isAuthenticated;
         final style = TextButton.styleFrom(
-          foregroundColor: AppTheme.publicOnDarkMuted,
+          foregroundColor: Ob.inkSoft,
           padding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         );

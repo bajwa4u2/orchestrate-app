@@ -343,7 +343,7 @@ class _MessageRowState extends State<_MessageRow> {
             child: SelectableText(
               value,
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'JetBrainsMono',
                 fontSize: 12.5,
                 color: AppTheme.publicText,
               ),

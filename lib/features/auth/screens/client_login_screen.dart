@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -687,100 +689,65 @@ class _AuthIntro extends StatelessWidget {
 
   final bool isJoin;
 
+  // DD-26 (board S05): what happens next, in three steps, and what it costs
+  // to start: nothing.
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
+    Widget step(String n, String title, String body) => Padding(
+          padding: const EdgeInsets.only(bottom: 18),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                  color: Ob.ink, shape: BoxShape.circle),
+              child: Text(n, style: Ob.figure(13, color: Ob.onInk)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Ob.strong(16)),
+                  const SizedBox(height: 3),
+                  Text(body, style: Ob.body(14.5)),
+                ],
+              ),
+            ),
+          ]),
+        );
+    if (!isJoin) {
+      return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          BrandAssets.operatorLockup(
-            context,
-            symbolSize: 28,
-            fontSize: 22,
-            color: AppTheme.publicText,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            isJoin ? 'CREATE ACCESS  →  SETUP  →  READINESS' : 'ACCOUNT ACCESS',
-            style: const TextStyle(
-              color: AppTheme.publicAccent,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.5,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            isJoin
-                ? 'Create your workspace and move straight into setup.'
-                : 'Return to your client workspace.',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            isJoin
-                // No trial is mentioned, because there is none. And no payment
-                // is mentioned either: creating a workspace costs nothing, and
-                // leading with a checkout describes a product this one is not.
-                ? 'Create your workspace, confirm your email and define your '
-                    'business setup. Nothing to pay for until you decide to.'
-                : 'Sign in to continue where you left off, review your account, '
-                    'and get back to work.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: AppTheme.publicMuted),
-          ),
+          const ObHeadline('Welcome back.', size: 48),
+          const SizedBox(height: 14),
+          Text('Whatever is waiting for your yes is on the first screen.',
+              style: Ob.body(17)),
           const SizedBox(height: 22),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppTheme.publicSurfaceSoft,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppTheme.publicLine),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // WHAT IS BEHIND THE DOOR, NOT HOW THE DOOR WORKS.
-                //
-                // These three described our own sign-in design to the person
-                // signing in — "email confirmation stays in the main flow",
-                // "plan and tier choices can carry directly into setup and
-                // subscription flow". The second was also stale: plan and tier
-                // are not a thing a business chooses any more.
-                const _IntroPoint(
-                  title: 'What needs you',
-                  body:
-                      'Anything waiting on a decision is on the first screen. '
-                      'A quiet day looks quiet.',
-                ),
-                const SizedBox(height: 12),
-                const _IntroPoint(
-                  title: 'Your relationships',
-                  body:
-                      'Every business you have durable commercial context with, '
-                      'and where each one stands.',
-                ),
-                const SizedBox(height: 12),
-                _IntroPoint(
-                  title: 'Access choices',
-                  body: _ClientLoginScreenState._googleSignInAvailable
-                      ? 'Sign in with your email or with Google — either one '
-                          'reaches the same workspace.'
-                      : 'Sign in with your work email.',
-                ),
-              ],
-            ),
+          _IntroPoint(
+            title: 'Access choices',
+            body: _ClientLoginScreenState._googleSignInAvailable
+                ? 'Sign in with your email or with Google. Either one reaches '
+                    'the same workspace.'
+                : 'Sign in with your work email.',
           ),
         ],
-      ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const ObHeadline('Three minutes to your first customers found.',
+            size: 48),
+        const SizedBox(height: 26),
+        step('1', 'Create your workspace', 'Free. No card needed to set up.'),
+        step('2', 'Say what you sell and who buys it',
+            'A few short questions. That is the market Orchestrate searches.'),
+        step('3', 'Connect your email',
+            'So what Orchestrate writes goes out as you, from your address.'),
+      ],
     );
   }
 }
@@ -795,9 +762,9 @@ class _IntroPoint extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 6),
-        Text(body, style: Theme.of(context).textTheme.bodyMedium),
+        Text(title, style: Ob.strong(16)),
+        const SizedBox(height: 4),
+        Text(body, style: Ob.body(14.5)),
       ],
     );
   }
@@ -810,15 +777,14 @@ class _AuthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canUseGoogle = _ClientLoginScreenState._googleSignInAvailable;
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(32),
-        side: const BorderSide(color: AppTheme.publicLine),
+    return Container(
+      decoration: BoxDecoration(
+        color: Ob.card,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: Ob.liftHigh,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(32),
         child: Form(
           key: state._formKey,
           child: Column(
@@ -828,17 +794,13 @@ class _AuthCard extends StatelessWidget {
                 state._isJoin
                     ? 'Create your workspace'
                     : 'Sign in to your workspace',
-                style: Theme.of(
-                  context,
-                )
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Ob.name(26),
               ),
               const SizedBox(height: 10),
               Text(
                 state._isJoin
-                    ? 'Use your work details so setup can continue cleanly after verification.'
+                    ? 'Setting up is free. You choose a plan only when you want '
+                        'Orchestrate to start sending; cancel any time.'
                     : 'Use your work email to continue.',
                 style: Theme.of(
                   context,
@@ -948,7 +910,7 @@ class _AuthCard extends StatelessWidget {
                     child: Text(
                       state._busy
                           ? 'Creating workspace...'
-                          : 'Create workspace',
+                          : 'Create workspace, free',
                     ),
                   ),
                 ),

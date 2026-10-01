@@ -60,6 +60,37 @@ flutter:
     - assets/branding/logo/
     - assets/branding/icons/
     - assets/branding/support/
+    - assets/fonts/OFL-Newsreader.txt
+    - assets/fonts/OFL-PublicSans.txt
+    - assets/fonts/OFL-JetBrainsMono.txt
+  # Direction B type (DD-26), bundled so every platform draws the same letters.
+  # All three are SIL Open Font License 1.1; the licences sit beside the files.
+  fonts:
+    - family: Newsreader
+      fonts:
+        - asset: assets/fonts/Newsreader-400.ttf
+          weight: 400
+        - asset: assets/fonts/Newsreader-600.ttf
+          weight: 600
+        - asset: assets/fonts/Newsreader-600Italic.ttf
+          weight: 600
+          style: italic
+    - family: PublicSans
+      fonts:
+        - asset: assets/fonts/PublicSans-400.ttf
+          weight: 400
+        - asset: assets/fonts/PublicSans-500.ttf
+          weight: 500
+        - asset: assets/fonts/PublicSans-600.ttf
+          weight: 600
+        - asset: assets/fonts/PublicSans-700.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-500.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-600.ttf
+          weight: 600
 
 # Microsoft Store / MSIX packaging.
 # identity_name, publisher and publisher_display_name below are the exact

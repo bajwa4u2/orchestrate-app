@@ -284,7 +284,7 @@ class _GovernedTemplatePickerState extends State<GovernedTemplatePicker> {
                   Text(
                     key,
                     style: const TextStyle(
-                      fontFamily: 'monospace',
+                      fontFamily: 'JetBrainsMono',
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.publicText,
@@ -492,7 +492,7 @@ class _GovernedTemplatePickerState extends State<GovernedTemplatePicker> {
           SelectableText(
             body,
             style: const TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'JetBrainsMono',
               fontSize: 12.5,
               height: 1.45,
               color: AppTheme.publicText,
@@ -526,7 +526,7 @@ class _GovernedTemplatePickerState extends State<GovernedTemplatePicker> {
           fontSize: 10.5,
           fontWeight: FontWeight.w600,
           color: AppTheme.publicMuted,
-          fontFamily: 'monospace',
+          fontFamily: 'JetBrainsMono',
         ),
       ),
     );

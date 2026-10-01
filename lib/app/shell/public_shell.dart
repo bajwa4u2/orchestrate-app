@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -7,6 +8,10 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/features/public/widgets/public_app_acquisition.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
 import 'package:orchestrate_app/app/routing/app_router.dart';
+
+/// Public pages rebuilt in direction B (DD-26). They sit on paper; every
+/// other public page keeps the estate's dark field until it is rebuilt.
+const Set<String> publicPaperPaths = {'/', '/pricing', '/how-it-works'};
 
 class PublicShell extends StatefulWidget {
   const PublicShell(
@@ -71,9 +76,13 @@ class _PublicShellState extends State<PublicShell> {
                     context.go('/');
                   },
                 ),
-                PublicAppAcquisition(
-                  config: orchestratePublicAppAcquisitionConfig,
-                  currentPath: widget.currentPath,
+                // On paper, like the header above it (DD-26).
+                ColoredBox(
+                  color: Ob.paper,
+                  child: PublicAppAcquisition(
+                    config: orchestratePublicAppAcquisitionConfig,
+                    currentPath: widget.currentPath,
+                  ),
                 ),
                 Expanded(
                   child: LayoutBuilder(
@@ -97,7 +106,15 @@ class _PublicShellState extends State<PublicShell> {
                             ),
                             child: Column(
                               children: [
-                                ConstrainedBox(
+                                ColoredBox(
+                                  // DD-26: the rebuilt pages sit on paper,
+                                  // full bleed; the estate's dark pages keep
+                                  // the canvas beneath them.
+                                  color: publicPaperPaths
+                                          .contains(widget.currentPath)
+                                      ? Ob.paper
+                                      : Colors.transparent,
+                                  child: ConstrainedBox(
                                   constraints: BoxConstraints(
                                     minHeight: (constraints.maxHeight -
                                             PublicShell._footerReserveHeight)
@@ -124,6 +141,7 @@ class _PublicShellState extends State<PublicShell> {
                                       ),
                                     ),
                                   ),
+                                ),
                                 ),
                                 if (widget.currentPath != '/intake' &&
                                     widget.currentPath != '/contact' &&
@@ -173,8 +191,8 @@ class PublicHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppTheme.publicSecondaryField,
-        border: Border(bottom: BorderSide(color: Color(0xFF2A4A56))),
+        color: Ob.paper,
+        border: Border(bottom: BorderSide(color: Ob.line)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
@@ -197,8 +215,8 @@ class PublicHeader extends StatelessWidget {
                         context,
                         symbolSize: 34,
                         fontSize: 26,
-                        darkSurface: true,
-                        color: AppTheme.publicOnDark,
+                        darkSurface: false,
+                        color: Ob.ink,
                         // Never shortened. Everywhere else a lockup may fade
                         // when space runs out; the company name on its own
                         // front door may not, so it scales instead.
@@ -208,35 +226,42 @@ class PublicHeader extends StatelessWidget {
                   ),
                 );
 
+                final wide = constraints.maxWidth >= 1080;
+                final link = TextButton.styleFrom(
+                  foregroundColor: Ob.inkSoft,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                );
                 final actions = Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    OutlinedButton(
-                      onPressed: () => context.go('/auth/login'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.publicOnDark,
-                        side: const BorderSide(color: Color(0xFF416170)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radius)),
+                    if (wide) ...[
+                      TextButton(
+                        style: link,
+                        onPressed: () => context.go('/how-it-works'),
+                        child: const Text('One customer, start to paid'),
                       ),
+                      TextButton(
+                        style: link,
+                        onPressed: () => context.go('/pricing'),
+                        child: const Text('Pricing'),
+                      ),
+                    ],
+                    TextButton(
+                      style: link,
+                      onPressed: () => context.go('/auth/login'),
                       child: const Text('Sign in'),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     FilledButton(
                       onPressed: () => context.go('/auth/register'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.publicAccent,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Ob.ink,
+                        foregroundColor: Ob.onInk,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radius)),
+                            horizontal: 20, vertical: 12),
                       ),
-                      child: const Text('Start setup'),
+                      child: const Text('Start with your business'),
                     ),
                   ],
                 );
@@ -264,7 +289,7 @@ class PublicHeader extends StatelessWidget {
                     children: [
                       ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxWidth: constraints.maxWidth * 0.40,
+                          maxWidth: constraints.maxWidth * 0.30,
                         ),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
@@ -275,10 +300,17 @@ class PublicHeader extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (!tablet)
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                  foregroundColor: Ob.inkSoft),
+                              onPressed: () => context.go('/auth/login'),
+                              child: const Text('Sign in'),
+                            ),
                           if (tablet) ...[
                             ConstrainedBox(
                               constraints: BoxConstraints(
-                                maxWidth: constraints.maxWidth * 0.45,
+                                maxWidth: constraints.maxWidth * 0.62,
                               ),
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
@@ -312,8 +344,9 @@ class _CommercialClosingBand extends StatelessWidget {
         margin: const EdgeInsets.only(top: 28),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 34),
         decoration: const BoxDecoration(
+          // DD-26: flat ink, no gradient.
           gradient: LinearGradient(
-            colors: [Color(0xFF0E1723), Color(0xFF173A3A)],
+            colors: [Ob.ink, Ob.ink],
           ),
         ),
         child: Center(
@@ -327,7 +360,7 @@ class _CommercialClosingBand extends StatelessWidget {
                 children: [
                   const Text('CONTINUE THE COMMERCIAL PATH',
                       style: TextStyle(
-                          color: Color(0xFF67D2C4),
+                          color: Ob.onInkMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.4)),
@@ -342,14 +375,14 @@ class _CommercialClosingBand extends StatelessWidget {
                   const SizedBox(height: 7),
                   const Text(
                       'Talk through readiness, qualification, delivery and the commercial states that matter to your business.',
-                      style: TextStyle(color: Color(0xFFB9C8D6), height: 1.5)),
+                      style: TextStyle(color: Ob.onInkMuted, height: 1.5)),
                 ],
               );
               final action = FilledButton(
                 onPressed: () => context.go('/intake'),
                 style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF67D2C4),
-                    foregroundColor: const Color(0xFF071311)),
+                    backgroundColor: Ob.paper,
+                    foregroundColor: Ob.ink),
                 child: const Text('Talk to Orchestrate'),
               );
               return stacked
@@ -377,8 +410,8 @@ class _CommercializationSupportBand extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppTheme.publicSupportField,
         border: Border(
-          top: BorderSide(color: Color(0xFF2C5960)),
-          bottom: BorderSide(color: Color(0xFF2C5960)),
+          top: BorderSide(color: Color(0xFF2A3644)),
+          bottom: BorderSide(color: Color(0xFF2A3644)),
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
@@ -394,7 +427,7 @@ class _CommercializationSupportBand extends StatelessWidget {
                 children: [
                   Text('MADE WITH SUPPORT',
                       style: TextStyle(
-                          color: AppTheme.publicAccent,
+                          color: Ob.onInkMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.4)),
@@ -724,11 +757,11 @@ class _PublicMenuButton extends StatelessWidget {
     return PopupMenuButton<String>(
       tooltip: 'Open navigation',
       position: PopupMenuPosition.under,
-      color: AppTheme.publicSecondaryField,
+      color: Ob.card,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        side: const BorderSide(color: Color(0xFF416170)),
+        borderRadius: BorderRadius.circular(Ob.radiusControl),
+        side: const BorderSide(color: Ob.line),
       ),
       onSelected: (value) => context.go(value),
       itemBuilder: (context) => [
@@ -768,19 +801,19 @@ class _PublicMenuButton extends StatelessWidget {
         // Signing in is where a returning operator is going, and it is now the
         // brightest thing here. Start setup is the commitment, and carries the
         // accent that marks it as the primary act.
-        _accountItem('Sign in', '/auth/login', AppTheme.publicOnDark),
-        _accountItem('Start setup', '/auth/register', AppTheme.coTeal),
+        _accountItem('Sign in', '/auth/login', Ob.ink),
+        _accountItem('Start with your business', '/auth/register', Ob.ink),
       ],
       child: Container(
         width: 42,
         height: 42,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppTheme.publicSecondaryField,
-          borderRadius: BorderRadius.circular(AppTheme.radius),
-          border: Border.all(color: const Color(0xFF416170)),
+          color: Ob.card,
+          borderRadius: BorderRadius.circular(Ob.radiusControl),
+          border: Border.all(color: Ob.lineStrong),
         ),
-        child: const Icon(Icons.menu, size: 20, color: AppTheme.publicOnDark),
+        child: const Icon(Icons.menu, size: 20, color: Ob.ink),
       ),
     );
   }
@@ -802,7 +835,7 @@ class _PublicMenuButton extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: active ? AppTheme.publicOnDark : AppTheme.publicOnDarkMuted,
+          color: active ? Ob.ink : Ob.inkMuted,
           fontWeight: active ? FontWeight.w700 : FontWeight.w500,
         ),
       ),

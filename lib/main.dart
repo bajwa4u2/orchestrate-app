@@ -1,6 +1,7 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show LicenseEntryWithLineBreaks, LicenseRegistry, kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show BrowserContextMenu;
+import 'package:flutter/services.dart' show BrowserContextMenu, rootBundle;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 
@@ -26,6 +27,13 @@ Future<void> main() async {
   if (kIsWeb) {
     await BrowserContextMenu.disableContextMenu();
   }
+  // The three bundled families are SIL OFL 1.1; the licence travels with them.
+  LicenseRegistry.addLicense(() async* {
+    for (final family in const ['Newsreader', 'PublicSans', 'JetBrainsMono']) {
+      final text = await rootBundle.loadString('assets/fonts/OFL-$family.txt');
+      yield LicenseEntryWithLineBreaks([family], text);
+    }
+  });
   await AuthSessionController.instance.init();
   runApp(const OrchestrateApp());
 }

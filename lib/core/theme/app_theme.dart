@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'ob.dart';
+
 /// NAVIGATING A WORKSPACE IS NOT TURNING A PAGE.
 ///
 /// Flutter's default page transition cross-fades two full-screen surfaces. In
@@ -59,28 +61,28 @@ class AppTheme {
   static const slate = Color(0xFF6B7280);
   static const border = Color(0xFFE5E7EB);
 
-  static const publicBackground = Color(0xFFF7F8FA);
-  static const publicSurface = Color(0xFFFFFFFF);
-  static const publicSurfaceSoft = Color(0xFFF1F4F7);
-  static const publicLine = Color(0xFFDDE3EA);
-  static const publicText = Color(0xFF10151F);
-  static const publicMuted = Color(0xFF5F6B7A);
-  static const publicAccent = Color(0xFF176B5D);
-  static const publicAccentSoft = Color(0xFFE6F4F1);
-  static const publicAmberSoft = Color(0xFFFFF4D8);
-  static const publicRoseSoft = Color(0xFFFFECEC);
+  static const publicBackground = Ob.paper;
+  static const publicSurface = Ob.card;
+  static const publicSurfaceSoft = Ob.cardSoft;
+  static const publicLine = Ob.line;
+  static const publicText = Ob.ink;
+  static const publicMuted = Ob.inkMuted;
+  static const publicAccent = Ob.ink;
+  static const publicAccentSoft = Ob.well;
+  static const publicAmberSoft = Ob.yesSoft;
+  static const publicRoseSoft = Ob.refusedSoft;
 
   // Orchestrate public-estate canvas tokens. Light chapters remain available
   // as intentional content fields, but the page substrate is always owned by
   // the Orchestrate environment.
-  static const publicCanvas = Color(0xFF091521);
-  static const publicDeepField = Color(0xFF0E1723);
-  static const publicSecondaryField = Color(0xFF132A38);
-  static const publicLightField = Color(0xFFF2F5F3);
-  static const publicSupportField = Color(0xFF15343A);
-  static const publicFooterField = Color(0xFF071019);
-  static const publicOnDark = Color(0xFFF4FAF8);
-  static const publicOnDarkMuted = Color(0xFFB9C8D6);
+  static const publicCanvas = Ob.ink;
+  static const publicDeepField = Color(0xFF1E2833);
+  static const publicSecondaryField = Color(0xFF26313E);
+  static const publicLightField = Ob.paper;
+  static const publicSupportField = Color(0xFF222D3A);
+  static const publicFooterField = Color(0xFF111820);
+  static const publicOnDark = Ob.onInk;
+  static const publicOnDarkMuted = Ob.onInkMuted;
 
   // ─── Canonical substrate tokens ──────────────────────────────────
   // Mirror `company/visuals/system/tokens/design-tokens.md`. These are
@@ -203,118 +205,10 @@ class AppTheme {
     );
   }
 
-  static ThemeData get lightTheme {
-    final scheme = const ColorScheme.light(
-      primary: publicAccent,
-      surface: publicSurface,
-      onSurface: publicText,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      pageTransitionsTheme: _workspaceTransitions,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: publicBackground,
-      fontFamily: 'Inter',
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(
-          fontSize: 54,
-          fontWeight: FontWeight.w700,
-          color: publicText,
-          height: 1.02,
-          letterSpacing: 0,
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-          color: publicText,
-          height: 1.12,
-          letterSpacing: 0,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: publicText,
-          height: 1.2,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: publicText,
-          height: 1.24,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          color: publicText,
-          height: 1.55,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: publicMuted,
-          height: 1.55,
-        ),
-      ),
-      dividerColor: publicLine,
-      splashFactory: NoSplash.splashFactory,
-      hoverColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      textSelectionTheme: TextSelectionThemeData(
-        selectionColor: publicAccent.withValues(alpha: 0.22),
-        cursorColor: publicAccent,
-        selectionHandleColor: publicAccent,
-      ),
-      cardTheme: CardThemeData(
-        color: publicSurface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radius),
-          side: const BorderSide(color: publicLine),
-        ),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radius),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radius),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radius),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: publicSurface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radius),
-          borderSide: const BorderSide(color: publicLine),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radius),
-          borderSide: const BorderSide(color: publicLine),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radius),
-          borderSide: const BorderSide(color: publicAccent, width: 1.2),
-        ),
-      ),
-    );
-  }
+  /// Public and client share direction B (DD-26); only the page transition
+  /// policy is added here.
+  static ThemeData get lightTheme =>
+      Ob.theme().copyWith(pageTransitionsTheme: _workspaceTransitions);
 }
 
 /// Shared responsive thresholds for shells and screens.

@@ -518,7 +518,7 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
             child: SelectableText(
               value,
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'JetBrainsMono',
                 fontSize: 11.5,
                 color: AppTheme.publicText,
               ),

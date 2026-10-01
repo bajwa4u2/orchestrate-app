@@ -268,7 +268,7 @@ class _SignatureIdentityCardState extends State<SignatureIdentityCard> {
                 child: Text(
                   _preview,
                   style: const TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'JetBrainsMono',
                     fontSize: 13,
                     height: 1.45,
                     color: AppTheme.publicText,

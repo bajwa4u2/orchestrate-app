@@ -31,9 +31,12 @@ const String canonicalWorkspaceHome = '/client/today';
 /// the business's relationship with Orchestrate rather than their own work.
 enum WorkspaceArea {
   today('Today', '/client/today'),
+  // DD-26 names: Customers is the relationship place; Money the business's
+  // own commerce; Setup the business itself.
   market('Market', '/client/market'),
-  relationships('Relationships', '/client/relationships'),
-  business('Business', '/client/business'),
+  relationships('Customers', '/client/relationships'),
+  money('Money', '/client/money'),
+  business('Setup', '/client/business'),
   account('Account', '/account/people');
 
   const WorkspaceArea(this.label, this.root);
@@ -135,6 +138,7 @@ const Set<String> _landings = {
   '/client/today',
   '/client/market',
   '/client/relationships',
+  '/client/money',
   '/client/business',
   '/account/people',
 };

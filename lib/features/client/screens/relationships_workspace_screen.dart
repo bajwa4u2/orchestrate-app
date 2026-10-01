@@ -76,8 +76,8 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const WorkspaceHeader(
-          title: 'Relationships',
-          context_: 'The businesses you have durable commercial context with.',
+          title: 'Customers',
+          context_: 'Everyone you work with, and where each one stands.',
         ),
         _ViewTabs(
           selected: _relationships.view,
@@ -111,7 +111,7 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
     }
     if (list.relationships.isEmpty && list.unattachedMeetings.isEmpty) {
       return const QuietState(
-        message: 'No relationships yet.',
+        message: 'No customers yet.',
         hint: 'One begins when something durable passes between your business '
             'and a counterparty.',
       );
@@ -157,7 +157,7 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
             // Named only when something above it needed the eye. With nothing
             // wanting attention this is simply the list, and a heading over it
             // would be furniture.
-            title: wanting.isEmpty ? 'RELATIONSHIPS' : 'EVERYTHING ELSE',
+            title: wanting.isEmpty ? 'CUSTOMERS' : 'EVERYONE ELSE',
             children: [for (final r in rest) _Row(summary: r, onOpen: _open)],
           ),
         // History, after the relationships rather than in front of them.

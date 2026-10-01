@@ -1717,8 +1717,7 @@ String _humanLabel(String key) {
 /// Michigan was offered "District of Columbia" -- a federal district nowhere
 /// near its market. Once regions are chosen in a country, only those regions
 /// are candidates. A country with no regions chosen still offers its
-/// city-type subdivisions.
-@visibleForTesting
+/// city-type subdivisions. Also offers towns in the one-path setup (DD-26).
 List<String> metroSuggestionsFor(
   Iterable<String> countryCodes,
   Set<String> regionCodes,

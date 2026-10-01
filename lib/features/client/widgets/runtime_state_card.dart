@@ -251,7 +251,7 @@ class _RuntimeStateCardState extends State<RuntimeStateCard> {
             child: SelectableText(
               value ?? '?',
               style: const TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'JetBrainsMono',
                 fontSize: 11,
                 color: AppTheme.publicText,
               ),

@@ -341,7 +341,7 @@ class _SequenceStepAuthorState extends State<SequenceStepAuthor> {
           Text(
             'Bound template: $_selectedTemplateKey',
             style: const TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: 'JetBrainsMono',
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: AppTheme.publicAccent,

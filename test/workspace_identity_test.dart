@@ -32,10 +32,11 @@ void main() {
     });
 
     test('the rail carries the mark, and keeps it when collapsed', () {
-      expect(shell.contains('WorkspaceMark(onDark: true)'), isTrue);
+      // DD-26: the rail is paper now, so the mark is drawn in its light form.
+      expect(shell.contains('WorkspaceMark()'), isTrue);
       // Twice: once beside the name, once alone when collapsed.
       expect(
-        'WorkspaceMark(onDark: true)'.allMatches(shell).length,
+        'WorkspaceMark()'.allMatches(shell).length,
         greaterThanOrEqualTo(2),
         reason: 'a collapsed rail must still say whose workspace it is',
       );

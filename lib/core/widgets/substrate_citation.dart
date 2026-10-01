@@ -55,7 +55,7 @@ class SubstrateCitation extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w400,
               color: foreground,
-              fontFamily: 'Inter',
+              fontFamily: 'PublicSans',
             ),
           ),
           for (var i = 0; i < paths.length; i++) ...[
@@ -65,7 +65,7 @@ class SubstrateCitation extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w400,
                 color: foreground,
-                fontFamily: 'monospace',
+                fontFamily: 'JetBrainsMono',
                 height: 1.4,
               ),
             ),
@@ -75,7 +75,7 @@ class SubstrateCitation extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   color: foreground,
-                  fontFamily: 'Inter',
+                  fontFamily: 'PublicSans',
                 ),
               ),
           ],
@@ -124,7 +124,7 @@ class SubstrateDoctrine extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontStyle: FontStyle.italic,
-            fontFamily: 'Inter',
+            fontFamily: 'PublicSans',
             fontWeight: FontWeight.w500,
             color: foreground.withValues(alpha: 0.88),
             height: 1.5,

@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/attention/client_attention.dart';
+import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
-import 'package:orchestrate_app/core/theme/workspace_theme.dart';
-import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/market/client_market.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:orchestrate_app/core/today/client_today.dart';
-import 'package:orchestrate_app/core/ui/governed_action.dart';
+import 'package:orchestrate_app/core/today/yes_count.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
+import 'package:orchestrate_app/data/repositories/client/client_attention_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_money_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_today_repository.dart';
 
-/// THE OPERATIONAL HOME.
+/// TODAY (DD-26, board S07): "N things need your yes."
 ///
-/// This replaces a dashboard that opened with a status hero and a grid of
-/// counters — Evaluated 13, Suppressed 0, opportunities, "Your market coverage
-/// is active", "No action is needed from you". None of those carried a
-/// decision, and the last one was a large card whose entire content was the
-/// news that it did not need to exist.
+/// The one question an owner opens Orchestrate to answer is what is waiting
+/// for them. So Today leads with exactly that, as cards they can act on where
+/// they stand, and everything that is moving without them sits below, quieter.
 ///
-/// One rule decides what appears here:
+/// Stage 1 builds the yes-cards from what the server already knows:
+///   * businesses found in the market that nobody has decided on yet,
+///   * readiness items that only the owner can resolve,
+///   * work waiting on the owner (mail to place, companies to reach).
+/// Stage 2 adds drafts (first notes, proposals, invoices) from a server queue.
 ///
-///   A card that carries neither a decision, an action, nor consequential
-///   operational context does not belong on Today.
-///
-/// Which is why a healthy morning is nearly empty. That is the product working,
-/// not the product missing.
+/// Nothing here is counted or phrased locally beyond joining those answers.
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
 
@@ -33,34 +34,52 @@ class TodayScreen extends StatefulWidget {
   State<TodayScreen> createState() => _TodayScreenState();
 }
 
+/// One thing waiting for the owner's yes, whatever its source.
+class _YesCard {
+  const _YesCard({
+    required this.name,
+    required this.ask,
+    this.detail,
+    this.reached,
+    this.eyebrow,
+    required this.primary,
+    required this.onPrimary,
+    this.secondary,
+    this.onSecondary,
+  });
+
+  final String name;
+  final String ask;
+  final String? detail;
+
+  /// Position on the path to paid; null when this is not about a customer.
+  final int? reached;
+  final String? eyebrow;
+  final String primary;
+  final VoidCallback onPrimary;
+  final String? secondary;
+  final VoidCallback? onSecondary;
+}
+
 class _TodayScreenState extends State<TodayScreen> {
   final ClientToday _today = ClientToday.instance;
   final ClientAttention _attention = ClientAttention.instance;
-
-  TodayState? get _state => _today.state;
-
-  /// Only while there is nothing to show. A refresh over an answer already on
-  /// screen happens underneath it — blanking the most-visited screen in the
-  /// product on every return was the whole defect.
-  bool get _loading => _today.isLoading && !_today.hasAnswer;
-
-  Refusal? get _refusal =>
-      _today.error == null ? null : Refusal.unexpected(_today.error!);
+  final ClientMarket _market = ClientMarket.instance;
+  final _money = ClientMoneyRepository();
+  MoneyView? _moneyView;
+  bool _moneyKnown = false;
+  final Set<String> _deciding = {};
+  String? _decisionFailure;
 
   @override
   void initState() {
     super.initState();
-    _attention.addListener(_onAttentionChanged);
-    _today.addListener(_onAttentionChanged);
-    // PAINT WHAT IS KNOWN, AND ASK AGAIN UNDERNEATH.
-    //
-    // This asked only when there was no answer, so returning to Today painted
-    // the old answer and never asked again. A business that had just
-    // authorised representation came back and was still told "Authorization
-    // required" — the server had already dropped the blocker; the screen
-    // simply never went back to it. Found filming Getting Started on a fresh
-    // workspace, 2026-09-18. The cached answer still paints immediately (no
-    // spinner flash); the refresh replaces it when it lands.
+    _today.addListener(_changed);
+    _attention.addListener(_changed);
+    _market.addListener(_changed);
+    // Paint what is known, and ask again underneath: returning to Today
+    // must never show yesterday's answer as today's. A load already in flight
+    // is not started twice.
     if (!_today.isLoading) {
       _load();
     }
@@ -68,329 +87,440 @@ class _TodayScreenState extends State<TodayScreen> {
 
   @override
   void dispose() {
-    _attention.removeListener(_onAttentionChanged);
-    _today.removeListener(_onAttentionChanged);
+    _today.removeListener(_changed);
+    _attention.removeListener(_changed);
+    _market.removeListener(_changed);
     super.dispose();
   }
 
-  void _onAttentionChanged() {
+  void _changed() {
     if (mounted) setState(() {});
   }
 
   Future<void> _load() async {
-    await _today.refresh();
-    // Attention is asked for here rather than inside the band, so Today does
-    // not fetch it again on every rebuild.
-    await _attention.refresh();
+    await Future.wait<void>([
+      _today.refresh().then((_) {}).catchError((_) {}),
+      _attention.refresh().then((_) {}).catchError((_) {}),
+      _market.refresh().then((_) {}).catchError((_) {}),
+      _money.fetch().then((m) {
+        _moneyView = m;
+        _moneyKnown = true;
+      }).catchError((_) {
+        _moneyKnown = false;
+      }),
+    ]);
     if (mounted) setState(() {});
   }
 
+  Future<void> _decide(Candidate c, PursuitDisposition d) async {
+    setState(() {
+      _deciding.add(c.key);
+      _decisionFailure = null;
+    });
+    try {
+      final result = await _market.setPursuit(key: c.key, disposition: d);
+      if (result['ok'] != true && mounted) {
+        setState(() => _decisionFailure =
+            (result['says'] ?? result['message'] ?? 'That decision was not recorded.')
+                .toString());
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _decisionFailure =
+            'Your decision on ${c.name} could not be recorded just now. Try again in a moment.');
+      }
+    } finally {
+      if (mounted) setState(() => _deciding.remove(c.key));
+    }
+  }
+
+  List<_YesCard> _cards() {
+    final cards = <_YesCard>[];
+    final session = AuthSessionController.instance;
+    if (!session.hasSetupCompleted) {
+      cards.add(_YesCard(
+        name: 'Your business',
+        eyebrow: 'GETTING READY',
+        ask: 'Finish getting ready',
+        detail: 'Six short steps. Everything you type is kept, and nothing is '
+            'sent while you set up.',
+        primary: 'Continue',
+        onPrimary: () => context.go('/client/setup'),
+      ));
+    }
+    for (final item in _today.state?.needsYou ?? const <TodayItem>[]) {
+      cards.add(_YesCard(
+        name: 'Your business',
+        eyebrow: 'ONLY YOU CAN DO THIS',
+        ask: item.title,
+        detail: item.detail,
+        primary: (item.cta ?? '').isEmpty ? 'Open' : item.cta!,
+        onPrimary: () => context.go(item.route ?? '/client/setup'),
+      ));
+    }
+    for (final c in _market.view?.needsReview ?? const <Candidate>[]) {
+      final busy = _deciding.contains(c.key);
+      cards.add(_YesCard(
+        name: c.name,
+        reached: 1,
+        ask: 'Worth writing to?',
+        detail: c.whyItMatters ?? c.certaintyMeans,
+        primary: busy ? 'Saving…' : 'Yes, pursue',
+        onPrimary: busy ? () {} : () => _decide(c, PursuitDisposition.pursuing),
+        secondary: 'Not now',
+        onSecondary: busy ? null : () => _decide(c, PursuitDisposition.holding),
+      ));
+    }
+    final owed = _attention.needsYou;
+    final contactWork = owed.where((i) => i.isAboutContact).toList();
+    final inbound = owed.where((i) => !i.isAboutContact).toList();
+    if (contactWork.isNotEmpty) {
+      cards.add(_YesCard(
+        name: contactWork.length == 1
+            ? (contactWork.first.counterparty ?? 'A company you chose')
+            : '${contactWork.length} companies you chose',
+        reached: 1,
+        ask: contactWork.length == 1
+            ? contactWork.first.title
+            : 'Cannot be reached yet',
+        detail: contactWork.length == 1
+            ? contactWork.first.why
+            : 'Orchestrate does not yet have a contact it can responsibly use for them.',
+        primary: 'Look',
+        onPrimary: () => context.go('/client/inbound'),
+      ));
+    }
+    if (inbound.isNotEmpty) {
+      cards.add(_YesCard(
+        name: 'Your inbox',
+        eyebrow: 'TO PLACE',
+        ask: inbound.length == 1
+            ? 'A message arrived that we could not place'
+            : '${inbound.length} messages arrived that we could not place',
+        detail: inbound.first.why,
+        primary: 'Look',
+        onPrimary: () => context.go('/client/inbound'),
+      ));
+    }
+    return cards;
+  }
+
+  static const _words = [
+    'Nothing', 'One thing', 'Two things', 'Three things', 'Four things',
+    'Five things', 'Six things', 'Seven things', 'Eight things',
+    'Nine things', 'Ten things'
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final session = AuthSessionController.instance;
+    final loading = _today.isLoading && !_today.hasAnswer;
+    final cards = _cards();
+    // Published for the rail's amber count beside Today.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_today.hasAnswer) todayYesCount.value = cards.length;
+    });
+    final n = cards.length;
+    final lead = n < _words.length ? _words[n] : '$n things';
+    final now = DateTime.now();
+    final phone = Workspace.sizeOf(context, MediaQuery.sizeOf(context).width).isPhone;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        WorkspaceHeader(
-          title: 'Today',
-          // Orientation only. Not plan, not tier, not onboarding state.
-          context_: _contextLine(),
-          trailing: IconButton(
-            onPressed: _today.isLoading ? null : _load,
-            icon: const Icon(Icons.refresh, size: 18),
-            tooltip: 'Refresh',
-            visualDensity: VisualDensity.compact,
+    return RefreshIndicator(
+      color: Ob.ink,
+      onRefresh: _load,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            runSpacing: 8,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_dateLine(now), style: Ob.body(14, color: Ob.inkMuted)),
+                  const SizedBox(height: 6),
+                  loading
+                      ? ObHeadline('Today', size: phone ? 34 : 44)
+                      : n == 0
+                          ? ObHeadline('Nothing needs your yes.', size: phone ? 34 : 44)
+                          : ObHeadline('$lead ${n == 1 ? 'needs' : 'need'} your ',
+                              accent: 'yes.', size: phone ? 34 : 44),
+                ],
+              ),
+              if ((_today.state?.inFlight ?? const []).isNotEmpty)
+                Text('Everything else is moving on its own.',
+                    style: Ob.body(14, color: Ob.inkMuted)),
+            ],
           ),
-        ),
-        if (_refusal != null) RefusalNotice(refusal: _refusal!, onRetry: _load),
-
-        // PART OF THE MORNING IS MISSING, AND SAYING SO IS THE POINT.
-        //
-        // Every source here is individually survivable, which is right — one
-        // failure must not blank the operational home. But survivable was
-        // silent: a source that failed returned an empty list, so it looked
-        // exactly like a source with nothing in it, and "nothing needs a
-        // decision from you" could mean either.
-        if (_state?.incompleteBecause != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(2, 0, 2, 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 1, right: 8),
-                  child: Icon(Icons.info_outline, size: 15, color: Ws.info),
-                ),
-                Expanded(
-                  child: Text(
-                    _state!.incompleteBecause!,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Ws.info),
-                  ),
-                ),
-                TextButton(onPressed: _load, child: const Text('Try again')),
-              ],
-            ),
-          ),
-        Expanded(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _body(session),
-        ),
-      ],
+          if (_today.state?.incompleteBecause != null) ...[
+            const SizedBox(height: 12),
+            Text(_today.state!.incompleteBecause!,
+                style: Ob.body(13.5, color: Ob.inkMuted)),
+          ],
+          if (_decisionFailure != null) ...[
+            const SizedBox(height: 12),
+            Text(_decisionFailure!, style: Ob.body(14, color: Ob.refused)),
+          ],
+          const SizedBox(height: 24),
+          if (loading)
+            const Padding(
+              padding: EdgeInsets.all(40),
+              child: Center(
+                  child: CircularProgressIndicator(color: Ob.ink, strokeWidth: 2)),
+            )
+          else if (n == 0)
+            _quiet(_today.state)
+          else
+            LayoutBuilder(builder: (context, c) {
+              final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
+              final shown = cards.take(cols == 1 ? 6 : cols * 2).toList();
+              final w = (c.maxWidth - 18 * (cols - 1)) / cols;
+              return Wrap(
+                spacing: 18,
+                runSpacing: 18,
+                children: [
+                  for (var i = 0; i < shown.length; i++)
+                    SizedBox(width: w, child: _Card(card: shown[i], lead: i == 0)),
+                ],
+              );
+            }),
+          if (n > 6) ...[
+            const SizedBox(height: 12),
+            Text('${n - 6} more waiting. Decide on these first and the rest '
+                'move up.',
+                style: Ob.body(14, color: Ob.inkMuted)),
+          ],
+          const SizedBox(height: 22),
+          LayoutBuilder(builder: (context, c) {
+            final moving = _MovingPanel(state: _today.state);
+            final month = _MonthPanel(view: _moneyView, known: _moneyKnown);
+            if (c.maxWidth < 760) {
+              return Column(children: [moving, const SizedBox(height: 18), month]);
+            }
+            return IntrinsicHeight(
+              child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Expanded(flex: 2, child: moving),
+                const SizedBox(width: 18),
+                Expanded(child: month),
+              ]),
+            );
+          }),
+          const SizedBox(height: 28),
+        ],
+      ),
     );
   }
 
-  String? _contextLine() {
-    final s = _state;
-    if (s == null) return null;
-    final needs = s.needsYou.length;
-    if (needs > 0) {
-      return needs == 1 ? '1 thing needs you' : '$needs things need you';
-    }
-    return null;
-  }
-
-  Widget _body(AuthSessionController session) {
-    final s = _state;
-    if (s == null) return const SizedBox.shrink();
-
-    // Attention comes from the one owner every surface reads, so Today and
-    // the Inbound list cannot disagree about what is waiting.
-    final owed = _attention.needsYou;
-    final inbound = owed.where((i) => !i.isAboutContact).toList(growable: false);
-    final contactWork = owed.where((i) => i.isAboutContact).toList(growable: false);
-    final needsYou = s.needsYou;
-    final inFlight = s.inFlight;
-    final changed = s.changed;
-
-    // Onboarding appears ONLY while incomplete and actionable. Once done it is
-    // history, and history does not get permanent space.
-    final setupIncomplete = !session.hasSetupCompleted;
-
-    if (needsYou.isEmpty &&
-        inbound.isEmpty &&
-        contactWork.isEmpty &&
-        inFlight.isEmpty &&
-        changed.isEmpty &&
-        !setupIncomplete) {
-      // AN EMPTY TODAY MEANT TWO OPPOSITE THINGS.
-      //
-      // This screen said the same sentence to a business that had just
-      // finished every step of its setup and to a business that had done
-      // nothing at all. Completion was expressed as the disappearance of a
-      // row, so the moment someone finished looked identical to the moment
-      // before they started, and nothing in the product ever said "you are
-      // ready".
-      //
-      // The readiness authority already knows which of the two this is. Ask
-      // it. When it did not answer, say nothing about readiness rather than
-      // guess — an onboarding signal that is sometimes wrong is worse than
-      // one that is sometimes absent.
-      if (s.executionReady == true) {
-        return const QuietState(
-          message: 'Your setup is complete.',
-          hint: 'Your market and your sending are configured, so Orchestrate '
-              'can act. What it finds, and anything that needs a decision '
-              'from you, will appear here.',
-        );
-      }
+  /// Said on a true answer only: null and false both fall through to the
+  /// plain quiet state, because an unknown is not "ready".
+  Widget _quiet(TodayState? s) {
+    if (s != null && s.executionReady == true) {
       return const QuietState(
-        message: 'Nothing needs you right now.',
-        hint: 'Work in flight and anything that changes will appear here.',
+        message: 'Your setup is complete.',
+        hint: 'New businesses appear in Market as Orchestrate finds them; '
+            'anything that needs your decision will wait here.',
       );
     }
+    return const QuietState(
+      message: 'Nothing is waiting for you.',
+      hint: 'Anything that needs your decision will appear here.',
+    );
+  }
 
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        WorkspaceBand(
-          title: 'NEEDS YOU',
-          children: [
-            if (setupIncomplete)
-              WorkspaceRow(
-                title: 'Finish setting up your business',
-                detail:
-                    'Discovery and outreach stay off until your market and '
-                    'sending are configured.',
-                tone: RowTone.attention,
-                action: TextButton(
-                  onPressed: () => context.go('/client/setup'),
-                  child: const Text('Continue'),
-                ),
-                onTap: () => context.go('/client/setup'),
-              ),
-            // A ROW THAT NAMES A PROBLEM SHOULD GO TO WHERE IT IS FIXED.
-            //
-            // Readiness blockers carry the route that resolves them and the
-            // words for the button. These rows rendered neither, so Today
-            // told somebody their mailbox was missing and then left them to
-            // work out which surface that meant and go and find it — on the
-            // screen whose whole promise is that the work comes to you.
-            //
-            // The onboarding row above has had a Continue button and a tap
-            // target since it was written. The blockers simply never got the
-            // same treatment.
-            for (final item in needsYou)
-              WorkspaceRow(
-                title: item.title,
-                detail: item.detail,
-                meta: item.meta,
-                tone: item.severity == 'CRITICAL' || item.severity == 'ERROR'
-                    ? RowTone.problem
-                    : RowTone.attention,
-                action: item.route == null
-                    ? null
-                    : TextButton(
-                        onPressed: () => context.go(item.route!),
-                        child: Text(
-                          (item.cta == null || item.cta!.isEmpty)
-                              ? 'Open'
-                              : item.cta!,
-                        ),
-                      ),
-                onTap:
-                    item.route == null ? null : () => context.go(item.route!),
-              ),
-            // Mail that reached this business and could not be placed. One
-            // row, leading with what it is and why — never "you have 27".
-            // A counterparty the business decided to pursue and cannot reach.
-            // Said as the decision they already made, because that is what
-            // makes it worth their time rather than another system complaint.
-            if (contactWork.isNotEmpty)
-              WorkspaceRow(
-                title: contactWork.length == 1
-                    ? contactWork.first.title
-                    : '${contactWork.length} companies you chose to pursue '
-                        'cannot be reached yet',
-                detail: contactWork.length == 1
-                    ? contactWork.first.why
-                    : 'Orchestrate does not yet have a contact it can '
-                        'responsibly use for them.',
-                meta: contactWork.first.counterparty,
-                tone: RowTone.attention,
-                onTap: () => context.go('/client/inbound'),
-                action: TextButton(
-                  onPressed: () => context.go('/client/inbound'),
-                  child: const Text('Look'),
-                ),
-              ),
-            if (inbound.isNotEmpty)
-              WorkspaceRow(
-                title: inbound.length == 1
-                    ? 'A message arrived that we could not place'
-                    : '${inbound.length} messages arrived that we could not place',
-                detail: inbound.length == 1
-                    ? inbound.first.why
-                    : 'They reached your mailbox and matched no message '
-                        'Orchestrate sent, so we cannot say who they belong to.',
-                meta: inbound.first.counterparty,
-                tone: RowTone.attention,
-                onTap: () => context.go('/client/inbound'),
-                action: TextButton(
-                  onPressed: () => context.go('/client/inbound'),
-                  child: const Text('Look'),
-                ),
-              ),
-          ],
-        ),
-        WorkspaceBand(
-          title: 'IN FLIGHT',
-          children: [
-            for (final item in inFlight)
-              WorkspaceRow(
-                title: item.title,
-                detail: item.detail,
-                meta: item.meta,
-                tone: RowTone.waiting,
-              ),
-          ],
-        ),
-        // Nothing has moved lately, and the record is not empty.
-        //
-        // Two different truths that used to render identically: an absent
-        // CHANGED band read as "nothing ever happened here", while widening
-        // the window to avoid that put five-day-old refusals at the top of the
-        // morning under a heading that says news.
-        if (changed.isEmpty && s.changedButNotRecently)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(2, 0, 2, 18),
-            child: Text(
-              'Nothing has changed in the last few days. Earlier activity is '
-              'on the relationships it belongs to.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Ws.inkSubtle),
+  static String _dateLine(DateTime d) {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June', 'July',
+      'August', 'September', 'October', 'November', 'December'
+    ];
+    final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+    final m = d.minute.toString().padLeft(2, '0');
+    return '${days[d.weekday - 1]}, ${months[d.month - 1]} ${d.day}, ${d.year} · '
+        '$h:$m ${d.hour < 12 ? 'AM' : 'PM'}';
+  }
+}
+
+class _Card extends StatelessWidget {
+  const _Card({required this.card, required this.lead});
+  final _YesCard card;
+  final bool lead;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Ob.card,
+        borderRadius: BorderRadius.circular(Ob.radiusPanel),
+        boxShadow: lead ? Ob.liftHigh : Ob.lift,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Text(card.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Ob.name(21)),
             ),
-          ),
-        WorkspaceBand(
-          title: 'CHANGED',
-          children: [
-            for (final item in changed)
-              WorkspaceRow(
-                title: item.title,
-                detail: item.detail,
-                meta: item.meta,
-                tone: item.severity == 'WARNING'
-                    ? RowTone.problem
-                    : (item.intent == 'INTERESTED' ? RowTone.good : RowTone.neutral),
-                // TODAY IS A PLACE, AND SOMEBODY SHOULD GET BACK TO IT.
-                //
-                // Inspecting one relationship should not cost an operator
-                // their morning. The relationships surface already honours a
-                // return path — it was simply never given one from here, so
-                // going back from a relationship landed on the list rather
-                // than on the day the person was working through.
-                onTap: () => context.go(
-                    withReturnTo('/client/relationships', '/client/today')),
-              ),
+          ]),
+          const SizedBox(height: 14),
+          if (card.reached != null)
+            PathBar(reached: card.reached!, waitingOnYes: true)
+          else if (card.eyebrow != null)
+            Text(card.eyebrow!, style: Ob.eyebrow(color: Ob.yesDeep)),
+          const SizedBox(height: 14),
+          Text(card.ask, style: Ob.strong(15)),
+          if ((card.detail ?? '').isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(card.detail!,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: Ob.body(14)),
           ],
-        ),
-        if (needsYou.isEmpty && inbound.isEmpty && !setupIncomplete)
-          const Padding(
-            padding: EdgeInsets.only(top: 4),
-            child: QuietState(message: 'Nothing needs a decision from you.'),
-          ),
-        const SizedBox(height: 24),
-      ],
+          const SizedBox(height: 16),
+          Row(children: [
+            Expanded(
+              child: FilledButton(
+                onPressed: card.onPrimary,
+                child: Text(card.primary, overflow: TextOverflow.ellipsis),
+              ),
+            ),
+            if (card.secondary != null) ...[
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: card.onSecondary,
+                child: Text(card.secondary!),
+              ),
+            ],
+          ]),
+        ],
+      ),
     );
   }
 }
 
-/// A small, quiet marker used where a state genuinely helps orientation.
-/// Never a banner, never permanent, never about plan or onboarding.
-class StateChip extends StatelessWidget {
-  const StateChip({super.key, required this.label, this.tone = RowTone.neutral});
-
-  final String label;
-  final RowTone tone;
+class _MovingPanel extends StatelessWidget {
+  const _MovingPanel({required this.state});
+  final TodayState? state;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (tone) {
-      RowTone.attention => AppTheme.amber,
-      RowTone.problem => AppTheme.rose,
-      RowTone.good => AppTheme.emerald,
-      _ => AppTheme.publicMuted,
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
+    final items = [
+      ...?state?.inFlight,
+      ...?state?.changed,
+    ].take(6).toList();
+    return ObCard(
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Moving on its own', style: Ob.strong(14, color: Ob.inkSoft)),
+          const SizedBox(height: 12),
+          if (items.isEmpty)
+            Text(
+                state?.changedButNotRecently == true
+                    ? 'Nothing has changed in the last few days. Earlier activity '
+                        'is on the customers it belongs to.'
+                    : 'Nothing is in motion yet. Work Orchestrate does for you '
+                        'will show here as it happens.',
+                style: Ob.body(14))
+          else
+            for (final item in items)
+              InkWell(
+                onTap: () => context.go(
+                    withReturnTo('/client/relationships', '/client/today')),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text.rich(TextSpan(children: [
+                          TextSpan(text: item.title, style: Ob.strong(14)),
+                          if ((item.detail ?? '').isNotEmpty)
+                            TextSpan(text: '  ${item.detail}', style: Ob.body(14)),
+                        ])),
+                      ),
+                      if ((item.meta ?? '').isNotEmpty) ...[
+                        const SizedBox(width: 12),
+                        Text(item.meta!, style: Ob.body(13, color: Ob.inkMuted)),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+        ],
       ),
     );
   }
+}
+
+class _MonthPanel extends StatelessWidget {
+  const _MonthPanel({required this.view, required this.known});
+  final MoneyView? view;
+  final bool known;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = view?.totals;
+    final cc = view?.currencyCode ?? 'USD';
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+      decoration: BoxDecoration(
+        color: Ob.ink,
+        borderRadius: BorderRadius.circular(Ob.radiusPanel),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('This month', style: Ob.body(14, color: Ob.onInkMuted)),
+          const SizedBox(height: 10),
+          if (t == null || t.isEmpty)
+            Text(
+                known || view != null
+                    ? 'No money has moved yet. When a customer agrees and pays, '
+                        'it shows here.'
+                    : 'Money appears here as customers agree and pay.',
+                style: Ob.body(14.5, color: Ob.onInk))
+          else ...[
+            Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(moneyLabel(t.paidThisMonthCents, currencyCode: cc),
+                      style: Ob.figure(36, color: Ob.moneyOnInk)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text('paid', style: Ob.body(14, color: Ob.onInkMuted)),
+            ]),
+            const SizedBox(height: 8),
+            if (t.invoicedDueCents > 0)
+              _line(moneyLabel(t.invoicedDueCents, currencyCode: cc), 'invoiced, due'),
+            if (t.proposedCount > 0)
+              _line('${t.proposedCount}',
+                  t.proposedCount == 1 ? 'proposal waiting' : 'proposals waiting'),
+          ],
+          const SizedBox(height: 14),
+          InkWell(
+            onTap: () => context.go('/client/money'),
+            child: Text('Open Money',
+                style: Ob.body(14, color: Ob.moneyOnInk, weight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _line(String figure, String label) => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+          Text(figure, style: Ob.figure(22, color: Ob.onInk)),
+          const SizedBox(width: 8),
+          Flexible(child: Text(label, style: Ob.body(14, color: Ob.onInkMuted))),
+        ]),
+      );
 }

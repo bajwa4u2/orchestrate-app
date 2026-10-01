@@ -242,7 +242,7 @@ void main() {
     await render(tester, 'healthy list');
 
     expect(find.text('NEEDS A LOOK'), findsNothing);
-    expect(find.text('RELATIONSHIPS'), findsOneWidget);
+    expect(find.text('CUSTOMERS'), findsOneWidget);
     // Nothing gets a banner for being fine.
     expect(find.textContaining('Everything is'), findsNothing);
     expect(find.textContaining('All good'), findsNothing);

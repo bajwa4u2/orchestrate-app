@@ -11,6 +11,7 @@ import 'package:orchestrate_app/core/ui/authority_gate.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
 import 'package:orchestrate_app/features/client/widgets/engagement_panel.dart';
 
@@ -98,10 +99,28 @@ class _RelationshipDepthViewState extends State<RelationshipDepthView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         WorkspaceHeader(
-          title: depth?.counterparty ?? 'Relationship',
+          title: depth?.counterparty ?? 'Customer',
           context_: depth?.counterpartyKey ?? '',
           onBack: widget.onBack,
         ),
+        // DD-26 (board S08): where this customer stands on the path to paid.
+        // A relationship exists only once something passed both ways, so it
+        // starts at Replied; agreements, invoices and payments on record move
+        // it on. Nothing here is inferred beyond those counts.
+        if (depth != null) ...[
+          PathBar(
+            reached: depth.commercial.payments > 0
+                ? 6
+                : depth.commercial.invoices > 0
+                    ? 5
+                    : depth.commercial.agreements > 0
+                        ? 4
+                        : 3,
+            height: 8,
+            showLabels: true,
+          ),
+          const SizedBox(height: 22),
+        ],
         Expanded(child: _body(depth)),
       ],
     );

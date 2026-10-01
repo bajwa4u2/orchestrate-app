@@ -72,7 +72,11 @@ class _Command {
 /// Human actions and places, not endpoints.
 const List<_Command> _commands = [
   _Command('What needs me', '/client/today', Icons.today_outlined),
-  _Command('Relationships', '/client/relationships', Icons.hub_outlined),
+  _Command('Customers', '/client/relationships', Icons.people_outline),
+  _Command('Money', '/client/money', Icons.payments_outlined,
+      hint: 'Agreed, invoiced, paid'),
+  _Command('Getting ready', '/client/setup', Icons.flag_outlined,
+      hint: 'Where your setup stands'),
   // NO PIPELINE, NO WAITING VIEW.
   //
   // Both pointed at ?view= values nothing reads. The relationships screen has

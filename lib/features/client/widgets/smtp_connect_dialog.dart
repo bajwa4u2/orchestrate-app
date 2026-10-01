@@ -1053,7 +1053,7 @@ class _SmtpDiagnosticPanel extends StatelessWidget {
             '${providerHint.isNotEmpty && providerHint != 'custom' ? '  ·  Provider: $providerHint' : ''}',
             style: theme.textTheme.bodySmall?.copyWith(
                   color: Colors.brown.shade900,
-                  fontFamily: 'monospace',
+                  fontFamily: 'JetBrainsMono',
                 ),
           ),
           if (message.isNotEmpty) ...[
@@ -1070,7 +1070,7 @@ class _SmtpDiagnosticPanel extends StatelessWidget {
               'Code: $code',
               style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.brown.shade700,
-                    fontFamily: 'monospace',
+                    fontFamily: 'JetBrainsMono',
                   ),
             ),
           ],
@@ -1103,7 +1103,7 @@ class _SmtpDiagnosticPanel extends StatelessWidget {
               'correlationId: $correlationId',
               style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.brown.shade700,
-                    fontFamily: 'monospace',
+                    fontFamily: 'JetBrainsMono',
                   ),
             ),
           ],
@@ -1415,7 +1415,7 @@ class _AttemptRow extends StatelessWidget {
               '${duration}ms',
               style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.blueGrey.shade700,
-                    fontFamily: 'monospace',
+                    fontFamily: 'JetBrainsMono',
                   ),
             ),
         ],

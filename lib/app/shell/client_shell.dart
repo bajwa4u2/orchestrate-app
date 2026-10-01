@@ -7,6 +7,9 @@ import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/theme/workspace_theme.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
+import 'package:orchestrate_app/core/today/yes_count.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/command_palette.dart';
 import 'package:orchestrate_app/features/client/widgets/feedback_sheet.dart';
@@ -56,42 +59,33 @@ class _ClientShellState extends State<ClientShell> {
   static const double _railWidth = 232;
   static const double _railCollapsed = 68;
 
-  /// THREE. Support and Account are affordances, not destinations.
+  /// DD-26: the four places a business owner works in, and Setup.
+  ///
+  /// Customers is the relationship place under an owner's word for it; Money
+  /// holds agreements, invoices and payments; Setup holds everything about
+  /// the business itself (identity, email, trust, branding) and, until it is
+  /// finished, the one-path setup. Support and Account stay affordances.
   static const List<_Destination> _destinations = [
     _Destination(
       label: 'Today',
       path: '/client/today',
       // Not Icons.today: it renders blank in the release web build, a
-      // codepoint the tree-shaken icon font does not carry. Inbox is also the
-      // truer metaphor — Today is the queue of what needs you.
+      // codepoint the tree-shaken icon font does not carry.
       icon: Icons.inbox_outlined,
       selectedIcon: Icons.inbox,
-      // Legacy paths that were conceptually "the operational home".
+      showsYesCount: true,
       absorbs: {
         '/client/overview',
         '/client/workspace',
-        '/client/notifications'
+        '/client/notifications',
+        '/client/inbound',
       },
     ),
-    // Market sits before Relationships because that is the order the business
-    // moves in: understand who may be worth pursuing, then hold a relationship
-    // with them. Leads, signals, qualification, intersections and campaigns are
-    // NOT destinations — they are how Market knows what it knows, and each one
-    // promoted to the sidebar would be a database table wearing a nav item.
     _Destination(
-      label: 'Market',
-      path: '/client/market',
-      icon: Icons.travel_explore_outlined,
-      selectedIcon: Icons.travel_explore,
-      absorbs: {'/client/leads', '/client/campaigns'},
-    ),
-    _Destination(
-      label: 'Relationships',
+      label: 'Customers',
       path: '/client/relationships',
-      icon: Icons.hub_outlined,
-      selectedIcon: Icons.hub,
-      // Opportunities, replies, meetings and outreach were all views of, or
-      // events inside, a relationship. They stop being destinations.
+      icon: Icons.people_outline,
+      selectedIcon: Icons.people,
       absorbs: {
         '/client/opportunities',
         '/client/contacts',
@@ -102,20 +96,31 @@ class _ClientShellState extends State<ClientShell> {
       },
     ),
     _Destination(
-      label: 'Business',
-      path: '/client/business',
+      label: 'Market',
+      path: '/client/market',
+      icon: Icons.travel_explore_outlined,
+      selectedIcon: Icons.travel_explore,
+      absorbs: {'/client/leads', '/client/campaigns'},
+    ),
+    _Destination(
+      label: 'Money',
+      path: '/client/money',
+      icon: Icons.payments_outlined,
+      selectedIcon: Icons.payments,
+      absorbs: {'/client/records'},
+    ),
+    _Destination(
+      label: 'Setup',
+      path: '/client/setup',
       icon: Icons.tune_outlined,
       selectedIcon: Icons.tune,
       absorbs: {
+        '/client/business',
         '/client/representation',
         '/client/business-identity',
         '/client/infrastructure',
         '/client/mailbox',
         '/client/trust',
-        '/client/records',
-        // The hub opens these four on /app paths. They were absent here, so
-        // Credentials, Evidence, Artifacts and Branding all left the bar
-        // highlighting Today while the screen showed a Business surface.
         '/app/trust',
         '/app/evidence',
         '/app/artifacts',
@@ -337,7 +342,8 @@ class _ClientShellState extends State<ClientShell> {
                         ),
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(28, 20, 28, 20),
+                            // DD-26 boards: 32 above, 44 at the sides.
+                            padding: const EdgeInsets.fromLTRB(44, 32, 44, 20),
                             child: content,
                           ),
                         ),
@@ -359,12 +365,16 @@ class _Destination {
     required this.icon,
     required this.selectedIcon,
     this.absorbs = const {},
+    this.showsYesCount = false,
   });
 
   final String label;
   final String path;
   final IconData icon;
   final IconData selectedIcon;
+
+  /// Carries the amber count of things waiting for the owner's yes.
+  final bool showsYesCount;
 
   /// Legacy paths that now resolve inside this destination, so a deep link
   /// still highlights the right place while redirects propagate.
@@ -399,15 +409,10 @@ class _Rail extends StatelessWidget {
     return Container(
       width: width,
       decoration: const BoxDecoration(
-        // THE DEEP FIELD, WHICH IS THE JOIN TO THE PUBLIC PRODUCT.
-        //
-        // The public site puts its most deliberate moments on this field.
-        // Using it for the rail is what makes signing in read as descending
-        // into the same product rather than arriving at a different one, and
-        // it gives the work area a ground to be light against, which a white
-        // rail beside a white page could never do.
-        color: Ws.field,
-        border: Border(right: BorderSide(color: Ws.fieldDeep)),
+        // DD-26: the rail is paper, like the page. Where you are is an ink
+        // pill; the only colour in it is the amber count beside Today.
+        color: Ob.paper,
+        border: Border(right: BorderSide(color: Ob.line)),
       ),
       child: SafeArea(
         right: false,
@@ -447,7 +452,7 @@ class _Rail extends StatelessWidget {
                 child: Center(
                   child: InkWell(
                     onTap: () => context.go('/client/today'),
-                    child: const WorkspaceMark(onDark: true),
+                    child: const WorkspaceMark(),
                   ),
                 ),
               )
@@ -459,7 +464,7 @@ class _Rail extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const WorkspaceMark(onDark: true),
+                      const WorkspaceMark(),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
@@ -473,18 +478,19 @@ class _Rail extends StatelessWidget {
                                   .textTheme
                                   .titleMedium
                                   ?.copyWith(
-                                    color: Ws.onField,
+                                    color: Ob.ink,
+                                    fontWeight: FontWeight.w700,
                                     height: 1.2,
                                   ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Commercial workspace',
+                              'Your workspace',
                               style: Theme.of(context)
                                   .textTheme
                                   .labelSmall
                                   ?.copyWith(
-                                    color: Ws.onFieldSubtle,
+                                    color: Ob.inkMuted,
                                   ),
                             ),
                           ],
@@ -516,7 +522,7 @@ class _Rail extends StatelessWidget {
               collapsed: collapsed,
               onTap: () => context.go('/client/support'),
             ),
-            const Divider(height: 20, color: Ws.fieldRaised),
+            const Divider(height: 20, color: Ob.line),
             Padding(
               padding: EdgeInsets.fromLTRB(collapsed ? 10 : 12, 0, 12, 14),
               child: collapsed
@@ -525,8 +531,7 @@ class _Rail extends StatelessWidget {
                           session: session,
                           currentPath: currentPath,
                           signingOut: signingOut,
-                          onSignOut: onSignOut,
-                          onDark: true))
+                          onSignOut: onSignOut))
                   // THE WHOLE ROW OPENS THE MENU, NOT THE CIRCLE.
                   //
                   // The avatar was the only tap target: a 30px circle at the
@@ -545,7 +550,6 @@ class _Rail extends StatelessWidget {
                       // shell built, and the shell does not rebuild when a
                       // profile is saved — so the rail kept the old name.
                       showIdentity: true,
-                      onDark: true,
                     ),
             ),
           ],
@@ -568,48 +572,42 @@ class _RailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Selection is structural rather than a filled pill: a lit left spine and
-    // a lift in the ground. A pill on a deep field reads as a button somebody
-    // pressed, when what it actually says is where you are.
+    // DD-26: where you are is an ink pill on paper, as on the boards.
     final child = Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       padding: EdgeInsets.only(
-          left: collapsed ? 0 : 11,
+          left: collapsed ? 0 : 12,
           right: collapsed ? 0 : 10,
-          top: 9,
-          bottom: 9),
+          top: 11,
+          bottom: 11),
       decoration: BoxDecoration(
-        color: selected ? Ws.fieldRaised : Colors.transparent,
-        borderRadius: BorderRadius.circular(Ws.radius),
-        border: Border(
-          left: BorderSide(
-            color: selected ? Ws.accentBright : Colors.transparent,
-            width: 2.5,
-          ),
-        ),
+        color: selected ? Ob.ink : Colors.transparent,
+        borderRadius: BorderRadius.circular(Ob.radiusControl),
       ),
       child: Row(
         mainAxisAlignment:
             collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
         children: [
-          // Icons do not follow the text scaler on their own, so with the OS
-          // enlarging text they stay at their designed size while every label
-          // beside them grows — the rail stops reading as one control and the
-          // hit target stops matching the row it belongs to. Tracked, and
-          // capped, because an icon is a mark rather than a sentence and does
-          // not need to keep growing to stay legible.
           Icon(selected ? destination.selectedIcon : destination.icon,
               size: Workspace.icon(context, 18),
-              color: selected ? Ws.onField : Ws.onFieldSubtle),
+              color: selected ? Ob.onInk : Ob.inkMuted),
           if (!collapsed) ...[
             const SizedBox(width: 11),
-            Text(
-              destination.label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: selected ? Ws.onField : Ws.onFieldMuted,
-                  ),
+            Expanded(
+              child: Text(
+                destination.label,
+                style: Ob.body(15,
+                    color: selected ? Ob.onInk : Ob.inkSoft,
+                    weight: selected ? FontWeight.w600 : FontWeight.w400),
+              ),
             ),
+            if (destination.showsYesCount)
+              ValueListenableBuilder<int?>(
+                valueListenable: todayYesCount,
+                builder: (context, count, _) => count == null || count == 0
+                    ? const SizedBox.shrink()
+                    : YesCount(count),
+              ),
           ],
         ],
       ),
@@ -665,14 +663,14 @@ class _RailAction extends StatelessWidget {
                   : MainAxisAlignment.start,
               children: [
                 Icon(icon,
-                    size: Workspace.icon(context, 18), color: Ws.onFieldSubtle),
+                    size: Workspace.icon(context, 18), color: Ob.inkMuted),
                 if (!collapsed) ...[
                   const SizedBox(width: 11),
                   Text(label,
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
-                          ?.copyWith(color: Ws.onFieldMuted)),
+                          ?.copyWith(color: Ob.inkSoft)),
                 ],
               ],
             ),
@@ -695,7 +693,6 @@ class _AccountButton extends StatefulWidget {
     required this.onSignOut,
     this.currentPath = '',
     this.showIdentity = false,
-    this.onDark = false,
   });
 
   final AuthSessionController session;
@@ -711,7 +708,6 @@ class _AccountButton extends StatefulWidget {
   /// Which surface this sits on. The same control appears in the rail, which
   /// is a deep field, and in the phone app bar, which is not. A control that
   /// assumes one of them is unreadable on the other.
-  final bool onDark;
 
   /// Where the person is, sent with feedback so a report about a page does not
   /// have to describe which page.
@@ -846,13 +842,13 @@ class _AccountButtonState extends State<_AccountButton> {
           children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor: widget.onDark ? Ws.fieldRaised : Ws.accentSoft,
+              backgroundColor: Ws.accentSoft,
               child: Text(
                 initials.toUpperCase(),
                 style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: widget.onDark ? Ws.onField : Ws.accent),
+                    color: Ws.accent),
               ),
             ),
             if (widget.showIdentity) ...[
@@ -877,7 +873,7 @@ class _AccountButtonState extends State<_AccountButton> {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: widget.onDark ? Ws.onField : Ws.ink,
+                            color: Ws.ink,
                           ),
                     ),
                     if (session.fullName.trim().isNotEmpty)
@@ -885,9 +881,7 @@ class _AccountButtonState extends State<_AccountButton> {
                         session.email,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: widget.onDark
-                                  ? Ws.onFieldSubtle
-                                  : Ws.inkSubtle,
+                              color: Ws.inkSubtle,
                               letterSpacing: 0,
                             ),
                       ),

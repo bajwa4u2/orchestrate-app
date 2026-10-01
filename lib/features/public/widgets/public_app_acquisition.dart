@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -128,7 +129,7 @@ class _PublicAppAcquisitionState extends State<PublicAppAcquisition> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1320),
             child: Material(
-              color: const Color(0xFFE7F0EC),
+              color: Ob.card,
               borderRadius: BorderRadius.circular(10),
               child: LayoutBuilder(
                 builder: (context, constraints) {

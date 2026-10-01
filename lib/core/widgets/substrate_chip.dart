@@ -67,7 +67,7 @@ class SubstrateChip extends StatelessWidget {
             Text(
               label.toUpperCase(),
               style: TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: 'JetBrainsMono',
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 color: color,

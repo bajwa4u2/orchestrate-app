@@ -76,7 +76,8 @@ void main() {
     final shell = read('lib/app/shell/public_shell.dart');
     final brand = read('lib/core/brand/brand_assets.dart');
     expect(shell, contains('BrandAssets.operatorLockup'));
-    expect(shell, contains('darkSurface: true'));
+    // DD-26: the header is paper, so the lockup is drawn for a light surface.
+    expect(shell, contains('darkSurface: false'));
     expect(shell, isNot(contains('orchestrate_logo_dark.png')));
     expect(brand, contains('orchestrate_symbol_dark.png'));
   });
@@ -272,7 +273,8 @@ void main() {
     final shell = read('lib/app/shell/public_shell.dart');
     final auth = read('lib/features/auth/screens/client_login_screen.dart');
     expect(shell, contains('width: double.infinity'));
-    expect(auth, contains('CREATE ACCESS  →  SETUP  →  READINESS'));
-    expect(auth, contains('ACCOUNT ACCESS'));
+    // DD-26 (board S05): sign-up leads with what happens next.
+    expect(auth, contains('Three minutes to your first customers found.'));
+    expect(auth, contains('Welcome back.'));
   });
 }

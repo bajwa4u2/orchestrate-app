@@ -44,7 +44,7 @@ void main() {
     final header = await _headerAt(tester, 1600);
 
     final menu = tester.getRect(find.byIcon(Icons.menu).first);
-    final startSetup = tester.getRect(find.text('Start setup').first);
+    final startSetup = tester.getRect(find.text('Start with your business').first);
     final brand = tester.getRect(find.text('Orchestrate').first);
 
     // The frame is centred inside the header and capped at _maxFrameWidth,
@@ -103,11 +103,11 @@ void main() {
     // Below the tablet breakpoint the menu carries navigation on its own; the
     // buttons must not be duplicated or stranded.
     await _headerAt(tester, 500);
-    expect(find.text('Start setup'), findsNothing);
+    expect(find.text('Start with your business'), findsNothing);
     expect(find.byIcon(Icons.menu), findsOneWidget);
 
     await _headerAt(tester, 1000);
-    expect(find.text('Start setup'), findsOneWidget);
+    expect(find.text('Start with your business'), findsOneWidget);
     expect(find.text('Sign in'), findsOneWidget);
     expect(find.byIcon(Icons.menu), findsOneWidget);
   });

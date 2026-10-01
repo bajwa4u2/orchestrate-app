@@ -157,7 +157,7 @@ class _StepRow extends StatelessWidget {
                 child: Text(
                   '#$order',
                   style: const TextStyle(
-                    fontFamily: 'monospace',
+                    fontFamily: 'JetBrainsMono',
                     fontWeight: FontWeight.w700,
                     color: AppTheme.publicMuted,
                   ),

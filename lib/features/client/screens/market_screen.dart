@@ -7,7 +7,8 @@ import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/market/client_market.dart';
 import 'package:orchestrate_app/core/network/api_client.dart';
-import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/candidate_sheet.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 
@@ -100,10 +101,8 @@ class _MarketScreenState extends State<MarketScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const WorkspaceHeader(
-          title: 'Market',
-          context_: 'Who may be worth entering into commercial relationship with.',
-        ),
+        _MarketHeader(view: _market.view),
+        const SizedBox(height: 22),
         Expanded(child: _body()),
       ],
     );
@@ -224,83 +223,143 @@ class _MarketScreenState extends State<MarketScreen> {
     final quiet = view.notEnoughKnown;
     final related = view.alreadyRelated;
 
-    return ListView(
-      padding: EdgeInsets.zero,
+    // DD-26 (board S09): cards a person can decide on where they stand. The
+    // order is the server's; nothing here re-ranks. Built in full rather than
+    // lazily: what was set aside must be on the page, not only on a scroll.
+    return SingleChildScrollView(
+      child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (view.intent != null) _Intent(intent: view.intent!),
-
-        // Shown alongside results too: a business seeing four companies should
-        // still be able to tell whether that is everything or the beginning.
         if (view.coverage.note != null && view.coverage.discovering)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Text(
-              view.coverage.note!,
-              style: Theme.of(context).textTheme.bodySmall,
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Text(view.coverage.note!,
+                style: Ob.body(13.5, color: Ob.inkMuted)),
+          ),
+        if (_decisionFailure != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Text(_decisionFailure!,
+                style: Ob.body(14, color: Ob.refused)),
+          ),
+        if (review.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 18),
+            child: ObCard(
+              child: Text(
+                  'Nothing new needs your judgement. New businesses appear '
+                  'here as Orchestrate finds them.',
+                  style: Ob.body(15, color: Ob.ink)),
             ),
-          ),
-
-        // Where something was actually observed and nobody has formed a view.
-        if (review.isNotEmpty)
-          WorkspaceBand(
-            title: 'WORTH A LOOK',
-            children: [for (final c in review) _Row(candidate: c, onOpen: _open)],
           )
-        else
-          const Padding(
-            padding: EdgeInsets.only(bottom: 8),
-            child: QuietState(message: 'Nothing new needs your judgement.'),
-          ),
-
-        if (decided.isNotEmpty)
-          WorkspaceBand(
-            title: 'YOU HAVE DECIDED',
-            children: [for (final c in decided) _Row(candidate: c, onOpen: _open)],
-          ),
-
-        // Already a relationship. Shown so Market can still explain how they
-        // were found, and handed onward rather than duplicated here.
-        if (related.isNotEmpty)
-          WorkspaceBand(
-            title: 'ALREADY A RELATIONSHIP',
-            children: [for (final c in related) _Row(candidate: c, onOpen: _open)],
-          ),
-
-        // Real companies nobody has observed anything about. Behind a fold,
-        // because presenting them beside evidenced ones would imply a finding
-        // where there is only a name.
+        else ...[
+          const _Section('Worth a look', first: true),
+          _Grid(children: [
+            for (final c in review)
+              _CandidateCard(
+                candidate: c,
+                busy: _deciding.contains(c.key),
+                onOpen: _open,
+                onDecide: _decide,
+              ),
+          ]),
+        ],
+        if (decided.isNotEmpty) ...[
+          const _Section('You have decided'),
+          _Grid(children: [
+            for (final c in decided)
+              _CandidateCard(candidate: c, busy: false, onOpen: _open),
+          ]),
+        ],
+        if (related.isNotEmpty) ...[
+          const _Section('Already your customers'),
+          _Grid(children: [
+            for (final c in related)
+              _CandidateCard(candidate: c, busy: false, onOpen: _open),
+          ]),
+        ],
         if (quiet.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: () => setState(() => _showQuiet = !_showQuiet),
-            icon: Icon(_showQuiet ? Icons.expand_less : Icons.expand_more, size: 18),
-            label: Text(_showQuiet
-                ? 'Hide the ones we know little about'
-                : 'Show ${quiet.length} we know little about'),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _showQuiet = !_showQuiet),
+              icon: Icon(_showQuiet ? Icons.expand_less : Icons.expand_more,
+                  size: 18),
+              label: Text(_showQuiet
+                  ? 'Hide the ones we know little about'
+                  : 'Show ${quiet.length} we know little about'),
+            ),
           ),
           if (_showQuiet)
-            WorkspaceBand(
-              title: 'NOT ENOUGH OBSERVED',
-              children: [for (final c in quiet) _Row(candidate: c, onOpen: _open)],
-            ),
+            _Grid(children: [
+              for (final c in quiet)
+                _CandidateCard(candidate: c, busy: false, onOpen: _open),
+            ]),
         ],
-
-        if (view.excludedNote != null) ...[
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              view.excludedNote!,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppTheme.publicMuted),
+        if (view.excludedNote != null &&
+            (view.excludedWithoutIdentity + view.excludedArtifacts) > 0) ...[
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Ob.ink,
+              borderRadius: BorderRadius.circular(Ob.radiusCard),
             ),
+            child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.shield_outlined,
+                      size: 18, color: Ob.onInkMuted),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            '${view.excludedWithoutIdentity + view.excludedArtifacts} set aside',
+                            style: Ob.body(16,
+                                color: Ob.onInk, weight: FontWeight.w600)),
+                        const SizedBox(height: 6),
+                        Text(view.excludedNote!,
+                            style: Ob.body(14, color: Ob.onInkMuted)),
+                      ],
+                    ),
+                  ),
+                ]),
           ),
         ],
         const SizedBox(height: 24),
       ],
+      ),
     );
+  }
+
+  final Set<String> _deciding = {};
+  String? _decisionFailure;
+
+  Future<void> _decide(Candidate c, PursuitDisposition d) async {
+    setState(() {
+      _deciding.add(c.key);
+      _decisionFailure = null;
+    });
+    try {
+      final result = await _market.setPursuit(key: c.key, disposition: d);
+      if (result['ok'] != true && mounted) {
+        setState(() => _decisionFailure = (result['says'] ??
+                result['message'] ??
+                'That decision was not recorded.')
+            .toString());
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _decisionFailure =
+            'Your decision on ${c.name} could not be recorded just now. '
+            'Try again in a moment.');
+      }
+    } finally {
+      if (mounted) setState(() => _deciding.remove(c.key));
+    }
   }
 
   void _open(Candidate candidate) {
@@ -316,95 +375,210 @@ class _MarketScreenState extends State<MarketScreen> {
   }
 }
 
-/// What this business sells, in its own words.
-///
-/// First on screen because "worth pursuing" is meaningless without an object.
-/// Every judgement below it is relative to this sentence.
-class _Intent extends StatelessWidget {
-  const _Intent({required this.intent});
-
-  final BusinessIntent intent;
+/// "Businesses that need you", what the business sells, and the counts the
+/// server gave. Counts are the server's, never recomputed here.
+class _MarketHeader extends StatelessWidget {
+  const _MarketHeader({required this.view});
+  final MarketView? view;
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.publicLine),
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('What you are looking for',
-              style: text.bodySmall?.copyWith(
-                  color: AppTheme.publicMuted, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          Text(intent.says, style: text.bodyMedium),
-          if (intent.triggers.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              'We watch for: ${intent.triggers.join(', ').toLowerCase()}.',
-              style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
-            ),
-          ],
-        ],
-      ),
-    );
+    final v = view;
+    final phone =
+        Workspace.sizeOf(context, MediaQuery.sizeOf(context).width).isPhone;
+    Widget tile(String n, String label, {bool dark = false}) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: dark ? Ob.ink : Ob.card,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(n, style: Ob.figure(24, color: dark ? Ob.onInk : Ob.ink)),
+            Text(label,
+                style: Ob.body(12, color: dark ? Ob.onInkMuted : Ob.inkMuted)),
+          ]),
+        );
+    final tiles = v != null && v.counts.total > 0
+        ? Wrap(spacing: 10, runSpacing: 10, children: [
+            tile('${v.counts.total}', 'found'),
+            tile('${v.counts.needsReview}', 'worth a look'),
+            tile('${v.counts.pursuing}', 'pursuing', dark: true),
+          ])
+        : null;
+    final title = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ObHeadline('Businesses that need you', size: phone ? 32 : 44),
+              if (v?.intent != null) ...[
+                const SizedBox(height: 6),
+                Text(v!.intent!.says, style: Ob.body(15, color: Ob.inkSoft)),
+                if (v.intent!.triggers.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                      'We watch for: '
+                      '${v.intent!.triggers.join(', ').toLowerCase()}.',
+                      style: Ob.body(13.5, color: Ob.inkMuted)),
+                ],
+              ],
+            ],
+          );
+    return LayoutBuilder(builder: (context, c) {
+      if (tiles == null) return title;
+      if (c.maxWidth < 900) {
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          title,
+          const SizedBox(height: 14),
+          tiles,
+        ]);
+      }
+      return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Expanded(child: title),
+        const SizedBox(width: 24),
+        tiles,
+      ]);
+    });
   }
 }
 
-/// One counterparty, at scanning density.
-///
-/// Carries who, why, how sure, and what the business decided — and nothing
-/// else. Every signal and score on a row would make the list unreadable and
-/// turn comparison back into browsing.
-class _Row extends StatelessWidget {
-  const _Row({required this.candidate, required this.onOpen});
+class _Section extends StatelessWidget {
+  const _Section(this.title, {this.first = false});
+  final String title;
+  final bool first;
 
-  final Candidate candidate;
-  final void Function(Candidate) onOpen;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.only(top: first ? 0 : 26, bottom: 12),
+        child: Text(title, style: Ob.name(21)),
+      );
+}
+
+class _Grid extends StatelessWidget {
+  const _Grid({required this.children});
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return WorkspaceRow(
-      title: candidate.name,
-      // Where the evidence is good, the row leads with why this matters.
-      // Where it has aged or was never there, it leads with that instead: a
-      // rationale printed beside a four-month-old observation reads as a live
-      // reason to act, and the row would be asserting something the evidence
-      // no longer supports. The rationale is still in the sheet.
-      detail: switch (candidate.certainty) {
-        Certainty.evidenced || Certainty.thin =>
-          candidate.whyItMatters ?? candidate.certaintyMeans,
-        Certainty.stale || Certainty.insufficient => candidate.certaintyMeans,
-      },
-      meta: _meta,
-      tone: candidate.hasRelationship
-          ? RowTone.good
-          : switch (candidate.certainty) {
-              Certainty.evidenced => RowTone.attention,
-              Certainty.thin => RowTone.waiting,
-              _ => RowTone.neutral,
-            },
-      onTap: () => onOpen(candidate),
-      action: const Icon(Icons.chevron_right, size: 18, color: AppTheme.publicMuted),
+    return LayoutBuilder(builder: (context, c) {
+      final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
+      final w = (c.maxWidth - 16 * (cols - 1)) / cols;
+      return Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          for (final child in children) SizedBox(width: w, child: child)
+        ],
+      );
+    });
+  }
+}
+
+/// One business, on a card: who, why now, where, and the owner's decision.
+class _CandidateCard extends StatelessWidget {
+  const _CandidateCard({
+    required this.candidate,
+    required this.busy,
+    required this.onOpen,
+    this.onDecide,
+  });
+
+  final Candidate candidate;
+  final bool busy;
+  final void Function(Candidate) onOpen;
+  final Future<void> Function(Candidate, PursuitDisposition)? onDecide;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = candidate;
+    final reason = switch (c.certainty) {
+      Certainty.evidenced ||
+      Certainty.thin =>
+        c.whyItMatters ?? c.certaintyMeans,
+      Certainty.stale || Certainty.insufficient => c.certaintyMeans,
+    };
+    // Never green: green is money. Certainty is said as a word.
+    final pill = c.hasRelationship
+        ? const ObPill('Customer', tone: PillTone.ink)
+        : ObPill(c.certainty.label,
+            tone: c.certainty == Certainty.evidenced
+                ? PillTone.ink
+                : PillTone.plain);
+    final where = [
+      if ((c.geography ?? '').isNotEmpty) c.geography!,
+      if (c.domain.isNotEmpty) c.domain,
+    ].join(' · ');
+    final decide = onDecide;
+    return InkWell(
+      onTap: () => onOpen(c),
+      borderRadius: BorderRadius.circular(Ob.radiusCard),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Ob.card,
+          borderRadius: BorderRadius.circular(Ob.radiusCard),
+          boxShadow: decide != null ? Ob.lift : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: Text(c.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Ob.name(20)),
+              ),
+              const SizedBox(width: 8),
+              pill,
+            ]),
+            const SizedBox(height: 10),
+            Text(reason,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: Ob.body(14)),
+            if (where.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(where, style: Ob.body(13, color: Ob.inkMuted)),
+            ],
+            const SizedBox(height: 14),
+            if (decide != null)
+              Row(children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: busy
+                        ? null
+                        : () => decide(c, PursuitDisposition.pursuing),
+                    child: Text(busy ? 'Saving…' : 'Yes, pursue'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed:
+                      busy ? null : () => decide(c, PursuitDisposition.holding),
+                  child: const Text('Not now'),
+                ),
+              ])
+            else if (c.hasRelationship && c.relationshipId != null)
+              OutlinedButton(
+                onPressed: () =>
+                    context.go('/client/relationships/${c.relationshipId}'),
+                child: const Text('Open customer'),
+              )
+            else
+              Container(
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Ob.paper,
+                  borderRadius: BorderRadius.circular(Ob.radiusControl),
+                ),
+                child: Text(c.disposition.label,
+                    style: Ob.strong(14, color: Ob.inkSoft)),
+              ),
+          ],
+        ),
+      ),
     );
   }
-
-  /// Never colour alone. Certainty and disposition are both words.
-  String get _meta => [
-        candidate.domain,
-        if (candidate.hasRelationship)
-          'relationship'
-        else
-          candidate.certainty.label.toLowerCase(),
-        if (candidate.disposition != PursuitDisposition.unreviewed)
-          candidate.disposition.label.toLowerCase(),
-      ].join(' · ');
 }
 
 /// WHY IT COULD NOT BE LOADED, WHICH IS NOT ONE SITUATION.
@@ -505,7 +679,7 @@ class _Unavailable extends StatelessWidget {
               style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Text(detail,
-              style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+              style: text.bodySmall?.copyWith(color: Ob.inkMuted)),
           const SizedBox(height: 6),
           // SAID IN EVERY CASE, WHATEVER FAILED.
           //
@@ -516,14 +690,14 @@ class _Unavailable extends StatelessWidget {
           // which is exactly what happened when this screen learned to tell
           // faults apart.
           Text('Nothing has changed and nothing was lost.',
-              style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+              style: text.bodySmall?.copyWith(color: Ob.inkMuted)),
           if (reference != null) ...[
             const SizedBox(height: 8),
             SelectableText(
               reference,
               style: text.bodySmall?.copyWith(
-                color: AppTheme.publicMuted,
-                fontFamily: 'monospace',
+                color: Ob.inkMuted,
+                fontFamily: 'JetBrainsMono',
               ),
             ),
           ],

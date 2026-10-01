@@ -193,7 +193,7 @@ class AuthorityRefusalNotice extends StatelessWidget {
                   refusal.code,
                   style: text.bodySmall?.copyWith(
                     color: AppTheme.publicMuted,
-                    fontFamily: 'monospace',
+                    fontFamily: 'JetBrainsMono',
                     fontSize: 11,
                   ),
                 ),
