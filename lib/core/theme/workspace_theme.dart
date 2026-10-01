@@ -113,8 +113,9 @@ class Ws {
   // and none of them is used to decorate a heading.
 
   /// Something completed, delivered, paid, reached.
-  static const positive = Ob.money;
-  static const positiveSoft = Ob.moneySoft;
+  // DD-26: green is money only, so "done" is said in ink.
+  static const positive = Ob.ink;
+  static const positiveSoft = Ob.well;
 
   /// Something needs a person. Not an error — a decision that is owed.
   static const caution = Ob.yesDeep;
