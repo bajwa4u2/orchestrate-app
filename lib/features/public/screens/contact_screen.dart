@@ -191,7 +191,7 @@ class _ContactSupportSurface extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(28, 0, 28, 18),
             child: Text(
-              'Leave your email and we will answer there.',
+              'Your message reaches the Orchestrate team, and a first answer appears here.',
               style: Ob.body(15, color: Ob.inkMuted),
             ),
           ),

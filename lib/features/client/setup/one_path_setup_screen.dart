@@ -1719,11 +1719,15 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                     style: Ob.body(13, color: Ob.moneyOnInk, weight: FontWeight.w600)),
             ]),
             const SizedBox(height: 6),
-            Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-              Text(amount, style: Ob.figure(34, color: dark ? Ob.onInk : Ob.ink)),
-              const SizedBox(width: 6),
-              Text(unit, style: Ob.body(14, color: dark ? Ob.onInkMuted : Ob.inkMuted)),
-            ]),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+                Text(amount, style: Ob.figure(34, color: dark ? Ob.onInk : Ob.ink)),
+                const SizedBox(width: 6),
+                Text(unit, style: Ob.body(14, color: dark ? Ob.onInkMuted : Ob.inkMuted)),
+              ]),
+            ),
             const SizedBox(height: 6),
             Text(note, style: Ob.body(13, color: dark ? Ob.onInkMuted : Ob.inkMuted)),
           ],

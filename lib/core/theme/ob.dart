@@ -109,13 +109,14 @@ class Ob {
   static TextStyle figure(double size,
           {Color color = ink, FontWeight weight = FontWeight.w600}) =>
       TextStyle(
-        fontFamily: mono,
+        // Large amounts are set in the text face with even-width figures: in
+        // the mono face the decimal point takes a whole cell, and "$29.99"
+        // read as "$29 . 99" at display sizes (founder's window, 10-01).
+        fontFamily: size >= 24 ? sans : mono,
         fontSize: size,
         fontWeight: weight,
         height: 1.1,
-        // Large mono figures close up slightly, so "29.99" reads as one
-        // number rather than five cells.
-        letterSpacing: size >= 24 ? -size * 0.045 : 0,
+        letterSpacing: size >= 24 ? -size * 0.02 : 0,
         color: color,
         fontFeatures: const [FontFeature.tabularFigures()],
       );

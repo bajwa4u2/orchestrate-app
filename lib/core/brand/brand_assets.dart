@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class BrandAssets {
   BrandAssets._();
@@ -11,6 +12,27 @@ class BrandAssets {
       'assets/branding/logo/orchestrate_symbol_light.png';
   static const String _symbolDark =
       'assets/branding/logo/orchestrate_symbol_dark.png';
+
+  /// The mark as vector, drawn in the colour of the surface it sits on.
+  ///
+  /// The 72x51 PNGs carried a faint tinted box across their whole canvas
+  /// (alpha 17 at the corners), which showed as a grey square behind the mark
+  /// on paper and blurred at high pixel density. The SVG has neither.
+  static const String _markSvg = 'assets/branding/logo/orchestrate_mark.svg';
+
+  static Widget _mark({required double size, required bool onDark, String? label}) {
+    return SvgPicture.asset(
+      _markSvg,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      semanticsLabel: label,
+      colorFilter: ColorFilter.mode(
+        onDark ? const Color(0xFFF3EFE7) : const Color(0xFF17202B),
+        BlendMode.srcIn,
+      ),
+    );
+  }
 
   static String logoFor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
@@ -66,13 +88,10 @@ class BrandAssets {
     bool? onDark,
   }) {
     return ExcludeSemantics(
-      child: Image.asset(
-        symbolFor(context, onDark: onDark),
-        width: size,
-        height: size,
-        fit: fit,
-        filterQuality: filterQuality,
-        semanticLabel: semanticLabel,
+      child: _mark(
+        size: size,
+        onDark: onDark ?? (Theme.of(context).brightness == Brightness.dark),
+        label: semanticLabel,
       ),
     );
   }
@@ -116,21 +135,15 @@ class BrandAssets {
     bool allowTruncation = true,
   }) {
     final theme = Theme.of(context);
-    final symbol = darkSurface ? _symbolDark : symbolFor(context);
+    final onDark =
+        darkSurface || Theme.of(context).brightness == Brightness.dark;
 
     return ExcludeSemantics(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.asset(
-            symbol,
-            width: symbolSize,
-            height: symbolSize,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-            semanticLabel: label,
-          ),
+          _mark(size: symbolSize, onDark: onDark, label: label),
           const SizedBox(width: 12),
           // Flexible is what allows the fade: it hands the text less width
           // than it asked for, and the text gives up the difference. Without

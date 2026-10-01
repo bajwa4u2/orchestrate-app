@@ -65,23 +65,14 @@ class _PublicDiagnosticsScreenState extends State<PublicDiagnosticsScreen> {
               _Hero(),
               const SizedBox(height: 24),
               PublicDnsDiagnosticCard(key: _dnsReadinessKey),
-              const SizedBox(height: 16),
-              const SubstrateDoctrine(
-                darkSurface: true,
-                text:
-                    'Verification has three states, not two. When the substrate '
-                    'hasn\'t evaluated a record yet, the result is UNKNOWN '
-                    'and is never coerced into PASS.',
-              ),
-              const SizedBox(height: 16),
-              const SubstrateCitation(
-                darkSurface: true,
-                paths: [
-                  'orchestrate_backend/src/deliverability/sending-identity.service.ts',
-                  'orchestrate_backend/src/runtime-truth/runtime-truth.types.ts (CanonicalDnsCheck)',
-                ],
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 14),
+              // DD-26: said for a person, not cited for an engineer. Source
+              // paths and substrate wording belonged to the retired surface.
+              Text(
+                  'A record that has not been checked yet shows as not yet '
+                  'known, never as passing.',
+                  style: Ob.body(14, color: Ob.inkMuted)),
+              const SizedBox(height: 28),
               _CrossLinks(),
             ],
           ),
@@ -123,51 +114,19 @@ class _Hero extends StatelessWidget {
 class _CrossLinks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Related operational surfaces',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              OutlinedButton(
-                onPressed: () => context.go('/trust-architecture'),
-                child: const Text('Trust architecture'),
-              ),
-              OutlinedButton(
-                onPressed: () => context.go('/how-orchestrate-operates'),
-                child: const Text('How Orchestrate operates'),
-              ),
-              OutlinedButton(
-                onPressed: () => context.go('/for-evaluators'),
-                child: const Text('For evaluators'),
-              ),
-              FilledButton(
-                onPressed: () => context.go('/activation'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.publicText,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('See activation progression'),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        FilledButton(
+          onPressed: () => context.go('/auth/register'),
+          child: const Text('Start with your business'),
+        ),
+        OutlinedButton(
+          onPressed: () => context.go('/trust'),
+          child: const Text('How your email is kept safe'),
+        ),
+      ],
     );
   }
 }

@@ -268,13 +268,15 @@ class _Stage extends StatelessWidget {
     return Semantics(
       label: 'Example: a customer waiting for your yes',
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 40, right: 12),
+        // The held-back card hangs below the example, over its margin only,
+        // so it never covers the example's words or its button.
+        padding: const EdgeInsets.only(bottom: 120, right: 12),
         child: Stack(clipBehavior: Clip.none, children: [
           Transform.rotate(angle: -1.5 * math.pi / 180, child: card),
           if (heldCard != null)
             Positioned(
               right: -12,
-              bottom: -52,
+              bottom: -112,
               child: Transform.rotate(angle: 2 * math.pi / 180, child: heldCard),
             ),
         ]),
@@ -512,16 +514,23 @@ class PricingBScreen extends StatelessWidget {
                         style: Ob.body(13, color: Ob.moneyOnInk, weight: FontWeight.w600)),
                 ]),
                 const SizedBox(height: 6),
-                Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(amount ?? '—',
-                          style: Ob.figure(40, color: dark ? Ob.onInk : Ob.ink)),
-                      const SizedBox(width: 6),
-                      Text(unit,
-                          style: Ob.body(14, color: dark ? Ob.onInkMuted : Ob.inkMuted)),
-                    ]),
+                // Fitted, so a longer price never pushes its unit off the card.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(amount ?? '—',
+                            style: Ob.figure(40,
+                                color: dark ? Ob.onInk : Ob.ink)),
+                        const SizedBox(width: 6),
+                        Text(unit,
+                            style: Ob.body(14,
+                                color: dark ? Ob.onInkMuted : Ob.inkMuted)),
+                      ]),
+                ),
                 const SizedBox(height: 6),
                 Text(note,
                     style: Ob.body(13, color: dark ? Ob.onInkMuted : Ob.inkMuted)),

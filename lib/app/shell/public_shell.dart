@@ -79,14 +79,6 @@ class _PublicShellState extends State<PublicShell> {
                     context.go('/');
                   },
                 ),
-                // On paper, like the header above it (DD-26).
-                ColoredBox(
-                  color: Ob.paper,
-                  child: PublicAppAcquisition(
-                    config: orchestratePublicAppAcquisitionConfig,
-                    currentPath: widget.currentPath,
-                  ),
-                ),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -109,6 +101,18 @@ class _PublicShellState extends State<PublicShell> {
                             ),
                             child: Column(
                               children: [
+                                // Scrolls with the page rather than pinning a
+                                // second bar under the header: on a short
+                                // window the two together took a third of the
+                                // screen before any content (founder's 943x489).
+                                ColoredBox(
+                                  color: Ob.paper,
+                                  child: PublicAppAcquisition(
+                                    config:
+                                        orchestratePublicAppAcquisitionConfig,
+                                    currentPath: widget.currentPath,
+                                  ),
+                                ),
                                 ColoredBox(
                                   // DD-26: the rebuilt pages sit on paper,
                                   // full bleed; the estate's dark pages keep
@@ -199,7 +203,9 @@ class PublicHeader extends StatelessWidget {
         border: Border(bottom: BorderSide(color: Ob.line)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+        padding: EdgeInsets.symmetric(
+            horizontal: 28,
+            vertical: MediaQuery.sizeOf(context).height < 640 ? 6 : 16),
         child: Center(
           child: ConstrainedBox(
             constraints:
@@ -270,8 +276,11 @@ class PublicHeader extends StatelessWidget {
                   ],
                 );
 
+                // Slimmer on a short window, where every pixel of a pinned
+                // header is one less of the page.
+                final short = MediaQuery.sizeOf(context).height < 640;
                 return SizedBox(
-                  height: 72,
+                  height: short ? 56 : 72,
                   // THE TRAILING GROUP BELONGS ON THE RIGHT EDGE.
                   //
                   // This was `[Flexible(brand), Spacer(), Flexible(actions)]`.
@@ -362,14 +371,14 @@ class _CommercialClosingBand extends StatelessWidget {
               final copy = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('CONTINUE THE COMMERCIAL PATH',
+                  const Text('READY WHEN YOU ARE',
                       style: TextStyle(
                           color: Ob.onInkMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.4)),
                   const SizedBox(height: 10),
-                  Text('Move from understanding to execution.',
+                  Text('Set up free. See who needs you before you pay.',
                       style: Theme.of(context)
                           .textTheme
                           .headlineSmall
@@ -378,16 +387,16 @@ class _CommercialClosingBand extends StatelessWidget {
                               fontWeight: FontWeight.w700)),
                   const SizedBox(height: 7),
                   const Text(
-                      'Talk through readiness, qualification, delivery and the commercial states that matter to your business.',
+                      'Orchestrate starts finding businesses as soon as your setup is done.',
                       style: TextStyle(color: Ob.onInkMuted, height: 1.5)),
                 ],
               );
               final action = FilledButton(
-                onPressed: () => context.go('/intake'),
+                onPressed: () => context.go('/auth/register'),
                 style: FilledButton.styleFrom(
                     backgroundColor: Ob.paper,
                     foregroundColor: Ob.ink),
-                child: const Text('Talk to Orchestrate'),
+                child: const Text('Start with your business'),
               );
               return stacked
                   ? Column(
@@ -429,7 +438,7 @@ class _CommercializationSupportBand extends StatelessWidget {
               final copy = const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('MADE WITH SUPPORT',
+                  Text('SUPPORTED BY',
                       style: TextStyle(
                           color: Ob.onInkMuted,
                           fontSize: 10,
@@ -437,7 +446,7 @@ class _CommercializationSupportBand extends StatelessWidget {
                           letterSpacing: 1.4)),
                   SizedBox(height: 8),
                   Text(
-                      'Orchestrate is being built in a commercialization environment that values durable execution.',
+                      'Orchestrate is built with the support of these programmes.',
                       style: TextStyle(
                           color: AppTheme.publicOnDark,
                           fontSize: 16,
@@ -613,14 +622,14 @@ class _PublicFooter extends StatelessWidget {
                                   .textTheme
                                   .labelLarge
                                   ?.copyWith(
-                                    color: AppTheme.accent,
+                                    color: AppTheme.publicOnDarkMuted,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 1.5,
                                   ),
                             ),
                             const SizedBox(height: 9),
                             Text(
-                              'Commercial execution, from prospect to complete.',
+                              'New customers, followed through to paid.',
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineSmall
@@ -632,7 +641,7 @@ class _PublicFooter extends StatelessWidget {
                           ],
                         );
                         const description = Text(
-                          'A managed path for readiness, relationships, delivery and revenue records.',
+                          'Finds businesses that need you, writes to them from your own email, and carries each one to an agreement and a paid invoice. You say yes at each step.',
                           style: TextStyle(
                               color: AppTheme.publicOnDarkMuted, height: 1.5),
                         );
