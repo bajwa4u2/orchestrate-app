@@ -229,734 +229,788 @@ class ContentAction {
   final bool filled;
 }
 
+// ── Policies (DD-26) ────────────────────────────────────────────────
+//
+// Rewritten 2026-10-01 in plain words. Every commitment, limit and right in
+// the previous wording is kept at the same strength; nothing new is promised.
+// The billing policy is corrected: Orchestrate is one plan, billed monthly or
+// yearly, not the retired "Opportunity" and "Revenue" tiers.
+
 PublicContentScreen buildTermsScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
+      eyebrow: 'Policy',
       title: 'Terms of use',
       subtitle:
-          'These terms govern access to the public site, operator workspace, client access areas, and related services provided through Orchestrate.',
+          'These terms cover the public site, your workspace, and everything '
+          'Orchestrate does for your business.',
+      sideActions: [
+        ContentAction(label: 'All policies', path: '/legal'),
+        ContentAction(label: 'Acceptable use', path: '/legal/acceptable-use'),
+        ContentAction(label: 'Billing', path: '/legal/billing'),
+      ],
       sections: [
         ContentSection(
-          title: 'Use of the service',
+          title: 'Using Orchestrate',
           body:
-              'Use of Orchestrate is conditioned on lawful use, truthful account information, payment of agreed fees, and compliance with the service boundaries presented publicly or contractually.',
+              'You may use Orchestrate lawfully, with truthful account '
+              'information, paying the fees you agreed to, and within the '
+              'limits described on this site or in your agreement with us.',
         ),
         ContentSection(
-          title: 'Account posture',
+          title: 'Your access',
           body:
-              'Operator access may be provisioned directly and may be limited, suspended, or revoked where misuse, non-payment, risk, or policy breaches create operational or legal concern. Client access may be limited to review functions appropriate to the service relationship.',
+              'We may limit, suspend or end access where there is misuse, '
+              'non-payment, risk, or a breach of our policies that creates an '
+              'operational or legal concern. Some people in a workspace may be '
+              'given review-only access, depending on their role.',
         ),
         ContentSection(
-          title: 'Service boundaries',
+          title: 'What Orchestrate does, and what it cannot promise',
           body:
-              'Orchestrate provides managed execution infrastructure for outbound business communication, follow-up continuity, meeting handoff, billing administration, reminders, records, and related service functions. It does not guarantee recipient response, booked meetings, customer payment, or uninterrupted third-party system behavior.',
+              'Orchestrate finds businesses, writes and follows up on your '
+              'behalf, hands meetings to you, and helps with agreements, '
+              'invoices, reminders and records. It does not guarantee that '
+              'anyone replies, books a meeting or pays, or that other '
+              'companies\' systems are always available.',
           highlight:
-              'External systems, recipient behavior, data quality, and client responsiveness remain variables outside direct control.',
+              'Other systems, how recipients behave, the quality of data, and '
+              'how quickly you respond are outside our direct control.',
         ),
         ContentSection(
-          title: 'Suspension and termination',
+          title: 'Suspension and ending service',
           body:
-              'Service may be suspended or ended where use creates abuse risk, legal exposure, security issues, payment failure, misuse of sender identity, harassment, fraud, or other misuse inconsistent with the purpose of the system.',
+              'Service may be suspended or ended where use creates abuse risk, '
+              'legal exposure or a security problem, where payment fails, or '
+              'where it involves misuse of a sender\'s identity, harassment, '
+              'fraud or other misuse that goes against what Orchestrate is for.',
         ),
       ],
     );
 
 PublicContentScreen buildPrivacyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Privacy policy',
+      eyebrow: 'Policy',
+      title: 'Privacy',
       subtitle:
-          'Orchestrate handles business contact information, communication records, billing records, service metadata, and a strictly-scoped subset of mailbox content in order to operate the service responsibly.',
+          'To run Orchestrate we handle business contact details, the record '
+          'of what was sent and agreed, billing records, technical logs, and '
+          'a strictly limited part of your mailbox.',
       sideActions: [
-        ContentAction(
-            label: 'Mailbox access policy', path: '/legal/mailbox-access'),
-        ContentAction(label: 'AI usage disclosure', path: '/legal/ai-usage'),
+        ContentAction(label: 'Mailbox access', path: '/legal/mailbox-access'),
+        ContentAction(label: 'AI usage', path: '/legal/ai-usage'),
         ContentAction(label: 'Credential handling', path: '/legal/credentials'),
+        ContentAction(label: 'All policies', path: '/legal'),
       ],
       sections: [
         ContentSection(
-          title: 'Information handled',
+          title: 'What we handle',
           body:
-              'The system may handle business names, contact details, lead and customer records, communication history, payment status information, agreements, statements, and basic usage logs needed for account security and service continuity.',
+              'Business names, contact details, customer records, the history '
+              'of messages, payment status, agreements and statements, and the '
+              'basic usage logs needed to keep accounts secure and the service '
+              'running.',
         ),
         ContentSection(
-          title: 'Mailbox content processed',
+          title: 'Your mailbox',
           body:
-              'Orchestrate does not behave as a general inbox reader. Inbound mail is inspected at the header level only; message bodies are fetched and stored exclusively when the message matches a known Orchestrate-managed outbound operation (via In-Reply-To / References headers or the X-Orchestrate-Operation-Id fingerprint). Unrelated mailbox content is not stored, classified, surfaced in the UI, or fed to AI systems. See the dedicated Mailbox access policy for the full scope description.',
+              'Orchestrate does not read your inbox. It looks only at the '
+              'headers of incoming mail, and fetches a message\'s body only '
+              'when that message is a reply to a note Orchestrate sent. '
+              'Anything else is not stored, sorted, shown, or given to an AI '
+              'system. The Mailbox access policy sets out exactly how.',
           highlight:
-              'Headers are inspected first. Bodies are fetched only for messages that resolve to an Orchestrate operation.',
+              'Headers first. A body is fetched only for a reply to a note '
+              'Orchestrate sent.',
         ),
         ContentSection(
-          title: 'Credentials handling',
+          title: 'Passwords and keys',
           body:
-              'Mailbox transport credentials (OAuth refresh tokens, SMTP / IMAP passwords, DKIM private keys) are sealed in a vault adapter (encrypted-DB or HashiCorp Vault) and never appear in API responses, logs, telemetry, or the browser. See the Credential handling disclosure for the storage model and rotation behavior.',
+              'Mailbox passwords, sign-in tokens and signing keys are held in '
+              'an encrypted vault. They never appear in any answer the system '
+              'gives, in logs, in diagnostics, or in your browser. The '
+              'Credential handling policy explains how they are stored and '
+              'changed.',
         ),
         ContentSection(
-          title: 'AI processing scope',
+          title: 'AI',
           body:
-              'AI-assisted systems operate against operation-scoped data only: Orchestrate-generated outbound content and operation-matched replies. Unrelated mailbox content never enters an AI pipeline. AI assists managed execution; it does not act autonomously as an impersonated human. See the AI usage disclosure for boundaries.',
+              'AI works only with notes Orchestrate wrote and replies to them. '
+              'Other mailbox content never reaches an AI system. AI helps do '
+              'the work; it never acts on its own as if it were a person. The '
+              'AI usage policy sets the limits.',
         ),
         ContentSection(
-          title: 'Purpose of collection and use',
+          title: 'Why we use it',
           body:
-              'Information is used to operate managed execution, preserve records, support billing workflows, maintain account access, provide client visibility, protect the service, and respond to support, contractual, or legal needs.',
+              'To do the work you asked for, keep the record, support billing, '
+              'keep your account working, show you what is happening, protect '
+              'the service, and answer support, contractual or legal needs.',
         ),
         ContentSection(
-          title: 'Sharing posture',
+          title: 'Who we share it with',
           body:
-              'Information is not shared casually. It may be shared with infrastructure vendors (database, vault, deliverability transport providers the client themselves selects), payment providers, or legal authorities where necessary to operate the system, enforce agreements, process payments, or meet legal obligations.',
+              'We do not share it casually. We may share it with the companies '
+              'that run our infrastructure (database, vault, and the email '
+              'providers you choose yourself), with payment providers, or with '
+              'legal authorities, where that is needed to run the service, '
+              'enforce agreements, take payment or meet the law.',
         ),
         ContentSection(
-          title: 'Retention and control',
+          title: 'How long we keep it',
           body:
-              'Records may be retained for operational continuity, legal compliance, financial accountability, dispute handling, and service history. Account deletion requests are honored per the Account deletion page; deletion may be limited where retention is reasonably required for the purposes listed above.',
+              'Records may be kept for running the service, legal compliance, '
+              'financial accountability, disputes, and service history. You '
+              'can delete your account as described on the Account deletion '
+              'page; some records may still be kept where there is a good '
+              'reason, for the purposes listed here.',
         ),
       ],
     );
 
 PublicContentScreen buildMailboxAccessPolicyScreen() =>
     const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Mailbox access policy',
+      eyebrow: 'Policy',
+      title: 'Mailbox access',
       subtitle:
-          'Orchestrate does not behave as a general inbox reader. This document defines the exact scope under which mailbox content is read, stored, classified, or fed to AI.',
+          'Orchestrate does not read your inbox. This sets out exactly when '
+          'mail is read, kept, sorted, or given to AI.',
+      sideActions: [
+        ContentAction(label: 'Reply monitoring', path: '/legal/reply-monitoring'),
+        ContentAction(label: 'Privacy', path: '/legal/privacy'),
+        ContentAction(label: 'Trust', path: '/trust'),
+      ],
       sections: [
         ContentSection(
-          title: 'Operation-scoped processing',
+          title: 'Only replies to Orchestrate\'s own notes',
           body:
-              'Inbound mail is processed only when it can be attributed to a known Orchestrate-managed outbound operation. Attribution is established through one of: (1) In-Reply-To header matching an OutreachMessage external Message-ID; (2) References header containing such an ID; (3) the X-Orchestrate-Operation-Id header Orchestrate stamps on its own outbound. Messages without any of these signals are not attributed and not processed.',
+              'Incoming mail is handled only when it can be tied to a note '
+              'Orchestrate sent: its reply headers point to that note, or it '
+              'carries the reference Orchestrate adds to every note it sends. '
+              'Mail without one of these is not handled at all.',
         ),
         ContentSection(
-          title: 'Header-first / body-on-match-only',
+          title: 'Headers first, and the body only for a match',
           body:
-              'For IMAP transports, the platform fetches envelope plus a narrow set of headers (Message-ID, In-Reply-To, References, From, To, Subject, X-Orchestrate-Operation-Id, X-Orchestrate-Thread-Id) before any matching decision. Message bodies are only requested after a successful attribution. Unattributed messages never have their body read by Orchestrate.',
+              'Orchestrate first reads only the envelope and a few headers '
+              '(sender, recipient, subject, and the reply references). It asks '
+              'for a message\'s body only after the message is matched to a '
+              'note it sent.',
           highlight:
-              'No body is ever fetched, stored, or processed for a message that fails attribution.',
+              'A message that does not match is never opened, kept, or '
+              'processed.',
         ),
         ContentSection(
-          title: 'No historical backfill on connect',
+          title: 'Nothing from before you connected',
           body:
-              'When an IMAP transport is connected, the polling cursor is initialized to the current highest UID at connection time. The first sweep after connect inspects only messages that arrive AFTER the connect moment. Historical inbox content from before the connection is never inspected unless the operator explicitly requests a bounded backfill (which is not exposed as a one-click default).',
+              'When you connect a mailbox, Orchestrate starts from that moment. '
+              'Mail that was already there is not looked at, unless an '
+              'operator deliberately runs a limited look-back, which is never '
+              'offered as a one-click default.',
         ),
         ContentSection(
-          title: 'OAuth transports (Google / Microsoft)',
+          title: 'Google and Microsoft',
           body:
-              'Where Orchestrate connects to Google Workspace or Microsoft 365 via OAuth, the consent screen requests minimum required scopes (send-only on this deployment). When inbound monitoring is implemented for these providers in the future, it will be scope-restricted to thread / metadata reads tied to operations, never broad mailbox read access.',
+              'When you connect Google Workspace or Microsoft 365, Orchestrate '
+              'asks only for permission to send. If it ever reads replies '
+              'there in future, it will be limited to the conversations it '
+              'started, never broad access to your mailbox.',
         ),
         ContentSection(
-          title: 'Sent folder scope',
+          title: 'Your sent folder',
           body:
-              'Orchestrate does not mirror or ingest the Sent folder. Only outbound messages that Orchestrate itself generated are persisted in the platform.',
+              'Orchestrate does not copy your sent folder. Only notes '
+              'Orchestrate wrote are kept.',
         ),
         ContentSection(
-          title: 'What this means for shared mailboxes',
+          title: 'Shared mailboxes',
           body:
-              'A dedicated sending mailbox is strongly recommended. If you connect a personal or shared mailbox, the operation-scoped rules above still apply. Unrelated personal mail is not stored, but a dedicated mailbox keeps the operational scope unambiguous.',
+              'We recommend an address used only for this. If you connect a '
+              'personal or shared mailbox, every rule above still applies and '
+              'unrelated mail is not kept; a separate address simply keeps '
+              'things clear.',
         ),
       ],
     );
 
 PublicContentScreen buildAiUsagePolicyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'AI usage disclosure',
+      eyebrow: 'Policy',
+      title: 'AI usage',
       subtitle:
-          'Orchestrate uses AI-assisted systems to support managed execution. This document defines what AI does, what AI does not do, and how the boundary is enforced.',
+          'What AI does in Orchestrate, what it never does, and how that line '
+          'is held.',
+      sideActions: [
+        ContentAction(label: 'Mailbox access', path: '/legal/mailbox-access'),
+        ContentAction(label: 'Privacy', path: '/legal/privacy'),
+        ContentAction(label: 'Trust', path: '/trust'),
+      ],
       sections: [
         ContentSection(
-          title: 'What AI assists',
+          title: 'What AI helps with',
           body:
-              'AI systems support: signal-qualification scoring against the client business identity, outbound message generation tied to a known recipient and operation, reply intent classification on operation-matched replies, and operator-side analysis surfaces. Every AI invocation is tied to an audited decision record.',
+              'Judging whether a business fits what you sell, writing a note '
+              'to a specific person, understanding what a reply to one of '
+              'those notes means, and analysis for our own operators. Every '
+              'use of AI is tied to a recorded decision.',
         ),
         ContentSection(
-          title: 'What AI does not do',
+          title: 'What AI never does',
           body:
-              'AI does not autonomously create accounts, impersonate the client in human-discretionary domains, ingest unrelated mailbox content, read the body of a mailbox message that has not been operation-attributed, or send to recipients without a governed dispatch decision.',
+              'It never creates accounts on its own, pretends to be you where '
+              'a person\'s judgement is needed, reads unrelated mail, opens a '
+              'message that is not a reply to a note Orchestrate sent, or '
+              'sends anything that has not passed Orchestrate\'s checks.',
           highlight:
-              'AI processing is bounded by the same operation-scoped attribution that governs the rest of the platform.',
+              'AI is held to the same rule as everything else: only notes '
+              'Orchestrate sent, and the replies to them.',
         ),
         ContentSection(
-          title: 'Transparency and traceability',
+          title: 'A record of every AI-assisted note',
           body:
-              'AI-generated or AI-assisted outbound content carries a stored traceability record (decision id, model identifier, input scope). Operators and clients can request the trail for any AI-assisted output that affected their workspace.',
+              'Each note written or helped by AI keeps a record of the '
+              'decision, the model used, and what it was given. You can ask '
+              'for that record for anything AI touched in your workspace.',
         ),
         ContentSection(
-          title: 'Human ownership of execution boundaries',
+          title: 'You set the limits',
           body:
-              'The client owns the operational boundaries: representation authorization, business identity, sending identity, and opt-out posture. AI operates within those boundaries; it does not override them. Where a recipient response indicates opt-out, suppression, or intent change, the governance layer halts further AI-assisted dispatch against that recipient.',
+              'Your permission, your business details, your sending address '
+              'and who must not be contacted are yours to set. AI works inside '
+              'them and never overrides them. When a reply asks to stop, or '
+              'shows a change of mind, AI-assisted sending to that person '
+              'stops.',
         ),
         ContentSection(
-          title: 'No human impersonation claims',
+          title: 'No pretending to be a person',
           body:
-              'Orchestrate does not claim that AI-assisted messages are written by a human individual. Outbound content is sent on behalf of the client business under their authorized representation, with attribution that complies with applicable commercial-communication rules.',
+              'Orchestrate does not claim that an AI-assisted note was written '
+              'by an individual. Notes are sent on behalf of your business, '
+              'under the permission you gave, and identify the sender as the '
+              'law on commercial messages requires.',
         ),
       ],
     );
 
 PublicContentScreen buildCredentialHandlingScreen() =>
     const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Credential handling disclosure',
+      eyebrow: 'Policy',
+      title: 'Credential handling',
       subtitle:
-          'Mailbox transport credentials never appear in API responses, logs, telemetry, the browser, or unencrypted database storage. This document defines the storage model and the access path.',
+          'Mailbox passwords, sign-in tokens and keys never appear in any '
+          'answer the system gives, in logs, in diagnostics, in your browser, '
+          'or unencrypted in our database. This is how they are kept.',
+      sideActions: [
+        ContentAction(label: 'Retention and deletion', path: '/legal/retention'),
+        ContentAction(label: 'Trust', path: '/trust'),
+      ],
       sections: [
         ContentSection(
-          title: 'Storage model',
+          title: 'Where they are kept',
           body:
-              'Credentials are sealed by a vault adapter selected at deployment time. Supported adapters: an encrypted-DB adapter (AES-256-GCM, key held outside the database row, suitable for managed-Postgres deployments) and a HashiCorp Vault adapter (for deployments that maintain their own vault infrastructure). An in-memory adapter exists for tests and local development; the production runtime refuses to boot if the in-memory adapter is selected with NODE_ENV=production.',
+              'In an encrypted vault: either encrypted in our database with '
+              'AES-256, with the key held apart from the data, or in a '
+              'dedicated HashiCorp Vault. A test-only store exists for '
+              'development, and the live service refuses to start if it is '
+              'ever selected.',
         ),
         ContentSection(
-          title: 'Access path',
+          title: 'One way in',
           body:
-              'Service code never imports a vault adapter directly. Every read, write, rotation, or revocation passes through a single credential-vault service whose audit trail captures the action, actor, organization, mailbox, and outcome, but never the credential contents.',
+              'Every read, change or removal goes through a single service. It '
+              'records what was done, by whom, for which business and mailbox, '
+              'and whether it worked, but never the secret itself.',
         ),
         ContentSection(
-          title: 'What is sealed',
+          title: 'What is protected this way',
           body:
-              'OAuth refresh tokens (Google Workspace, Microsoft 365), SMTP passwords, IMAP passwords, DKIM private keys generated by Orchestrate, and IMAP poll cursors (`lastSeenUid`) are all sealed by the vault adapter. The application database holds only opaque references and non-sensitive metadata (granted scopes, provider account email, last refresh timestamp).',
+              'Google and Microsoft sign-in tokens, mail server passwords, the '
+              'signing keys Orchestrate creates for your domain, and the '
+              'position Orchestrate has reached in your inbox. Our main '
+              'database holds only references and harmless details such as '
+              'the permissions granted and when they were last refreshed.',
         ),
         ContentSection(
-          title: 'Rotation and revocation',
+          title: 'Changing and removing them',
           body:
-              'Credentials can be rotated in place (used when re-authorizing a mailbox or attaching IMAP onto an existing SMTP transport). Revocation removes the vault entry; the cross-vault audit trail preserves the action record. Where the upstream provider supports remote revocation, the platform issues the revoke call alongside the local delete.',
+              'They can be replaced in place, for example when you reconnect a '
+              'mailbox. Removing one deletes it from the vault and keeps only '
+              'the record that it was removed. Where the provider allows it, '
+              'Orchestrate also revokes the access with them.',
         ),
         ContentSection(
-          title: 'Out of scope',
+          title: 'Where they never go',
           body:
-              'Credentials are not propagated to third-party deliverability vendors, analytics platforms, or logging systems. They are not present in error messages or stack traces. Audit log entries deliberately capture metadata only (host, port, encryption mode, folder, outcome), never password content, refresh-token strings, or message bodies.',
+              'Never to delivery vendors, analytics or logging services, and '
+              'never into error messages. Records of activity hold only '
+              'details such as the server, port and outcome: never a '
+              'password, token, or the contents of a message.',
           highlight:
-              'Audit-log-is-metadata-only is a structural property of the emission code, not a runtime check.',
+              'Activity records cannot hold secrets: the code that writes them '
+              'has no access to them.',
         ),
       ],
     );
 
 PublicContentScreen buildReplyMonitoringDisclosureScreen() =>
     const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Reply monitoring disclosure',
+      eyebrow: 'Policy',
+      title: 'Reply monitoring',
       subtitle:
-          'When inbound reply monitoring is wired (via IMAP attached to a custom SMTP transport, or via a future scope-restricted OAuth inbound path), the platform behaves under the rules described below.',
+          'When you let Orchestrate watch for replies, this is exactly what it '
+          'does and does not do.',
+      sideActions: [
+        ContentAction(label: 'Mailbox access', path: '/legal/mailbox-access'),
+        ContentAction(label: 'Suppression and opt-out', path: '/legal/suppression'),
+      ],
       sections: [
         ContentSection(
-          title: 'When monitoring runs',
+          title: 'Only when you connect it',
           body:
-              'Monitoring runs only against transports where the client has explicitly connected an inbound credential. SMTP outbound without IMAP inbound produces an outbound-only transport. Replies arrive in the recipient mailbox unobserved by the platform until inbound credentials are attached.',
+              'Replies are watched only where you have connected incoming '
+              'mail as well as sending. Today that is your own mail server '
+              '(IMAP); with Google or Microsoft, Orchestrate only sends, so '
+              'replies reach your inbox without Orchestrate seeing them.',
         ),
         ContentSection(
-          title: 'How matching works',
+          title: 'How a reply is recognised',
           body:
-              'Each inbound message is matched against the client\'s outbound corpus via In-Reply-To, References, or the X-Orchestrate-Operation-Id header. The first match path is the operation-id header, which Orchestrate stamps on every supported outbound and which survives relays that strip standard threading headers.',
+              'Each incoming message is checked against the notes Orchestrate '
+              'sent, using the reply headers or the reference Orchestrate adds '
+              'to every note, which survives even when other systems strip '
+              'the usual headers.',
         ),
         ContentSection(
-          title: 'What happens to matched mail',
+          title: 'When it matches',
           body:
-              'A matched message is persisted as a Reply row scoped to the matching lead, campaign, and outbound message. Pending follow-up jobs against the same lead are cancelled. The reply surfaces in the client\'s Replies workspace and may be classified by an AI reply-intent worker.',
+              'The reply is kept with the customer and the note it answers, '
+              'any follow-ups still waiting for that person are cancelled, and '
+              'it appears in your workspace. AI may read it to understand '
+              'what the person wants.',
         ),
         ContentSection(
-          title: 'What happens to unmatched mail',
+          title: 'When it does not match',
           body:
-              'Unmatched messages remain in the upstream mailbox untouched. The platform does not download their body, does not store them, does not classify them, and does not feed them to AI. A header-level "unmatched" count may be recorded as non-content telemetry.',
+              'It stays in your mailbox untouched. Orchestrate does not '
+              'download it, keep it, sort it, or give it to AI. At most, a '
+              'count of unmatched messages may be recorded, with no content.',
         ),
         ContentSection(
-          title: 'Deduplication',
+          title: 'Never twice',
           body:
-              'Matching is keyed by the upstream message-id, and the IMAP UID cursor (`lastSeenUid`) advances monotonically. The same inbound message cannot be ingested twice across restarts or re-attaches.',
+              'Each message is recognised by its own unique ID and Orchestrate '
+              'only moves forward through your inbox, so the same message is '
+              'never taken in twice, even after a restart or a reconnect.',
         ),
         ContentSection(
-          title: 'Follow-up suppression',
+          title: 'A reply stops the follow-ups',
           body:
-              'A matched reply against a lead automatically cancels queued FOLLOWUP_SEND jobs and any QUEUED / SCHEDULED OutreachMessage rows targeting that lead, so the platform does not continue dispatching after a recipient has responded.',
+              'Once someone replies, every follow-up still waiting for them is '
+              'cancelled, so Orchestrate never keeps writing to a person who '
+              'has already answered.',
         ),
       ],
     );
 
 PublicContentScreen buildSuppressionPolicyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Suppression and opt-out policy',
+      eyebrow: 'Policy',
+      title: 'Suppression and opt-out',
       subtitle:
-          'Recipients have the right to stop receiving outbound communication. The platform enforces this in two complementary ways: an explicit suppression list and reply-triggered automatic suppression.',
+          'Anyone can stop hearing from a business that uses Orchestrate. Two '
+          'things make sure of it: a do-not-contact list, and replies that ask '
+          'to stop.',
+      sideActions: [
+        ContentAction(label: 'Reply monitoring', path: '/legal/reply-monitoring'),
+        ContentAction(label: 'Abuse', path: '/legal/abuse'),
+        ContentAction(label: 'Trust', path: '/trust'),
+      ],
       sections: [
         ContentSection(
-          title: 'Suppression list',
+          title: 'The do-not-contact list',
           body:
-              'The platform maintains a suppression list scoped per organization and per client. Entries may be created from inbound opt-out signals, manual operator action, or imported lists. The list supports per-email and per-domain entries. Dispatch checks suppression before every FIRST_SEND and FOLLOWUP_SEND; a matching entry blocks the send and marks the lead as SUPPRESSED.',
+              'Each business has its own list, which can hold single addresses '
+              'or whole domains. Entries come from people asking to stop, from '
+              'our operators, or from lists you import. Every first note and '
+              'every follow-up is checked against it; a match stops the send '
+              'and marks that person as not to be contacted.',
         ),
         ContentSection(
-          title: 'Reply-triggered suppression',
+          title: 'A reply that says stop',
           body:
-              'When an inbound reply is classified as an opt-out intent, the recipient is automatically added to the suppression list with the source recorded. No further outbound is dispatched to that recipient by the platform unless an operator explicitly removes the entry.',
+              'When a reply asks to stop, the person is added to the list '
+              'automatically, with the reason recorded. Nothing more is sent '
+              'to them unless an operator deliberately removes the entry.',
         ),
         ContentSection(
-          title: 'Suppression categories',
+          title: 'Four reasons, one effect',
           body:
-              'Entries carry one of four canonical categories: UNSUBSCRIBE (explicit recipient opt-out), HARD_BOUNCE (recipient address unreachable), COMPLAINT (recipient reported as spam), MANUAL_BLOCK (operator-applied block). Each category carries the same dispatch-blocking effect.',
+              'An entry records why: the person unsubscribed, their address no '
+              'longer exists, they reported a message as spam, or an operator '
+              'blocked them. Every reason stops sending in the same way.',
         ),
         ContentSection(
-          title: 'No bypass',
+          title: 'No way around it',
           body:
-              'There is no UI affordance, API endpoint, or operator tool that lets a dispatch path skip suppression check. Suppression check is in the FIRST_SEND code path, the FOLLOWUP_SEND code path, and the direct-email send path.',
-          highlight: 'No code path dispatches to a suppressed recipient.',
+              'No button, setting or tool lets any send skip the check. It is '
+              'built into the first note, every follow-up, and direct email.',
+          highlight: 'Nothing is ever sent to someone on the list.',
         ),
         ContentSection(
-          title: 'Visibility',
+          title: 'Where you see it',
           body:
-              'Suppressed recipients appear in the operator-side suppression view with the source, category, and timestamp. Clients see suppression as a transparent operational state on the affected leads.',
+              'Our operators see every entry with its reason and date. In your '
+              'workspace, a person on the list shows clearly as not to be '
+              'contacted.',
         ),
       ],
     );
 
 PublicContentScreen buildProviderResponsibilityScreen() =>
     const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Provider responsibility boundaries',
+      eyebrow: 'Policy',
+      title: 'Provider boundaries',
       subtitle:
-          'Outbound and inbound mail transport is provider-agnostic infrastructure beneath the client domain identity. This document defines what Orchestrate is responsible for and what each provider remains responsible for.',
+          'Who is responsible for what when Orchestrate sends through your '
+          'email provider.',
+      sideActions: [
+        ContentAction(label: 'Deliverability', path: '/legal/deliverability'),
+        ContentAction(label: 'Check your domain', path: '/diagnostics'),
+      ],
       sections: [
         ContentSection(
-          title: 'Client domain identity is primary',
+          title: 'Your domain comes first',
           body:
-              'The conceptual center of operational identity is the client\'s sending domain (SPF, DKIM, DMARC). Transport providers (Google Workspace, Microsoft 365, custom SMTP / IMAP) are interchangeable infrastructure beneath that identity. Changing providers does not change the operational identity.',
+              'What identifies you is your own domain and its records. The '
+              'email provider underneath (Google, Microsoft, or your own mail '
+              'server) can change without changing who you are.',
         ),
         ContentSection(
-          title: 'Google Workspace / Microsoft 365 (OAuth)',
+          title: 'Google Workspace and Microsoft 365',
           body:
-              'OAuth transports use the provider\'s consent screen to grant Orchestrate scope-restricted access (send-only on this deployment). The provider remains the underlying mail-relay infrastructure and applies its own deliverability, throttling, and policy enforcement. Where the provider expires or revokes the OAuth grant, the platform detects this and surfaces a reconnect prompt; it does not retry against an invalid grant.',
+              'You approve Orchestrate on the provider\'s own screen, and it '
+              'asks only to send. The provider still carries the mail and '
+              'applies its own limits and rules. If the provider ends that '
+              'permission, Orchestrate asks you to reconnect rather than '
+              'trying again with it.',
         ),
         ContentSection(
-          title: 'Custom SMTP transport',
+          title: 'Your own mail server',
           body:
-              'For custom SMTP, the client supplies the host, port, encryption mode, credentials, and from-address. Orchestrate validates against the upstream host before persisting, vaults credentials, generates a per-transport DKIM keypair, and signs every outbound message inside its process before handing it to the relay. The underlying SMTP server\'s deliverability behavior remains the client\'s contractual relationship with that provider.',
+              'You give the server details and from-address. Orchestrate '
+              'checks them before saving, keeps the password in the vault, '
+              'creates a signing key for your domain, and signs every note '
+              'before handing it to your server. How that server delivers '
+              'mail stays between you and its provider.',
         ),
         ContentSection(
-          title: 'Custom IMAP transport',
+          title: 'Reading replies from your own server',
           body:
-              'For custom IMAP, the client supplies the inbound credentials and a folder. Orchestrate polls the folder header-first, fetches bodies only for operation-matched messages, and persists the cursor in the vault. IMAP servers that do not return STATUS uidNext are supported but with a one-time degraded header-scan window on first connect.',
+              'If you connect incoming mail, Orchestrate reads headers first, '
+              'opens only replies to its own notes, and keeps its place in the '
+              'vault. A few servers do not report their position; they still '
+              'work, with one wider header check on first connect.',
         ),
         ContentSection(
-          title: 'DNS verification (SPF / DKIM / DMARC)',
+          title: 'Domain records',
           body:
-              'DNS records are published by the client at their DNS provider. Orchestrate verifies them via live DNS lookups, surfaces propagation history, re-checks PENDING domains automatically, and gates dispatch eligibility on the verification state. The DNS host is the client\'s responsibility; the verification + dispatch-gating decisions are the platform\'s.',
+              'You publish the records with whoever hosts your domain. '
+              'Orchestrate checks them live, shows the history, re-checks '
+              'records that are not found yet on its own, and holds sending '
+              'until they are in place. The domain host is yours; the checks '
+              'and the decision to send are ours.',
         ),
         ContentSection(
-          title: 'Trust classification',
+          title: 'How much Orchestrate sends',
           body:
-              'The trust classification (pending / limited / warmup-allowed / full-trust) drives dispatch eligibility at the platform layer. It is informed by SPF / DKIM / DMARC verification results, mailbox health, and recent transport health events. Recipient-side inbox placement remains outside any platform\'s direct control.',
+              'Orchestrate decides how freely to send from what it can check: '
+              'your domain records, the health of your mailbox, and recent '
+              'delivery problems. Whether a note lands in an inbox is still up '
+              'to the recipient\'s systems, for us as for anyone.',
         ),
       ],
     );
 
 PublicContentScreen buildAbusePolicyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Abuse and complaint policy',
+      eyebrow: 'Policy',
+      title: 'Abuse and complaints',
       subtitle:
-          'Orchestrate is managed execution infrastructure for legitimate business communication. Abusive use creates risk for the platform, other clients, the recipient ecosystem, and the underlying provider relationships. This policy defines how abuse is handled.',
+          'Orchestrate is for genuine business communication. Abuse puts '
+          'everyone at risk: the recipients, other businesses using '
+          'Orchestrate, and the providers that carry the mail. This is how it '
+          'is handled.',
+      sideActions: [
+        ContentAction(label: 'Acceptable use', path: '/legal/acceptable-use'),
+        ContentAction(label: 'Suppression and opt-out', path: '/legal/suppression'),
+      ],
       sections: [
         ContentSection(
-          title: 'Prohibited behavior',
+          title: 'Not allowed',
           body:
-              'Unsolicited bulk sending without a documented business relationship or applicable consent, fraudulent or deceptive content, impersonation of a third party, harassment of recipients, deliberate evasion of provider deliverability controls, and use of the system to deliver malware or phishing payloads are all prohibited.',
+              'Sending in bulk without a business relationship or the consent '
+              'the law requires, fraudulent or misleading content, pretending '
+              'to be someone else, harassing recipients, deliberately getting '
+              'around providers\' controls, and sending malware or phishing.',
         ),
         ContentSection(
-          title: 'Complaint handling',
+          title: 'Complaints',
           body:
-              'Complaint signals (from recipient-side abuse reports, hard bounces with abuse codes, provider feedback loops, or direct reports to support) are routed to an operator queue. Confirmed complaints result in suppression entries (per the Suppression policy), potential transport reconfiguration, and account-level review.',
+              'Spam reports, bounces that signal abuse, provider feedback and '
+              'reports to support all go to our operators. A confirmed '
+              'complaint adds the person to the do-not-contact list, may change '
+              'how mail is sent, and starts a review of the account.',
         ),
         ContentSection(
-          title: 'Account consequences',
+          title: 'What can happen to an account',
           body:
-              'Repeated complaint patterns, hard-bounce rates above acceptable thresholds, or evidence of policy violation may result in dispatch pause, transport disconnection, account suspension, or termination of service. Where suspension is applied, the operational reason is recorded in the account audit trail.',
+              'Repeated complaints, too many failed deliveries, or evidence of '
+              'a breach can pause sending, disconnect a mailbox, suspend the '
+              'account or end the service. When an account is suspended, the '
+              'reason is recorded in its history.',
         ),
         ContentSection(
           title: 'Reporting abuse',
           body:
-              'Recipients or third parties may report suspected abuse to support@orchestrateops.com. Reports are reviewed against the audit trail (which account dispatched, against what targeting, under what authorization) and acted on per the consequences above.',
-        ),
-      ],
-    );
-
-PublicContentScreen buildWhyOrchestrateExistsScreen() =>
-    const PublicContentScreen(
-      eyebrow: 'Why Orchestrate exists',
-      title:
-          'Businesses are forced to operate the infrastructure they should be running on.',
-      subtitle:
-          'Outbound revenue tooling today exposes operational burden as a feature surface. The operator becomes a deliverability engineer, a prompting expert, a credential manager, a reply triage worker, and a CRM hygienist. All of this is work for a job that should be infrastructure.',
-      sideActions: [
-        ContentAction(
-            label: 'See how Orchestrate operates',
-            path: '/how-it-works',
-            filled: true),
-        ContentAction(label: 'Trust architecture', path: '/trust-architecture'),
-      ],
-      sections: [
-        ContentSection(
-          title: 'The operational burden every outbound team is carrying',
-          body:
-              'Pick any week of running outbound through current SaaS and the operator is doing infrastructure work: chasing SPF / DKIM / DMARC at the registrar, watching mailbox reputation, debugging why dispatch stalled, rewriting sequences that triggered spam filters, copying replies between an inbox and a CRM, manually suppressing recipients who replied "stop", reconnecting mailboxes after a token expired, and prompting AI to draft messages that match their voice. None of that is the work the business is trying to do.',
-          points: [
-            'Deliverability: SPF, DKIM, DMARC at the registrar, then chasing propagation',
-            'Mailbox operations: connecting, reconnecting, token expiry, warmup, throttling',
-            'Sequencing: rebuilding cadence logic in someone else\'s sequence-builder',
-            'Reply triage: copying responses from inbox to CRM, classifying by hand',
-            'Suppression: manually marking opt-outs, hard bounces, complaints',
-            'AI prompting: re-engineering prompts every time the tone drifts',
-            'Recovery: figuring out what to do when a transport fails mid-send',
-            'Monitoring: dashboards that show numbers but not operational state',
-          ],
-        ),
-        ContentSection(
-          title: 'Why current tooling does not absorb this',
-          body:
-              'Campaign-SaaS platforms expose the infrastructure surface because that is their architecture. They are sequence builders dressed up as automation. AI tools surface the prompting burden because they are language models behind a chat UI, not governed execution. CRMs surface fragmentation because they were never designed to operate revenue infrastructure; they are systems of record. Each tool optimizes its own surface; the operational burden falls in the gaps between them, on the operator.',
-          highlight:
-              'When the operator is the integration layer between tools, the operational burden is not reduced. It is hidden under multiple subscription lines.',
-        ),
-        ContentSection(
-          title: 'What Orchestrate is, structurally',
-          body:
-              'Managed commercial execution infrastructure. The client provides the identity layer: business identity, mailbox transport, sending domain, and representation authorization. Orchestrate provides the operational layer beneath that: signal-driven discovery, qualification, governed dispatch, follow-up continuity, trust verification, reply ingestion, suppression enforcement, recovery, and audit. The boundary is intentional: identity is yours, operation is ours.',
-        ),
-        ContentSection(
-          title: 'What changes for the operator',
-          body:
-              'The operator stops doing infrastructure work. No registrar trips for propagation chasing. DNS verification runs continuously. No sequence-builder UX. Orchestrate generates and paces governed dispatch under the readiness engine. No manual reply triage. Operation-scoped IMAP ingestion attaches matched replies to the right outbound and cancels follow-ups against responded leads. No prompt engineering. AI assists inside the governance layer, with traceability and operator oversight. No silent transport failures. Health checks surface degraded state with the next concrete action, ownership badge attached.',
-        ),
-        ContentSection(
-          title: 'What does not change',
-          body:
-              'The client remains the legal and commercial author. Representation authorization is recorded explicitly; sender attribution is enforced on every outbound. Suppression entries from opt-outs are honored before every dispatch. The audit trail records what the system did and on whose behalf. Orchestrate is operational infrastructure; it is not autonomous impersonation.',
-          highlight:
-              'Identity belongs to the client. Operation belongs to Orchestrate. The boundary is the product.',
-        ),
-      ],
-    );
-
-PublicContentScreen buildHowOrchestrateOperatesScreen() =>
-    const PublicContentScreen(
-      eyebrow: 'How Orchestrate operates',
-      title:
-          'Identity → trust → transport → readiness → governed execution → continuity.',
-      subtitle:
-          'A linear walkthrough of what actually happens after a client connects identity to the platform. Every layer is operationally truthful, mapping to runtime behavior rather than feature copy.',
-      sideActions: [
-        ContentAction(
-            label: 'Why Orchestrate exists',
-            path: '/why-orchestrate',
-            filled: true),
-        ContentAction(label: 'Trust architecture', path: '/trust-architecture'),
-        ContentAction(label: 'Pricing', path: '/pricing'),
-      ],
-      sections: [
-        ContentSection(
-          title: '1. Domain attached',
-          body:
-              'The client confirms or attaches their sending domain: auraplatform.org, outreach.company.com, mail.company.com, or any apex / subdomain they control. The domain is the operational identity center; transports plug in beneath. Orchestrate creates a SendingDomain row with status=PENDING and surfaces the SPF, DKIM, and DMARC records to publish.',
-          points: [
-            'Domain inferred from Representation profile when available',
-            'Manual domain entry supported for clients with separate sending infrastructure',
-            'No transport required to begin DNS verification',
-          ],
-        ),
-        ContentSection(
-          title: '2. DNS verified',
-          body:
-              'Orchestrate runs live DNS lookups against the published records. SPF, DKIM, and DMARC are checked individually; per-record propagation history is recorded so the client can watch the verification window land. A polling worker re-checks pending domains automatically. The operator does not chase the registrar.',
-          points: [
-            'Live DNS queries via node:dns (no third-party deliverability vendor)',
-            'Per-record verification history kept for audit',
-            'Trust classification: pending → limited → warmup → full-trust',
-          ],
-        ),
-        ContentSection(
-          title: '3. Transport connected',
-          body:
-              'Three first-class transports: Google Workspace OAuth, Microsoft 365 OAuth, or custom SMTP + IMAP. OAuth runs entirely backend-side. Tokens never touch the browser. Custom SMTP + IMAP is one guided dialog: outbound credentials, inbound credentials (optional), and Orchestrate generates a per-transport DKIM keypair, vaults everything, and seeds the IMAP cursor at the current highest UID so no historical inbox is ever inspected.',
-          points: [
-            'Google / Microsoft via OAuth (send-only scope)',
-            'Custom SMTP + IMAP for SES, Mailgun, SendGrid, Postfix, regional providers',
-            'Per-transport DKIM keypair on custom SMTP',
-            'IMAP cursor seeded at current highest UID, no historical scan',
-          ],
-        ),
-        ContentSection(
-          title: '4. Readiness governed',
-          body:
-              'A single backend authority (ExecutionEligibilityService) evaluates the full dependency chain: setup, subscription, representation, business identity, sending domain, trust classification, sending transport, reply monitoring, dispatch eligibility. Every client surface (Operations, Infrastructure, Settings, Home, guidance drawer) reads from this one authority. There is no per-screen readiness composition that can drift.',
-          points: [
-            '9-layer dependency chain with per-layer state (ready / pending / waiting / blocked)',
-            'Single backend authority, no per-screen recomposition',
-            'Owner tagging: client / Orchestrate / operator per layer',
-            'Inline resolution CTA on every client-pending layer',
-          ],
-        ),
-        ContentSection(
-          title: '5. Outbound execution activated',
-          body:
-              'When every layer is ready, dispatch eligibility flips. Outbound messages are generated against the business identity, paced under a per-mailbox governor, signed via DKIM at the adapter layer, and stamped with a custom X-Orchestrate-Operation-Id header so reply matching survives relays that strip standard threading headers. Every send passes a suppression check, a governance check, and a readiness check before leaving the process.',
-          points: [
-            'Per-message DKIM signing inside Orchestrate',
-            'Custom operation-fingerprint header on outbound',
-            'Suppression check at every FIRST_SEND and FOLLOWUP_SEND',
-            'Governed pacing under per-mailbox in-flight cap',
-          ],
-        ),
-        ContentSection(
-          title: '6. Replies matched',
-          body:
-              'Operation-scoped IMAP ingestion runs against custom SMTP+IMAP transports. Phase 1 fetches headers only; phase 2 matches inbound against this client\'s outbound by In-Reply-To, References, or the operation-id header; phase 3 fetches bodies ONLY for matched UIDs. Unmatched mail stays in the upstream mailbox. Bodies are never read, content is never stored, and AI is never reached. Matched replies land in the Replies workspace.',
-          points: [
-            'Header-first, body-on-match-only',
-            'No general inbox reading, operation-scoped attribution required',
-            'Deduplication keyed by upstream message-id',
-            'Unmatched mail never persisted, classified, surfaced, or fed to AI',
-          ],
-        ),
-        ContentSection(
-          title: '7. Follow-ups governed',
-          body:
-              'A matched reply against a lead automatically cancels queued FOLLOWUP_SEND jobs and any QUEUED / SCHEDULED OutreachMessage rows targeting that lead. The platform stops dispatching the moment a recipient responds, with no operator action required and no race condition between inbox triage and the next-send timer.',
-        ),
-        ContentSection(
-          title: '8. Suppression enforced',
-          body:
-              'Opt-out signals, hard bounces, complaints, and operator blocks create SuppressionEntry rows scoped per organization and per client. The dispatch path checks suppression before every FIRST_SEND, every FOLLOWUP_SEND, and every direct email. There is no code path that bypasses the suppression check.',
-        ),
-        ContentSection(
-          title: '9. Operational continuity maintained',
-          body:
-              'When something degrades (OAuth grant revoked, SMTP host throttling, DNS regression on an ACTIVE domain), the readiness chain reports the dependency by name, with ownership and a concrete next action. Recovery is automatic where Orchestrate owns it (transient provider hiccups, deliverability re-checks); the client sees what is happening and who owns the next step. No fake "everything green" while a subsystem is degraded.',
-          highlight:
-              'The runtime reports operational truth. "Recovering" / "Degraded" / "Reconnect required" name the real dependency, not a marketing state.',
-        ),
-      ],
-    );
-
-PublicContentScreen buildTrustArchitectureScreen() => const PublicContentScreen(
-      eyebrow: 'Trust architecture',
-      title:
-          'Operation-scoped access, encrypted vault, governed dispatch, AI bounded by attribution.',
-      subtitle:
-          'A consolidated view of how trust is architected at runtime, not a list of legal pages but the structural design of the system. Each layer below maps to a dedicated policy page for the formal commitment.',
-      sideActions: [
-        ContentAction(
-            label: 'Mailbox access policy',
-            path: '/legal/mailbox-access',
-            filled: true),
-        ContentAction(label: 'Credential handling', path: '/legal/credentials'),
-        ContentAction(label: 'AI usage', path: '/legal/ai-usage'),
-        ContentAction(
-            label: 'Reply monitoring', path: '/legal/reply-monitoring'),
-        ContentAction(label: 'Provider boundaries', path: '/legal/providers'),
-        ContentAction(
-            label: 'Suppression / opt-out', path: '/legal/suppression'),
-        ContentAction(label: 'Retention / deletion', path: '/legal/retention'),
-        ContentAction(label: 'Abuse policy', path: '/legal/abuse'),
-      ],
-      sections: [
-        ContentSection(
-          title: 'Mailbox access is operation-scoped at the read layer',
-          body:
-              'Orchestrate is not a general inbox reader. For custom IMAP transports, the platform fetches envelope + a narrow header set (Message-ID, In-Reply-To, References, From, To, Subject, X-Orchestrate-Operation-Id) BEFORE any matching decision. Bodies are only fetched after a message resolves to an OutreachMessage Orchestrate sent. Unmatched mail stays in the upstream mailbox. Body is never read, content is never stored, and AI is never reached. The full disclosure is the Mailbox access policy.',
-          points: [
-            'Header-first fetch on every IMAP poll',
-            'Body fetched only after operation attribution',
-            'Initial IMAP connect seeds cursor at current highest UID, no historical scan',
-            'OAuth transports today use send-only scopes',
-          ],
-        ),
-        ContentSection(
-          title: 'Credentials are sealed by an encrypted vault',
-          body:
-              'OAuth refresh tokens, SMTP passwords, IMAP passwords, and DKIM private keys live behind a vault adapter (encrypted-DB AES-256-GCM or HashiCorp Vault). Production runtime refuses to boot with the in-memory adapter. Service code never imports a vault adapter directly; every read, write, rotation, and revocation is auditable. Audit log entries are metadata-only by construction, no credential content, no message body.',
-        ),
-        ContentSection(
-          title: 'AI is bounded to operation-attributed data',
-          body:
-              'AI workers consume OutreachMessage rows (Orchestrate-generated) and Reply rows (operation-matched only). They do not receive raw IMAP messages, unmatched inbound mail, or the contents of a mailbox outside what Orchestrate generated or matched. Every AI invocation produces a stored decision record.',
-        ),
-        ContentSection(
-          title: 'Transport is provider-agnostic, domain identity is primary',
-          body:
-              'Google Workspace, Microsoft 365, and custom SMTP+IMAP are interchangeable transport layers beneath the client\'s sending domain. Changing providers does not change operational identity. The trust classification (pending / limited / warmup / full-trust) is informed by SPF / DKIM / DMARC verification, mailbox health, and recent transport events, and it gates dispatch eligibility at the platform layer.',
-        ),
-        ContentSection(
-          title: 'Suppression is enforced at every dispatch path',
-          body:
-              'UNSUBSCRIBE / HARD_BOUNCE / COMPLAINT / MANUAL_BLOCK suppression entries block FIRST_SEND, FOLLOWUP_SEND, and direct email. There is no code path that skips the suppression check. Opt-out replies are auto-converted to UNSUBSCRIBE entries.',
-        ),
-        ContentSection(
-          title: 'Dispatch is governed, not autonomous',
-          body:
-              'Every send passes a readiness check, a suppression check, and a governance check. The dispatch governor enforces a per-mailbox in-flight cap so sending posture stays stable. Recovery branches re-converge the readiness state without requiring client lifecycle controls.',
-        ),
-        ContentSection(
-          title: 'Operational state is audited and explainable',
-          body:
-              'Connect, reconnect, disconnect, credential rotation, IMAP-inbound attached, reply ingested, follow-up suppressed by reply, readiness transitions, and dispatch decisions all leave append-only audit rows. Audit content is metadata only, never credentials, never message bodies. The readiness engine renders the same authoritative state across Operations, Infrastructure, Settings, and the guidance drawer.',
-          highlight:
-              'No screen recomputes readiness independently. One backend authority, one truth, multiple read surfaces.',
-        ),
-        ContentSection(
-          title: 'Runtime reports operational truth',
-          body:
-              'The platform does not over-claim. "Ready" only appears when the underlying state proves it. "Recovering" / "Degraded" / "Reconnect required" name the real dependency. Trust classification distinguishes "full-trust" from "warmup-allowed" from "pending". Reply monitoring is reported as "outbound-only" until inbound is genuinely wired. Operator-owned and client-owned next actions are tagged explicitly.',
+              'Anyone can report suspected abuse to support@orchestrateops.com. '
+              'We check the report against the record of which account sent '
+              'what, to whom, and with whose permission, and act as described '
+              'above.',
         ),
       ],
     );
 
 PublicContentScreen buildRetentionPolicyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Data retention and deletion',
+      eyebrow: 'Policy',
+      title: 'Retention and deletion',
       subtitle:
-          'Records are retained to operate the service, meet legal obligations, and preserve the audit trail. This document names what is retained and the deletion paths.',
+          'What we keep, why, and how it is deleted. Records are kept to run '
+          'the service, meet the law, and keep an honest history.',
+      sideActions: [
+        ContentAction(label: 'Account deletion', path: '/account-deletion'),
+        ContentAction(label: 'Privacy', path: '/legal/privacy'),
+      ],
       sections: [
         ContentSection(
-          title: 'Operational records',
+          title: 'Working records',
           body:
-              'Account profiles, workspace state, business identity, representation authorization, mailboxes, sending domains, dispatched messages, replies, meetings, and invoices are retained for the active life of the account and after termination for dispute resolution, financial accountability, and audit traceability. No fixed post-termination period is currently set.',
+              'Your account, workspace, business details, permission given, '
+              'mailboxes, domains, notes sent, replies, meetings and invoices '
+              'are kept while the account is active, and afterwards for '
+              'disputes, financial accountability and an auditable history. '
+              'No fixed period after the account ends is set yet.',
         ),
         ContentSection(
-          title: 'Mailbox credentials',
+          title: 'Mailbox passwords and keys',
           body:
-              'Mailbox credentials are retained as long as the mailbox is connected. On disconnect or revocation, the vault entry is deleted and the cross-vault audit log preserves the action record (action, actor, organization, mailbox, outcome) but never the credential contents.',
+              'Kept while the mailbox is connected. When you disconnect, they '
+              'are deleted from the vault; only the record that it happened '
+              'remains, never the secret.',
         ),
         ContentSection(
-          title: 'Audit logs',
+          title: 'Activity records',
           body:
-              'Audit logs (credential vault audit, application-layer audit events such as SMTP_MAILBOX_CONNECTED / IMAP_INBOUND_ATTACHED / REPLY_INGESTED / FOLLOWUP_SUPPRESSED_BY_REPLY) are retained for the longer of the account lifecycle and the period legally required for security and audit purposes. Audit log content is metadata-only by construction; bodies and credentials are not part of audit records.',
+              'Records of activity, such as a mailbox connected or a reply '
+              'received, are kept for as long as the account exists or as long '
+              'as the law requires for security and audit, whichever is '
+              'longer. They never contain message contents or secrets.',
         ),
         ContentSection(
-          title: 'Operation-attributed mailbox content',
+          title: 'Replies',
           body:
-              'Reply rows persisted from inbound mail are retained alongside the operational record they belong to. Unmatched inbound mail is never persisted in the first place (see the Mailbox access policy) and therefore has no retention question.',
+              'Replies to Orchestrate\'s notes are kept with the customer they '
+              'belong to. Other mail is never kept in the first place, so '
+              'there is nothing to delete.',
         ),
         ContentSection(
-          title: 'Account deletion',
+          title: 'Deleting your account',
           body:
-              'Account deletion requests are honored per the Account deletion page. Sign-in, profile data and workspace access are deleted. Some records are kept after deletion, as listed on the Account deletion page, for billing accountability, fraud prevention, audit logs, legal compliance, dispute resolution, or unpaid balances.',
+              'Follow the Account deletion page. Your sign-in, profile and '
+              'access to the workspace are deleted. The records listed there '
+              'are kept for billing, fraud prevention, activity history, legal '
+              'compliance, disputes, or unpaid balances.',
         ),
       ],
     );
 
 PublicContentScreen buildBillingPolicyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Billing and subscription policy',
+      eyebrow: 'Policy',
+      title: 'Billing',
       subtitle:
-          'This policy explains how service tiers, invoicing, subscriptions, reminders, and payment responsibilities are handled through Orchestrate.',
+          'How paying for Orchestrate works.',
+      sideActions: [
+        ContentAction(label: 'Pricing', path: '/pricing'),
+        ContentAction(label: 'Refunds', path: '/legal/refunds'),
+      ],
       sections: [
         ContentSection(
-          title: 'Managed-execution scopes',
+          title: 'One plan',
           body:
-              'Orchestrate is structured around two managed-infrastructure scopes: Opportunity (signal discovery, qualification, governed dispatch, follow-up continuity, reply handling) and Revenue (Opportunity plus revenue continuity: billing administration, reminders, statements, agreements, and payment accountability records).',
+              'Orchestrate is one plan for your whole business, paid monthly '
+              'or yearly at the prices on the Pricing page. Setting up your '
+              'workspace is free. Unusually heavy use, and any setup help we '
+              'agree to provide, are priced separately.',
         ),
         ContentSection(
-          title: 'Billing cycle and charges',
+          title: 'When you are charged',
           body:
-              'Charges may be one-time, recurring, milestone-based, or contract-based depending on the service relationship. Applicable charges, due dates, and billing cadence should be stated in the governing service agreement or accepted proposal.',
+              'A monthly plan is billed each month and a yearly plan each '
+              'year. Anything charged differently, such as setup help, follows '
+              'what is stated in your agreement or accepted proposal.',
         ),
         ContentSection(
-          title: 'Late payment posture',
+          title: 'Late payment',
           body:
-              'Late payment may result in reminder escalation, service pause, restricted access, or withholding of certain service functions until account status is brought current.',
+              'If a payment is late, you may get reminders, and some or all of '
+              'the service may be paused or limited until it is paid.',
           highlight:
-              'Billing administration support does not erase the client’s own responsibility for payment obligations owed to Orchestrate.',
+              'Orchestrate helping with your own billing does not change what '
+              'you owe Orchestrate.',
         ),
         ContentSection(
-          title: 'Client billing support',
+          title: 'Billing your own customers',
           body:
-              'Where the Revenue tier includes billing support for the client’s customers, Orchestrate acts as a structured service intermediary. It does not become the underlying contractual counterparty between the client and the customer unless expressly agreed in writing.',
+              'Where Orchestrate prepares agreements and invoices for your '
+              'customers, it does so on your behalf. It does not become a party '
+              'to the agreement between you and your customer unless that is '
+              'agreed in writing.',
         ),
       ],
     );
 
 PublicContentScreen buildRefundPolicyScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Refund policy',
+      eyebrow: 'Policy',
+      title: 'Refunds',
       subtitle:
-          'Refund posture should remain clear, restrained, and tied to actual service conditions rather than vague promises.',
+          'When a refund is possible, and when it is not.',
+      sideActions: [
+        ContentAction(label: 'Billing', path: '/legal/billing'),
+        ContentAction(label: 'Contact', path: '/contact'),
+      ],
       sections: [
         ContentSection(
-          title: 'General rule',
+          title: 'The general rule',
           body:
-              'Fees already earned for completed service, delivered work, used subscription periods, activated infrastructure, or executed dispatch are generally non-refundable unless otherwise stated in writing.',
+              'Fees for service already provided, work delivered, time on a '
+              'plan already used, or notes already sent are not refunded, '
+              'unless we have said otherwise in writing.',
         ),
         ContentSection(
-          title: 'When review may be appropriate',
+          title: 'When we will look at a refund',
           body:
-              'Refund review may be appropriate where duplicate charges, proven billing error, material non-delivery of agreed setup work, or other clear account mistakes are established.',
+              'Where you were charged twice, a billing error is shown, setup '
+              'work we agreed to was not delivered, or there is another clear '
+              'mistake on your account.',
         ),
         ContentSection(
-          title: 'What is not a refund trigger by itself',
+          title: 'Not reasons on their own',
           body:
-              'Low reply rates, low meeting conversion, customer non-payment, spam filtering, slow client response, or recipient silence are not by themselves grounds for refund because they depend on variables outside direct platform control.',
+              'Few replies, few meetings, customers who do not pay, spam '
+              'filters, slow responses, or people who do not answer are not '
+              'reasons for a refund by themselves: they depend on things no '
+              'one fully controls.',
         ),
       ],
     );
 
 PublicContentScreen buildAcceptableUseScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Acceptable use policy',
+      eyebrow: 'Policy',
+      title: 'Acceptable use',
       subtitle:
-          'Orchestrate is managed execution infrastructure for legitimate business communication, governed dispatch, revenue continuity, and accountable client records. It is not a tool for unsolicited bulk sending or sender-identity manipulation.',
+          'Orchestrate is for genuine business communication and honest '
+          'records. It is not for bulk unsolicited sending or for disguising '
+          'who is sending.',
+      sideActions: [
+        ContentAction(label: 'Abuse', path: '/legal/abuse'),
+        ContentAction(label: 'Terms of use', path: '/legal/terms'),
+      ],
       sections: [
         ContentSection(
-          title: 'Prohibited behavior',
+          title: 'Not allowed',
           body:
-              'Use of the service for fraud, harassment, impersonation, unlawful targeting, deceptive billing, abuse of sender identity, delivery of malware, or unlawful data handling is prohibited.',
+              'Fraud, harassment, pretending to be someone else, unlawful '
+              'targeting, misleading billing, misusing a sender\'s identity, '
+              'sending malware, or handling data unlawfully.',
         ),
         ContentSection(
-          title: 'Sender and deliverability discipline',
+          title: 'Sending responsibly',
           body:
-              'Users may not deliberately degrade sender reputation, rotate identities deceptively, conceal origin, or use the platform in a manner likely to create systemic abuse or blacklisting risk.',
+              'You may not deliberately damage a sender\'s reputation, switch '
+              'identities to deceive, hide who is sending, or use Orchestrate '
+              'in a way likely to get senders blocked or blacklisted.',
         ),
         ContentSection(
-          title: 'Operational protection',
+          title: 'Protecting everyone',
           body:
-              'Access may be restricted where behavior threatens infrastructure stability, payment integrity, legal compliance, account security, or the integrity of other clients using the system.',
+              'Access may be limited where behaviour threatens the service, '
+              'payments, legal compliance, account security, or other '
+              'businesses using Orchestrate.',
         ),
       ],
     );
 
 PublicContentScreen buildServiceAgreementScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
+      eyebrow: 'Policy',
       title: 'Service agreement',
       subtitle:
-          'The service agreement defines the operational relationship between Orchestrate and the client once the managed-execution scope is accepted.',
+          'The agreement between your business and Orchestrate, and what it '
+          'covers.',
+      sideActions: [
+        ContentAction(label: 'Terms of use', path: '/legal/terms'),
+        ContentAction(label: 'Billing', path: '/legal/billing'),
+      ],
       sections: [
         ContentSection(
-          title: 'What the agreement should establish',
+          title: 'What it sets out',
           body:
-              'The agreement should state the managed-execution scope, plan, billing cadence, deliverables, account visibility, communication posture, reminder handling, records responsibility, and any limits or exclusions that shape the operational relationship.',
+              'What Orchestrate will do for you, the plan and how often you '
+              'pay, what is delivered, what you can see, how Orchestrate writes '
+              'on your behalf, how reminders and records are handled, and any '
+              'limits or exclusions.',
         ),
         ContentSection(
-          title: 'Why it matters here',
+          title: 'Why it matters',
           body:
-              'Because Orchestrate runs both signal-driven opportunity detection and revenue continuity under the same infrastructure, the service agreement is the place where responsibilities stop being implied and become explicit: what Orchestrate operates, what the client owns (business identity, sending identity), and where the boundary sits.',
+              'Orchestrate both finds customers and helps you get paid, so the '
+              'agreement is where responsibilities are written down: what '
+              'Orchestrate does, what stays yours (your business details and '
+              'your sending address), and where the line between them is.',
           highlight:
-              'This page does not replace a signed agreement. It marks that the signed agreement is structurally required.',
+              'This page does not replace the agreement itself. A signed '
+              'agreement is required.',
         ),
       ],
     );
 
 PublicContentScreen buildDeliverabilityScreen() => const PublicContentScreen(
-      eyebrow: 'Legal framework',
-      title: 'Deliverability notice',
+      eyebrow: 'Policy',
+      title: 'Deliverability',
       subtitle:
-          'Deliverability is treated as a working responsibility, but no honest system can promise universal inbox placement, responses, or conversions.',
+          'We work hard to get your notes delivered. No honest service can '
+          'promise every note reaches an inbox, or that anyone replies or buys.',
+      sideActions: [
+        ContentAction(label: 'Check your domain', path: '/diagnostics'),
+        ContentAction(label: 'Provider boundaries', path: '/legal/providers'),
+      ],
       sections: [
         ContentSection(
-          title: 'What deliverability depends on',
+          title: 'What delivery depends on',
           body:
-              'Inbox placement and outbound performance depend on sender domain condition, mailbox health, recipient filtering systems, message quality, targeting discipline, list quality, complaint behavior, and broader third-party infrastructure conditions.',
+              'The state of your domain and mailbox, the recipient\'s filters, '
+              'the quality of the message, who it goes to, how clean the list '
+              'is, whether people complain, and the systems of other companies '
+              'along the way.',
         ),
         ContentSection(
-          title: 'What Orchestrate operates',
+          title: 'What Orchestrate does',
           body:
-              'Orchestrate runs verified sending-identity setup (live SPF / DKIM / DMARC verification + automated re-checks), backend-owned mailbox OAuth with vault-backed credentials, governed dispatch, and continuous mailbox-health monitoring. The infrastructure improves the variables Orchestrate controls.',
+              'Checks your domain records live and keeps re-checking them, '
+              'connects your mailbox securely with passwords held in a vault, '
+              'checks every note before it is sent, and keeps watching your '
+              'mailbox\'s health. It improves everything it can control.',
         ),
         ContentSection(
           title: 'What cannot be promised',
           body:
-              'No representation is made that a message will reach the inbox, receive a reply, convert to a meeting, or result in customer payment in every case.',
+              'That every note reaches the inbox, gets a reply, becomes a '
+              'meeting, or leads to payment.',
           highlight:
-              'Deliverability work improves posture. It does not remove the reality of external systems and recipient choice.',
+              'Good practice raises the odds. It does not take away other '
+              'companies\' systems or the recipient\'s choice.',
         ),
       ],
     );

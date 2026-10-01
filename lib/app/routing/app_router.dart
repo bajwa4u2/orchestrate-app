@@ -46,12 +46,7 @@ import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
 import 'package:orchestrate_app/features/public/screens/commercial_model_screen.dart';
 import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_sequence_author_screen.dart';
-import 'package:orchestrate_app/features/public/screens/activation_preview_screen.dart';
-import 'package:orchestrate_app/features/public/screens/for_evaluators_screen.dart';
-import 'package:orchestrate_app/features/public/screens/orchestrate_operations_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_diagnostics_screen.dart';
-import 'package:orchestrate_app/features/public/screens/public_answers_screen.dart';
-import 'package:orchestrate_app/features/public/screens/public_journey_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
 import 'package:orchestrate_app/features/public/screens/public_home_screen.dart';
@@ -769,12 +764,14 @@ GoRouter _buildRouter() {
         child: PublicShell(
           currentPath: state.uri.path,
           child: const PublicContentScreen(
-            eyebrow: 'Account access',
+            eyebrow: 'Policy',
             title: 'Account deletion',
             subtitle:
-                'Orchestrate users can request account deletion from inside the app or by contacting support from the email address associated with the account.',
+                'You can delete your account yourself inside the app, or ask us '
+                'to from the email address on the account.',
             sideNote:
-                'Orchestrate by Aura Platform LLC. Support: support@orchestrateops.com.',
+                'Orchestrate is made by Aura Platform LLC. '
+                'Support: support@orchestrateops.com.',
             sections: [
               ContentSection(
                 title: 'Delete your account from inside the app',
@@ -782,7 +779,7 @@ GoRouter _buildRouter() {
                     'You can permanently delete your account yourself, without contacting support: Client workspace → Account → Delete account. Deletion is confirmed in-app and cannot be undone.',
               ),
               ContentSection(
-                title: 'Alternative contact method',
+                title: 'Or ask us by email',
                 body:
                     'If you prefer, you may also request deletion by emailing support@orchestrateops.com from the email address associated with your Orchestrate account.',
               ),
@@ -815,11 +812,6 @@ GoRouter _buildRouter() {
                 title: 'Timeline',
                 body:
                     'Requests are reviewed and processed within a reasonable period, normally within 30 days, unless retention is required by law, billing, security, or dispute obligations.',
-              ),
-              ContentSection(
-                title: 'Developer and support',
-                body:
-                    'Orchestrate is operated by Aura Platform LLC. For account deletion support, email support@orchestrateops.com.',
               ),
             ],
           ),

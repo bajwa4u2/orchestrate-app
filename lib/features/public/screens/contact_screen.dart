@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:orchestrate_app/core/ui/ob_widgets.dart';
@@ -113,48 +114,61 @@ class _ContactScreenState extends State<ContactScreen> {
   }
 }
 
-/// DD-26: who to talk to and about what, in the front door's words.
+/// DD-26: one support surface, the way support works now. The conversation
+/// on the right is the support; this side only says what it is for and the
+/// two other doors: email, and signing in for anything about an account.
+/// The explanatory cards and the second "quick answers" tray that opened the
+/// same conversation again are gone.
 class _ContactIntro extends StatelessWidget {
   const _ContactIntro({required this.onOpenDrawer});
 
+  // Kept for the call site; the tray is no longer offered here.
   final VoidCallback onOpenDrawer;
 
   @override
   Widget build(BuildContext context) {
-    Widget point(String title, String body) => Padding(
+    Widget door(IconData icon, String title, Widget body) => Padding(
           padding: const EdgeInsets.only(bottom: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Ob.strong(16)),
-              const SizedBox(height: 4),
-              Text(body, style: Ob.body(15)),
-            ],
-          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2, right: 12),
+              child: Icon(icon, size: 20, color: Ob.inkSoft),
+            ),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, style: Ob.strong(16)),
+                const SizedBox(height: 3),
+                body,
+              ]),
+            ),
+          ]),
         );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('CONTACT', style: Ob.eyebrow()),
         const SizedBox(height: 14),
-        const ObHeadline('Ask us anything before you start.', size: 44),
+        const ObHeadline('Ask us anything.', size: 44),
         const SizedBox(height: 14),
-        Text(
-            'Ask about price, how Orchestrate would find customers for your '
-            'business, or what setting up your email involves.',
+        Text('Price, how Orchestrate would find customers for your business, '
+            'or setting up your email. Ask in the box and an answer comes '
+            'back straight away.',
             style: Ob.body(17)),
         const SizedBox(height: 28),
-        point('Good things to tell us',
-            'What you sell, who usually buys it, and where they are.'),
-        point('About your email',
-            'Which address you would send from, and who runs your domain. '
-            'A Gmail or Outlook address is fine.'),
-        point('Short question?',
-            'Quick answers stay open beside the page you are reading.'),
-        OutlinedButton(
-          onPressed: onOpenDrawer,
-          child: const Text('Open quick answers'),
-        ),
+        door(Icons.mail_outline, 'Email',
+            SelectableText('support@orchestrateops.com', style: Ob.body(15))),
+        door(
+            Icons.lock_outline,
+            'Already a customer?',
+            Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
+              Text('Sign in and use Support inside your workspace, so we can '
+                  'see your account. ',
+                  style: Ob.body(15)),
+              InkWell(
+                onTap: () => GoRouter.of(context).go('/auth/login'),
+                child: Text('Sign in', style: Ob.strong(15)),
+              ),
+            ])),
       ],
     );
   }
