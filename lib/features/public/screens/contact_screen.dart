@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
 import 'package:orchestrate_app/features/support/services/support_service.dart';
 import 'package:orchestrate_app/features/support/state/support_controller.dart';
@@ -70,7 +71,7 @@ class _ContactScreenState extends State<ContactScreen> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
+      padding: const EdgeInsets.fromLTRB(0, 56, 0, 56),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1180),
@@ -112,6 +113,7 @@ class _ContactScreenState extends State<ContactScreen> {
   }
 }
 
+/// DD-26: who to talk to and about what, in the front door's words.
 class _ContactIntro extends StatelessWidget {
   const _ContactIntro({required this.onOpenDrawer});
 
@@ -119,75 +121,41 @@ class _ContactIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.publicSurfaceSoft,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppTheme.publicLine),
-            ),
-            child: Text(
-              'Contact',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
-            ),
+    Widget point(String title, String body) => Padding(
+          padding: const EdgeInsets.only(bottom: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Ob.strong(16)),
+              const SizedBox(height: 4),
+              Text(body, style: Ob.body(15)),
+            ],
           ),
-          const SizedBox(height: 18),
-          Text(
-            'Talk through whether managed execution infrastructure is the right fit.',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Use this page when you want a direct conversation before activating. Orchestrate is commercial intelligence + execution infrastructure, not outreach software. The right conversation is usually about scope, sending identity readiness, and which infrastructure scope (Opportunity or revenue continuity) you want Orchestrate to operate.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
-          ),
-          const SizedBox(height: 28),
-          const _DetailCard(
-            title: 'Good reasons to use this page',
-            body:
-                'Scope and pricing clarity, sending-identity / domain questions, onboarding flow, or deciding between Opportunity (managed execution) and Opportunity + revenue continuity before account setup.',
-          ),
-          const SizedBox(height: 14),
-          const _DetailCard(
-            title: 'What helps the conversation',
-            body:
-                'Share what your business sells, the market and segments you target, the mailbox / sending domain you would connect, and any constraint (compliance, internal infrastructure, deliverability history) that shapes how Orchestrate would activate for you.',
-          ),
-          const SizedBox(height: 14),
-          const _DetailCard(
-            title: 'When quick guidance helps',
-            body:
-                'Use quick guidance if you want support to stay open while you compare scopes or review another public page. It is faster than booking a call when the question is short.',
-          ),
-          const SizedBox(height: 22),
-          OutlinedButton(
-            onPressed: onOpenDrawer,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.publicText,
-              side: const BorderSide(color: AppTheme.publicLine),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radius),
-              ),
-            ),
-            child: const Text('Open quick guidance'),
-          ),
-        ],
-      ),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('CONTACT', style: Ob.eyebrow()),
+        const SizedBox(height: 14),
+        const ObHeadline('Ask us anything before you start.', size: 44),
+        const SizedBox(height: 14),
+        Text(
+            'Ask about price, how Orchestrate would find customers for your '
+            'business, or what setting up your email involves.',
+            style: Ob.body(17)),
+        const SizedBox(height: 28),
+        point('Good things to tell us',
+            'What you sell, who usually buys it, and where they are.'),
+        point('About your email',
+            'Which address you would send from, and who runs your domain. '
+            'A Gmail or Outlook address is fine.'),
+        point('Short question?',
+            'Quick answers stay open beside the page you are reading.'),
+        OutlinedButton(
+          onPressed: onOpenDrawer,
+          child: const Text('Open quick answers'),
+        ),
+      ],
     );
   }
 }
@@ -208,27 +176,23 @@ class _ContactSupportSurface extends StatelessWidget {
     return Container(
       height: 600,
       decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
+        color: Ob.card,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: Ob.liftHigh,
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(28, 28, 28, 10),
-            child: Text(
-              'Start the conversation',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            child: Text('Write to us', style: Ob.name(26)),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(28, 0, 28, 18),
             child: Text(
-              'We’ll respond directly or guide the next step from here.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
+              'Leave your email and we will answer there.',
+              style: Ob.body(15, color: Ob.inkMuted),
             ),
           ),
           const Divider(height: 1),
@@ -259,40 +223,6 @@ class _ContactSupportSurface extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
             child: SupportFooter(showStripe: false),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailCard extends StatelessWidget {
-  const _DetailCard({required this.title, required this.body});
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            body,
-            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       ),

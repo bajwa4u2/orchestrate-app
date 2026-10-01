@@ -43,3 +43,15 @@ The audit opened the retained footer destinations and captured their rendered
 top surfaces at 1440 px. The full-page visual loop must continue for any newly
 added public destination; a route must not be accepted solely because it
 returns 200 or mounts `PublicShell`.
+
+
+## DD-26 public rebuild (2026-10-01)
+
+Retired from footer and menu, each address now redirecting to the page that
+replaced it: /product, /why-orchestrate, /ai-governed-revenue → `/`;
+/lead-sourcing, /how-orchestrate-operates, /activation, /journey → `/how-it-works`;
+/trust-compliance, /trust-architecture, /for-evaluators, /security-evaluation,
+/trust-review → `/trust`; /newsletter → `/`; /answers, /faq, /help → `/contact`.
+New: `/trust` (one trust page) and `/legal` (every policy). Footer: Orchestrate
+(one customer, pricing, check your domain), Company (about, trust, contact),
+Policies (terms, privacy, billing and refunds, account deletion, all policies).

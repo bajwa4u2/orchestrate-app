@@ -644,3 +644,262 @@ class PricingBScreen extends StatelessWidget {
         ],
       );
 }
+
+// ── Trust (one page in place of four) ────────────────────────────────
+
+/// What Orchestrate touches, and what it never will (DD-26).
+///
+/// This replaces four overlapping pages (trust and compliance, trust
+/// architecture, for evaluators, security evaluation). An owner reads the top
+/// half; a security reviewer reads the bottom half and the policies it links.
+/// Every "never" here is a structural property the evaluators page already
+/// stated; only the wording is plainer.
+class TrustScreen extends StatelessWidget {
+  const TrustScreen({super.key});
+
+  static const _keeps = [
+    (
+      'Your email',
+      'Orchestrate sends only the notes you approve, from the address you '
+          'connect. With Google or Microsoft it asks for send-only access. It '
+          'never reads the rest of your mailbox.'
+    ),
+    (
+      'Your customers',
+      'Anyone who asks not to be contacted is never written to again. Every '
+          'send checks that list first; there is no way around it.'
+    ),
+    (
+      'Your passwords and keys',
+      'Held in an encrypted vault. They never appear on a screen, in a log, '
+          'or in any answer the system gives.'
+    ),
+  ];
+
+  static const _never = [
+    'Read a message in your inbox that is not a reply to a note Orchestrate sent.',
+    'Write to anyone on your do-not-contact list.',
+    'Show a password or key anywhere, to anyone, including you.',
+    'Tell you a workspace is ready while anything it needs is missing.',
+    "Give your mailbox to an AI system, except replies to Orchestrate's own notes.",
+    'Copy your sent folder. Only notes Orchestrate wrote are kept.',
+  ];
+
+  static const _policies = [
+    ('Mailbox access', '/legal/mailbox-access'),
+    ('Reply monitoring', '/legal/reply-monitoring'),
+    ('Credential handling', '/legal/credentials'),
+    ('AI usage', '/legal/ai-usage'),
+    ('Suppression and opt-out', '/legal/suppression'),
+    ('Provider boundaries', '/legal/providers'),
+    ('Retention and deletion', '/legal/retention'),
+    ('Abuse', '/legal/abuse'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      final phone = c.maxWidth < 760;
+      final cols = c.maxWidth >= 1000 ? 3 : 1;
+      final w = (c.maxWidth - 16 * (cols - 1)) / cols;
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: phone ? 28 : 56),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('TRUST', style: Ob.eyebrow()),
+            const SizedBox(height: 14),
+            ObHeadline('What Orchestrate touches, and what it ',
+                accent: 'never will.',
+                accentColor: Ob.ink,
+                size: phone ? 34 : 56),
+            const SizedBox(height: 14),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: Text(
+                  'Orchestrate writes to businesses in your name, so the line '
+                  'it will not cross has to be built in, not promised.',
+                  style: Ob.body(phone ? 16.5 : 18)),
+            ),
+            const SizedBox(height: 32),
+            Wrap(spacing: 16, runSpacing: 16, children: [
+              for (final (t, b) in _keeps)
+                SizedBox(
+                  width: w,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Ob.card,
+                      borderRadius: BorderRadius.circular(Ob.radiusPanel),
+                    ),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(t, style: Ob.name(22)),
+                          const SizedBox(height: 8),
+                          Text(b, style: Ob.body(15.5)),
+                        ]),
+                  ),
+                ),
+            ]),
+            const SizedBox(height: 18),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(phone ? 24 : 34),
+              decoration: BoxDecoration(
+                color: Ob.ink,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ORCHESTRATE WILL NEVER',
+                        style: Ob.eyebrow(color: Ob.onInkMuted)),
+                    const SizedBox(height: 16),
+                    for (final n in _never)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(top: 3, right: 12),
+                                child: Icon(Icons.close,
+                                    size: 18, color: Ob.onInkMuted),
+                              ),
+                              Expanded(
+                                  child: Text(n,
+                                      style: Ob.body(16, color: Ob.onInk))),
+                            ]),
+                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                        'These are properties of how the system is built, not '
+                        'policies it could quietly change.',
+                        style: Ob.body(13.5, color: Ob.onInkMuted)),
+                  ]),
+            ),
+            const SizedBox(height: 36),
+            Text('For security and procurement reviewers', style: Ob.name(26)),
+            const SizedBox(height: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: Text(
+                  'Each commitment above is written down as a policy. The full '
+                  'set, with the binding wording, is here.',
+                  style: Ob.body(16)),
+            ),
+            const SizedBox(height: 16),
+            Wrap(spacing: 10, runSpacing: 10, children: [
+              for (final (label, path) in _policies)
+                OutlinedButton(
+                    onPressed: () => context.go(path), child: Text(label)),
+              FilledButton(
+                  onPressed: () => context.go('/legal'),
+                  child: const Text('All policies')),
+            ]),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+// ── Policies index ───────────────────────────────────────────────────
+
+/// Every policy in one place, grouped by what it is about.
+class LegalIndexScreen extends StatelessWidget {
+  const LegalIndexScreen({super.key});
+
+  static const groups = [
+    (
+      'Using Orchestrate',
+      [
+        ('Terms of use', '/legal/terms'),
+        ('Privacy', '/legal/privacy'),
+        ('Service agreement', '/legal/service-agreement'),
+        ('Acceptable use', '/legal/acceptable-use'),
+        ('Account deletion', '/account-deletion'),
+      ]
+    ),
+    (
+      'Paying',
+      [
+        ('Billing', '/legal/billing'),
+        ('Refunds', '/legal/refunds'),
+      ]
+    ),
+    (
+      'Your email and your customers',
+      [
+        ('Mailbox access', '/legal/mailbox-access'),
+        ('Reply monitoring', '/legal/reply-monitoring'),
+        ('Deliverability', '/legal/deliverability'),
+        ('Suppression and opt-out', '/legal/suppression'),
+        ('Abuse', '/legal/abuse'),
+      ]
+    ),
+    (
+      'How data is handled',
+      [
+        ('Credential handling', '/legal/credentials'),
+        ('AI usage', '/legal/ai-usage'),
+        ('Provider boundaries', '/legal/providers'),
+        ('Retention and deletion', '/legal/retention'),
+      ]
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      final phone = c.maxWidth < 760;
+      final cols = c.maxWidth >= 1000 ? 2 : 1;
+      final w = (c.maxWidth - 16 * (cols - 1)) / cols;
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: phone ? 28 : 56),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('POLICIES', style: Ob.eyebrow()),
+          const SizedBox(height: 14),
+          ObHeadline('Every policy, in one place.', size: phone ? 34 : 48),
+          const SizedBox(height: 28),
+          Wrap(spacing: 16, runSpacing: 16, children: [
+            for (final (title, items) in groups)
+              SizedBox(
+                width: w,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                  decoration: BoxDecoration(
+                    color: Ob.card,
+                    borderRadius: BorderRadius.circular(Ob.radiusPanel),
+                  ),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(title, style: Ob.name(21)),
+                        const SizedBox(height: 8),
+                        for (final (label, path) in items)
+                          InkWell(
+                            onTap: () => context.go(path),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: const BoxDecoration(
+                                  border:
+                                      Border(top: BorderSide(color: Ob.line))),
+                              child: Row(children: [
+                                Expanded(
+                                    child: Text(label, style: Ob.strong(15))),
+                                const Icon(Icons.arrow_forward,
+                                    size: 16, color: Ob.inkMuted),
+                              ]),
+                            ),
+                          ),
+                      ]),
+                ),
+              ),
+          ]),
+        ]),
+      );
+    });
+  }
+}

@@ -13,6 +13,9 @@ import 'package:orchestrate_app/app/routing/app_router.dart';
 /// other public page keeps the estate's dark field until it is rebuilt.
 const Set<String> publicPaperPaths = {'/', '/pricing', '/how-it-works'};
 
+/// DD-26 public rebuild: every public page now sits on paper.
+const bool publicAllPaper = true;
+
 class PublicShell extends StatefulWidget {
   const PublicShell(
       {super.key, required this.currentPath, required this.child});
@@ -110,8 +113,9 @@ class _PublicShellState extends State<PublicShell> {
                                   // DD-26: the rebuilt pages sit on paper,
                                   // full bleed; the estate's dark pages keep
                                   // the canvas beneath them.
-                                  color: publicPaperPaths
-                                          .contains(widget.currentPath)
+                                  color: publicAllPaper ||
+                                          publicPaperPaths
+                                              .contains(widget.currentPath)
                                       ? Ob.paper
                                       : Colors.transparent,
                                   child: ConstrainedBox(
@@ -497,44 +501,38 @@ class _PublicFooter extends StatelessWidget {
                 // abuse, retention, deliverability) are surfaced on the
                 // /trust-compliance hub — reachable from the header "Trust"
                 // — rather than as a towering footer column.
+                // DD-26: three columns, every link a page in the new design.
+                // Retired pages redirect, so no old link breaks.
                 final groups = [
                   _FooterGroup(
-                    title: 'Explore execution',
+                    title: 'Orchestrate',
                     links: [
                       _FooterLink(
-                          label: 'Product',
-                          onTap: () => context.push('/product')),
-                      _FooterLink(
-                          label: 'Signals and sourcing',
-                          onTap: () => context.push('/lead-sourcing')),
-                      _FooterLink(
-                          label: 'Activation journey',
+                          label: 'One customer, start to paid',
                           onTap: () => context.push('/how-it-works')),
                       _FooterLink(
-                          label: 'DNS readiness check',
+                          label: 'Pricing',
+                          onTap: () => context.push('/pricing')),
+                      _FooterLink(
+                          label: 'Check your domain',
                           onTap: () =>
                               context.push('/diagnostics?focus=dns-readiness')),
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Readiness + trust',
+                    title: 'Company',
                     links: [
                       _FooterLink(
-                          label: 'Operational answers',
-                          onTap: () => context.push('/answers')),
+                          label: 'About', onTap: () => context.push('/about')),
                       _FooterLink(
-                          label: 'Trust + compliance',
-                          onTap: () => context.push('/trust-compliance')),
+                          label: 'Trust', onTap: () => context.push('/trust')),
                       _FooterLink(
-                          label: 'Trust architecture',
-                          onTap: () => context.push('/trust-architecture')),
-                      _FooterLink(
-                          label: 'For evaluators',
-                          onTap: () => context.push('/for-evaluators')),
+                          label: 'Contact',
+                          onTap: () => context.push('/contact')),
                     ],
                   ),
                   _FooterGroup(
-                    title: 'Business + policy',
+                    title: 'Policies',
                     links: [
                       _FooterLink(
                           label: 'Terms',
@@ -543,23 +541,14 @@ class _PublicFooter extends StatelessWidget {
                           label: 'Privacy',
                           onTap: () => context.push('/legal/privacy')),
                       _FooterLink(
-                          label: 'Billing',
+                          label: 'Billing and refunds',
                           onTap: () => context.push('/legal/billing')),
-                    ],
-                  ),
-                  _FooterGroup(
-                    title: 'Legal + account',
-                    links: [
-                      _FooterLink(
-                          label: 'Service agreement',
-                          onTap: () =>
-                              context.push('/legal/service-agreement')),
-                      _FooterLink(
-                          label: 'Refunds',
-                          onTap: () => context.push('/legal/refunds')),
                       _FooterLink(
                           label: 'Account deletion',
                           onTap: () => context.push('/account-deletion')),
+                      _FooterLink(
+                          label: 'All policies',
+                          onTap: () => context.push('/legal')),
                     ],
                   ),
                 ];
@@ -765,26 +754,15 @@ class _PublicMenuButton extends StatelessWidget {
       ),
       onSelected: (value) => context.go(value),
       itemBuilder: (context) => [
-        _menuItem('Product', '/product', _isActive(const ['/product'])),
-        _menuItem(
-          'How it works',
-          '/how-it-works',
-          _isActive(const ['/how-it-works']),
-        ),
-        _menuItem(
-          'Intelligence',
-          '/lead-sourcing',
-          _isActive(const ['/lead-sourcing']),
-        ),
-        _menuItem(
-          'Trust',
-          '/trust-compliance',
-          _isActive(const ['/trust-compliance']),
-        ),
+        // DD-26: the pages that exist in the new design, nothing else.
+        _menuItem('One customer, start to paid', '/how-it-works',
+            _isActive(const ['/how-it-works'])),
         _menuItem('Pricing', '/pricing', _isActive(const ['/pricing'])),
+        _menuItem('Trust', '/trust', _isActive(const ['/trust'])),
+        _menuItem('About', '/about', _isActive(const ['/about'])),
         _menuItem(
           'Contact',
-          '/intake',
+          '/contact',
           _isActive(const ['/contact', '/intake']),
         ),
         const PopupMenuDivider(),

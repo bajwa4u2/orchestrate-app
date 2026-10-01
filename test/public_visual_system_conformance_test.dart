@@ -200,13 +200,17 @@ void main() {
     expect(router, contains("_clientRoute('/auth/register'"));
   });
 
-  test('public content uses the shared visual chapter hook', () {
+  test('public content reads in direction B, without the retired chapters',
+      () {
+    // DD-26: every legal and explainer page shares one paper template. The
+    // dark visual chapters belonged to the retired look; the parameter stays
+    // so callers compile, but nothing draws it.
     final content =
         read('lib/features/public/screens/public_content_screen.dart');
     expect(content, contains('final Widget? visualChapter'));
-    expect(content, contains('visualChapter!'));
-    expect(content, contains('color: AppTheme.publicDeepField'));
-    expect(content, contains('color: AppTheme.publicOnDarkMuted'));
+    expect(content, isNot(contains('visualChapter!')));
+    expect(content, contains('ObHeadline(title'));
+    expect(content, isNot(contains('publicDeepField')));
   });
 
   test('Home restores the live lifecycle flagship before the hero', () {
@@ -233,10 +237,13 @@ void main() {
   test('public footer follows the current destination contract', () {
     final shell = read('lib/app/shell/public_shell.dart');
     final contract = read('docs/ORCHESTRATE_CLICKABLE_JOURNEY_MATRIX.md');
-    expect(shell, contains("label: 'Product'"));
-    expect(shell, contains("label: 'Signals and sourcing'"));
-    expect(shell, contains("label: 'DNS readiness check'"));
+    // DD-26: the footer names only pages in the new design.
+    expect(shell, contains("label: 'One customer, start to paid'"));
+    expect(shell, contains("label: 'Check your domain'"));
+    expect(shell, contains("label: 'All policies'"));
     expect(shell, contains("focus=dns-readiness"));
+    expect(shell, isNot(contains("label: 'Product'")));
+    expect(shell, isNot(contains("label: 'Signals and sourcing'")));
     expect(shell, isNot(contains("label: 'Why Orchestrate exists'")));
     expect(shell, isNot(contains("label: 'How Orchestrate operates'")));
     expect(contract, contains('Retired from footer'));
@@ -247,8 +254,9 @@ void main() {
     final diagnostics =
         read('lib/features/public/screens/public_diagnostics_screen.dart');
     expect(shell, contains('jumpTo(0)'));
-    expect(shell, contains("'/legal/service-agreement'"));
-    expect(shell, contains("'/legal/refunds'"));
+    // DD-26: every policy stays one tap away through the policies index.
+    expect(shell, contains("'/legal'"));
+    expect(shell, contains("'/account-deletion'"));
     expect(shell, isNot(contains("label: 'Acceptable use'")));
     expect(diagnostics, contains("focus == 'dns-readiness'"));
     expect(diagnostics, contains('Scrollable.ensureVisible'));

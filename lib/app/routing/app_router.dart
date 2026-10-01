@@ -642,57 +642,9 @@ GoRouter _buildRouter() {
     ),
     GoRoute(
       path: '/product',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const PublicContentScreen(
-            eyebrow: 'Product',
-            title: 'Commercial intelligence + execution infrastructure',
-            visualChapter: ExecutionObjectStage(),
-            subtitle:
-                'Orchestrate is commercial execution infrastructure for B2B firms in regulated and reputation-sensitive sectors. It runs governed outbound for you under your own verified identity, turns market signals into qualified opportunity, and refuses the sends that would burn your reputation — refusal is a first-class outcome, not an error. You connect identity; Orchestrate runs the rest.',
-            sideNote:
-                'Pick the scope of managed execution at activation: execution alone, or execution plus revenue continuity (invoices, statements, reminders, agreements).',
-            sideActions: [
-              ContentAction(
-                  label: 'Start 15-Day Trial',
-                  path: '/auth/join',
-                  filled: true),
-              ContentAction(label: 'View Plans', path: '/pricing'),
-            ],
-            sections: [
-              ContentSection(
-                title: 'What you provide',
-                body:
-                    'Four inputs. Business identity, mailbox transport (OAuth or custom SMTP+IMAP), sending-domain verification, and representation authorization. That is the full client surface.',
-                points: [
-                  'Business identity, market, and offer context',
-                  'Mailbox transport — Google Workspace, Microsoft 365, or custom SMTP + IMAP',
-                  'Sending-domain verification (SPF / DKIM / DMARC)',
-                  'Representation authorization',
-                ],
-              ),
-              ContentSection(
-                title: 'What Orchestrate owns',
-                body:
-                    'Everything after readiness. Signal-driven discovery, qualification, readiness orchestration, governed dispatch, follow-up continuity, recovery, deliverability posture, and operational continuity — all visible, explainable, audited.',
-                points: [
-                  'Signal-driven opportunity detection',
-                  'Readiness orchestration + auto-activation',
-                  'Governed dispatch + follow-up continuity',
-                  'Automatic recovery, retry, and deliverability posture',
-                  'Explainable readiness transitions + audit trail',
-                ],
-              ),
-              ContentSection(
-                title: 'How it is organized',
-                body:
-                    'Public pages explain the category and the activation path. The client workspace shows what is verified, what is running, and what is awaiting your input — never lifecycle buttons. Operator tools run the deeper infrastructure controls.',
-              ),
-            ],
-          ),
-        ),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/',
     ),
     GoRoute(
       path: '/how-it-works',
@@ -705,177 +657,21 @@ GoRouter _buildRouter() {
     ),
     GoRoute(
       path: '/ai-governed-revenue',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const PublicContentScreen(
-            eyebrow: 'AI governance',
-            visualChapter: ResponsibleAiVisualChapter(),
-            title: 'AI runs inside the governance layer — never around it.',
-            subtitle:
-                'AI assists with strategy, message drafting, follow-up cadence, and revenue-document generation. Every action is reviewable, auditable, and gated by readiness checks before it affects live execution.',
-            sideActions: [
-              ContentAction(
-                  label: 'Start 15-Day Trial',
-                  path: '/auth/join',
-                  filled: true),
-              ContentAction(
-                  label: 'See activation journey', path: '/how-it-works'),
-            ],
-            sections: [
-              ContentSection(
-                title: 'Governed assistance',
-                body:
-                    'Operators can review readiness, trust status, diagnosis, and generation decisions before they affect live execution. AI is decision support inside the readiness engine, not an autonomous SDR running outside it.',
-              ),
-              ContentSection(
-                title: 'Client-safe explainability',
-                body:
-                    'Clients see verified state, blocked states, and the next concrete step — never raw logs, never decision-tree internals. The readiness engine is the explanation surface.',
-              ),
-              ContentSection(
-                title: 'Execution truth',
-                body:
-                    'When a view is not available for an account yet, the workspace says so plainly and points to the next useful action. No fabricated dashboards. No invented metrics.',
-              ),
-            ],
-          ),
-        ),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/',
     ),
     GoRoute(
       path: '/lead-sourcing',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const PublicContentScreen(
-            eyebrow: 'Commercial intelligence',
-            visualChapter: SignalsVisualChapter(),
-            title:
-                'Signal-driven opportunity detection, not a rented contact list.',
-            subtitle:
-                'Orchestrate continuously watches your defined market for commercial signals and turns them into qualified, contactable opportunities. The discovery layer is provider-agnostic and bound to your business identity — never a generic database.',
-            sideActions: [
-              ContentAction(
-                  label: 'Start 15-Day Trial',
-                  path: '/auth/join',
-                  filled: true),
-              ContentAction(
-                  label: 'See how it operates', path: '/how-it-works'),
-            ],
-            sections: [
-              ContentSection(
-                title: 'How discovery works',
-                body:
-                    'Signal discovery runs against the market, region, industry, and offer context you provide. Each opportunity is qualified against contact readiness, reachability, and business fit before it enters governed dispatch.',
-                points: [
-                  'Provider-agnostic signal sources',
-                  'Tied to your defined business identity, not a vendor list',
-                  'Qualification gates run before any send',
-                ],
-              ),
-              ContentSection(
-                title: 'What you see',
-                body:
-                    'You see qualified opportunities with explainable reasoning — why each one matched your scope, the contact path Orchestrate found, and where it sits in managed execution. Operator-only signal-source plumbing stays out of the client surface.',
-              ),
-              ContentSection(
-                title: 'Why this matters',
-                body:
-                    'A contact list rented from one vendor goes stale and locks you in. Signal-driven discovery scales with your scope, stays explainable, and lets the rest of the infrastructure (governed dispatch, follow-up continuity, recovery) operate against high-quality input.',
-              ),
-            ],
-          ),
-        ),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/how-it-works',
     ),
     GoRoute(
       path: '/trust-compliance',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const PublicContentScreen(
-            eyebrow: 'Trust and compliance',
-            visualChapter: RecoveryVisualChapter(),
-            title:
-                'Operation-scoped mailbox access, vaulted credentials, governed dispatch, audited execution.',
-            subtitle:
-                'Trust is infrastructure, not marketing. Operation-scoped mailbox ingestion (header-first, body-on-match-only), encrypted credential vault, real DNS-based SPF / DKIM / DMARC verification, governed dispatch, AI processing bounded to operation-attributed data, and an auditable readiness trail are all first-class. The dedicated policy pages below describe each layer.',
-            sideActions: [
-              ContentAction(
-                  label: 'Mailbox access policy',
-                  path: '/legal/mailbox-access',
-                  filled: true),
-              ContentAction(
-                  label: 'Reply monitoring', path: '/legal/reply-monitoring'),
-              ContentAction(label: 'AI usage', path: '/legal/ai-usage'),
-              ContentAction(
-                  label: 'Credential handling', path: '/legal/credentials'),
-              ContentAction(
-                  label: 'Provider boundaries', path: '/legal/providers'),
-              ContentAction(
-                  label: 'Suppression / opt-out', path: '/legal/suppression'),
-              ContentAction(label: 'Abuse policy', path: '/legal/abuse'),
-              ContentAction(
-                  label: 'Retention / deletion', path: '/legal/retention'),
-              ContentAction(
-                  label: 'Deliverability policy',
-                  path: '/legal/deliverability'),
-              ContentAction(
-                  label: 'Acceptable use', path: '/legal/acceptable-use'),
-            ],
-            sections: [
-              ContentSection(
-                title: 'Operation-scoped mailbox access',
-                body:
-                    'Orchestrate does not behave as a general inbox reader. Inbound mail is inspected at the header level only; bodies are fetched and stored exclusively for messages that resolve to an Orchestrate-managed operation. Unrelated mailbox content is not stored, classified, surfaced, or fed to AI. The IMAP cursor is initialized to the current highest UID on connect, so no historical mailbox content is ever inspected.',
-                points: [
-                  'Headers fetched first, body only after operation match',
-                  'No historical-mailbox scan on first connect',
-                  'Sent folder is not mirrored',
-                  'Unmatched mail stays in the upstream mailbox untouched',
-                ],
-              ),
-              ContentSection(
-                title: 'Verified sending identity',
-                body:
-                    'SPF, DKIM, and DMARC are verified with live DNS before any non-sandbox dispatch. A background poller keeps re-verifying pending domains so propagation is visible. For custom SMTP transports, Orchestrate generates a per-transport DKIM keypair and surfaces the public-key TXT record the client must publish.',
-                points: [
-                  'Live DNS verification (no third-party deliverability vendor)',
-                  'Per-record propagation history visible to the client',
-                  'Per-transport DKIM keypair on custom SMTP',
-                  'Dispatch eligibility is gated on the verification state',
-                ],
-              ),
-              ContentSection(
-                title: 'Encrypted credential vault',
-                body:
-                    'Mailbox OAuth refresh tokens, SMTP and IMAP passwords, and DKIM private keys are sealed by a vault adapter (encrypted-DB AES-256-GCM today, or HashiCorp Vault). Production refuses to boot with the in-memory adapter. Credentials never appear in API responses, browser state, logs, or unencrypted database storage.',
-              ),
-              ContentSection(
-                title: 'Governed dispatch + auditable readiness',
-                body:
-                    'Every dispatch passes a readiness check, a suppression check, and a governance check. Readiness transitions, credential reads, OAuth callbacks, DNS verification outcomes, SMTP and IMAP connect events, reply ingestion, and follow-up suppressions are recorded in append-only audit trails tied to the account. Audit records carry metadata only — never credentials, never message bodies.',
-              ),
-              ContentSection(
-                title: 'AI processing scope',
-                body:
-                    'AI-assisted systems operate against operation-scoped data only — Orchestrate-generated outbound content and operation-attributed replies. Unrelated mailbox content never enters an AI pipeline. AI-assisted output carries a stored traceability record.',
-              ),
-              ContentSection(
-                title: 'Suppression and opt-out enforcement',
-                body:
-                    'Opt-out signals, hard bounces, complaints, and operator blocks create suppression entries that block every subsequent FIRST_SEND and FOLLOWUP_SEND against the affected recipient. There is no UI affordance or API path that bypasses the suppression check.',
-              ),
-              ContentSection(
-                title: 'Authorization and records',
-                body:
-                    'Representation authorization, agreements, statements, reminders, notifications, and formal documents are governed alongside execution under the revenue-continuity scope — same infrastructure, same audit trail.',
-              ),
-            ],
-          ),
-        ),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/trust',
     ),
     GoRoute(
       path: '/intake',
@@ -897,32 +693,64 @@ GoRouter _buildRouter() {
       ),
     ),
     GoRoute(
+      path: '/trust',
+      // DD-26: one trust page in place of four.
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path, child: const TrustScreen()),
+      ),
+    ),
+    GoRoute(
+      path: '/legal',
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: PublicShell(
+            currentPath: state.uri.path, child: const LegalIndexScreen()),
+      ),
+    ),
+    GoRoute(
       path: '/about',
       pageBuilder: (context, state) => NoTransitionPage(
         child: PublicShell(
           currentPath: state.uri.path,
+          // DD-26: said in the front door's own words.
           child: const PublicContentScreen(
             eyebrow: 'About',
-            visualChapter: RevenueRecordsVisual(),
-            title: 'Commercial intelligence + execution infrastructure',
+            title: 'Built for owners who would rather be doing the work.',
             subtitle:
-                'Orchestrate exists because, for firms in regulated and reputation-sensitive sectors, outbound is either outsourced — burning the sending identity — or left undone. Revenue execution deserves to be governed infrastructure you activate, not another tool you operate. Connect your verified identity; Orchestrate runs governed outbound end to end, and refuses what would burn you.',
+                'Orchestrate finds businesses that need what you do, writes to '
+                'them from your own email, and carries each one to an agreement '
+                'and a paid invoice. You say yes at every step that matters.',
             sections: [
               ContentSection(
-                title: 'The category',
+                title: 'What it is',
                 body:
-                    'Not a CRM. Not an AI SDR. Not sequence software. Managed revenue automation infrastructure: signal discovery, readiness orchestration, governed dispatch, follow-up continuity, recovery, and operational visibility — owned by the platform after the client verifies identity.',
+                    'Not a list of contacts to work through, and not a robot '
+                    'that writes to people on its own. Orchestrate does the '
+                    'searching, the writing and the following up, and stops '
+                    'for your yes before anything goes out in your name.',
               ),
               ContentSection(
-                title: 'The handoff',
+                title: 'What stays yours',
                 body:
-                    'Clients own four inputs: business identity, mailbox, mailbox ownership, sending-domain verification. Everything after readiness belongs to Orchestrate. The infrastructure is the product — not a workspace of buttons.',
+                    'Your name, your email address and your customers. Notes go '
+                    'from your own address; replies land in your own inbox; '
+                    'anyone who asks not to be contacted is never written to '
+                    'again. You can stop at any time.',
               ),
               ContentSection(
-                title: 'Why move now',
-                body:
-                    'The status quo is a forced choice: hand outbound to an agency that burns your domain, hire and run a revenue-operations team, or leave pipeline on the table. Orchestrate replaces that choice with governed execution under your own verified identity — activated, not operated — so the move is off a liability, not onto another tool.',
+                title: 'Who makes it',
+                body: 'Orchestrate is made by Aura Platform LLC.',
               ),
+            ],
+            sideActions: [
+              ContentAction(
+                  label: 'Start with your business',
+                  path: '/auth/register',
+                  filled: true),
+              ContentAction(
+                  label: 'One customer, start to paid', path: '/how-it-works'),
+              ContentAction(label: 'Pricing', path: '/pricing'),
+              ContentAction(label: 'Trust', path: '/trust'),
             ],
           ),
         ),
@@ -1000,54 +828,15 @@ GoRouter _buildRouter() {
     ),
     GoRoute(
       path: '/newsletter',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const PublicContentScreen(
-            eyebrow: 'Updates',
-            title: 'Infrastructure updates will appear here.',
-            subtitle:
-                'Public infrastructure notes — provider adapters, readiness-orchestration changes, sending-identity verification updates — are not published here yet. Account-specific notices appear inside the client workspace.',
-            sections: [
-              ContentSection(
-                title: 'What goes here',
-                body:
-                    'When enabled, this page will publish updates to the managed-execution infrastructure: new mailbox provider adapters, deliverability posture changes, readiness-engine behavior, and similar operational notes that matter to verified clients.',
-              ),
-              ContentSection(
-                title: 'Client communications',
-                body:
-                    'Per-account notices, reminders, and audit records appear inside the client workspace after sign-in when they are available for the account.',
-              ),
-            ],
-            sideActions: [
-              ContentAction(
-                  label: 'Contact us', path: '/contact', filled: true),
-            ],
-          ),
-        ),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/',
     ),
     GoRoute(
       path: '/newsletter/subscribe',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: const PublicContentScreen(
-            eyebrow: 'Updates',
-            title: 'Update subscription is not available yet.',
-            subtitle:
-                'Public update subscriptions for infrastructure notes are not connected yet. Use contact in the meantime if you want to talk through scope, fit, or activation timing.',
-            sections: [
-              ContentSection(
-                title: 'Status',
-                body:
-                    'When enabled, this page will let you subscribe to public infrastructure updates. Until then, contact is the right next action.',
-              ),
-            ],
-          ),
-        ),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/',
     ),
     GoRoute(path: '/terms', redirect: (context, state) => '/legal/terms'),
     GoRoute(path: '/privacy', redirect: (context, state) => '/legal/privacy'),
@@ -1162,45 +951,39 @@ GoRouter _buildRouter() {
     ),
     GoRoute(
       path: '/why-orchestrate',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-            currentPath: state.uri.path,
-            child: buildWhyOrchestrateExistsScreen()),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/',
     ),
     GoRoute(
       path: '/how-orchestrate-operates',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-            currentPath: state.uri.path,
-            child: const OrchestrateOperationsScreen()),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/how-it-works',
     ),
     GoRoute(
       path: '/trust-architecture',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-            currentPath: state.uri.path, child: buildTrustArchitectureScreen()),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/trust',
     ),
     GoRoute(
       path: '/for-evaluators',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-            currentPath: state.uri.path, child: const ForEvaluatorsScreen()),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/trust',
     ),
     GoRoute(
       path: '/activation',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-            currentPath: state.uri.path,
-            child: const ActivationPreviewScreen()),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/how-it-works',
     ),
     GoRoute(
       path: '/security-evaluation',
-      redirect: (context, state) => '/for-evaluators',
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/trust',
     ),
     // Public DNS diagnostic surface — visitors can verify SPF / DKIM /
     // DMARC for their sending domain without signup. Live DNS lookups;
@@ -1221,40 +1004,35 @@ GoRouter _buildRouter() {
     // deterministic matcher, no AI generation. Honest "no match" path.
     GoRoute(
       path: '/answers',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-            currentPath: state.uri.path, child: const PublicAnswersScreen()),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/contact',
     ),
     GoRoute(
       path: '/help',
-      redirect: (context, state) => '/answers',
+      redirect: (context, state) => '/contact',
     ),
     GoRoute(
       path: '/faq',
-      redirect: (context, state) => '/answers',
+      redirect: (context, state) => '/contact',
     ),
     // Guided operational journey surface. /journey defaults to the
     // evaluate-and-activate map for visitors landing without a key.
     GoRoute(
       path: '/journey',
-      redirect: (context, state) => '/journey/evaluate_and_activate',
+      redirect: (context, state) => '/how-it-works',
     ),
     GoRoute(
       path: '/journey/:journeyKey',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: PublicShell(
-          currentPath: state.uri.path,
-          child: PublicJourneyScreen(
-            journeyKey:
-                state.pathParameters['journeyKey'] ?? 'evaluate_and_activate',
-          ),
-        ),
-      ),
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/how-it-works',
     ),
     GoRoute(
       path: '/trust-review',
-      redirect: (context, state) => '/for-evaluators',
+      // DD-26: retired in the public rebuild; the address still lands
+      // somewhere true.
+      redirect: (context, state) => '/trust',
     ),
     // SETUP IS A FOCUSED FLOW, NOT A WORKSPACE DESTINATION.
     //

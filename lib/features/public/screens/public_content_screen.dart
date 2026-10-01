@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:orchestrate_app/core/theme/app_theme.dart';
-import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 
+/// THE PUBLIC READING PAGE, IN DIRECTION B (DD-26).
+///
+/// Every legal page and every remaining explainer is built from this one
+/// template, so the whole public estate reads as one product: paper, a serif
+/// title, a readable column, and the next step beside it. The old dark
+/// "visual chapters" are no longer drawn here; they belonged to the retired
+/// look and made each page half one design and half another.
 class PublicContentScreen extends StatelessWidget {
   const PublicContentScreen({
     super.key,
@@ -22,127 +29,175 @@ class PublicContentScreen extends StatelessWidget {
   final List<ContentSection> sections;
   final String? sideNote;
   final List<ContentAction> sideActions;
+
+  /// Kept for the pages that still pass one; not drawn (see above).
   final Widget? visualChapter;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1180),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0E1723), Color(0xFF173A3A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+    return LayoutBuilder(builder: (context, c) {
+      final phone = c.maxWidth < 760;
+      final wide = c.maxWidth >= 1040;
+      final head = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(eyebrow.toUpperCase(), style: Ob.eyebrow()),
+          const SizedBox(height: 14),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: ObHeadline(title, size: phone ? 34 : 48),
+          ),
+          const SizedBox(height: 14),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: Text(subtitle, style: Ob.body(phone ? 16.5 : 18)),
+          ),
+        ],
+      );
+      final article = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < sections.length; i++)
+            _SectionBlock(section: sections[i], first: i == 0),
+        ],
+      );
+      final side = (sideNote == null && sideActions.isEmpty)
+          ? null
+          : _SidePanel(note: sideNote, actions: sideActions);
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: phone ? 28 : 56),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            head,
+            SizedBox(height: phone ? 26 : 40),
+            if (wide && side != null)
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: article,
                   ),
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
-                  border: Border.all(color: const Color(0xFF2F5A5B)),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final stacked = constraints.maxWidth < 940;
-                    final lead = Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.publicAccentSoft,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            eyebrow,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  color: AppTheme.accent,
-                                ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 720),
-                          child: Text(
-                            title,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineLarge
-                                ?.copyWith(
-                                  // Responsive cap: desktop is held at 44,
-                                  // narrow widths scale down (not up).
-                                  color: Colors.white,
-                                  fontSize: stacked ? 34 : 48,
-                                  height: 1.1,
-                                  letterSpacing: 0,
-                                ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 720),
-                          child: Text(
-                            subtitle,
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: const Color(0xFFD2E2DF),
-                                    ),
-                          ),
-                        ),
-                      ],
-                    );
-
-                    final aside = _SidePanel(
-                      note: sideNote,
-                      actions: sideActions,
-                    );
-
-                    if (stacked) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          lead,
-                          if (sideNote != null || sideActions.isNotEmpty) ...[
-                            const SizedBox(height: 22),
-                            aside,
-                          ],
-                        ],
-                      );
-                    }
-
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 7, child: lead),
-                        if (sideNote != null || sideActions.isNotEmpty) ...[
-                          const SizedBox(width: 24),
-                          Expanded(flex: 4, child: aside),
-                        ],
-                      ],
-                    );
-                  },
+                const SizedBox(width: 56),
+                SizedBox(width: 340, child: side),
+              ])
+            else ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: article,
                 ),
               ),
-              const SizedBox(height: 24),
-              if (visualChapter != null) ...[
-                visualChapter!,
-                const SizedBox(height: 24),
-              ],
-              for (final section in sections) ...[
-                _SectionCard(section: section),
-                const SizedBox(height: 18),
-              ],
+              if (side != null) ...[const SizedBox(height: 28), side],
             ],
-          ),
+          ],
         ),
+      );
+    });
+  }
+}
+
+class _SectionBlock extends StatelessWidget {
+  const _SectionBlock({required this.section, required this.first});
+  final ContentSection section;
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(top: first ? 0 : 26, bottom: 26),
+      decoration: BoxDecoration(
+        border: first ? null : const Border(top: BorderSide(color: Ob.line)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(section.title, style: Ob.name(23)),
+          const SizedBox(height: 10),
+          SelectableText(section.body, style: Ob.body(16.5)),
+          if (section.points.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            for (final p in section.points)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 10, right: 12),
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                        color: Ob.ink, shape: BoxShape.circle),
+                  ),
+                  Expanded(child: Text(p, style: Ob.body(16))),
+                ]),
+              ),
+          ],
+          if (section.highlight != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Ob.card,
+                borderRadius: BorderRadius.circular(Ob.radiusCard),
+              ),
+              child: Text(section.highlight!,
+                  style: Ob.body(15.5, color: Ob.ink)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SidePanel extends StatelessWidget {
+  const _SidePanel({required this.note, required this.actions});
+  final String? note;
+  final List<ContentAction> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final filled = actions.where((a) => a.filled).toList();
+    final links = actions.where((a) => !a.filled).toList();
+    return Container(
+      padding: const EdgeInsets.all(26),
+      decoration: BoxDecoration(
+        color: Ob.card,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: Ob.lift,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (note != null) ...[
+            Text(note!, style: Ob.body(15, color: Ob.ink)),
+            if (actions.isNotEmpty) const SizedBox(height: 18),
+          ],
+          for (final a in filled) ...[
+            FilledButton(
+                onPressed: () => context.go(a.path), child: Text(a.label)),
+            const SizedBox(height: 10),
+          ],
+          if (links.isNotEmpty) ...[
+            if (filled.isNotEmpty) const SizedBox(height: 4),
+            Text('RELATED', style: Ob.eyebrow()),
+            const SizedBox(height: 6),
+            for (final a in links)
+              InkWell(
+                onTap: () => context.go(a.path),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  child: Row(children: [
+                    Expanded(child: Text(a.label, style: Ob.strong(15))),
+                    const Icon(Icons.arrow_forward, size: 16, color: Ob.inkMuted),
+                  ]),
+                ),
+              ),
+          ],
+        ],
       ),
     );
   }
@@ -173,144 +228,6 @@ class ContentAction {
   final String path;
   final bool filled;
 }
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.section});
-
-  final ContentSection section;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
-      decoration: BoxDecoration(
-        color: AppTheme.publicDeepField,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: Border.all(color: const Color(0xFF203A4B)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            section.title,
-            style: Theme.of(context)
-                .textTheme
-                .headlineMedium
-                ?.copyWith(color: AppTheme.publicOnDark),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            section.body,
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: AppTheme.publicOnDarkMuted),
-          ),
-          if (section.highlight != null) ...[
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppTheme.publicAccentSoft,
-                borderRadius: BorderRadius.circular(AppTheme.radius),
-              ),
-              child: Text(
-                section.highlight!,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.publicText,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-          ],
-          if (section.points.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            for (final point in section.points) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Icon(
-                      Icons.circle,
-                      size: 8,
-                      color: AppTheme.publicAccent,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      point,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyLarge
-                          ?.copyWith(color: AppTheme.publicOnDarkMuted),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SidePanel extends StatelessWidget {
-  const _SidePanel({required this.note, required this.actions});
-
-  final String? note;
-  final List<ContentAction> actions;
-
-  @override
-  Widget build(BuildContext context) {
-    final primaryAction = actions.isNotEmpty ? actions.first : null;
-
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurfaceSoft,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (note != null) ...[
-            Text(
-              note!,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.publicMuted,
-                  ),
-            ),
-            if (primaryAction != null) const SizedBox(height: 18),
-          ],
-          if (primaryAction != null)
-            FilledButton(
-              onPressed: () => context.go(primaryAction.path),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-                backgroundColor: AppTheme.publicText,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
-                ),
-              ),
-              child: Text(primaryAction.label),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-// Note: buildHowItWorksScreen / buildPricingScreen / buildContactScreen
-// were removed. The router renders inline PublicContentScreens for those
-// routes with the current category-coherent copy. Leaving the old
-// builders here let outreach-tinted fallback copy drift back in if any
-// future edit re-wired them. Legal builders below remain in use.
 
 PublicContentScreen buildTermsScreen() => const PublicContentScreen(
       eyebrow: 'Legal framework',

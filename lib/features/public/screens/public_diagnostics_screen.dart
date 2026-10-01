@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/app_theme.dart';
@@ -90,42 +92,27 @@ class _PublicDiagnosticsScreenState extends State<PublicDiagnosticsScreen> {
 }
 
 class _Hero extends StatelessWidget {
+  // DD-26: plain words, the reading-page heading.
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: AppTheme.publicSurface,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.publicLine),
-      ),
+    final phone = MediaQuery.sizeOf(context).width < 760;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.publicAccentSoft,
-              borderRadius: BorderRadius.circular(999),
-            ),
+          Text('CHECK YOUR DOMAIN', style: Ob.eyebrow()),
+          const SizedBox(height: 14),
+          ObHeadline('Will inboxes trust email from your domain?',
+              size: phone ? 34 : 48),
+          const SizedBox(height: 14),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
             child: Text(
-              'Operational diagnostics',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.publicAccent,
-                  ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Verify your sending-domain readiness against Orchestrate\'s real DNS checks.',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No account required. The check below runs live SPF / DKIM / DMARC lookups against the domain you supply. The same verification logic gates dispatch eligibility on activated accounts. Nothing here is mocked or estimated.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.publicMuted,
-                ),
+                'No account needed. Enter the domain you send from and this '
+                'looks up its records live, the same check Orchestrate runs '
+                'before it sends anything for you.',
+                style: Ob.body(phone ? 16.5 : 18)),
           ),
         ],
       ),
@@ -249,7 +236,7 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
               Icon(Icons.dns_outlined, size: 16, color: AppTheme.publicMuted),
               const SizedBox(width: 8),
               Text(
-                'DNS readiness check',
+                'Your domain',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: AppTheme.publicMuted,
                       fontWeight: FontWeight.w700,
@@ -259,7 +246,7 @@ class _PublicDnsDiagnosticCardState extends State<PublicDnsDiagnosticCard> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Enter the domain you intend to send from. The check confirms SPF, DKIM, and DMARC records exist and match what Orchestrate expects to find at dispatch time.',
+            'Enter the part after the @ in your email address, for example yourbusiness.com.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.publicMuted,
                   height: 1.45,
