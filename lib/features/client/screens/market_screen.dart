@@ -96,34 +96,44 @@ class _MarketScreenState extends State<MarketScreen> {
     });
   }
 
+  // DD-30: the whole page scrolls. The header was pinned above an inner list
+  // and took about 40% of a laptop screen before a single business showed.
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _MarketHeader(view: _market.view),
-        const SizedBox(height: 22),
-        Expanded(child: _body()),
-      ],
+    final view = _market.view;
+    final failure = _market.error;
+    final Widget body;
+    if (failure != null) {
+      body = _Unavailable(error: failure, onRetry: () => _market.refresh());
+    } else if (view == null) {
+      body = const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: SizedBox(
+              width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      );
+    } else {
+      body = _body(view);
+    }
+    return RefreshIndicator(
+      onRefresh: () => _market.refresh(),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _MarketHeader(view: view),
+            const SizedBox(height: 22),
+            body,
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _body() {
-    final failure = _market.error;
-    if (failure != null) {
-      return _Unavailable(error: failure, onRetry: () => _market.refresh());
-    }
-    final view = _market.view;
-    if (view == null) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40),
-          child: SizedBox(
-            width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-        ),
-      );
-    }
-
+  Widget _body(MarketView view) {
     // AN EMPTY MARKET MUST EXPLAIN ITSELF.
     //
     // These are different situations, not one. "Nobody has been found yet"
@@ -135,12 +145,6 @@ class _MarketScreenState extends State<MarketScreen> {
       final coverage = view.coverage;
 
       // A POINTER HAS TO LEAD SOMEWHERE THAT RESOLVES IT.
-      //
-      // This said "Business is where that is set" and offered no way there.
-      // Worse, nothing on Business could set it: intent was read only from a
-      // table no customer-facing screen writes. The server now reads the
-      // offer from Business identity's "Offer / service description", and the
-      // button goes to that field's screen.
       if (view.intent == null) {
         return QuietState(
           message: 'Your business has not said what it sells.',
@@ -154,7 +158,6 @@ class _MarketScreenState extends State<MarketScreen> {
       }
 
       // The one thing only the business can resolve, so it comes first.
-      // Geography is the market setup records, so setup is where it is set.
       if (coverage.geographyNeedsConfirmation) {
         return QuietState(
           message: 'We need to know where your market is.',
@@ -168,28 +171,15 @@ class _MarketScreenState extends State<MarketScreen> {
       }
 
       // NOT SEARCHED BECAUSE IT MAY NOT BE, SAID AS THAT.
-      //
-      // Discovery requires an active plan. Without one the sweep is refused
-      // and records nothing, so the branches below would say "Discovery is
-      // paused" or, once a profile exists, "Searching your market" — forever,
-      // about a search that is not happening. The commercial authority's own
-      // reason and resolution are shown instead, with the way to act on them.
       if (ClientCapabilities.instance
               .refusalFor(Capabilities.researchCounterparties) !=
           null) {
-        return ListView(
-          padding: EdgeInsets.zero,
-          children: const [
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             QuietState(message: 'Your market is not being searched.'),
             CommercialBoundary(capability: Capabilities.researchCounterparties),
           ],
-        );
-      }
-
-      if (view.excludedWithoutIdentity > 0 || view.excludedArtifacts > 0) {
-        return QuietState(
-          message: 'Nothing found so far could be shown as a company.',
-          hint: view.excludedNote ?? '',
         );
       }
 
@@ -200,62 +190,44 @@ class _MarketScreenState extends State<MarketScreen> {
         );
       }
 
-      if (!coverage.hasSearched) {
-        return const QuietState(
-          message: 'Searching your market.',
-          hint: 'Businesses appear here as they are found.',
-        );
+      // Found, and still being proven. The checks themselves are the promise.
+      if (view.research.checking > 0 || coverage.hasSearched) {
+        return _ChecksPromise(research: view.research, coverage: coverage);
       }
 
-      // Searched, and genuinely nothing yet. Bounded by what was covered, so
-      // it never claims more than it checked.
-      return QuietState(
-        message: 'No businesses matching your market found yet.',
-        hint: coverage.areasKnown > 0
-            ? '${coverage.areasChecked} of ${coverage.areasKnown} areas in '
-                'your market have been checked so far. Discovery continues.'
-            : 'Discovery continues.',
+      return const QuietState(
+        message: 'Searching your market.',
+        hint: 'Businesses appear here once they pass every check.',
       );
     }
 
-    final review = view.needsReview;
+    final ready = view.needsReview;
     final decided = view.decided;
     final quiet = view.notEnoughKnown;
     final related = view.alreadyRelated;
+    final setAside = view.excludedWithoutIdentity + view.excludedArtifacts;
 
     // DD-26 (board S09): cards a person can decide on where they stand. The
-    // order is the server's; nothing here re-ranks. Built in full rather than
-    // lazily: what was set aside must be on the page, not only on a scroll.
-    return SingleChildScrollView(
-      child: Column(
+    // order is the server's; nothing here re-ranks.
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (view.coverage.note != null && view.coverage.discovering)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Text(view.coverage.note!,
-                style: Ob.body(13.5, color: Ob.inkMuted)),
-          ),
         if (_decisionFailure != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: Text(_decisionFailure!,
                 style: Ob.body(14, color: Ob.refused)),
           ),
-        if (review.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 18),
-            child: ObCard(
-              child: Text(
-                  'Nothing new needs your judgement. New businesses appear '
-                  'here as Orchestrate finds them.',
-                  style: Ob.body(15, color: Ob.ink)),
-            ),
-          )
+        if (ready.isEmpty)
+          _ChecksPromise(research: view.research, coverage: view.coverage)
         else ...[
-          const _Section('Worth a look', first: true),
+          _Section('Ready for you',
+              note: ready.length == 1
+                  ? 'One business passed every check.'
+                  : '${ready.length} businesses passed every check.',
+              first: true),
           _Grid(children: [
-            for (final c in review)
+            for (final c in ready)
               _CandidateCard(
                 candidate: c,
                 busy: _deciding.contains(c.key),
@@ -265,17 +237,15 @@ class _MarketScreenState extends State<MarketScreen> {
           ]),
         ],
         if (decided.isNotEmpty) ...[
-          const _Section('You have decided'),
-          _Grid(children: [
-            for (final c in decided)
-              _CandidateCard(candidate: c, busy: false, onOpen: _open),
+          const _Section('You decided'),
+          _Rows(children: [
+            for (final c in decided) _DecidedRow(candidate: c, onOpen: _open),
           ]),
         ],
         if (related.isNotEmpty) ...[
           const _Section('Already your customers'),
-          _Grid(children: [
-            for (final c in related)
-              _CandidateCard(candidate: c, busy: false, onOpen: _open),
+          _Rows(children: [
+            for (final c in related) _DecidedRow(candidate: c, onOpen: _open),
           ]),
         ],
         if (quiet.isNotEmpty) ...[
@@ -292,46 +262,17 @@ class _MarketScreenState extends State<MarketScreen> {
             ),
           ),
           if (_showQuiet)
-            _Grid(children: [
+            _Rows(children: [
               for (final c in quiet)
-                _CandidateCard(candidate: c, busy: false, onOpen: _open),
+                _DecidedRow(candidate: c, onOpen: _open, detail: c.certaintyMeans),
             ]),
         ],
-        if (view.excludedNote != null &&
-            (view.excludedWithoutIdentity + view.excludedArtifacts) > 0) ...[
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Ob.ink,
-              borderRadius: BorderRadius.circular(Ob.radiusCard),
-            ),
-            child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.shield_outlined,
-                      size: 18, color: Ob.onInkMuted),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            '${view.excludedWithoutIdentity + view.excludedArtifacts} set aside',
-                            style: Ob.body(16,
-                                color: Ob.onInk, weight: FontWeight.w600)),
-                        const SizedBox(height: 6),
-                        Text(view.excludedNote!,
-                            style: Ob.body(14, color: Ob.onInkMuted)),
-                      ],
-                    ),
-                  ),
-                ]),
-          ),
+        if (view.excludedNote != null && setAside > 0) ...[
+          const SizedBox(height: 20),
+          Text('$setAside set aside. ${view.excludedNote!}',
+              style: Ob.body(13, color: Ob.inkMuted)),
         ],
-        const SizedBox(height: 24),
       ],
-      ),
     );
   }
 
@@ -375,8 +316,29 @@ class _MarketScreenState extends State<MarketScreen> {
   }
 }
 
-/// "Businesses that need you", what the business sells, and the counts the
-/// server gave. Counts are the server's, never recomputed here.
+/// "14 Sep 2026 · 5:18 PM", or "today · 5:18 PM". Always with the time.
+String _when(DateTime at) {
+  final now = DateTime.now();
+  final h = at.hour % 12 == 0 ? 12 : at.hour % 12;
+  final time = '$h:${at.minute.toString().padLeft(2, '0')} ${at.hour < 12 ? 'AM' : 'PM'}';
+  final today = at.year == now.year && at.month == now.month && at.day == now.day;
+  if (today) return 'today · $time';
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return '${at.day} ${months[at.month - 1]} ${at.year} · $time';
+}
+
+String _count(int n) {
+  final s = n.toString();
+  final b = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+    b.write(s[i]);
+  }
+  return b.toString();
+}
+
+/// What the business sells, and one line on the research under way. No
+/// tiles: the counts that matter are said in a sentence.
 class _MarketHeader extends StatelessWidget {
   const _MarketHeader({required this.view});
   final MarketView? view;
@@ -386,69 +348,146 @@ class _MarketHeader extends StatelessWidget {
     final v = view;
     final phone =
         Workspace.sizeOf(context, MediaQuery.sizeOf(context).width).isPhone;
-    Widget tile(String n, String label, {bool dark = false}) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: dark ? Ob.ink : Ob.card,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(n, style: Ob.figure(24, color: dark ? Ob.onInk : Ob.ink)),
-            Text(label,
-                style: Ob.body(12, color: dark ? Ob.onInkMuted : Ob.inkMuted)),
+    final r = v?.research;
+    final researching = r != null && (r.checking + r.passed) > 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ObHeadline('Businesses worth your time', size: phone ? 28 : 34),
+        if (v?.intent != null) ...[
+          const SizedBox(height: 6),
+          Text(v!.intent!.says,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Ob.body(15, color: Ob.inkSoft)),
+          if (v.intent!.triggers.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text('We watch for: ${v.intent!.triggers.join(', ').toLowerCase()}.',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Ob.body(13.5, color: Ob.inkMuted)),
+          ],
+        ],
+        if (researching) ...[
+          const SizedBox(height: 10),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 6),
+              child: _Pulse(),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Checking ${_count(r.checking)} '
+                '${r.checking == 1 ? 'business' : 'businesses'} in your market. '
+                '${r.passed == 0 ? 'None has' : '${_count(r.passed)} ${r.passed == 1 ? 'has' : 'have'}'} '
+                'passed every check so far.'
+                '${r.lastCheckedAt != null ? ' Last check ${_when(r.lastCheckedAt!)}.' : ''}',
+                style: Ob.body(13.5, color: Ob.inkMuted),
+              ),
+            ),
           ]),
-        );
-    final tiles = v != null && v.counts.total > 0
-        ? Wrap(spacing: 10, runSpacing: 10, children: [
-            tile('${v.counts.total}', 'found'),
-            tile('${v.counts.needsReview}', 'worth a look'),
-            tile('${v.counts.pursuing}', 'pursuing', dark: true),
-          ])
-        : null;
-    final title = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ObHeadline('Businesses that need you', size: phone ? 32 : 44),
-              if (v?.intent != null) ...[
-                const SizedBox(height: 6),
-                Text(v!.intent!.says, style: Ob.body(15, color: Ob.inkSoft)),
-                if (v.intent!.triggers.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                      'We watch for: '
-                      '${v.intent!.triggers.join(', ').toLowerCase()}.',
-                      style: Ob.body(13.5, color: Ob.inkMuted)),
-                ],
-              ],
-            ],
-          );
-    return LayoutBuilder(builder: (context, c) {
-      if (tiles == null) return title;
-      if (c.maxWidth < 900) {
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          title,
-          const SizedBox(height: 14),
-          tiles,
-        ]);
-      }
-      return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Expanded(child: title),
-        const SizedBox(width: 24),
-        tiles,
-      ]);
-    });
+        ],
+      ],
+    );
+  }
+}
+
+/// A small steady dot: the research is running.
+class _Pulse extends StatelessWidget {
+  const _Pulse();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(color: Ob.inkSoft, shape: BoxShape.circle),
+      );
+}
+
+/// Before anything has passed: what every business must prove before it is
+/// shown here. The promise, said once, instead of an empty list.
+class _ChecksPromise extends StatelessWidget {
+  const _ChecksPromise({required this.research, required this.coverage});
+  final MarketResearch research;
+  final MarketCoverage coverage;
+
+  static const _checks = [
+    ('It exists', 'Seen by two independent sources, or an official registry.'),
+    ('It is alive', 'Its own website answers, and it is not parked.'),
+    ('It fits', 'It is the kind of business you sell to.'),
+    ('It can be reached', 'It published an address, and that mailbox accepts mail.'),
+    ('It can be explained', 'Why it fits is said in plain words.'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Ob.card,
+        borderRadius: BorderRadius.circular(Ob.radiusCard),
+        border: Border.all(color: Ob.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Nothing has passed every check yet.', style: Ob.name(20)),
+          const SizedBox(height: 6),
+          Text(
+              'We show a business only when all five hold. Anything that passes '
+              'appears here with the reason, and on Today.',
+              style: Ob.body(14.5, color: Ob.inkSoft)),
+          const SizedBox(height: 16),
+          for (final (title, detail) in _checks)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Icon(Icons.check_circle_outline, size: 18, color: Ob.inkMuted),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text.rich(TextSpan(children: [
+                    TextSpan(text: '$title. ', style: Ob.strong(14)),
+                    TextSpan(text: detail, style: Ob.body(14, color: Ob.inkSoft)),
+                  ])),
+                ),
+              ]),
+            ),
+          if (coverage.note != null) ...[
+            const SizedBox(height: 4),
+            Text(coverage.note!, style: Ob.body(13, color: Ob.inkMuted)),
+          ],
+        ],
+      ),
+    );
   }
 }
 
 class _Section extends StatelessWidget {
-  const _Section(this.title, {this.first = false});
+  const _Section(this.title, {this.note, this.first = false});
   final String title;
+  final String? note;
   final bool first;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.only(top: first ? 0 : 26, bottom: 12),
-        child: Text(title, style: Ob.name(21)),
+        padding: EdgeInsets.only(top: first ? 0 : 28, bottom: 12),
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 12,
+          runSpacing: 4,
+          children: [
+            Text(title, style: Ob.name(21)),
+            if (note != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(note!, style: Ob.body(13.5, color: Ob.inkMuted)),
+              ),
+          ],
+        ),
       );
 }
 
@@ -472,7 +511,83 @@ class _Grid extends StatelessWidget {
   }
 }
 
-/// One business, on a card: who, why now, where, and the owner's decision.
+/// Decided businesses, as a list: they are a record now, not a judgement.
+class _Rows extends StatelessWidget {
+  const _Rows({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: Ob.card,
+          borderRadius: BorderRadius.circular(Ob.radiusCard),
+          border: Border.all(color: Ob.line),
+        ),
+        child: Column(children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const Divider(height: 1, color: Ob.line),
+            children[i],
+          ],
+        ]),
+      );
+}
+
+class _DecidedRow extends StatelessWidget {
+  const _DecidedRow({required this.candidate, required this.onOpen, this.detail});
+  final Candidate candidate;
+  final void Function(Candidate) onOpen;
+
+  /// A line under the name, for rows that are not a decision yet.
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = candidate;
+    final state = c.hasRelationship
+        ? 'Customer'
+        : switch (c.disposition) {
+            PursuitDisposition.pursuing => 'On your Today list',
+            _ => c.disposition.label,
+          };
+    final where = [
+      if ((c.geography ?? '').isNotEmpty) c.geography!,
+      if (c.domain.isNotEmpty && !c.domain.startsWith('name:')) c.domain,
+    ].join(' · ');
+    return InkWell(
+      onTap: () => c.hasRelationship && c.relationshipId != null
+          ? context.go('/client/relationships/${c.relationshipId}')
+          : onOpen(c),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        child: Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(c.name,
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: Ob.strong(15)),
+              if (where.isNotEmpty)
+                Text(where,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Ob.body(13, color: Ob.inkMuted)),
+              if ((detail ?? '').isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(detail!, style: Ob.body(13.5, color: Ob.inkSoft)),
+                ),
+            ]),
+          ),
+          const SizedBox(width: 12),
+          Text(state, style: Ob.body(13.5, color: Ob.inkSoft)),
+          const SizedBox(width: 6),
+          const Icon(Icons.chevron_right, size: 18, color: Ob.inkFaint),
+        ]),
+      ),
+    );
+  }
+}
+
+/// One business that passed every check: why it fits, what was proven, and
+/// the owner's decision.
 class _CandidateCard extends StatelessWidget {
   const _CandidateCard({
     required this.candidate,
@@ -489,24 +604,28 @@ class _CandidateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = candidate;
+    final checks = c.checks;
     final reason = switch (c.certainty) {
-      Certainty.evidenced ||
-      Certainty.thin =>
-        c.whyItMatters ?? c.certaintyMeans,
-      Certainty.stale || Certainty.insufficient => c.certaintyMeans,
+      Certainty.evidenced || Certainty.thin => c.whyItMatters ?? c.certaintyMeans,
+      Certainty.stale || Certainty.insufficient =>
+        checks != null ? (c.whyItMatters ?? c.certaintyMeans) : c.certaintyMeans,
     };
-    // Never green: green is money. Certainty is said as a word.
-    final pill = c.hasRelationship
-        ? const ObPill('Customer', tone: PillTone.ink)
-        : ObPill(c.certainty.label,
-            tone: c.certainty == Certainty.evidenced
-                ? PillTone.ink
-                : PillTone.plain);
-    final where = [
-      if ((c.geography ?? '').isNotEmpty) c.geography!,
-      if (c.domain.isNotEmpty) c.domain,
-    ].join(' · ');
+    // Never green: green is money. A passed check is said as a word.
+    final pill = checks != null
+        ? const ObPill('Checked', tone: PillTone.ink)
+        : ObPill(c.certainty.label, tone: PillTone.plain);
     final decide = onDecide;
+    Widget fact(IconData icon, String text, {Color color = Ob.inkSoft}) => Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(icon, size: 15, color: Ob.inkMuted),
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(text, style: Ob.body(13.5, color: color))),
+          ]),
+        );
     return InkWell(
       onTap: () => onOpen(c),
       borderRadius: BorderRadius.circular(Ob.radiusCard),
@@ -515,7 +634,7 @@ class _CandidateCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Ob.card,
           borderRadius: BorderRadius.circular(Ob.radiusCard),
-          boxShadow: decide != null ? Ob.lift : null,
+          boxShadow: Ob.liftLow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -523,57 +642,44 @@ class _CandidateCard extends StatelessWidget {
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(
                 child: Text(c.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Ob.name(20)),
+                    maxLines: 2, overflow: TextOverflow.ellipsis, style: Ob.name(20)),
               ),
               const SizedBox(width: 8),
               pill,
             ]),
             const SizedBox(height: 10),
             Text(reason,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-                style: Ob.body(14)),
-            if (where.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(where, style: Ob.body(13, color: Ob.inkMuted)),
+                maxLines: 4, overflow: TextOverflow.ellipsis, style: Ob.body(14.5)),
+            const SizedBox(height: 6),
+            if ((c.geography ?? '').isNotEmpty) fact(Icons.place_outlined, c.geography!),
+            if (c.domain.isNotEmpty && !c.domain.startsWith('name:'))
+              fact(Icons.language,
+                  '${c.domain}${checks?.websiteAnswers == true ? ', its own site, answering' : ''}'),
+            if (checks != null) ...[
+              fact(
+                Icons.alternate_email,
+                '${checks.email}, found ${checks.addressFoundInSaid}'
+                '${checks.mailboxConfirmed ? '. Its mailbox accepts mail.' : '.'}',
+              ),
+              if (checks.checkedAt != null)
+                fact(Icons.schedule, 'Checked ${_when(checks.checkedAt!)}',
+                    color: Ob.inkMuted),
             ],
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             if (decide != null)
               Row(children: [
                 Expanded(
                   child: FilledButton(
-                    onPressed: busy
-                        ? null
-                        : () => decide(c, PursuitDisposition.pursuing),
-                    child: Text(busy ? 'Saving…' : 'Yes, pursue'),
+                    onPressed: busy ? null : () => decide(c, PursuitDisposition.pursuing),
+                    child: Text(busy ? 'Saving…' : 'Pursue'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton(
-                  onPressed:
-                      busy ? null : () => decide(c, PursuitDisposition.holding),
+                  onPressed: busy ? null : () => decide(c, PursuitDisposition.holding),
                   child: const Text('Not now'),
                 ),
-              ])
-            else if (c.hasRelationship && c.relationshipId != null)
-              OutlinedButton(
-                onPressed: () =>
-                    context.go('/client/relationships/${c.relationshipId}'),
-                child: const Text('Open customer'),
-              )
-            else
-              Container(
-                height: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Ob.paper,
-                  borderRadius: BorderRadius.circular(Ob.radiusControl),
-                ),
-                child: Text(c.disposition.label,
-                    style: Ob.strong(14, color: Ob.inkSoft)),
-              ),
+              ]),
           ],
         ),
       ),

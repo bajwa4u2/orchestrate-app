@@ -139,7 +139,7 @@ void main() {
     // "Worth pursuing" needs an object, and it is the first thing on screen.
     // DD-26: the page is named for what it holds; what the business sells
     // sits directly beneath it.
-    expect(find.text('Businesses that need you'), findsOneWidget);
+    expect(find.text('Businesses worth your time'), findsOneWidget);
     expect(find.textContaining('more qualified conversations'), findsOneWidget);
     expect(find.textContaining('hiring sales staff'), findsOneWidget);
 
@@ -155,7 +155,7 @@ void main() {
     ClientMarket.instance.seed(view([candidate()]));
     await render(tester, 'high evidence');
 
-    expect(find.text('Worth a look'), findsOneWidget);
+    expect(find.text('Ready for you'), findsOneWidget);
     expect(find.text('trainwell'), findsOneWidget);
     // The rationale, verbatim, naming offer and observation.
     expect(find.textContaining('Commercial execution'), findsWidgets);
@@ -177,10 +177,11 @@ void main() {
 
     // Not beside the evidenced ones — that would imply a finding where there
     // is only a name.
-    expect(find.text('Worth a look'), findsNothing);
-    expect(find.textContaining('Nothing new needs your judgement'), findsOneWidget);
+    expect(find.text('Ready for you'), findsNothing);
+    expect(find.textContaining('Nothing has passed every check yet'), findsOneWidget);
     expect(find.textContaining('Show 1 we know little about'), findsOneWidget);
 
+    await tester.ensureVisible(find.textContaining('Show 1 we know little about'));
     await tester.tap(find.textContaining('Show 1 we know little about'));
     await tester.pump();
     expect(find.text('Quiet Co'), findsOneWidget);
@@ -200,7 +201,7 @@ void main() {
     // withholding these would leave the surface empty and useless. It stays in
     // view, and the row leads with the staleness rather than with a rationale
     // that would read as a live reason to act today.
-    expect(find.text('Worth a look'), findsOneWidget);
+    expect(find.text('Ready for you'), findsOneWidget);
     expect(find.text('Last Spring Ltd'), findsOneWidget);
     expect(find.textContaining('has aged'), findsOneWidget);
     expect(find.textContaining('may no longer be true'), findsOneWidget);
@@ -219,9 +220,10 @@ void main() {
     ]));
     await render(tester, 'decided');
 
-    expect(find.text('Worth a look'), findsOneWidget);
-    expect(find.text('You have decided'), findsOneWidget);
-    expect(find.text('Worth pursuing'), findsOneWidget);
+    expect(find.text('Ready for you'), findsOneWidget);
+    expect(find.text('You decided'), findsOneWidget);
+    // DD-30: a pursued business is on the owner's Today list, said so.
+    expect(find.text('On your Today list'), findsOneWidget);
     expect(find.text('Keep in view'), findsOneWidget);
   });
 
@@ -237,7 +239,7 @@ void main() {
     // Said as what they are to this business now: a customer, one tap away.
     expect(find.text('Customer'), findsOneWidget);
     // Not duplicated as an ordinary untouched candidate.
-    expect(find.text('Worth a look'), findsNothing);
+    expect(find.text('Ready for you'), findsNothing);
   });
 
   testWidgets('7. no business intent is its own empty state', (tester) async {
@@ -333,7 +335,8 @@ void main() {
     ));
     await render(tester, 'searched, none yet');
 
-    expect(find.textContaining('No businesses matching your market found yet'),
+    // DD-30: what every business must prove, instead of an empty list.
+    expect(find.textContaining('Nothing has passed every check yet'),
         findsOneWidget);
     expect(find.textContaining('3 of 15 areas'), findsOneWidget);
     expect(find.textContaining('has not said what it sells'), findsNothing);
@@ -409,7 +412,7 @@ void main() {
 
       expect(tester.takeException(), isNull,
           reason: 'market must render without overflow at ${size.width}px');
-      expect(find.text('Worth a look'), findsOneWidget);
+      expect(find.text('Ready for you'), findsOneWidget);
       debugPrint('  ok  ${size.width.toInt()}x${size.height.toInt()} — no overflow');
     }
   });

@@ -155,6 +155,7 @@ class Candidate {
     required this.dispositionMeans,
     required this.dispositionNote,
     required this.discoveredRepresentations,
+    this.checks,
   });
 
   /// Canonical counterparty identity. Server-derived and stable — never a
@@ -193,6 +194,9 @@ class Candidate {
 
   /// How many times discovery saw this one company.
   final int discoveredRepresentations;
+
+  /// What was proven about it, and when. Present only when every test passed.
+  final ProspectChecks? checks;
 
   /// Whether this is waiting on a person's judgement.
   ///
@@ -244,8 +248,65 @@ class Candidate {
       dispositionNote: _text(json['dispositionNote']),
       discoveredRepresentations:
           (json['discoveredRepresentations'] as num?)?.toInt() ?? 1,
+      checks: json['checks'] is Map
+          ? ProspectChecks.fromJson(Map<String, dynamic>.from(json['checks'] as Map))
+          : null,
     );
   }
+}
+
+/// The five tests a business passed before it was offered, as facts.
+class ProspectChecks {
+  const ProspectChecks({
+    required this.email,
+    required this.addressFoundIn,
+    required this.mailboxConfirmed,
+    required this.witnesses,
+    required this.websiteAnswers,
+    required this.checkedAt,
+    required this.passedAt,
+  });
+
+  final String email;
+
+  /// 'OWN_WEBSITE', 'BUSINESS_LISTING', or the host it was published on.
+  final String addressFoundIn;
+  final bool mailboxConfirmed;
+  final int witnesses;
+  final bool websiteAnswers;
+  final DateTime? checkedAt;
+  final DateTime? passedAt;
+
+  String get addressFoundInSaid => switch (addressFoundIn) {
+        'OWN_WEBSITE' => 'on its own website',
+        'BUSINESS_LISTING' => 'in its public business listing',
+        final host => 'at $host',
+      };
+
+  static ProspectChecks fromJson(Map<String, dynamic> json) => ProspectChecks(
+        email: (json['email'] as String?) ?? '',
+        addressFoundIn: (json['addressFoundIn'] as String?) ?? 'BUSINESS_LISTING',
+        mailboxConfirmed: json['mailboxConfirmed'] == true,
+        witnesses: (json['witnesses'] as num?)?.toInt() ?? 0,
+        websiteAnswers: json['websiteAnswers'] == true,
+        checkedAt: DateTime.tryParse(json['checkedAt']?.toString() ?? '')?.toLocal(),
+        passedAt: DateTime.tryParse(json['passedAt']?.toString() ?? '')?.toLocal(),
+      );
+}
+
+/// The research behind the list: how many are being checked, how many passed.
+class MarketResearch {
+  const MarketResearch({
+    required this.checking,
+    required this.passed,
+    required this.lastCheckedAt,
+  });
+
+  static const none = MarketResearch(checking: 0, passed: 0, lastCheckedAt: null);
+
+  final int checking;
+  final int passed;
+  final DateTime? lastCheckedAt;
 }
 
 class CandidateDepth {
@@ -386,9 +447,12 @@ class MarketView {
     required this.excludedArtifacts,
     required this.excludedNote,
     required this.counts,
+    this.research = MarketResearch.none,
   });
 
   final BusinessIntent? intent;
+
+  final MarketResearch research;
 
   /// What has actually been searched. An empty market must explain itself.
   final MarketCoverage coverage;
@@ -427,7 +491,14 @@ class MarketView {
   static MarketView fromJson(Map<String, dynamic> json) {
     final excluded = Map<String, dynamic>.from(json['excluded'] as Map? ?? {});
     final counts = Map<String, dynamic>.from(json['counts'] as Map? ?? {});
+    final research = Map<String, dynamic>.from(json['research'] as Map? ?? {});
     return MarketView(
+      research: MarketResearch(
+        checking: (research['checking'] as num?)?.toInt() ?? 0,
+        passed: (research['passed'] as num?)?.toInt() ?? 0,
+        lastCheckedAt:
+            DateTime.tryParse(research['lastCheckedAt']?.toString() ?? '')?.toLocal(),
+      ),
       intent: BusinessIntent.fromJson(
           json['intent'] is Map ? Map<String, dynamic>.from(json['intent'] as Map) : null),
       coverage: MarketCoverage.fromJson(json['coverage'] is Map
