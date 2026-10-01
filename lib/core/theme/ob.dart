@@ -67,6 +67,10 @@ class Ob {
   static const List<BoxShadow> lift = [
     BoxShadow(color: Color(0x1A17202B), blurRadius: 36, offset: Offset(0, 18)),
   ];
+  /// For cards set side by side: a wide lift on each merges into a grey band.
+  static const List<BoxShadow> liftLow = [
+    BoxShadow(color: Color(0x1417202B), blurRadius: 14, offset: Offset(0, 5)),
+  ];
   static const List<BoxShadow> liftHigh = [
     BoxShadow(color: Color(0x2417202B), blurRadius: 52, offset: Offset(0, 26)),
   ];

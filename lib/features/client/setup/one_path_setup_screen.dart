@@ -12,11 +12,13 @@ import '../../../core/ui/ob_widgets.dart';
 import '../../../core/ui/screen_memory.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../core/commercial/commercial_model.dart';
+import '../../../core/platform/billing_gate.dart';
 import '../../../data/repositories/client/client_billing_repository.dart';
 import '../../../data/repositories/client/client_business_identity_repository.dart';
 import '../../../data/repositories/client/client_campaign_repository.dart';
 import '../../../data/repositories/client/client_mailbox_repository.dart';
 import '../../../data/repositories/client/client_outreach_repository.dart';
+import '../../../data/setup/buyer_suggestions.dart';
 import '../../../data/setup/global_setup_options.dart';
 import '../screens/client_setup_screen.dart' show metroSuggestionsFor;
 import '../widgets/smtp_connect_dialog.dart';
@@ -134,6 +136,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   final Set<String> _regions = {};
   final List<String> _towns = [];
 
+  // Step 4: one address; a password only where the provider needs one.
+  final _address = TextEditingController();
+  final _appPassword = TextEditingController();
+  final _server = TextEditingController();
+  Map<String, dynamic>? _recognised;
+
   // Step 3
   final _offer = TextEditingController();
   String _lane = 'opportunity';
@@ -145,6 +153,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   Map<String, dynamic> _eligibility = const {};
   List<Map<String, dynamic>> _providers = const [];
   CommercialModel? _pricing;
+
+  /// The cadence picked on the plan step; monthly until the owner picks.
+  String _cadence = 'MONTHLY';
   bool _setupCompleted = false;
   bool _planDeferred = false;
   Timer? _domainPoll;
@@ -156,6 +167,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     for (final c in [_name, _website, _line1, _city, _postcode, _offer]) {
       c.addListener(_keepDraft);
     }
+    // The address they signed up with is usually the one notes come from.
+    _address.text = AuthSessionController.instance.email.trim();
     _load();
   }
 
@@ -163,7 +176,10 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   void dispose() {
     _domainPoll?.cancel();
     _draftTimer?.cancel();
-    for (final c in [_name, _website, _line1, _city, _postcode, _offer]) {
+    for (final c in [
+      _name, _website, _line1, _city, _postcode, _offer,
+      _address, _appPassword, _server,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -312,7 +328,30 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     if (_addressCountry.isEmpty && _countries.length == 1) {
       _addressCountry = _countries.first;
     }
+    // Starting points, never overwriting anything typed: the website from
+    // a work address's domain, the country from this device's region.
+    if (_website.text.trim().isEmpty) {
+      final email = AuthSessionController.instance.email.trim().toLowerCase();
+      final at = email.lastIndexOf('@');
+      final domain = at < 0 ? '' : email.substring(at + 1);
+      if (domain.contains('.') && !_freeMailDomains.contains(domain)) {
+        _website.text = domain;
+      }
+    }
+    if (_addressCountry.isEmpty) {
+      final region = WidgetsBinding.instance.platformDispatcher.locale.countryCode;
+      if (region != null && GlobalSetupOptions.countryByCode(region) != null) {
+        _addressCountry = region;
+      }
+    }
   }
+
+  /// Personal mailboxes: their domain is nobody's business website.
+  static const _freeMailDomains = {
+    'gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'live.com',
+    'msn.com', 'yahoo.com', 'icloud.com', 'me.com', 'aol.com', 'proton.me',
+    'protonmail.com', 'gmx.com', 'zoho.com', 'yandex.com', 'mail.com',
+  };
 
   String _oauthReason(String? raw) {
     switch ((raw ?? '').trim()) {
@@ -330,6 +369,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   void _keepDraft() {
+    // The side card previews what is typed (the footer, the first note), so
+    // it is redrawn with each keystroke, not only on the next step.
+    if (mounted && !_loading) setState(() {});
     _draftTimer?.cancel();
     _draftTimer = Timer(const Duration(milliseconds: 600), _writeDraft);
   }
@@ -430,7 +472,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             ? StepState.done
             : StepState.todo;
       case SetupStep.plan:
-        return (_planActive || _planDeferred) ? StepState.done : StepState.todo;
+        // Putting the plan off is a choice, not a plan: it waits, never ticks.
+        return _planActive
+            ? StepState.done
+            : _planDeferred
+                ? StepState.waiting
+                : StepState.todo;
       case SetupStep.ready:
         return StepState.todo;
     }
@@ -466,6 +513,10 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   void _goTo(SetupStep s) {
     setState(() {
+      // Buyers are usually in the business's own country: start there.
+      if (s == SetupStep.want && _countries.isEmpty && _addressCountry.isNotEmpty) {
+        _countries.add(_addressCountry);
+      }
       _step = s;
       _stepError = null;
       _fieldErrors = {};
@@ -618,16 +669,39 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       })
       .toList();
 
+  /// The chosen-country area whose name this is, if any.
+  String? _areaNamed(String name) {
+    final n = name.toLowerCase();
+    for (final cc in _countries) {
+      for (final r in GlobalSetupOptions.regionsForCountry(cc)) {
+        if (r.label.toLowerCase() == n) return r.code;
+      }
+    }
+    return null;
+  }
+
+  static String _titleCase(String s) => s
+      .split(RegExp(r'\s+'))
+      .where((w) => w.isNotEmpty)
+      .map((w) => w.length <= 2 && w == w.toUpperCase()
+          ? w
+          : '${w[0].toUpperCase()}${w.substring(1)}')
+      .join(' ');
+
   List<Map<String, String>> _townsPayload(List<Map<String, String>> regions) {
     if (_towns.isEmpty) return const [];
     // A town is filed under a region of its own country when one is chosen;
     // with no regions it rides on the country alone.
     return _towns.map((t) {
-      final country = _countries.length == 1 ? _countries.first : _countries.first;
-      final region = regions
+      final country = _countries.first;
+      // Filed under a region only when exactly one was chosen in its
+      // country. Taking the first of many filed every town under whichever
+      // region sorted first (Alabama, for a business that picked all states).
+      final inCountry = regions
           .where((r) => r['countryCode'] == country)
           .map((r) => r['regionCode']!)
-          .firstOrNull;
+          .toList();
+      final region = inCountry.length == 1 ? inCountry.single : null;
       return {
         'countryCode': country,
         if (region != null) 'regionCode': region,
@@ -797,6 +871,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           _domain = d;
           _markSaved();
         });
+        // An address on the business's own domain goes straight on to the
+        // records for it; nobody should have to ask for them.
+        if (!_personalMailbox && !_domainAttached) await _attachDomain();
         _schedulePollIfWaiting();
       }
     });
@@ -806,6 +883,115 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     final saved = await SmtpConnectDialog.show(context);
     if (saved != true || !mounted) return;
     await _refreshEmail();
+  }
+
+  String get _recognisedProvider => (_recognised?['provider'] ?? '').toString();
+
+  bool _oauthAvailable(String key) =>
+      _providers.any((p) => p['key'] == key && p['available'] == true);
+
+  /// The owner types an address; the server says who holds it. Google and
+  /// Microsoft sign in on their own page; everyone else gives a password.
+  Future<void> _continueWithAddress() async {
+    final address = _address.text.trim();
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(address)) {
+      setState(() => _fieldErrors = {'address': 'Type the full address, like you@yourbusiness.com.'});
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _stepError = null;
+      _fieldErrors = {};
+    });
+    try {
+      final r = await _mailbox.recogniseMailbox(address);
+      if (!mounted) return;
+      final provider = (r['provider'] ?? 'generic').toString();
+      setState(() {
+        _recognised = r;
+        _busy = false;
+        if (provider == 'generic' && _server.text.trim().isEmpty) {
+          _server.text = 'mail.${(r['domain'] ?? '').toString()}';
+        }
+      });
+      if ((provider == 'google' || provider == 'microsoft') &&
+          _oauthAvailable(provider)) {
+        await _connect(provider);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _stepError = _reasonFor(error,
+            fallback: 'That address could not be checked just now. Try again in a moment.');
+      });
+    }
+  }
+
+  /// Connect with a password: the servers come from the provider, so the
+  /// owner never types a port or an encryption mode. The server tries the
+  /// provider's other documented endpoints itself if the first refuses.
+  Future<void> _connectWithPassword() async {
+    final r = _recognised ?? const {};
+    final provider = _recognisedProvider.isEmpty ? 'generic' : _recognisedProvider;
+    final address = _address.text.trim();
+    final password = _appPassword.text;
+    if (password.isEmpty) {
+      setState(() => _fieldErrors = {'password': 'Enter the password for this mailbox.'});
+      return;
+    }
+    final smtp = _map(r['smtp']);
+    final imap = _map(r['imap']);
+    final host = provider == 'generic' ? _server.text.trim() : '${smtp['host'] ?? ''}';
+    if (host.isEmpty) {
+      setState(() => _fieldErrors = {'server': 'Enter your mail server, like mail.yourbusiness.com.'});
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _stepError = null;
+      _fieldErrors = {};
+    });
+    try {
+      await _mailbox.connectCustomTransport(
+        smtp: {
+          'host': host,
+          'port': smtp['port'] ?? 465,
+          'secure': smtp['secure'] ?? 'tls',
+          'username': address,
+          'password': password,
+          'fromAddress': address,
+          if (AuthSessionController.instance.fullName.trim().isNotEmpty)
+            'fromName': AuthSessionController.instance.fullName.trim(),
+          'providerOverride': provider,
+        },
+        imap: {
+          'host': provider == 'generic' ? host : '${imap['host'] ?? host}',
+          'port': imap['port'] ?? 993,
+          'secure': imap['secure'] ?? 'tls',
+          'username': address,
+          'password': password,
+        },
+      );
+      _appPassword.clear();
+      await _refreshEmail();
+      if (!mounted) return;
+      if (_emailConnected && !_personalMailbox && !_domainAttached) {
+        await _attachDomain();
+      }
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _markSaved();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _stepError = _reasonFor(error,
+            fallback: 'That mailbox did not accept the password. Check it and try again.');
+      });
+    }
   }
 
   Future<void> _refreshEmail() async {
@@ -894,6 +1080,47 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     }
   }
 
+  /// Straight from the plan step to secure checkout: no second price page.
+  /// A store build sends nobody out to pay, so it opens Billing, where the
+  /// store's own purchase sheet lives.
+  Future<void> _startCheckout() async {
+    if (!externalPurchaseAllowed) {
+      context.go('/client/billing');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _stepError = null;
+    });
+    await _writeDraft();
+    try {
+      final response =
+          await ClientBillingRepository().createSubscription(period: _cadence);
+      final url = (response['checkoutUrl'] ?? '').toString();
+      if (url.isEmpty) {
+        // The server says why when it will not open a checkout, and that
+        // sentence is the one worth showing.
+        final why = (response['reason'] ?? response['message'] ?? '').toString();
+        throw StateError(why.isEmpty ? 'Checkout could not open just now.' : why);
+      }
+      final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _stepError = ok ? null : 'Checkout could not open on this device.';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _stepError = error is StateError
+            ? error.message
+            : _reasonFor(error, fallback: 'Checkout could not open just now. '
+                'Try again in a moment.');
+      });
+    }
+  }
+
   Future<void> _deferPlan() async {
     setState(() => _planDeferred = true);
     await _writeDraft();
@@ -951,7 +1178,10 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           onSignOut: _signOut,
         ),
         Expanded(
+          // Keyed by step: every step opens at its top, not where the last
+          // one was scrolled to.
           child: SingleChildScrollView(
+            key: ValueKey('setup-desktop-${_step.key}'),
             padding: const EdgeInsets.fromLTRB(64, 44, 64, 44),
             child: _step == SetupStep.ready
                 ? _readyView(phone: false)
@@ -1013,6 +1243,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         ),
         Expanded(
           child: SingleChildScrollView(
+            key: ValueKey('setup-phone-${_step.key}'),
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
             child: isReady
                 ? _readyView(phone: true)
@@ -1240,7 +1471,20 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               setState(() => _buyerKinds.remove(k));
               _keepDraft();
             }),
-          ObAddChoice('Add a kind', onTap: () async {
+          // Who usually buys from a business of this kind, one tap each.
+          for (final s in buyerSuggestionsFor(_industryCode, _buyerKinds))
+            ObAddChoice(s, onTap: () {
+              setState(() {
+                _buyerKinds.add(s);
+                _stepError = null;
+              });
+              _keepDraft();
+            }),
+          ObAddChoice(
+              buyerSuggestionsFor(_industryCode, const []).isEmpty
+                  ? 'Add a kind'
+                  : 'Another kind',
+              onTap: () async {
             final picked = await _pick(
               title: 'Which businesses buy from you?',
               options: [
@@ -1259,9 +1503,6 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             _keepDraft();
           }),
         ]),
-        const SizedBox(height: 6),
-        Text('Type your own if it is not listed, such as "House builders".',
-            style: Ob.body(13, color: Ob.inkMuted)),
         _gap(),
         Text('Where they are', style: Ob.strong(15)),
         const SizedBox(height: 8),
@@ -1355,9 +1596,21 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               allowCustom: true,
             );
             if (picked == null || !mounted) return;
-            setState(() => _towns
-              ..clear()
-              ..addAll(picked.take(120)));
+            setState(() {
+              _towns.clear();
+              for (final raw in picked.take(120)) {
+                final t = _titleCase(raw.trim());
+                if (t.isEmpty) continue;
+                // A state or province typed as a town is an area: file it
+                // there, where it is searched as the whole area it is.
+                final area = _areaNamed(t);
+                if (area != null) {
+                  _regions.add(area);
+                } else if (!_towns.any((x) => x.toLowerCase() == t.toLowerCase())) {
+                  _towns.add(t);
+                }
+              }
+            });
             _keepDraft();
           }),
         ]),
@@ -1375,37 +1628,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   Widget _offerStep(bool phone) {
-    Widget lane(String code, String title, String body) {
-      final on = _lane == code;
-      return Semantics(
-        selected: on,
-        button: true,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () {
-            setState(() => _lane = code);
-            _keepDraft();
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Ob.card,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: on ? Ob.ink : Ob.card, width: 2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Ob.body(15, color: Ob.ink, weight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(body, style: Ob.body(13.5, color: Ob.inkMuted)),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
+    // One path: Orchestrate finds the customer and follows them through to
+    // paid, so there is no "what first" to choose. A business that chose
+    // before keeps its choice; a new one starts by finding customers.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1440,16 +1665,6 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             ],
           ),
         ),
-        _gap(),
-        Text('What should Orchestrate do first?', style: Ob.strong(15)),
-        const SizedBox(height: 8),
-        _pair(
-          phone,
-          lane('opportunity', 'Find new customers',
-              'Look for businesses that need you now, and write to them.'),
-          lane('revenue', 'Get paid for work done',
-              'Agreements, invoices and reminders for customers you already have.'),
-        ),
         _errorLine(),
         _gap(26),
         ObActions(
@@ -1465,48 +1680,66 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   Widget _emailStep(bool phone) {
     if (_emailConnected && !_personalMailbox) return _domainStep(phone);
-    Widget provider(String key, String name, String sub, VoidCallback? onTap) {
-      return InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: _busy ? null : onTap,
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Ob.card,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: Ob.body(16, color: Ob.ink, weight: FontWeight.w700)),
-                  const SizedBox(height: 3),
-                  Text(sub, style: Ob.body(13.5, color: Ob.inkMuted)),
-                ],
-              ),
-            ),
-            Text('Connect', style: Ob.strong(14)),
-            const SizedBox(width: 4),
-            const Icon(Icons.arrow_forward, size: 16, color: Ob.ink),
-          ]),
-        ),
-      );
-    }
-
-    bool available(String key) =>
-        _providers.isEmpty ||
-        _providers.any((p) => p['key'] == key && p['available'] == true);
-
     final connected = _emailConnected;
+    final provider = _recognisedProvider;
+    // A password is asked for only once the address is known to need one.
+    final needsPassword = !connected &&
+        provider.isNotEmpty &&
+        !((provider == 'google' || provider == 'microsoft') && _oauthAvailable(provider));
+    final providerName = const {
+      'google': 'Google',
+      'microsoft': 'Microsoft',
+      'zoho': 'Zoho',
+    }[provider];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _head('Which email should notes come from?',
-            'Notes go out from your own address, and replies land in your own '
-                'inbox. Orchestrate never sends from an address it made up.',
+        _head('Which address should notes come from?',
+            'Notes go out from it, and replies come back to it.',
             phone: phone),
         _gap(),
+        if (!connected) ...[
+          ObField(
+            label: 'Your email',
+            controller: _address,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            error: _fieldErrors['address'],
+            onChanged: (_) {
+              if (_recognised != null) setState(() => _recognised = null);
+            },
+          ),
+          if (needsPassword) ...[
+            const SizedBox(height: 18),
+            if (provider == 'generic') ...[
+              ObField(
+                label: 'Mail server',
+                controller: _server,
+                error: _fieldErrors['server'],
+                hint: 'Your email host lists it, often as the SMTP server.',
+              ),
+              const SizedBox(height: 18),
+            ],
+            ObField(
+              label: providerName == null ? 'Password' : '$providerName app password',
+              controller: _appPassword,
+              obscure: true,
+              error: _fieldErrors['password'],
+              hint: provider == 'zoho'
+                  ? 'Zoho Mail: Settings, Security, App passwords. Make one for Orchestrate.'
+                  : provider == 'google'
+                      ? 'Google account: Security, App passwords. Make one for Orchestrate.'
+                      : provider == 'microsoft'
+                          ? 'Microsoft account: Security, App passwords. Make one for Orchestrate.'
+                          : 'The password for this mailbox. If it uses two-step sign-in, an app password.',
+            ),
+          ],
+          const SizedBox(height: 12),
+          Text(
+              'Orchestrate sends only the notes you approve, and reads only '
+              'the replies to them.',
+              style: Ob.body(13.5, color: Ob.inkMuted)),
+        ],
         if (connected) ...[
           ObCard(
             padding: const EdgeInsets.all(18),
@@ -1524,35 +1757,41 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               'A Gmail or Outlook address needs no change at a domain host. '
               'Orchestrate sends at a careful pace from it.',
               style: Ob.body(13.5, color: Ob.inkMuted)),
-        ] else ...[
-          if (available('google'))
-            provider('google', 'Google Workspace or Gmail',
-                'Sign in with Google. Takes a minute.', () => _connect('google')),
-          if (available('google')) const SizedBox(height: 10),
-          if (available('microsoft'))
-            provider('microsoft', 'Microsoft 365 or Outlook',
-                'Sign in with Microsoft. Takes a minute.',
-                () => _connect('microsoft')),
-          if (available('microsoft')) const SizedBox(height: 10),
-          provider('other', 'Another email provider',
-              'Enter your mail server details. We show you where to find them.',
-              _connectOther),
-          const SizedBox(height: 12),
-          Text(
-              'If your address uses your own domain, the next screen shows the '
-              'one change to make at your domain host. A Gmail or Outlook '
-              'address needs no change.',
-              style: Ob.body(13.5, color: Ob.inkMuted)),
         ],
         _errorLine(),
         _gap(26),
-        ObActions(
-          primary: connected ? 'Continue' : 'Skip for now',
-          onPrimary: () => _goTo(_next(SetupStep.email)),
-          secondary: 'Back',
-          onSecondary: () => _goTo(SetupStep.offer),
-          busy: _busy,
-        ),
+        if (connected)
+          ObActions(
+            primary: 'Continue',
+            onPrimary: () => _goTo(_next(SetupStep.email)),
+            secondary: 'Back',
+            onSecondary: () => _goTo(SetupStep.offer),
+          )
+        else ...[
+          ObActions(
+            primary: needsPassword
+                ? 'Connect'
+                : provider == 'google' || provider == 'microsoft'
+                    ? 'Sign in with ${providerName ?? 'your provider'}'
+                    : 'Continue',
+            onPrimary: needsPassword ? _connectWithPassword : _continueWithAddress,
+            secondary: 'Back',
+            onSecondary: () => _goTo(SetupStep.offer),
+            busy: _busy,
+          ),
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                  foregroundColor: Ob.inkMuted,
+                  padding: EdgeInsets.zero,
+                  textStyle: Ob.body(14, weight: FontWeight.w600)),
+              onPressed: _busy ? null : () => _goTo(_next(SetupStep.email)),
+              child: const Text('Do this later'),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1702,21 +1941,35 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   Widget _planStep(bool phone) {
-    Widget price(String cadence, String amount, String unit, String note,
-        {bool dark = false, String? badge}) {
-      return ObCard(
-        color: dark ? Ob.ink : Ob.card,
-        radius: Ob.radiusCard,
+    // The picked cadence is the dark card; tapping the other picks it.
+    Widget price(String period, String cadence, String amount, String unit, String note,
+        {String? badge}) {
+      final dark = _cadence == period;
+      return InkWell(
+        borderRadius: BorderRadius.circular(Ob.radiusCard),
+        onTap: _busy ? null : () => setState(() => _cadence = period),
+        child: Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: dark ? Ob.ink : Ob.card,
+          borderRadius: BorderRadius.circular(Ob.radiusCard),
+          border: Border.all(color: dark ? Ob.ink : Ob.line, width: 1.5),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
+              Icon(dark ? Icons.radio_button_checked : Icons.radio_button_off,
+                  size: 18, color: dark ? Ob.onInk : Ob.inkMuted),
+              const SizedBox(width: 8),
               Text(cadence,
                   style: Ob.body(13, color: dark ? Ob.onInkMuted : Ob.inkMuted)),
               const Spacer(),
               if (badge != null)
                 Text(badge,
-                    style: Ob.body(13, color: Ob.moneyOnInk, weight: FontWeight.w600)),
+                    style: Ob.body(13,
+                        color: dark ? Ob.moneyOnInk : Ob.money,
+                        weight: FontWeight.w600)),
             ]),
             const SizedBox(height: 6),
             FittedBox(
@@ -1731,6 +1984,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             const SizedBox(height: 6),
             Text(note, style: Ob.body(13, color: dark ? Ob.onInkMuted : Ob.inkMuted)),
           ],
+        ),
         ),
       );
     }
@@ -1751,12 +2005,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           // Prices are the server's (`/public/pricing`), never written here.
           _pair(
             phone,
-            price('Monthly', _offers.first.priceLabel, '/ month',
+            price(_offers.first.period, 'Monthly', _offers.first.priceLabel, '/ month',
                 'Cancel any time'),
             _offers.length > 1
-                ? price('Yearly', _offers.last.priceLabel, '/ year',
+                ? price(_offers.last.period, 'Yearly', _offers.last.priceLabel, '/ year',
                     '${_perMonth(_offers.last)} a month, paid yearly',
-                    dark: true, badge: _monthsFree())
+                    badge: _monthsFree())
                 : const SizedBox.shrink(),
           ),
         ],
@@ -1771,10 +2025,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           )
         else
           ObActions(
-            primary: 'Choose a plan',
-            onPrimary: () => context.go('/app/subscribe'),
+            primary: 'Continue to payment',
+            onPrimary: _startCheckout,
             secondary: 'Not yet, look around first',
             onSecondary: _deferPlan,
+            busy: _busy,
           ),
       ],
     );
@@ -1972,6 +2227,13 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         Text(b, style: Ob.strong(14.5)),
       ]);
 
+  String _openCountLine() {
+    final open =
+        SetupStep.values.take(6).where((s) => _stateOf(s) == StepState.todo).length;
+    const words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+    return open == 1 ? 'One thing is still open.' : '${words[open]} things are still open.';
+  }
+
   Widget _readyView({required bool phone}) {
     final allDone = SetupStep.values.take(6).every((s) => _stateOf(s) != StepState.todo);
     String line(SetupStep s) {
@@ -1986,9 +2248,17 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ].where((e) => e.isNotEmpty).join(' · ');
         case SetupStep.want:
           final icp = _map(_profile['icp']);
+          // Short enough to read whole: the kinds, then the first place and
+          // how many more, never a list cut off mid-word.
+          final places = _list(icp['geoTargets']).map((e) => '$e').toList();
+          final where = places.isEmpty
+              ? ''
+              : places.length == 1
+                  ? places.first
+                  : '${places.first} and ${places.length - 1} more';
           return [
-            _joinWords(_list(icp['industryTags']).map((e) => '$e').toList()),
-            _joinWords(_list(icp['geoTargets']).map((e) => '$e').take(3).toList()),
+            _joinWords(_list(icp['industryTags']).map((e) => '$e').take(3).toList()),
+            where,
           ].where((e) => e.isNotEmpty).join(' · ');
         case SetupStep.offer:
           return _text(_profile, 'outboundOffer');
@@ -2004,7 +2274,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         case SetupStep.plan:
           return _planActive
               ? 'Active'
-              : 'Not chosen yet · finding businesses is free; sending starts with a plan';
+              : 'Not chosen yet. Finding businesses is free.';
         case SetupStep.ready:
           return '';
       }
@@ -2016,7 +2286,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('WHERE EVERYTHING STANDS', style: Ob.eyebrow()),
+          Text('YOUR SETUP', style: Ob.eyebrow()),
           const SizedBox(height: 8),
           for (final s in SetupStep.values.take(6))
             InkWell(
@@ -2037,7 +2307,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                           Text(s.title, style: Ob.strong(15)),
                           const SizedBox(height: 2),
                           Text(line(s),
-                              maxLines: 2,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: Ob.body(13.5, color: Ob.inkMuted)),
                         ],
@@ -2060,7 +2330,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         ObHeadline(
             allDone
                 ? 'Orchestrate is looking for your first customers.'
-                : 'A few things are still open.',
+                : _openCountLine(),
             size: phone ? 36 : 60),
         const SizedBox(height: 14),
         ConstrainedBox(
@@ -2340,7 +2610,7 @@ class _Rail extends StatelessWidget {
                 Text(
                     done >= 6
                         ? 'All 6 done'
-                        : '$done of 6 done · about ${(6 - done) * 2} minutes left',
+                        : '$done of 6 done · about ${6 - done} ${6 - done == 1 ? 'minute' : 'minutes'} left',
                     style: Ob.body(13, color: Ob.inkMuted)),
               ],
             ),
@@ -2459,9 +2729,11 @@ class _RailRow extends StatelessWidget {
                     if (!isReady) ...[
                       const SizedBox(height: 2),
                       Text(
-                          state == StepState.waiting
-                              ? 'Domain check running on its own'
-                              : step.subtitle,
+                          state != StepState.waiting
+                              ? step.subtitle
+                              : step == SetupStep.plan
+                                  ? 'Later, when you want to send'
+                                  : 'Domain check running on its own',
                           style: Ob.body(12.5, color: Ob.inkMuted)),
                     ],
                   ],

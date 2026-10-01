@@ -96,6 +96,17 @@ class ClientMailboxRepository {
     return _asMap(json);
   }
 
+  /// Who holds [email], read by the server from its domain's MX records:
+  /// `{provider: google|microsoft|zoho|generic, personal, domain, smtp?, imap?}`.
+  /// A suggestion for setup's one email field; connecting still validates.
+  Future<Map<String, dynamic>> recogniseMailbox(String email) async {
+    final json = await _apiClient.getJson(
+      '/client/mailbox/smtp/recognise?email=${Uri.encodeQueryComponent(email.trim())}',
+      surface: ApiSurface.client,
+    );
+    return _asMap(json);
+  }
+
   /// Provider catalog the chooser renders. Returned as data so the
   /// frontend never hard-codes provider labels.
   Future<List<Map<String, dynamic>>> fetchProviderCatalog() async {

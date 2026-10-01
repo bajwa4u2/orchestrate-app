@@ -6,6 +6,7 @@ import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/market/client_market.dart';
+import 'package:orchestrate_app/core/readiness/owner_readiness.dart';
 import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:orchestrate_app/core/today/client_today.dart';
 import 'package:orchestrate_app/core/today/yes_count.dart';
@@ -38,6 +39,7 @@ class TodayScreen extends StatefulWidget {
 /// One thing waiting for the owner's yes, whatever its source.
 class _YesCard {
   const _YesCard({
+    this.done = false,
     required this.name,
     required this.ask,
     this.detail,
@@ -51,6 +53,8 @@ class _YesCard {
     this.onSecondary,
   });
 
+  /// One of the four owner steps, already done: shown quietly, no button.
+  final bool done;
   final String name;
   final String ask;
   final String? detail;
@@ -231,23 +235,46 @@ class _TodayScreenState extends State<TodayScreen> {
     }
     if (!session.hasSetupCompleted) {
       cards.add(_YesCard(
-        name: 'Your business',
-        eyebrow: 'GETTING READY',
-        ask: 'Finish getting ready',
-        detail: 'Six short steps. Everything you type is kept, and nothing is '
-            'sent while you set up.',
+        name: 'Finish getting ready',
+        ask: '',
+        detail: 'Everything you typed is kept. Nothing is sent while you set up.',
         primary: 'Continue',
         onPrimary: () => context.go('/client/setup'),
       ));
     }
-    for (final item in _today.state?.needsYou ?? const <TodayItem>[]) {
+    // The four things only the owner can do, each still open one a card.
+    // All four stay in view until all four are done, so the owner sees how
+    // far they are; a done one is quiet and has no button.
+    final steps = session.hasSetupCompleted
+        ? ownerStepsFrom(_today.state?.eligibility)
+        : const <OwnerStep>[];
+    final allDone = steps.every((s) => s.done);
+    for (final step in allDone ? const <OwnerStep>[] : steps) {
       cards.add(_YesCard(
-        name: 'Your business',
-        eyebrow: 'ONLY YOU CAN DO THIS',
-        ask: item.title,
-        detail: item.detail,
-        primary: (item.cta ?? '').isEmpty ? 'Open' : item.cta!,
-        onPrimary: () => context.go(item.route ?? '/client/setup'),
+        done: step.done,
+        name: step.title,
+        ask: '',
+        detail: step.line,
+        primary: step.cta,
+        onPrimary: () => context.go(step.route),
+      ));
+    }
+    for (final item in _today.state?.needsYou ?? const <TodayItem>[]) {
+      // Already a card above, in fewer words.
+      if (ownerStepBlockerCodes.contains(item.code)) continue;
+      final meeting = item.category == 'meeting';
+      cards.add(_YesCard(
+        name: item.title,
+        ask: '',
+        detail: meeting && item.meta != null ? item.meta : item.detail,
+        primary: meeting
+            ? 'Open'
+            : (item.cta ?? '').isEmpty
+                ? 'Open'
+                : item.cta!,
+        onPrimary: () => context.go(meeting
+            ? '/client/relationships'
+            : setupRouteFor(item.route)),
       ));
     }
     for (final c in _market.view?.needsReview ?? const <Candidate>[]) {
@@ -309,9 +336,13 @@ class _TodayScreenState extends State<TodayScreen> {
     final cards = _cards();
     // Published for the rail's amber count beside Today.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_today.hasAnswer) todayYesCount.value = cards.length;
+      if (_today.hasAnswer) {
+        todayYesCount.value = cards.where((c) => !c.done).length;
+      }
     });
-    final n = cards.length;
+    // A done owner step is on screen but is not something that needs a yes.
+    final n = cards.where((c) => !c.done).length;
+    final shownCount = cards.length;
     final lead = n < _words.length ? _words[n] : '$n things';
     final now = DateTime.now();
     final phone = Workspace.sizeOf(context, MediaQuery.sizeOf(context).width).isPhone;
@@ -361,21 +392,33 @@ class _TodayScreenState extends State<TodayScreen> {
               child: Center(
                   child: CircularProgressIndicator(color: Ob.ink, strokeWidth: 2)),
             )
-          else if (n == 0)
+          else if (shownCount == 0)
             _quiet(_today.state)
           else
             LayoutBuilder(builder: (context, c) {
-              final cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
-              final shown = cards.take(cols == 1 ? 6 : cols * 2).toList();
-              final w = (c.maxWidth - 18 * (cols - 1)) / cols;
-              return Wrap(
-                spacing: 18,
-                runSpacing: 18,
-                children: [
-                  for (var i = 0; i < shown.length; i++)
-                    SizedBox(width: w, child: _Card(card: shown[i], lead: i == 0)),
+              var cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
+              // Four cards fill two rows of two (or one row of four), never
+              // three and one left alone.
+              if (cols == 3 && shownCount == 4) cols = c.maxWidth >= 1240 ? 4 : 2;
+              final shown = cards.take(cols == 1 ? 6 : (cols == 4 ? 4 : cols * 2)).toList();
+              // Cards in a row share one height, so their buttons line up.
+              return Column(children: [
+                for (var r = 0; r < shown.length; r += cols) ...[
+                  if (r > 0) const SizedBox(height: 18),
+                  IntrinsicHeight(
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      for (var i = r; i < r + cols; i++) ...[
+                        if (i > r) const SizedBox(width: 18),
+                        Expanded(
+                          child: i < shown.length
+                              ? _Card(card: shown[i])
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ]),
+                  ),
                 ],
-              );
+              ]);
             }),
           if (n > 6) ...[
             const SizedBox(height: 12),
@@ -434,18 +477,18 @@ class _TodayScreenState extends State<TodayScreen> {
 }
 
 class _Card extends StatelessWidget {
-  const _Card({required this.card, required this.lead});
+  const _Card({required this.card});
   final _YesCard card;
-  final bool lead;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Ob.card,
         borderRadius: BorderRadius.circular(Ob.radiusPanel),
-        boxShadow: lead ? Ob.liftHigh : Ob.lift,
+        color: card.done ? Ob.paper : Ob.card,
+        border: card.done ? Border.all(color: Ob.line) : null,
+        boxShadow: card.done ? null : Ob.liftLow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -462,21 +505,33 @@ class _Card extends StatelessWidget {
               MoneyText(card.figure!),
             ],
           ]),
-          const SizedBox(height: 14),
-          if (card.reached != null)
-            PathBar(reached: card.reached!, waitingOnYes: true)
-          else if (card.eyebrow != null)
+          if (card.reached != null) ...[
+            const SizedBox(height: 14),
+            PathBar(reached: card.reached!, waitingOnYes: true),
+          ] else if (card.eyebrow != null) ...[
+            const SizedBox(height: 14),
             Text(card.eyebrow!, style: Ob.eyebrow(color: Ob.yesDeep)),
-          const SizedBox(height: 14),
-          Text(card.ask, style: Ob.strong(15)),
+          ],
+          if (card.ask.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(card.ask, style: Ob.strong(15)),
+          ],
           if ((card.detail ?? '').isNotEmpty) ...[
-            const SizedBox(height: 6),
+            SizedBox(height: card.ask.isEmpty ? 8 : 6),
             Text(card.detail!,
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
-                style: Ob.body(14)),
+                style: Ob.body(14.5)),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
+          const Spacer(),
+          if (card.done)
+            Row(children: [
+              const Icon(Icons.check_circle, size: 20, color: Ob.ink),
+              const SizedBox(width: 8),
+              Text('Done', style: Ob.strong(14.5)),
+            ])
+          else
           Row(children: [
             Expanded(
               child: FilledButton(

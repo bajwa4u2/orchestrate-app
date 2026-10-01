@@ -134,7 +134,8 @@ void main() {
     final ops = read('lib/features/auth/screens/ops_login_screen.dart');
     final journey = read('docs/ORCHESTRATE_VISIBLE_JOURNEY_REGISTER.md');
     expect(authShell, contains('class AuthShell'));
-    expect(authShell, contains('_SetupJourneyHeader'));
+    // DD-26: the dark four-step band named a different path; retired.
+    expect(authShell, isNot(contains('_SetupJourneyHeader')));
     expect(router, contains("path: '/auth/login'"));
     expect(router, contains("path: '/auth/register'"));
     expect(router, contains("path: '/app/setup'"));
@@ -286,7 +287,7 @@ void main() {
     final auth = read('lib/features/auth/screens/client_login_screen.dart');
     expect(shell, contains('width: double.infinity'));
     // DD-26 (board S05): sign-up leads with what happens next.
-    expect(auth, contains('Three minutes to your first customers found.'));
+    expect(auth, contains('Six minutes to set up. Then Orchestrate starts looking.'));
     expect(auth, contains('Welcome back.'));
   });
 }

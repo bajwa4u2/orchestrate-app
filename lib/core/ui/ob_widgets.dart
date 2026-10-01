@@ -394,8 +394,11 @@ class ObField extends StatelessWidget {
     this.onChanged,
     this.placeholder,
     this.autofillHints,
+    this.obscure = false,
   });
 
+  /// A password: its characters are hidden.
+  final bool obscure;
   final String label;
   final TextEditingController controller;
   final String? hint;
@@ -416,7 +419,8 @@ class ObField extends StatelessWidget {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          maxLines: maxLines,
+          obscureText: obscure,
+          maxLines: obscure ? 1 : maxLines,
           maxLength: maxLength,
           keyboardType: keyboardType,
           onChanged: onChanged,

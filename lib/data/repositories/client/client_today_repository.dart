@@ -310,6 +310,7 @@ class TodayState {
     for (final c in standingConditionsFrom(eligibility)) {
       items.add(TodayItem(
         when: TodayWhen.standing,
+        code: c.code,
         route: c.route,
         cta: c.cta,
         title: c.title,
@@ -617,7 +618,11 @@ class TodayItem {
     this.cta,
     this.at,
     this.when = TodayWhen.happened,
+    this.code,
   });
+
+  /// The server's code for a readiness condition; null for anything else.
+  final String? code;
 
   final String title;
   final String? detail;

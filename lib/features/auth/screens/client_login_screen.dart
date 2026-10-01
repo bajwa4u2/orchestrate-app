@@ -53,11 +53,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   final _fullName = TextEditingController();
   final _company = TextEditingController();
   final _email = TextEditingController();
-  final _website = TextEditingController();
   final _password = TextEditingController();
   /// Named so NEXT from the email field lands here and nowhere else.
   final _passwordFocus = FocusNode();
-  final _confirmPassword = TextEditingController();
   final _resetPassword = TextEditingController();
   final _loginCode = TextEditingController();
 
@@ -66,7 +64,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   bool _requestingReset = false;
   bool _resendingVerification = false;
   bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   bool _obscureResetPassword = true;
   bool _rememberEmail = false;
   bool _trustDevice = true;
@@ -75,6 +72,9 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
   String? _error;
   String? _verificationEmail;
   Map<String, dynamic>? _pendingChallenge;
+
+  /// The pending code confirms a new sign-up rather than a sign-in.
+  bool _signupCode = false;
   bool _verificationComplete = false;
 
   bool get _isJoin => widget.createMode;
@@ -97,10 +97,8 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     _fullName.dispose();
     _company.dispose();
     _email.dispose();
-    _website.dispose();
     _password.dispose();
     _passwordFocus.dispose();
-    _confirmPassword.dispose();
     _resetPassword.dispose();
     _loginCode.dispose();
     super.dispose();
@@ -220,13 +218,6 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
   Future<void> register() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_password.text != _confirmPassword.text) {
-      setState(() {
-        _error = 'Passwords do not match.';
-        _message = null;
-      });
-      return;
-    }
 
     setState(() {
       _busy = true;
@@ -240,12 +231,24 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
         email: _email.text.trim(),
         password: _password.text,
         companyName: _company.text.trim(),
-        websiteUrl: _website.text.trim().isEmpty ? null : _website.text.trim(),
       );
 
       await AuthSessionController.instance.clear();
 
       if (!mounted) return;
+      // ONE TRIP TO THE INBOX: the email carries a code, typed here, which
+      // confirms the address and signs straight in. The link page is only
+      // for a server that sent a link alone.
+      if (response['requiresEmailCodeChallenge'] == true) {
+        setState(() {
+          _signupCode = true;
+          _trustDevice = true;
+          _pendingChallenge = Map<String, dynamic>.from(
+              (response['challenge'] as Map?) ?? const {});
+          _message = null;
+        });
+        return;
+      }
       final email = response['email']?.toString().trim();
       context.go(_route('/auth/verify-email', sent: true, email: email));
     } catch (error) {
@@ -664,11 +667,10 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
     if (text.contains('timeout') || text.contains('timed out')) {
       return 'The request timed out. Check your connection and try again.';
     }
-    if (text.contains('expired')) {
-      return 'That code expired. Request a fresh code and try again.';
-    }
-    if (text.contains('invalid')) {
-      return 'That code did not work. Check it and try again.';
+    // The server answers "Invalid or expired" for any refused code, so a
+    // mistyped code must not be told it expired.
+    if (text.contains('invalid') || text.contains('expired')) {
+      return 'That code did not work. Check it, or send a fresh one.';
     }
     if (text.contains('too many') ||
         text.contains('wait') ||
@@ -739,14 +741,14 @@ class _AuthIntro extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const ObHeadline('Three minutes to your first customers found.',
+        const ObHeadline('Six minutes to set up. Then Orchestrate starts looking.',
             size: 48),
         const SizedBox(height: 26),
-        step('1', 'Create your workspace', 'Free. No card needed to set up.'),
+        step('1', 'Create your workspace', 'Free. No card needed.'),
         step('2', 'Say what you sell and who buys it',
-            'A few short questions. That is the market Orchestrate searches.'),
+            'That is the market Orchestrate searches.'),
         step('3', 'Connect your email',
-            'So what Orchestrate writes goes out as you, from your address.'),
+            'Notes go out from your address. Replies land in your inbox.'),
       ],
     );
   }
@@ -859,44 +861,19 @@ class _AuthCard extends StatelessWidget {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 14),
-                _Field(controller: state._company, label: 'Company name'),
-                const SizedBox(height: 14),
-                _Field(
-                  controller: state._website,
-                  label: 'Website',
-                  keyboardType: TextInputType.url,
-                  required: false,
-                  hintText: 'https://yourcompany.com',
-                ),
+                _Field(controller: state._company, label: 'Business name'),
                 const SizedBox(height: 14),
                 _Field(
                   controller: state._password,
                   label: 'Password',
                   obscure: state._obscurePassword,
+                  onSubmitted: state._busy ? null : state.register,
                   suffixIcon: IconButton(
                     onPressed: () => state.setState(
                       () => state._obscurePassword = !state._obscurePassword,
                     ),
                     icon: Icon(
                       state._obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                _Field(
-                  controller: state._confirmPassword,
-                  label: 'Confirm password',
-                  obscure: state._obscureConfirmPassword,
-                  onSubmitted: state._busy ? null : state.register,
-                  suffixIcon: IconButton(
-                    onPressed: () => state.setState(
-                      () => state._obscureConfirmPassword =
-                          !state._obscureConfirmPassword,
-                    ),
-                    icon: Icon(
-                      state._obscureConfirmPassword
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
                     ),
@@ -1054,96 +1031,81 @@ class _EmailCodeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final challenge = state._pendingChallenge ?? const {};
     final email = challenge['email']?.toString() ?? 'your email';
+    final signup = state._signupCode;
     return AuthShell(
-      maxContentWidth: 560,
-      child: Card(
-        elevation: 0,
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
-          side: const BorderSide(color: AppTheme.publicLine),
+      maxContentWidth: 520,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(28, 30, 28, 24),
+        decoration: BoxDecoration(
+          color: Ob.card,
+          borderRadius: BorderRadius.circular(Ob.radiusPanel),
+          boxShadow: Ob.liftLow,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BrandAssets.operatorLockup(
-                context,
-                symbolSize: 28,
-                fontSize: 22,
-                color: AppTheme.publicText,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ObHeadline(signup ? 'Confirm your email.' : 'Check your email.',
+                size: 32),
+            const SizedBox(height: 10),
+            Text(
+              signup
+                  ? 'We sent a 6-digit code to $email. Type it here and you are in.'
+                  : 'We sent a 6-digit code to $email. Type it here to sign in.',
+              style: Ob.body(16),
+            ),
+            const SizedBox(height: 22),
+            if (state._error != null)
+              _Banner(message: state._error!, error: true)
+            else if (state._message != null)
+              _Banner(message: state._message!, error: false),
+            _Field(
+              controller: state._loginCode,
+              label: 'Code',
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              onSubmitted: state._busy ? null : state.verifyLoginCode,
+            ),
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: state._trustDevice,
+              onChanged: (value) => state.setState(
+                () => state._trustDevice = value == true,
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Check your email',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'We sent a code to $email. Enter it to finish signing in.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.publicMuted,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              if (state._message != null)
-                _Banner(message: state._message!, error: false),
-              if (state._error != null)
-                _Banner(message: state._error!, error: true),
-              _Field(
-                controller: state._loginCode,
-                label: 'Email code',
-                keyboardType: TextInputType.number,
-                onSubmitted: state._busy ? null : state.verifyLoginCode,
-              ),
-              const SizedBox(height: 10),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                value: state._trustDevice,
-                onChanged: (value) => state.setState(
-                  () => state._trustDevice = value == true,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text('Remember this device for 60 days',
+                  style: Ob.body(14.5, color: Ob.ink)),
+            ),
+            const SizedBox(height: 10),
+            FilledButton(
+              onPressed: state._busy ? null : state.verifyLoginCode,
+              child: Text(state._busy
+                  ? 'Checking…'
+                  : signup
+                      ? 'Confirm and continue'
+                      : 'Sign in'),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: state._resendingVerification
+                      ? null
+                      : state.resendLoginCode,
+                  child: Text(state._resendingVerification
+                      ? 'Sending…'
+                      : 'Send a new code'),
                 ),
-                controlAffinity: ListTileControlAffinity.leading,
-                title: const Text('Trust this device for 60 days'),
-                subtitle: const Text(
-                  'Trusted devices skip the email code until they expire or are revoked.',
+                TextButton(
+                  onPressed: state._busy ? null : state.changeLoginEmail,
+                  child: const Text('Use another email'),
                 ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: state._busy ? null : state.verifyLoginCode,
-                  child: Text(
-                    state._busy ? 'Verifying...' : 'Verify code',
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  OutlinedButton(
-                    onPressed: state._resendingVerification
-                        ? null
-                        : state.resendLoginCode,
-                    child: Text(state._resendingVerification
-                        ? 'Sending...'
-                        : 'Resend code'),
-                  ),
-                  TextButton(
-                    onPressed: state._busy ? null : state.changeLoginEmail,
-                    child: const Text('Back and change email'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -1329,20 +1291,20 @@ class _Field extends StatelessWidget {
     required this.controller,
     required this.label,
     this.keyboardType,
-    this.required = true,
-    this.hintText,
     this.obscure = false,
     this.suffixIcon,
     this.onSubmitted,
     this.focusNode,
     this.nextFocus,
+    this.autofocus = false,
   });
+
+  /// Takes the cursor when it appears: the one field a screen is for.
+  final bool autofocus;
 
   final TextEditingController controller;
   final String label;
   final TextInputType? keyboardType;
-  final bool required;
-  final String? hintText;
   final bool obscure;
   final Widget? suffixIcon;
 
@@ -1361,9 +1323,10 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    final field = TextFormField(
       controller: controller,
       focusNode: focusNode,
+      autofocus: autofocus,
       keyboardType: keyboardType,
       obscureText: obscure,
       // ENTER SUBMITS.
@@ -1379,8 +1342,7 @@ class _Field extends StatelessWidget {
           : nextFocus != null
           ? (_) => nextFocus!.requestFocus()
           : null,
-      validator: required
-          ? (value) {
+      validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return '$label is required.';
               }
@@ -1389,13 +1351,21 @@ class _Field extends StatelessWidget {
                 return 'Enter a valid email address.';
               }
               return null;
-            }
-          : null,
+            },
       decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
         suffixIcon: suffixIcon,
       ),
+    );
+    // The label sits above the field, so it is still there once something
+    // is typed (the theme never floats labels).
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: Ob.strong(14.5)),
+        const SizedBox(height: 6),
+        field,
+      ],
     );
   }
 }
@@ -1412,11 +1382,8 @@ class _Banner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: error ? Colors.red.shade50 : Colors.green.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: error ? Colors.red.shade100 : Colors.green.shade100,
-        ),
+        color: error ? Ob.refusedSoft : Ob.track,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
     );
