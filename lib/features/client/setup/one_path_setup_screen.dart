@@ -151,6 +151,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   final _server = TextEditingController();
   Map<String, dynamic>? _recognised;
 
+  /// "Add the records for me", when the domain's host takes our template.
+  Map<String, dynamic> _autoRecords = const {};
+
   // Step 3
   final _offer = TextEditingController();
   String _lane = 'opportunity';
@@ -277,6 +280,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         _loading = false;
       });
       _schedulePollIfWaiting();
+      // Back from the domain host after approving: read the records now.
+      if (GoRouterState.of(context).uri.queryParameters['dc'] == 'done' && _domainAttached) {
+        await _checkDomainNow();
+      }
+      _loadAutoRecords();
       if (widget.checkoutStatus == 'success' && !_planActive) _awaitPayment();
       // Back from the provider with an address on the business's own domain:
       // prepare its records at once rather than asking for another press.
@@ -1080,6 +1088,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                 'moment.');
       });
     }
+  }
+
+  Future<void> _loadAutoRecords() async {
+    if (!_domainAttached || _domainReady) return;
+    final link = await _mailbox.domainConnectLink();
+    if (mounted) setState(() => _autoRecords = link);
   }
 
   Future<void> _checkDomainNow() async {
@@ -1897,6 +1911,33 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             ),
           )
         else ...[
+          // Signed in at the domain's host, the owner approves and the
+          // records are added for them.
+          if (!_domainReady && _autoRecords['available'] == true) ...[
+            ObCard(
+              raised: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Let ${_autoRecords['host'] ?? 'your domain host'} add them for you.',
+                      style: Ob.name(19)),
+                  const SizedBox(height: 6),
+                  Text('You sign in there, see exactly what will be added, and approve. '
+                      'Nothing else in your domain changes.',
+                      style: Ob.body(14.5)),
+                  const SizedBox(height: 14),
+                  FilledButton(
+                    onPressed: () => launchUrl(Uri.parse(_autoRecords['url'].toString()),
+                        mode: LaunchMode.externalApplication),
+                    child: const Text('Add the records for me'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('Or add them yourself:', style: Ob.body(14, color: Ob.inkMuted)),
+            const SizedBox(height: 8),
+          ],
           // Who manages this domain's records, and the page to make changes on.
           if (!_domainReady && _map(_domain['dnsHost'])['name'] != null) ...[
             Wrap(

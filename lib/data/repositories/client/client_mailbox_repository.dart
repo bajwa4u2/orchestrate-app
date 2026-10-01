@@ -74,6 +74,18 @@ class ClientMailboxRepository {
     }
   }
 
+  /// "Add the records for me": `{available, url, host, groups}`, or
+  /// `{available: false, reason}` when the domain's host does not take it.
+  Future<Map<String, dynamic>> domainConnectLink() async {
+    try {
+      final json = await _apiClient.getJson('/client/mailbox/domain/connect',
+          surface: ApiSurface.client);
+      return _asMap(json);
+    } catch (_) {
+      return const <String, dynamic>{'available': false};
+    }
+  }
+
   Future<Map<String, dynamic>> verifySendingDomain() async {
     final json = await _apiClient.postJson(
       '/client/mailbox/domain/verify',
