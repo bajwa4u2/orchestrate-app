@@ -92,7 +92,8 @@ void main() {
         '&email=capture%40example.test&mailboxId=mbx_123',
       );
       final at = Uri.parse(location(r));
-      expect(at.path, '/client/setup');
+      // A finished workspace opens Setup inside the workspace.
+      expect(at.path, '/client/setup/workspace');
       expect(at.queryParameters['step'], 'email');
       expect(at.queryParameters['oauth'], 'success');
     });
@@ -104,7 +105,8 @@ void main() {
         '/client/oauth/return?status=error&provider=google&reason=access_denied',
       );
       final at = Uri.parse(location(r));
-      expect(at.path, '/client/setup');
+      // A finished workspace opens Setup inside the workspace.
+      expect(at.path, '/client/setup/workspace');
       expect(at.queryParameters['oauth'], 'error');
       expect(at.queryParameters['reason'], 'access_denied');
     });

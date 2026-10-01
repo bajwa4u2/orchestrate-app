@@ -1039,6 +1039,17 @@ GoRouter _buildRouter() {
     // canonical spelling is what changed; the chrome is what it always was.
     GoRoute(
         path: '/client/setup',
+        // Founder, 1 Oct 2026: once a business has its workspace, Setup lives
+        // inside it, with the sidebar, instead of taking the whole screen.
+        // First-time setup stays here, focused. Every query (step, oauth,
+        // checkout) travels with the move.
+        redirect: (context, state) => AuthSessionController.instance.hasSetupCompleted
+            ? Uri(path: '/client/setup/workspace',
+                    queryParameters: state.uri.queryParameters.isEmpty
+                        ? null
+                        : state.uri.queryParameters)
+                .toString()
+            : null,
         // DD-26: setup is one path of six steps. `?step=` opens a step
         // directly; without it the first unfinished step opens.
         builder: (context, state) => OnePathSetupScreen(
@@ -1059,6 +1070,16 @@ GoRouter _buildRouter() {
       builder: (context, state, child) =>
           ClientShell(currentPath: state.uri.path, child: child),
       routes: [
+        // Setup inside the workspace, once the business has one.
+        GoRoute(
+            path: '/client/setup/workspace',
+            pageBuilder: (context, state) => NoTransitionPage(
+                child: OnePathSetupScreen(
+                    embedded: true,
+                    initialStep: state.uri.queryParameters['step'],
+                    oauthStatus: state.uri.queryParameters['oauth'],
+                    oauthReason: state.uri.queryParameters['reason'],
+                    checkoutStatus: state.uri.queryParameters['checkout']))),
         GoRoute(
             path: '/client', redirect: (context, state) => '/client/today'),
         GoRoute(

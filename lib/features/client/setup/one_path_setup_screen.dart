@@ -91,7 +91,16 @@ enum StepState { todo, done, waiting }
 
 class OnePathSetupScreen extends StatefulWidget {
   const OnePathSetupScreen(
-      {super.key, this.initialStep, this.oauthStatus, this.oauthReason, this.checkoutStatus});
+      {super.key,
+      this.initialStep,
+      this.oauthStatus,
+      this.oauthReason,
+      this.checkoutStatus,
+      this.embedded = false});
+
+  /// Inside the workspace (its sidebar around it): no screen of its own, and
+  /// the steps as a strip across the top.
+  final bool embedded;
 
   /// From `?step=`; when absent the first unfinished step opens.
   final String? initialStep;
@@ -582,7 +591,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     _writeDraft();
     // Keep the address honest so a reload lands on the same step.
     final router = GoRouter.maybeOf(context);
-    router?.replace('/client/setup?step=${s.key}');
+    router?.replace(
+        '${widget.embedded ? '/client/setup/workspace' : '/client/setup'}?step=${s.key}');
   }
 
   SetupStep _next(SetupStep s) {
@@ -1197,6 +1207,17 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return Theme(
+        data: Ob.theme(),
+        child: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: Ob.ink, strokeWidth: 2))
+            : _loadFailure != null
+                ? _LoadFailure(message: _loadFailure!, onRetry: _load, onSignOut: _signOut)
+                : LayoutBuilder(builder: (context, c) => _embeddedLayout(c)),
+      );
+    }
     return Theme(
       data: Ob.theme(),
       child: Scaffold(
@@ -1213,6 +1234,58 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                     }),
         ),
       ),
+    );
+  }
+
+  /// Setup inside the workspace: the steps across the top, the step below.
+  Widget _embeddedLayout(BoxConstraints c) {
+    final phone = c.maxWidth < 700;
+    final twoColumns = c.maxWidth >= 1080;
+    final content = _stepContent(phone: phone);
+    final side = _sideCard();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final s in SetupStep.values)
+              _StepChip(
+                number: s == SetupStep.ready ? null : s.number,
+                label: s == SetupStep.ready ? 'Where it stands' : s.title,
+                state: s == SetupStep.ready ? StepState.todo : _stateOf(s),
+                current: s == _step,
+                onTap: () => _goTo(s),
+              ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Expanded(
+          child: SingleChildScrollView(
+            key: ValueKey('setup-embedded-${_step.key}'),
+            padding: const EdgeInsets.only(bottom: 32),
+            child: _step == SetupStep.ready
+                ? _readyView(phone: phone)
+                : twoColumns && side != null
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 11, child: content),
+                          const SizedBox(width: 40),
+                          Expanded(flex: 9, child: side),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          content,
+                          if (side != null) ...[const SizedBox(height: 28), side],
+                        ],
+                      ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -2792,6 +2865,58 @@ class _SideCard extends StatelessWidget {
           Text(label, style: Ob.eyebrow()),
           for (final c in children) ...[const SizedBox(height: 16), c],
         ],
+      ),
+    );
+  }
+}
+
+/// One step in the strip across the top of Setup inside the workspace.
+class _StepChip extends StatelessWidget {
+  const _StepChip({
+    required this.number,
+    required this.label,
+    required this.state,
+    required this.current,
+    required this.onTap,
+  });
+  final int? number;
+  final String label;
+  final StepState state;
+  final bool current;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final done = state == StepState.done;
+    final waiting = state == StepState.waiting;
+    return InkWell(
+      borderRadius: BorderRadius.circular(Ob.radiusPill),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: current ? Ob.ink : Ob.card,
+          borderRadius: BorderRadius.circular(Ob.radiusPill),
+          border: Border.all(color: current ? Ob.ink : Ob.line),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(
+            done
+                ? Icons.check_circle
+                : waiting
+                    ? Icons.schedule
+                    : number == null
+                        ? Icons.flag_outlined
+                        : Icons.radio_button_unchecked,
+            size: 16,
+            color: current ? Ob.onInk : (done ? Ob.ink : Ob.inkMuted),
+          ),
+          const SizedBox(width: 6),
+          Text(label,
+              style: Ob.body(13.5,
+                  color: current ? Ob.onInk : Ob.ink,
+                  weight: current ? FontWeight.w600 : FontWeight.w500)),
+        ]),
       ),
     );
   }

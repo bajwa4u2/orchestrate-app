@@ -100,7 +100,10 @@ void main() {
       final canonical = router.indexOf("path: '/client/setup'");
       expect(canonical, greaterThan(-1));
       expect(
-        router.substring(canonical, canonical + 200).contains('uilder:'),
+        // The first-time screen renders here; once a workspace exists it
+        // redirects into the workspace (1 Oct 2026), so the builder sits
+        // after that redirect.
+        router.substring(canonical, canonical + 900).contains('uilder:'),
         isTrue,
         reason: '/client/setup is the surface and must render',
       );
