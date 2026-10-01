@@ -1859,17 +1859,23 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         ? (_domain['domain'] ?? '').toString()
         : _mailboxDomain;
     final records = _list(_domain['records']).map(_map).toList();
+    final missing = records.where((r) => r['matched'] != true).length;
     final lastChecked = (_domain['lastCheckedAt'] ?? '').toString();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _head(_domainReady ? 'Your domain is trusted.' : 'One change at your domain host.',
+        _head(
+            _domainReady
+                ? 'Your domain is trusted.'
+                : missing <= 1
+                    ? 'One change at your domain host.'
+                    : '${const ['', 'One', 'Two', 'Three'][missing.clamp(1, 3)]} changes at your domain host.',
             _domainReady
                 ? '$_mailboxAddress is connected and $domainName checks out. '
                     'Inboxes will trust notes sent from it.'
                 : '$_mailboxAddress is connected. So that inboxes trust notes '
-                    'from $domainName, add these records where you bought the '
-                    'domain. Copy each line exactly.',
+                    'from $domainName, make the changes marked "Not seen yet" '
+                    'where your domain is managed. Records already found need nothing.',
             phone: phone),
         _gap(),
         if (!_domainAttached)
@@ -3046,6 +3052,10 @@ class _RecordRow extends StatelessWidget {
     final host = (record['host'] ?? '').toString();
     final value = (record['expectedValue'] ?? '').toString();
     final matched = record['matched'] == true;
+    final why = (record['explanation'] ?? '').toString();
+    // Google's and Microsoft's DKIM key is made in their admin console, not
+    // by us: there is nothing to copy, only steps to follow.
+    final providerMade = record['match'] == 'dkim-present';
     final status = matched
         ? const ObPill('Found', tone: PillTone.ink)
         : const ObPill('Not seen yet');
@@ -3078,10 +3088,16 @@ class _RecordRow extends StatelessWidget {
             status,
           ]),
           const SizedBox(height: 6),
-          SelectableText(value,
-              style: Ob.figure(13.5, color: Ob.inkSoft, weight: FontWeight.w500)
-                  .copyWith(height: 1.4)),
-          Wrap(children: [copy('name', host.isEmpty ? '@' : host), copy('value', value)]),
+          if (!providerMade)
+            SelectableText(value,
+                style: Ob.figure(13.5, color: Ob.inkSoft, weight: FontWeight.w500)
+                    .copyWith(height: 1.4)),
+          if (why.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(why, style: Ob.body(13.5, color: Ob.inkMuted)),
+          ],
+          if (!matched && !providerMade)
+            Wrap(children: [copy('name', host.isEmpty ? '@' : host), copy('value', value)]),
         ],
       ),
     );
