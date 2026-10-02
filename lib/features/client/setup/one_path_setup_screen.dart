@@ -158,6 +158,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   final Set<String> _regions = {};
   final List<String> _towns = [];
 
+  /// The country each town was saved with, so a save never moves it. Towns
+  /// in Oman were refiled under the United States because the country was
+  /// guessed from area names (2 Oct 2026).
+  final Map<String, String> _townCountries = {};
+
   // Step 4: one address; a password only where the provider needs one.
   final _address = TextEditingController();
   final _appPassword = TextEditingController();
@@ -368,16 +373,34 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               ? _regionCodeOf('${r['regionCode'] ?? r['code']}',
                   '${r['regionLabel'] ?? ''}', '${r['countryCode'] ?? ''}')
               : '$r')
-          .where((c) => c.isNotEmpty));
+          .where((c) => c.isNotEmpty && _region(c) != null));
     if (_regions.isEmpty) {
       _regions.addAll(_list(draft['regions']).map((e) => '$e'));
     }
     _worldwide = setup['worldwide'] == true || draft['worldwide'] == true;
-    _towns
-      ..clear()
-      ..addAll(_list(setup['metros'])
-          .map((m) => m is Map ? '${m['label']}' : '$m')
-          .where((c) => c.isNotEmpty));
+    _towns.clear();
+    _townCountries.clear();
+    for (final m in _list(setup['metros'])) {
+      final label = m is Map ? '${m['label'] ?? ''}'.trim() : '$m'.trim();
+      if (label.isEmpty) continue;
+      _towns.add(label);
+      final cc = m is Map ? _countryCodeOf('${m['countryCode'] ?? ''}') : '';
+      if (cc.isNotEmpty) _townCountries[label.toLowerCase()] = cc;
+    }
+    // An old record named cities as areas ("Lahore", "Doha"). An area the
+    // screen does not know is kept as a town in its own country, never
+    // dropped on the next save (2 Oct 2026: fifteen were).
+    for (final r in _list(setup['regions'])) {
+      if (r is! Map) continue;
+      final code = _regionCodeOf('${r['regionCode'] ?? r['code'] ?? ''}',
+          '${r['regionLabel'] ?? ''}', '${r['countryCode'] ?? ''}');
+      if (_region(code) != null) continue;
+      final label = '${r['regionLabel'] ?? r['label'] ?? ''}'.trim();
+      final cc = _countryCodeOf('${r['countryCode'] ?? ''}');
+      if (label.isEmpty || cc.isEmpty) continue;
+      if (!_towns.any((t) => t.toLowerCase() == label.toLowerCase())) _towns.add(label);
+      _townCountries[label.toLowerCase()] = cc;
+    }
     if (_towns.isEmpty) _towns.addAll(_list(draft['towns']).map((e) => '$e'));
 
     _offer.text = pick(_text(p, 'outboundOffer'), 'offer');
@@ -819,6 +842,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   /// filed under the first country, so a business selling in the United
   /// States and Pakistan had Lahore searched for in the United States.
   String _townCountry(String town) {
+    final saved = _townCountries[town.trim().toLowerCase()];
+    if (saved != null && _countries.contains(saved)) return saved;
     final parts = town.split(',').map((p) => p.trim()).toList();
     if (parts.length > 1) {
       final said = parts.last.toLowerCase();
