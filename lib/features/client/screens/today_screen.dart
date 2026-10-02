@@ -13,6 +13,7 @@ import 'package:orchestrate_app/core/today/yes_count.dart';
 import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/data/repositories/client/client_attention_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_authority_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_digest_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_money_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_representative_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_today_repository.dart';
@@ -86,6 +87,10 @@ class _TodayScreenState extends State<TodayScreen> {
   final _money = ClientMoneyRepository();
   final _authority = ClientAuthorityRepository();
   final _representative = ClientRepresentativeRepository();
+  final _digestRepo = ClientDigestRepository();
+  /// Since yesterday morning: the same lines as the 8 AM email.
+  DigestView? _digest;
+  bool _savingMorningEmail = false;
   /// Whether the business recognises who decides for it (who acts card).
   String? _actsState;
   List<WaitingDecision> _waiting = const [];
@@ -133,6 +138,9 @@ class _TodayScreenState extends State<TodayScreen> {
         final org = readiness is Map ? readiness['organizationalAuthority'] : null;
         _actsState = org is Map ? org['state']?.toString() : null;
       }).catchError((_) {}),
+      _digestRepo.fetch().then((d) {
+        _digest = d;
+      }).catchError((_) {}),
       _money.fetch().then((m) {
         _moneyView = m;
         _moneyKnown = true;
@@ -141,6 +149,25 @@ class _TodayScreenState extends State<TodayScreen> {
       }),
     ]);
     if (mounted) setState(() {});
+  }
+
+  Future<void> _setMorningEmail(bool on) async {
+    setState(() => _savingMorningEmail = true);
+    try {
+      final now = await _digestRepo.setMorningEmail(on);
+      final d = _digest;
+      if (d != null && mounted) {
+        _digest = DigestView(
+            hasNews: d.hasNews, lines: d.lines, quietLine: d.quietLine, morningEmail: now);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(const SnackBar(
+            content: Text('That setting could not be saved just now.')));
+      }
+    } finally {
+      if (mounted) setState(() => _savingMorningEmail = false);
+    }
   }
 
   /// A decision on an agreement or invoice that stopped at the owner's limit.
@@ -402,6 +429,14 @@ class _TodayScreenState extends State<TodayScreen> {
             const SizedBox(height: 12),
             Text(_decisionFailure!, style: Ob.body(14, color: Ob.refused)),
           ],
+          if (_digest != null) ...[
+            const SizedBox(height: 16),
+            _SinceStrip(
+              digest: _digest!,
+              saving: _savingMorningEmail,
+              onMorningEmail: _setMorningEmail,
+            ),
+          ],
           const SizedBox(height: 24),
           if (loading)
             const Padding(
@@ -491,6 +526,82 @@ class _TodayScreenState extends State<TodayScreen> {
     final m = d.minute.toString().padLeft(2, '0');
     return '${days[d.weekday - 1]}, ${months[d.month - 1]} ${d.day}, ${d.year} · '
         '$h:$m ${d.hour < 12 ? 'AM' : 'PM'}';
+  }
+}
+
+/// SINCE YESTERDAY MORNING, IN ONE STRIP.
+///
+/// Every line of the 8 AM email, said here too, with its switch. Lines that
+/// are also cards below are still said: the cards may sit a screen away.
+class _SinceStrip extends StatelessWidget {
+  const _SinceStrip({
+    required this.digest,
+    required this.saving,
+    required this.onMorningEmail,
+  });
+
+  final DigestView digest;
+  final bool saving;
+  final ValueChanged<bool> onMorningEmail;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = digest.lines;
+    final said = lines.isNotEmpty ? null : digest.quietLine;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: Ob.card,
+        borderRadius: BorderRadius.circular(Ob.radiusCard),
+        border: Border.all(color: Ob.line),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('SINCE YESTERDAY MORNING', style: Ob.eyebrow()),
+        const SizedBox(height: 8),
+        if (said != null) Text(said, style: Ob.body(14.5, color: Ob.inkSoft)),
+        for (final l in lines)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 10,
+              children: [
+                Text(l.headline, style: Ob.strong(14.5)),
+                if (l.items.isNotEmpty)
+                  Text(l.items.join(' · '), style: Ob.body(14, color: Ob.inkSoft))
+                else if (l.detail != null)
+                  Text(l.detail!, style: Ob.body(14, color: Ob.inkSoft)),
+                TextButton(
+                  onPressed: () => context.go(l.route),
+                  style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      minimumSize: const Size(0, 32)),
+                  child: Text(l.action),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 4),
+        Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
+          Text(
+              digest.morningEmail
+                  ? 'Emailed to you at 8 AM on mornings when something happened.'
+                  : 'The 8 AM morning email is off.',
+              style: Ob.body(13, color: Ob.inkMuted)),
+          TextButton(
+            onPressed: saving ? null : () => onMorningEmail(!digest.morningEmail),
+            style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: const Size(0, 32)),
+            child: Text(saving
+                ? 'Saving…'
+                : digest.morningEmail
+                    ? 'Turn off'
+                    : 'Turn on'),
+          ),
+        ]),
+      ]),
+    );
   }
 }
 
