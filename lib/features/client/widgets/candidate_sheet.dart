@@ -8,6 +8,7 @@ import 'package:orchestrate_app/core/ui/governed_action.dart';
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
+import 'package:orchestrate_app/features/client/widgets/prospect_facts.dart';
 
 /// ONE COUNTERPARTY, IN DEPTH.
 ///
@@ -86,8 +87,39 @@ class _CandidateSheetState extends State<CandidateSheet> {
 
           const SizedBox(height: 18),
 
+          // ── WHY THIS BUSINESS (it passed every check) ──────────────────
+          if (c.checks != null) ...[
+            _Panel(
+              icon: Icons.verified_outlined,
+              accent: AppTheme.publicAccent,
+              title: 'Why this business',
+              body: [
+                prospectSummary(c),
+                // The older fit sentence only when no buyer kind was matched.
+                if (c.whyItMatters != null && c.checks!.matchesYour.isEmpty) c.whyItMatters!,
+              ].where((s) => s.isNotEmpty).join(' '),
+            ),
+            const SizedBox(height: 12),
+            Text('What was checked',
+                style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
+            for (final f in prospectFacts(c))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(f.icon, size: 16, color: AppTheme.publicMuted),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(f.text, style: text.bodySmall)),
+                ]),
+              ),
+            Text(
+                'It exists, its own website answers, it fits what you sell to, '
+                'its published address accepts mail, and why it fits can be said '
+                'in plain words. Nothing is sent without your yes.',
+                style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+          ]
           // ── WHY THIS MAY MATTER ──────────────────────────────────────────
-          if (c.whyItMatters != null)
+          else if (c.whyItMatters != null)
             _Panel(
               icon: Icons.insights_outlined,
               accent: AppTheme.publicAccent,
@@ -113,6 +145,8 @@ class _CandidateSheetState extends State<CandidateSheet> {
           const SizedBox(height: 12),
 
           // ── HOW SURE ─────────────────────────────────────────────────────
+          // A checked business's facts are above; the older grades are not.
+          if (c.checks == null) ...[
           _Panel(
             icon: switch (c.certainty) {
               Certainty.evidenced => Icons.verified_outlined,
@@ -134,6 +168,7 @@ class _CandidateSheetState extends State<CandidateSheet> {
               style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           _evidence(text),
+          ],
 
           // ── JUDGEMENT ────────────────────────────────────────────────────
           if (c.reasons.isNotEmpty) ...[

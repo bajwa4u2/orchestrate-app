@@ -265,7 +265,19 @@ class ProspectChecks {
     required this.websiteAnswers,
     required this.checkedAt,
     required this.passedAt,
+    this.kind,
+    this.matchesYour = const [],
+    this.sources = const [],
   });
+
+  /// What the business is, in words: "dental office".
+  final String? kind;
+
+  /// Which of the owner's own buyer kinds it matches.
+  final List<String> matchesYour;
+
+  /// Where it was seen: "OpenStreetMap", "its own website".
+  final List<String> sources;
 
   final String email;
 
@@ -291,6 +303,9 @@ class ProspectChecks {
         websiteAnswers: json['websiteAnswers'] == true,
         checkedAt: DateTime.tryParse(json['checkedAt']?.toString() ?? '')?.toLocal(),
         passedAt: DateTime.tryParse(json['passedAt']?.toString() ?? '')?.toLocal(),
+        kind: (json['kind'] as String?)?.trim().isEmpty ?? true ? null : json['kind'] as String,
+        matchesYour: ((json['matchesYour'] as List?) ?? const []).map((e) => '$e').toList(),
+        sources: ((json['sources'] as List?) ?? const []).map((e) => '$e').toList(),
       );
 }
 

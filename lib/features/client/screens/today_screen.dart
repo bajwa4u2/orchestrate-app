@@ -17,6 +17,8 @@ import 'package:orchestrate_app/data/repositories/client/client_digest_repositor
 import 'package:orchestrate_app/data/repositories/client/client_money_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_representative_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_today_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/candidate_sheet.dart';
+import 'package:orchestrate_app/features/client/widgets/prospect_facts.dart';
 
 /// TODAY (DD-26, board S07): "N things need your yes."
 ///
@@ -54,7 +56,15 @@ class _YesCard {
     required this.onPrimary,
     this.secondary,
     this.onSecondary,
+    this.facts = const [],
+    this.onOpen,
   });
+
+  /// Facts behind the ask, one line each (a business's checks).
+  final List<ProspectFact> facts;
+
+  /// Opens the thing the card is about, in full.
+  final VoidCallback? onOpen;
 
   /// One of the four owner steps, already done: shown quietly, no button.
   final bool done;
@@ -323,11 +333,23 @@ class _TodayScreenState extends State<TodayScreen> {
     }
     for (final c in _market.view?.needsReview ?? const <Candidate>[]) {
       final busy = _deciding.contains(c.key);
+      final summary = prospectSummary(c);
       cards.add(_YesCard(
         name: c.name,
         reached: 1,
         ask: 'Worth writing to?',
-        detail: c.whyItMatters ?? c.certaintyMeans,
+        // What it is and why it matches, not a sentence about the market.
+        detail: summary.isNotEmpty ? summary : (c.whyItMatters ?? c.certaintyMeans),
+        facts: prospectFacts(c),
+        onOpen: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          builder: (_) => CandidateSheet(
+            candidate: c,
+            onChanged: () => _market.refresh(),
+          ),
+        ),
         primary: busy ? 'Saving…' : 'Yes, pursue',
         onPrimary: busy ? () {} : () => _decide(c, PursuitDisposition.pursuing),
         secondary: 'Not now',
@@ -612,6 +634,17 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final open = card.onOpen;
+    final body = _body(context);
+    if (open == null) return body;
+    return InkWell(
+      onTap: open,
+      borderRadius: BorderRadius.circular(Ob.radiusPanel),
+      child: body,
+    );
+  }
+
+  Widget _body(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -653,6 +686,32 @@ class _Card extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: Ob.body(14.5)),
           ],
+          for (final f in card.facts)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(f.icon, size: 15, color: Ob.inkMuted),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(f.text,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Ob.body(13.5, color: Ob.inkSoft)),
+                ),
+              ]),
+            ),
+          if (card.onOpen != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: card.onOpen,
+                style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 0)),
+                child: const Text('See the business'),
+              ),
+            ),
           const SizedBox(height: 18),
           const Spacer(),
           if (card.done)
