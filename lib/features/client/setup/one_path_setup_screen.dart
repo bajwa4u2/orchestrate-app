@@ -28,6 +28,7 @@ import '../screens/client_setup_screen.dart' show metroSuggestionsFor;
 import '../widgets/smtp_connect_dialog.dart';
 import '../widgets/sign_off_section.dart';
 import '../../../data/repositories/client/client_branding_repository.dart';
+import '../../../core/config/app_config.dart';
 
 /// GETTING READY: ONE PATH (DD-26, founder, 2026-09-30).
 ///
@@ -139,6 +140,19 @@ class OnePathSetupScreen extends StatefulWidget {
 }
 
 class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
+  @override
+  void didUpdateWidget(covariant OnePathSetupScreen old) {
+    super.didUpdateWidget(old);
+    // Arriving at another step while Setup is already open (Search, Market,
+    // Today) kept the step on screen: the state outlived the new address.
+    final asked = _stepFromKey(widget.initialStep);
+    if (!_loading && asked != null && widget.initialStep != old.initialStep && asked != _step) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _goTo(asked);
+      });
+    }
+  }
+
   final _identity = ClientBusinessIdentityRepository();
   final _auth = AuthRepository();
   final _mailbox = ClientMailboxRepository();
@@ -793,9 +807,22 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   // ── Navigation ─────────────────────────────────────────────────────
 
   /// The last step opens only once every step before it is done or waiting.
-  bool get _actUnlocked => SetupStep.values
-      .take(SetupStep.permission.index)
-      .every((s) => _stateOf(s) != StepState.todo);
+  ///
+  /// Its conditions are the ones it always had: business, buyers, offer, email
+  /// and plan. The two steps added before it (moments, payment) are not among
+  /// them: adding them locked every existing business out of its own
+  /// authority document (founder, live walk, 2 Oct 2026). And once the step is
+  /// under way, or its document sent, it never locks again.
+  bool get _actUnlocked =>
+      _stateOf(SetupStep.permission) != StepState.todo ||
+      (_document ?? const {}).isNotEmpty ||
+      const [
+        SetupStep.business,
+        SetupStep.want,
+        SetupStep.offer,
+        SetupStep.email,
+        SetupStep.plan,
+      ].every((s) => _stateOf(s) != StepState.todo);
 
   void _goTo(SetupStep s) {
     setState(() {
@@ -3698,8 +3725,32 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         ),
       ];
 
+  /// Bumped after each upload so the preview asks for the new image.
+  int _logoVersion = 0;
+
   Widget _logoRow() {
+    final token = AuthSessionController.instance.token;
     return Row(children: [
+      Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          color: Ob.card,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Ob.line),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: _hasLogo
+            ? Image.network(
+                '${AppConfig.normalizedApiBaseUrl}/clients/me/branding/logo/logo_primary?v=$_logoVersion',
+                headers: {'Authorization': 'Bearer $token'},
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) =>
+                    const Center(child: Icon(Icons.broken_image_outlined, color: Ob.inkFaint)),
+              )
+            : const Center(child: Icon(Icons.image_outlined, color: Ob.inkFaint, size: 28)),
+      ),
+      const SizedBox(width: 14),
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Your logo', style: Ob.strong(14.5)),
@@ -3746,6 +3797,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         assetType: 'logo_primary',
       );
       _hasLogo = true;
+      _logoVersion++;
       _logoNote = 'Saved. It appears on your proposals and invoices.';
     } catch (error) {
       _logoNote = _reasonFor(error, fallback: 'The logo could not be saved. Try a PNG or JPG under 2 MB.');

@@ -85,21 +85,9 @@ const List<_Command> _commands = [
   _Command('Customers', '/client/relationships', Icons.people_outline),
   _Command('Money', '/client/money', Icons.payments_outlined,
       hint: 'Agreed, invoiced, paid'),
+  // Setup's steps are on Setup's own strip; Search does not repeat them.
   _Command('Setup', '/client/setup?step=ready', Icons.tune_outlined,
-      hint: 'Where your setup stands'),
-  _Command('Your business', '/client/setup?step=business', Icons.storefront_outlined,
-      hint: 'Name, address, kind of business, logo'),
-  _Command('Who you want', '/client/setup?step=want', Icons.groups_outlined,
-      hint: 'Buyers, places, people to reach, who never to contact'),
-  _Command("When they're ready", '/client/setup?step=moments', Icons.bolt_outlined,
-      hint: 'The moments that bring you work'),
-  _Command('What you offer and your proof', '/client/setup?step=offer',
-      Icons.verified_outlined,
-      hint: 'Offer, licences, insurance, references, how notes sound'),
-  _Command('How you get paid', '/client/setup?step=payment', Icons.request_quote_outlined,
-      hint: 'Deposits, terms, retainage'),
-  _Command('Email and sign-off', '/client/setup?step=email', Icons.mark_email_read_outlined,
-      hint: 'Where notes are sent from, and how you sign them'),
+      hint: 'Your business, buyers, offer, proof, payment, email'),
   // NO PIPELINE, NO WAITING VIEW.
   //
   // Both pointed at ?view= values nothing reads. The relationships screen has
@@ -241,8 +229,12 @@ class _CommandPaletteState extends State<_CommandPalette> {
                                       .bodySmall
                                       ?.copyWith(color: AppTheme.publicMuted)),
                           onTap: () {
+                            // Read before the dialog closes: its context is
+                            // gone after pop, and a navigation through it went
+                            // nowhere (founder, live walk, 2 Oct 2026).
+                            final router = GoRouter.of(context);
                             Navigator.of(context).pop();
-                            context.go(c.path);
+                            router.go(c.path);
                           },
                         );
                       },
