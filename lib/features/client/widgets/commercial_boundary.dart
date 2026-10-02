@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 
 /// WHY AN ACTION DID NOT PROCEED, WHEN THE REASON IS COMMERCIAL.
 ///
@@ -215,11 +217,9 @@ class _EntitlementSummaryState extends State<EntitlementSummary> {
   Widget _build(BuildContext context) {
     final capabilities = ClientCapabilities.instance;
     final entitlement = capabilities.entitlement;
-    final text = Theme.of(context).textTheme;
 
     if (capabilities.error != null) {
       return _panel(
-        text,
         'We could not read your plan',
         'Nothing has changed about what your business is entitled to — we just '
             'could not check it.',
@@ -234,10 +234,16 @@ class _EntitlementSummaryState extends State<EntitlementSummary> {
       );
     }
 
+    // In the design Setup, Support and Account use (founder walk, 2 Oct 2026:
+    // the top of Plan & billing was still the old page).
+    final model = capabilities.projection?.model ?? const [];
+    final note = capabilities.projection?.note ?? '';
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _panel(text, entitlement.says, entitlement.because,
+        Text('YOUR PLAN', style: Ob.eyebrow()),
+        const SizedBox(height: 10),
+        _panel(entitlement.says, entitlement.because,
             // How the organisation came to be entitled, when it was not bought.
             // A grant is not a subscription and is not presented as one.
             //
@@ -248,45 +254,48 @@ class _EntitlementSummaryState extends State<EntitlementSummary> {
             // it reads as a rendering fault rather than as emphasis.
             _footnoteFor(entitlement)),
 
-        const SizedBox(height: 20),
-
-        Text('What Orchestrate charges for',
-            style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        // The model, from the server. No plan cards, no amounts — there is no
-        // approved price, and inventing one here is how the last catalog
-        // became doctrine.
-        for (final part in capabilities.projection?.model ?? const [])
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text('· ${part.means}',
-                style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+        if (model.isNotEmpty) ...[
+          const SizedBox(height: 26),
+          Text('HOW ORCHESTRATE CHARGES', style: Ob.eyebrow()),
+          const SizedBox(height: 10),
+          // The model, from the server. The amounts live on Setup's plan
+          // step, where the plan is chosen; this says how charging works.
+          ObCard(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final part in model)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(part.means, style: Ob.body(14.5, color: Ob.inkSoft)),
+                  ),
+              ],
+            ),
           ),
-
-        const SizedBox(height: 16),
-        Text(capabilities.projection?.note ?? '',
-            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+        ],
+        if (note.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(note, style: Ob.body(13.5, color: Ob.inkMuted)),
+        ],
       ],
     );
   }
 
-  Widget _panel(TextTheme text, String title, String body, String? footnote) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.publicLine),
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-      ),
+  Widget _panel(String title, String body, String? footnote) {
+    return ObCard(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(body, style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+          Text(title, style: Ob.strong(15.5)),
+          if (body.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(body, style: Ob.body(14, color: Ob.inkSoft)),
+          ],
           if (footnote != null) ...[
             const SizedBox(height: 8),
-            Text(footnote, style: text.bodySmall),
+            Text(footnote, style: Ob.body(12.5, color: Ob.inkMuted)),
           ],
         ],
       ),

@@ -20,7 +20,8 @@ class OwnerStep {
     this.waiting = false,
   });
 
-  /// Being checked on our side: shown, but not something that needs a yes.
+  /// Shown, but not something that needs a yes now: being checked on our
+  /// side, or not open until an earlier step is done.
   final bool waiting;
 
   final String key;
@@ -51,6 +52,15 @@ List<OwnerStep> ownerStepsFrom(Object? eligibility, {String? authority}) {
   };
   // A connected mailbox that can no longer send is still the email step.
   final mailboxTrouble = codes.any(mailboxProblemCodes.contains);
+  final planDone = ready.contains('subscription');
+  final emailDone = ready.contains('sending_transport') && !mailboxTrouble;
+  final actDone = ready.contains('representation') && authority == 'ESTABLISHED';
+  final actChecking = authority == 'UNDER_REVIEW';
+  // Setup opens this step only after the plan and email (and the business,
+  // buyers and offer a finished setup already has). A card that sends someone
+  // to a locked step promises what the step cannot give (founder walk,
+  // 2 Oct 2026): say what comes first, and go there.
+  final actLocked = !actDone && !actChecking && (!planDone || !emailDone);
   return [
     OwnerStep(
       key: 'plan',
@@ -58,18 +68,24 @@ List<OwnerStep> ownerStepsFrom(Object? eligibility, {String? authority}) {
       line: 'Setting up is free. A plan starts finding businesses and sending your notes.',
       cta: 'Choose a plan',
       route: '/client/setup?step=plan',
-      done: ready.contains('subscription'),
+      done: planDone,
     ),
     OwnerStep(
       key: 'act',
       title: 'Who acts for this business',
-      line: authority == 'UNDER_REVIEW'
+      line: actChecking
           ? 'Checking your document. Nothing is needed from you.'
-          : 'You, your registration document, and your yes.',
-      cta: authority == 'UNDER_REVIEW' ? 'See where it stands' : 'Finish this step',
-      route: '/client/setup?step=permission',
-      done: ready.contains('representation') && authority == 'ESTABLISHED',
-      waiting: authority == 'UNDER_REVIEW',
+          : actLocked
+              ? 'Opens once your plan and email are set.'
+              : 'You, your registration document, and your yes.',
+      cta: actChecking
+          ? 'See where it stands'
+          : actLocked
+              ? 'See what comes first'
+              : 'Finish this step',
+      route: actLocked ? '/client/setup' : '/client/setup?step=permission',
+      done: actDone,
+      waiting: actChecking || actLocked,
     ),
     OwnerStep(
       key: 'email',
@@ -79,7 +95,7 @@ List<OwnerStep> ownerStepsFrom(Object? eligibility, {String? authority}) {
           : 'Notes go out from your address. Replies land in your inbox.',
       cta: mailboxTrouble ? 'Reconnect email' : 'Connect email',
       route: '/client/setup?step=email',
-      done: ready.contains('sending_transport') && !mailboxTrouble,
+      done: emailDone,
     ),
     OwnerStep(
       key: 'domain',

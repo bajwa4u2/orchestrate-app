@@ -27,6 +27,19 @@ void main() {
     expect(pending.firstWhere((s) => s.key == 'act').done, isFalse);
   });
 
+  test('who acts for it says what comes first until plan and email are set', () {
+    // Founder walk, 2 Oct 2026: "Finish this step" opened a locked step.
+    final locked = ownerStepsFrom(chain({'setup'})).firstWhere((s) => s.key == 'act');
+    expect(locked.cta, 'See what comes first');
+    expect(locked.route, '/client/setup');
+    expect(locked.waiting, isTrue, reason: 'not a yes the owner can give yet');
+    final open = ownerStepsFrom(chain({'subscription', 'sending_transport'}))
+        .firstWhere((s) => s.key == 'act');
+    expect(open.cta, 'Finish this step');
+    expect(open.route, '/client/setup?step=permission');
+    expect(open.waiting, isFalse);
+  });
+
   test('a connected mailbox that cannot send keeps the email card open', () {
     final e = chain({'sending_transport'});
     e['blockers'] = [{'code': 'MAILBOX_CREDENTIAL_MISSING'}];
