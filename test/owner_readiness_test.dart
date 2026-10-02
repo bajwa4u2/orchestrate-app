@@ -40,10 +40,8 @@ void main() {
     expect(ownerStepsFrom({'blockers': []}), isEmpty);
   });
 
-  test('older resolution pages map to the setup step that does the job', () {
-    expect(setupRouteFor('/client/infrastructure?focus=domain'), '/client/setup?step=email');
-    expect(setupRouteFor('/client/billing'), '/client/setup?step=plan');
-    expect(setupRouteFor('/client/representation'), '/client/setup?step=business');
+  test('the server names the place; no route means Setup', () {
+    expect(setupRouteFor('/client/setup?step=email'), '/client/setup?step=email');
     expect(setupRouteFor('/client/money'), '/client/money');
     expect(setupRouteFor(null), '/client/setup');
   });

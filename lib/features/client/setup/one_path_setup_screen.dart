@@ -24,7 +24,7 @@ import '../../../data/repositories/client/client_playbook_repository.dart';
 import '../../../data/repositories/client/client_representative_repository.dart';
 import '../../../data/setup/buyer_suggestions.dart';
 import '../../../data/setup/global_setup_options.dart';
-import '../screens/client_setup_screen.dart' show metroSuggestionsFor;
+import '../../../data/setup/metro_suggestions.dart';
 import '../widgets/smtp_connect_dialog.dart';
 import '../widgets/sign_off_section.dart';
 import '../../../data/repositories/client/client_branding_repository.dart';
@@ -2884,7 +2884,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _head(_planActive ? 'Your plan is active.' : 'Choose when to start sending.',
+        _head(_planActive ? 'Your plan is active.' : 'Choose your plan.',
             _planActive
                 ? 'Orchestrate can send the notes you approve.'
                 : 'Setting up is free. A plan starts Orchestrate finding and '

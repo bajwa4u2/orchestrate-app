@@ -96,7 +96,7 @@ void main() {
   test('visible acquisition journey has canonical auth and setup owners', () {
     final authShell = read('lib/app/shell/auth_shell.dart');
     final router = read('lib/app/routing/app_router.dart');
-    final setup = read('lib/features/client/screens/client_setup_screen.dart');
+    final setup = read('lib/features/client/setup/one_path_setup_screen.dart');
     final ops = read('lib/features/auth/screens/ops_login_screen.dart');
     final journey = read('docs/ORCHESTRATE_VISIBLE_JOURNEY_REGISTER.md');
     expect(authShell, contains('class AuthShell'));
@@ -104,9 +104,10 @@ void main() {
     expect(authShell, isNot(contains('_SetupJourneyHeader')));
     expect(router, contains("path: '/auth/login'"));
     expect(router, contains("path: '/auth/register'"));
-    expect(router, contains("path: '/app/setup'"));
-    expect(router, contains("path: '/app/subscribe'"));
-    expect(setup, contains('setupFlow: true'));
+    // One setup, at one address; /app/setup and /app/subscribe are retired.
+    expect(router, contains("path: '/client/setup'"));
+    expect(router, isNot(contains("path: '/app/")));
+    expect(setup, contains('class OnePathSetupScreen'));
     expect(ops, contains('AuthShell'));
     expect(journey, contains('Orchestrate visible journey register'));
   });

@@ -63,37 +63,30 @@ void main() {
   ///
   /// Search kept offering Business settings, Targeting, Credentials and
   /// Evidence after Setup and Account replaced them, and those pages still
-  /// rendered. Every retired address now redirects to its new home, so an old
-  /// email, bookmark or installed app still arrives somewhere real, and none
-  /// of them can open a retired page again.
+  /// rendered. The first answer was to redirect every old address. With no
+  /// client yet depending on one, the founder retired them outright: a fresh
+  /// client meets only today's places, and an old address is not found.
   const retired = {
-    '/client/business': '/client/setup',
-    '/client/representation': '/client/setup?step=business',
-    '/client/infrastructure': '/client/setup?step=email',
-    '/client/billing': '/account/plan',
-    '/client/subscribe': '/account/plan',
-    '/client/records': '/account/record',
-    '/client/settings': '/account/security',
-    '/client/account': '/account/security',
-    '/app/account': '/account/security',
-    '/app/trust': '/client/setup?step=offer',
-    '/app/evidence': '/client/setup?step=offer',
-    '/app/branding': '/client/setup?step=business',
-    '/app/artifacts': '/client/money',
-    '/client/contacts/inventory': '/client/relationships',
-    '/client/sequences/:sequenceId': '/client/relationships',
+    '/client/overview', '/client/workspace', '/client/business',
+    '/client/representation', '/client/infrastructure', '/client/mailbox',
+    '/client/billing', '/client/subscribe', '/client/records',
+    '/client/settings', '/client/account', '/client/contacts',
+    '/client/contacts/inventory', '/client/sequences/:sequenceId',
+    '/client/leads', '/client/campaigns', '/client/operations',
+    '/client/outreach', '/client/replies', '/client/meetings',
+    '/client/opportunities', '/client/notifications', '/client/help',
+    '/client/trust', '/client/activity', '/client/invoices',
+    '/client/receipts', '/client/agreements', '/client/statements',
+    '/client/reminders', '/client/authorised-people',
+    '/client/business-identity',
   };
 
-  test('every retired address redirects to its new home', () {
-    for (final entry in retired.entries) {
-      expect(
-        // Line endings and indentation are not the point; the pairing is.
-        router.replaceAll(RegExp(r'\s+'), ' ').contains(
-            "path: '${entry.key}', redirect: (context, state) => _retired(state, '${entry.value}'))"),
-        isTrue,
-        reason: '${entry.key} must redirect to ${entry.value}',
-      );
+  test('no retired address is routed, and nothing under /app is', () {
+    for (final path in retired) {
+      expect(router.contains("path: '$path'"), isFalse, reason: '$path is retired');
     }
+    expect(router.contains("path: '/app/"), isFalse, reason: 'the /app area is retired');
+    expect(router.contains('_retired('), isFalse, reason: 'retired means gone, not redirected');
   });
 
   test('no retired page is mounted anywhere', () {
@@ -115,7 +108,7 @@ void main() {
     for (final f in Directory('lib').listSync(recursive: true).whereType<File>()) {
       if (!f.path.endsWith('.dart') || f.path.contains('app_router.dart')) continue;
       final src = f.readAsStringSync();
-      for (final path in retired.keys) {
+      for (final path in retired) {
         final p = RegExp.escape(path.split('/:').first);
         final link = RegExp("go\\('$p(['?/])");
         final command = RegExp("_Command\\((?:'[^']*'|\"[^\"]*\"), '$p['?]");
@@ -136,7 +129,7 @@ void main() {
     for (final path in commands) {
       expect(router.contains("path: '$path'"), isTrue,
           reason: '$path is offered but not routed');
-      expect(retired.containsKey(path), isFalse,
+      expect(retired.contains(path), isFalse,
           reason: '$path is retired and must not be offered');
     }
   });
@@ -154,7 +147,29 @@ void main() {
     expect(routes.length, greaterThan(8));
     for (final path in routes) {
       expect(router.contains("path: '$path'"), isTrue, reason: '$path is named by Support but not routed');
-      expect(retired.containsKey(path), isFalse, reason: '$path is retired');
+      expect(retired.contains(path), isFalse, reason: '$path is retired');
+    }
+  }, skip: backendSkipReason);
+
+  /// The server names where a blocker is resolved. Each must be a page the
+  /// app shows today, or the button that should help lands on nothing.
+  test('every route the server sends a client to is a page the app shows', () {
+    const sources = [
+      'src/operational-readiness/execution-eligibility.service.ts',
+      'src/client-portal/workflow-state.service.ts',
+      'src/client-portal/client-experience.service.ts',
+      'src/clients/clients.service.ts',
+      'src/guidance/readiness-explanation.engine.ts',
+      'src/guidance/operational-state.explainer.ts',
+      'src/guidance/guidance-rules.provider.ts',
+    ];
+    final named = RegExp(r"'(/(?:client|account)[A-Za-z/_-]*)[?']");
+    for (final source in sources) {
+      for (final m in named.allMatches(backendSource(source))) {
+        final path = m.group(1)!;
+        expect(router.contains("path: '$path'") || path == '/client', isTrue,
+            reason: '$source sends clients to $path, which is not routed');
+      }
     }
   }, skip: backendSkipReason);
 

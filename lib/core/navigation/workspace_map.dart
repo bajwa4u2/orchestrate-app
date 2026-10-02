@@ -72,10 +72,6 @@ const Map<String, _Surface> _surfaces = {
   // Today, so its trail and its tab say the same (2 Oct 2026).
   '/client/inbound': _Surface('Waiting on you', WorkspaceArea.today,
       parent: '/client/today'),
-  '/client/activity': _Surface('Activity', WorkspaceArea.relationships,
-      parent: '/client/relationships'),
-  '/client/meetings': _Surface('Meetings', WorkspaceArea.relationships,
-      parent: '/client/relationships'),
 
   // ── ACCOUNT ──────────────────────────────────────────────────────────
   // The account layer is a set of siblings under one roof; each returns to the

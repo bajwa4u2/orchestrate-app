@@ -42,12 +42,10 @@ void main() {
   });
 
   test('the legacy home and its billing page are retired, not orphaned', () {
+    // Once redirected for old links; retired outright on 2 Oct 2026, when no
+    // client yet depended on one.
     for (final legacy in <String>['/app/home', '/app/billing']) {
-      final at = router.indexOf("path: '$legacy'");
-      expect(at, greaterThan(-1), reason: '$legacy must still resolve');
-      // Redirected rather than rendered — the paths are in old links.
-      expect(router.substring(at, at + 200).contains('redirect:'), isTrue,
-          reason: '$legacy must not render the legacy screen');
+      expect(router.contains("path: '$legacy'"), isFalse, reason: '$legacy is retired');
     }
     expect(router.contains('ClientHomeScreen'), isFalse);
     expect(
@@ -82,11 +80,12 @@ void main() {
       '/app/mailbox': '/client/setup?step=email',
       '/app/newsletter': '/client/today',
     };
+    // Retired outright on 2 Oct 2026: not routed at all, and each former
+    // destination is still a real page.
     retired.forEach((from, to) {
-      final at = router.indexOf("path: '$from'");
-      expect(at, greaterThan(-1), reason: '$from must still resolve');
-      expect(router.substring(at, at + 220).contains("'$to'"), isTrue,
-          reason: '$from must lead to $to');
+      expect(router.contains("path: '$from'"), isFalse, reason: '$from is retired');
+      expect(router.contains("path: '${to.split('?').first}'"), isTrue,
+          reason: '$to must still be a page');
     });
     for (final gone in <String>[
       'lib/features/client/screens/campaigns_screen.dart',

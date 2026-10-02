@@ -16,7 +16,6 @@ import 'package:orchestrate_app/features/client/setup/one_path_setup_screen.dart
 import 'package:orchestrate_app/features/client/money/money_screen.dart';
 import 'package:orchestrate_app/features/public/b/public_b.dart';
 import 'package:orchestrate_app/features/client/screens/client_notifications_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_outreach_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_records_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_replies_screen.dart';
 import 'package:orchestrate_app/features/client/screens/leads_screen.dart';
@@ -58,22 +57,6 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _clientShellNavigatorKey = GlobalKey<NavigatorState>();
 final _operatorShellNavigatorKey = GlobalKey<NavigatorState>();
 
-const _clientCoreRoutes = <String>{
-  '/app/home',
-  '/app/campaigns',
-  '/app/activity',
-  '/app/mailbox',
-  '/app/newsletter',
-  '/app/branding',
-  '/app/trust',
-  '/app/evidence',
-  '/app/artifacts',
-  '/app/billing',
-  '/app/account',
-  '/app/setup',
-  '/app/subscribe',
-};
-
 /// Operator surfaces that no longer exist.
 ///
 /// Each was reachable only by typing a URL, so the only links to them are
@@ -100,56 +83,23 @@ const _retiredOperatorSurfaces = <String>{
   '/ops/overview-legacy',
 };
 
+/// Every client page that exists (DD-35: the old addresses are retired, not
+/// redirected; an unknown address shows the way back to the workspace).
 const _clientCanonicalRoutes = <String>{
   '/client',
-  '/client/overview',
   '/client/setup',
-  '/client/subscribe',
-  '/client/workspace',
-  // New operational IA — these are the canonical paths.
-  '/client/relationships',
-  '/client/operations',
-  '/client/opportunities',
-  '/client/infrastructure',
-  '/client/representation',
-  // The reconstructed workspace: three destinations plus the account layer.
   '/client/today',
   '/client/market',
-  // Inbound is an Attention view reached from Today, not a top-level
-  // destination. Quarantine is a system condition, not a product domain a
-  // business should have to learn the name of.
+  '/client/relationships',
+  '/client/money',
   '/client/inbound',
-  '/client/business',
-  '/client/authorised-people',
+  '/client/support',
+  '/client/oauth/return',
   '/account',
   '/account/people',
   '/account/plan',
   '/account/security',
-  // Legacy paths kept so deep links keep resolving via redirects.
-  '/client/contacts',
-  '/client/leads',
-  '/client/outreach',
-  '/client/mailbox',
-  '/client/business-identity',
-  '/client/campaign',
-  '/client/campaign/targeting',
-  '/client/campaigns',
-  '/client/replies',
-  '/client/meetings',
-  '/client/billing',
-  '/client/records',
-  '/client/invoices',
-  '/client/receipts',
-  '/client/agreements',
-  '/client/statements',
-  '/client/reminders',
-  '/client/notifications',
-  '/client/support',
-  '/client/settings',
-  '/client/account',
-  '/client/help',
-  '/client/trust',
-  '/client/oauth/return',
+  '/account/record',
 };
 
 // Imperative public navigation uses `push` so browser Back traverses the
@@ -370,10 +320,9 @@ GoRouter _buildRouter() {
     // representative must be able to establish authority before the workspace
     // is fully configured.
     final isAccountLayer = path == '/account' || path.startsWith('/account/');
-    final isClientArea = _clientCoreRoutes.contains(path) ||
-        _clientCanonicalRoutes.contains(path) ||
+    final isClientArea = _clientCanonicalRoutes.contains(path) ||
         isAccountLayer ||
-        path.startsWith('/app/');
+        path.startsWith('/client/');
     final isOperatorArea =
         (path.startsWith('/ops/') || path.startsWith('/operator/')) &&
             !isOpsAuth;
@@ -581,39 +530,6 @@ GoRouter _buildRouter() {
         path: '/client/reset-password',
         redirect: (context, state) => _alias(state, '/auth/reset-password')),
     GoRoute(path: '/operator', redirect: (context, state) => '/ops/overview'),
-    GoRoute(
-        path: '/app/command', redirect: (context, state) => '/ops/overview'),
-    GoRoute(
-        path: '/app/pipeline', redirect: (context, state) => '/ops/contacts'),
-    GoRoute(
-        path: '/app/inquiries', redirect: (context, state) => '/ops/inquiries'),
-    GoRoute(
-        path: '/app/inquiries/:id',
-        redirect: (context, state) =>
-            '/ops/inquiries/${state.pathParameters['id'] ?? ''}'),
-    GoRoute(
-        path: '/app/execution', redirect: (context, state) => '/ops/campaigns'),
-    GoRoute(
-        path: '/app/execution/campaigns',
-        redirect: (context, state) => '/ops/campaigns'),
-    GoRoute(
-        path: '/app/execution/replies',
-        redirect: (context, state) => '/ops/activity'),
-    GoRoute(
-        path: '/app/execution/meetings',
-        redirect: (context, state) => '/ops/activity'),
-    GoRoute(path: '/app/clients', redirect: (context, state) => '/ops/clients'),
-    GoRoute(
-        path: '/app/revenue', redirect: (context, state) => '/ops/activity'),
-    GoRoute(
-        path: '/app/deliverability',
-        redirect: (context, state) => '/ops/mailboxes'),
-    GoRoute(
-        path: '/app/communications',
-        redirect: (context, state) => '/ops/activity'),
-    GoRoute(
-        path: '/app/records', redirect: (context, state) => '/ops/activity'),
-    GoRoute(path: '/app/settings', redirect: (context, state) => '/ops/debug'),
     GoRoute(
       path: '/',
       pageBuilder: (context, state) => NoTransitionPage(
@@ -1044,14 +960,6 @@ GoRouter _buildRouter() {
             oauthStatus: state.uri.queryParameters['oauth'],
             oauthReason: state.uri.queryParameters['reason'],
             checkoutStatus: state.uri.queryParameters['checkout'])),
-    // Compatibility only. /client/setup is canonical; this keeps older links
-    // and any saved deep link resolving rather than 404ing.
-    GoRoute(
-        path: '/app/setup',
-        redirect: (context, state) => '/client/setup'),
-    GoRoute(
-        path: '/app/subscribe',
-        redirect: (context, state) => '/client/setup?step=plan'),
     ShellRoute(
       navigatorKey: _clientShellNavigatorKey,
       builder: (context, state, child) =>
@@ -1069,12 +977,6 @@ GoRouter _buildRouter() {
                     checkoutStatus: state.uri.queryParameters['checkout']))),
         GoRoute(
             path: '/client', redirect: (context, state) => '/client/today'),
-        GoRoute(
-            path: '/client/overview',
-            redirect: (context, state) => '/client/today'),
-        GoRoute(
-            path: '/client/workspace',
-            redirect: (context, state) => '/client/today'),
         // ── THE THREE DESTINATIONS ─────────────────────────────────────
         // Today, Relationships, Business. Everything else is reached by
         // entering the work, or lives in the account layer below.
@@ -1117,9 +1019,6 @@ GoRouter _buildRouter() {
             path: '/client/inbound',
             pageBuilder: (context, state) =>
             NoTransitionPage(child: const AttentionScreen())),
-        GoRoute(
-            path: '/client/business',
-            redirect: (context, state) => _retired(state, '/client/setup')),
 
         // ── THE ACCOUNT LAYER ──────────────────────────────────────────
         // Deliberately NOT subject to the setup or subscription gates below.
@@ -1147,16 +1046,6 @@ GoRouter _buildRouter() {
             path: '/account/security',
             pageBuilder: (context, state) =>
             NoTransitionPage(child: const AccountLayerScreen(section: AccountSection.security))),
-        // The authority screen's first home. It moved; the link still works.
-        GoRoute(
-            path: '/client/authorised-people',
-            redirect: (context, state) => '/account/people'),
-        // Representation — the canonical client-owned commercial-profile
-        // surface. Old /client/business-identity + /client/campaign paths
-        // redirect here so the operational IA stays single-source.
-        GoRoute(
-            path: '/client/representation',
-            redirect: (context, state) => _retired(state, '/client/setup?step=business')),
         // OAuth return surface — backend's ORCH_APP_OAUTH_RETURN_URL
         // should be configured to land here so the result is rendered
         // with operation-scoped mailbox disclosure + next-action CTAs
@@ -1188,229 +1077,9 @@ GoRouter _buildRouter() {
                   mailboxId: state.uri.queryParameters['mailboxId'],
                 ))),
         GoRoute(
-            path: '/client/business-identity',
-            redirect: (context, state) => '/client/setup?step=want'),
-        GoRoute(
-            path: '/client/campaign',
-            redirect: (context, state) => '/client/setup?step=want'),
-        GoRoute(
-            path: '/client/campaign/targeting',
-            redirect: (context, state) => '/client/setup?step=want'),
-        GoRoute(
-            path: '/client/campaigns',
-            redirect: (context, state) => '/client/setup?step=want'),
-        // Targeting scope editor (geographies + industries). Kept under
-        // /app/campaigns for now; representation links to it as
-        // "refine targeting".
-        GoRoute(
-            // Targeting is edited on the business identity surface — ideal
-            // customer, geography, industry — so this points there rather than
-            // at a route that no longer renders anything.
-            //
-            // It used to redirect to /app/campaigns while /app/campaigns
-            // redirected back here, so the two were a cycle: every arrival
-            // bounced between them and the workspace reported no surface. The
-            // pair was written when /app/campaigns still rendered the targeting
-            // editor, and survived the retirement of the /app screens as two
-            // redirects with nothing left underneath either.
-            path: '/client/representation/targeting',
-            redirect: (context, state) => '/client/setup?step=want'),
-        // Sequence authoring (governed template vs legacy custom body).
-        // Mounted under the client shell so the workspace chrome wraps
-        // it. Step CRUD posts directly to the new ClientPortalService
-        // endpoints (POST /client/sequences/:id/steps,
-        // PATCH /client/sequence-steps/:stepId,
-        // DELETE /client/sequence-steps/:stepId).
-        GoRoute(
-            path: '/client/sequences/:sequenceId',
-            redirect: (context, state) => _retired(state, '/client/relationships')),
-        GoRoute(
-            path: '/client/subscribe',
-            redirect: (context, state) => _retired(state, '/account/plan')),
-        // Relationships — mailbox-derived relationship intelligence.
-        GoRoute(
-            path: '/client/contacts/inventory',
-            redirect: (context, state) => _retired(state, '/client/relationships')),
-        GoRoute(
-            path: '/client/contacts',
-            redirect: (context, state) => '/client/relationships'),
-        // Opportunities — signal-driven intelligence (was "Leads").
-        GoRoute(
-            // Opportunities were a second list of the same durable records.
-            // Pipeline survives as a view; the second universe does not.
-            path: '/client/opportunities',
-            redirect: (context, state) => '/client/relationships'),
-        GoRoute(
-            path: '/client/leads',
-            redirect: (context, state) => '/client/relationships'),
-        // Operations — managed execution runtime (was "Outreach").
-        GoRoute(
-            // Outreach in flight shows on Today; per-relationship activity
-            // shows inside the relationship.
-            path: '/client/operations',
-            redirect: (context, state) => '/client/relationships'),
-        GoRoute(
-            path: '/client/outreach',
-            redirect: (context, state) => '/client/operations'),
-        GoRoute(
-            // Replies are relationship correspondence, not a destination.
-            path: '/client/replies',
-            redirect: (context, state) => '/client/relationships'),
-        // Infrastructure — mailbox + sending identity + provider trust
-        // consolidated under one surface (was /client/mailbox).
-        GoRoute(
-            path: '/client/infrastructure',
-            redirect: (context, state) => _retired(state, '/client/setup?step=email')),
-        GoRoute(
-            path: '/client/mailbox',
-            redirect: (context, state) => '/client/setup?step=email'),
-        GoRoute(
-            // Meetings are timeline events inside a relationship.
-            path: '/client/meetings',
-            redirect: (context, state) => '/client/relationships'),
-        GoRoute(
-            path: '/client/billing',
-            redirect: (context, state) => _retired(state, '/account/plan')),
-        GoRoute(
-            path: '/client/records',
-            redirect: (context, state) => _retired(state, '/account/record')),
-        GoRoute(
-            path: '/client/invoices',
-            redirect: (context, state) => '/account/record'),
-        GoRoute(
-            path: '/client/receipts',
-            redirect: (context, state) => '/account/record'),
-        GoRoute(
-            path: '/client/agreements',
-            redirect: (context, state) => '/account/record'),
-        GoRoute(
-            path: '/client/statements',
-            redirect: (context, state) => '/account/record'),
-        GoRoute(
-            path: '/client/reminders',
-            redirect: (context, state) => '/account/record'),
-        GoRoute(
-            // Notifications became Attention, which lives in Today.
-            path: '/client/notifications',
-            redirect: (context, state) => '/client/today'),
-        GoRoute(
             path: '/client/support',
             pageBuilder: (context, state) =>
             NoTransitionPage(child: const ClientSupportScreen())),
-        GoRoute(
-            path: '/client/settings',
-            redirect: (context, state) => _retired(state, '/account/security')),
-        GoRoute(
-            path: '/client/account',
-            redirect: (context, state) => _retired(state, '/account/security')),
-        GoRoute(
-            path: '/client/help',
-            redirect: (context, state) => '/client/support'),
-        // CREDENTIALS WAS A DIAGNOSTIC WEARING A PRODUCT LABEL.
-        //
-        // The Business hub offered "Credentials — certifications, licences,
-        // insurance" and this route answered with "Client-safe AI activity and
-        // trust summary": a generic backend-surface screen that listed the
-        // endpoints it had called and printed whatever came back, including a
-        // record whose only visible field read "campaign: null".
-        //
-        // The product has no certifications capability, so the honest move is
-        // to stop offering one. It redirects rather than 404s because the link
-        // has existed, and Evidence is the real surface for what a business can
-        // show about itself.
-        GoRoute(
-            path: '/client/trust',
-            redirect: (context, state) => '/client/setup?step=offer'),
-        // THE LEGACY HOME IS RETIRED, NOT LEFT LYING AROUND.
-        //
-        // It predates the reconstructed workspace and was never one of its
-        // four destinations, so it rendered inside the new shell with nothing
-        // selected — a page that could not say where it was. Sign-in sent
-        // every client here, which is why it kept being the last place a lot
-        // of people saw. It redirects rather than 404s: the path is in old
-        // links, and Today is where it was always meant to lead.
-        GoRoute(
-            path: '/app/home',
-            redirect: (context, state) => '/client/today'),
-        GoRoute(
-            path: '/app/contacts',
-            redirect: (context, state) => '/client/relationships'),
-        GoRoute(
-            path: '/app/contacts/import',
-            redirect: (context, state) => '/client/relationships'),
-        GoRoute(
-            path: '/app/contacts/:contactId',
-            redirect: (context, state) => '/client/relationships'),
-        // LEGACY TARGETING. Unlinked from the current IA, and it told a
-        // business "Billing: ACTIVE" beside "Plan: opportunity ·" — the first
-        // flatly untrue for an account with no subscription, the second a
-        // concept the product retired. Market and targeting is the surface the
-        // Business hub maintains.
-        GoRoute(
-            path: '/app/campaigns',
-            redirect: (context, state) => '/client/setup?step=want'),
-        GoRoute(
-            path: '/app/campaigns/create',
-            redirect: (context, state) => '/client/setup?step=want'),
-        GoRoute(
-            path: '/app/campaigns/:campaignId',
-            redirect: (context, state) => '/client/setup?step=want'),
-        // A SECOND EXECUTION SURFACE, LINKED FROM NOWHERE. What has actually
-        // moved belongs on the relationship it moved on, which is where the
-        // reconstructed workspace puts it.
-        GoRoute(
-            path: '/app/activity',
-            redirect: (context, state) => '/client/relationships'),
-        GoRoute(
-            path: '/app/mailbox',
-            redirect: (context, state) => '/client/setup?step=email'),
-        // A PLACEHOLDER IS NOT A FEATURE. This said "Update controls are
-        // available later" and nothing else, and nothing linked to it. A
-        // customer who found it learned only that something might exist one
-        // day.
-        GoRoute(
-            path: '/app/newsletter',
-            redirect: (context, state) => '/client/today'),
-        GoRoute(
-            path: '/app/newsletter/audience',
-            redirect: (context, state) => '/client/today'),
-        GoRoute(
-            path: '/app/newsletter/issues',
-            redirect: (context, state) => '/client/today'),
-        GoRoute(
-            path: '/app/newsletter/settings',
-            redirect: (context, state) => '/client/today'),
-        GoRoute(
-            path: '/app/branding',
-            redirect: (context, state) => _retired(state, '/client/setup?step=business')),
-        GoRoute(
-            path: '/app/branding/identity',
-            redirect: (context, state) => '/client/setup?step=business'),
-        GoRoute(
-            path: '/app/branding/templates',
-            redirect: (context, state) => '/client/setup?step=business'),
-        GoRoute(
-            path: '/app/branding/signatures',
-            redirect: (context, state) => '/client/setup?step=business'),
-        GoRoute(
-            path: '/app/trust',
-            redirect: (context, state) => _retired(state, '/client/setup?step=offer')),
-        GoRoute(
-            path: '/app/evidence',
-            redirect: (context, state) => _retired(state, '/client/setup?step=offer')),
-        GoRoute(
-            path: '/app/artifacts',
-            redirect: (context, state) => _retired(state, '/client/money')),
-        // Retired with the home it belonged to. It carried no title, no
-        // breadcrumb, buttons in a colour the design system does not use, and
-        // "ICP" as a word shown to a customer — while /client/billing is the
-        // billing surface the product actually maintains.
-        GoRoute(
-            path: '/app/billing',
-            redirect: (context, state) => '/account/plan'),
-        GoRoute(
-            path: '/app/account',
-            redirect: (context, state) => _retired(state, '/account/security')),
       ],
     ),
     ShellRoute(
@@ -1722,16 +1391,6 @@ String _clientRoute(String path, {String? returnTo}) =>
 /// Found on 2026-09-17 by clicking a real confirmation link from a real
 /// mailbox. It could not be found any other way: the token only exists in
 /// mail, so no amount of clicking inside the app reaches this path.
-/// A retired page's address, kept so old emails, bookmarks and installed apps
-/// still arrive somewhere real (DD-34). The new home's own `?step=` wins; any
-/// other query the old link carried travels with it.
-String _retired(GoRouterState state, String home) {
-  final target = Uri.parse(home);
-  final query = {...state.uri.queryParameters}..remove('focus');
-  query.addAll(target.queryParameters);
-  return Uri(path: target.path, queryParameters: query.isEmpty ? null : query).toString();
-}
-
 String _alias(GoRouterState state, String destination) {
   final query = state.uri.query;
   if (query.isEmpty) return destination;

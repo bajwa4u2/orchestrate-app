@@ -96,7 +96,7 @@ void main() {
     late final String router =
         File('lib/app/routing/app_router.dart').readAsStringSync();
 
-    test('/client/setup renders and /app/setup redirects to it', () {
+    test('/client/setup renders, and there is no second name', () {
       final canonical = router.indexOf("path: '/client/setup'");
       expect(canonical, greaterThan(-1));
       expect(
@@ -107,14 +107,8 @@ void main() {
         isTrue,
         reason: '/client/setup is the surface and must render',
       );
-
-      final legacy = router.indexOf("path: '/app/setup'");
-      expect(legacy, greaterThan(-1),
-          reason: 'old links and deep links must still resolve');
-      final next = router.indexOf('GoRoute(', legacy);
-      final decl = router.substring(legacy, next == -1 ? legacy + 200 : next);
-      expect(decl.contains("=> '/client/setup'"), isTrue,
-          reason: '/app/setup is the second name, not a second screen');
+      // /app/setup was retired with the rest of /app (2 Oct 2026).
+      expect(router.contains("path: '/app/setup'"), isFalse);
     });
 
     test('nothing sends anybody to the second name', () {
@@ -132,7 +126,7 @@ void main() {
     test('saving setup does not route to checkout', () {
       // The router treats subscription as not a door; sequencing a plan screen
       // immediately after setup taught the opposite of what the product does.
-      final source = File('lib/features/client/screens/client_setup_screen.dart')
+      final source = File('lib/features/client/setup/one_path_setup_screen.dart')
           .readAsStringSync();
       expect(source.contains("context.go('/app/subscribe')"), isFalse,
           reason: 'entitlement refuses an action, never a place');

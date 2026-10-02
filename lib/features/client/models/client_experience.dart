@@ -148,7 +148,7 @@ class ClientExperienceAction {
       title: (json['title'] ?? '').toString(),
       message: (json['message'] ?? '').toString(),
       ctaLabel: (json['ctaLabel'] ?? 'Continue').toString(),
-      route: (json['route'] ?? '/client/overview').toString(),
+      route: (json['route'] ?? '/client/today').toString(),
     );
   }
 }

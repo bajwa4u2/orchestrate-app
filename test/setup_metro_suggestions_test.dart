@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orchestrate_app/features/client/screens/client_setup_screen.dart';
+import 'package:orchestrate_app/data/setup/metro_suggestions.dart';
 
 /// Found filming Getting Started: a business that chose Michigan was offered
 /// "District of Columbia" under "Suggestions from selected markets".

@@ -117,12 +117,6 @@ const mailboxProblemCodes = <String>{
   'MAILBOX_PROVIDER_ERROR',
 };
 
-/// Where a remaining condition is resolved, in today's screens. The server
-/// still names some older pages; each has a setup step that does the same job.
-String setupRouteFor(String? route) {
-  if (route == null) return '/client/setup';
-  if (route.startsWith('/client/infrastructure')) return '/client/setup?step=email';
-  if (route.startsWith('/client/representation')) return '/client/setup?step=business';
-  if (route.startsWith('/client/billing')) return '/client/setup?step=plan';
-  return route;
-}
+/// Where a remaining condition is resolved. The server names today's places
+/// (2 Oct 2026); with no route, Setup is where conditions are met.
+String setupRouteFor(String? route) => route ?? '/client/setup';

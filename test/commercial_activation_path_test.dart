@@ -174,10 +174,11 @@ void main() {
 
   test('there is one place to buy, and it is not a second page', () {
     // The separate Subscribe page is retired (DD-34): Setup's plan step takes
-    // the payment, and its old addresses arrive there or on Plan and billing.
+    // the payment. Its old addresses are gone, not redirected (2 Oct 2026).
     expect(File('lib/features/client/screens/client_subscribe_screen.dart').existsSync(), isFalse);
-    expect(router.contains("redirect: (context, state) => '/client/setup?step=plan'"), isTrue);
-    expect(router.contains("_retired(state, '/account/plan')"), isTrue);
+    expect(router.contains("path: '/client/subscribe'"), isFalse);
+    expect(router.contains("path: '/client/billing'"), isFalse);
+    expect(router.contains("path: '/account/plan'"), isTrue);
   });
 
   test('iOS reaches activation, and what it finds there is in-app', () {
