@@ -866,7 +866,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         if (r.label.toLowerCase() == name) return cc;
       }
     }
-    return _countries.first;
+    return _countries.isEmpty ? (_addressCountry) : _countries.first;
   }
 
   String get _scopeMode {
@@ -906,8 +906,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           'Add at least one kind of business that buys from you.');
       return;
     }
-    if (_countries.isEmpty) {
-      setState(() => _stepError = 'Add at least one country.');
+    // "Anywhere in the world" is a market on its own; towns still need the
+    // country they are in.
+    if (_countries.isEmpty && (!_worldwide || _towns.isNotEmpty)) {
+      setState(() => _stepError = _worldwide
+          ? 'Add the country your towns are in.'
+          : 'Add at least one country, or choose anywhere in the world.');
       return;
     }
     setState(() {
