@@ -1858,7 +1858,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               selected: _towns.toSet(),
               allowCustom: true,
               hint: _countries.length > 1
-                  ? 'Search, or type a town and its country: Lahore, Pakistan'
+                  ? 'Type a town and its country; several with ";" — Lahore, Pakistan; Dubai, United Arab Emirates'
                   : null,
             );
             if (picked == null || !mounted) return;
@@ -2779,11 +2779,13 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           // Short enough to read whole: the kinds, then the first place and
           // how many more, never a list cut off mid-word.
           final places = _list(icp['geoTargets']).map((e) => '$e').toList();
-          final where = places.isEmpty
-              ? ''
-              : places.length == 1
-                  ? places.first
-                  : '${places.first} and ${places.length - 1} more';
+          final where = _worldwide
+              ? 'Anywhere in the world'
+              : places.isEmpty
+                  ? ''
+                  : places.length == 1
+                      ? places.first
+                      : '${places.first} and ${places.length - 1} more';
           return [
             _joinWords(_list(icp['industryTags']).map((e) => '$e').take(3).toList()),
             where,
@@ -2912,12 +2914,39 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   // ── Picker ─────────────────────────────────────────────────────────
 
+  bool _picking = false;
+
   Future<Set<String>?> _pick({
     required String title,
     required List<(String, String)> options,
     required Set<String> selected,
     bool single = false,
     bool allowCustom = false,
+    String? hint,
+  }) async {
+    // One picker at a time. A second tap opened a second sheet, and the older
+    // sheet's Done then overwrote the newer choices (2 Oct 2026).
+    if (_picking) return null;
+    _picking = true;
+    try {
+      return await _openPicker(
+          title: title,
+          options: options,
+          selected: selected,
+          single: single,
+          allowCustom: allowCustom,
+          hint: hint);
+    } finally {
+      _picking = false;
+    }
+  }
+
+  Future<Set<String>?> _openPicker({
+    required String title,
+    required List<(String, String)> options,
+    required Set<String> selected,
+    required bool single,
+    required bool allowCustom,
     String? hint,
   }) {
     return showModalBottomSheet<Set<String>>(
@@ -3502,6 +3531,29 @@ class _PickerSheetState extends State<_PickerSheet> {
     super.dispose();
   }
 
+  /// What the box holds, as entries: several may be pasted at once,
+  /// separated by ";" or new lines. Never an empty one.
+  List<String> _typed() => _query.text
+      .split(RegExp(r'[;\n]'))
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+
+  void _addTyped() {
+    final entries = _typed();
+    if (entries.isEmpty) return;
+    setState(() {
+      for (final value in entries) {
+        if (!_options.any((o) => o.$1.toLowerCase() == value.toLowerCase())) {
+          _options.insert(0, (value, value));
+        }
+        if (!widget.single) _chosen.add(value);
+      }
+      _query.clear();
+    });
+    if (widget.single) _toggle(entries.first);
+  }
+
   void _toggle(String code) {
     setState(() {
       if (widget.single) {
@@ -3521,9 +3573,10 @@ class _PickerSheetState extends State<_PickerSheet> {
     final visible = q.isEmpty
         ? _options
         : _options.where((o) => o.$2.toLowerCase().contains(q)).toList();
+    final typed = _typed();
     final canAddCustom = widget.allowCustom &&
-        q.isNotEmpty &&
-        !_options.any((o) => o.$2.toLowerCase() == q);
+        typed.isNotEmpty &&
+        !(typed.length == 1 && _options.any((o) => o.$2.toLowerCase() == q));
     final height = MediaQuery.sizeOf(context).height * 0.8;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -3554,15 +3607,10 @@ class _PickerSheetState extends State<_PickerSheet> {
                 controller: _query,
                 autofocus: true,
                 onChanged: (_) => setState(() {}),
-                onSubmitted: (v) {
-                  if (canAddCustom) {
-                    final value = v.trim();
-                    setState(() {
-                      _options.insert(0, (value, value));
-                      _query.clear();
-                    });
-                    _toggle(value);
-                  }
+                // Read at the moment of submitting: a stale "can add" added
+                // empty entries when Enter was pressed on an empty box.
+                onSubmitted: (_) {
+                  if (widget.allowCustom) _addTyped();
                 },
                 style: Ob.body(16, color: Ob.ink),
                 decoration: InputDecoration(
@@ -3579,15 +3627,12 @@ class _PickerSheetState extends State<_PickerSheet> {
                   if (canAddCustom)
                     ListTile(
                       leading: const Icon(Icons.add, color: Ob.ink),
-                      title: Text('Add "${_query.text.trim()}"', style: Ob.strong(15)),
-                      onTap: () {
-                        final value = _query.text.trim();
-                        setState(() {
-                          _options.insert(0, (value, value));
-                          _query.clear();
-                        });
-                        _toggle(value);
-                      },
+                      title: Text(
+                          typed.length > 1
+                              ? 'Add ${typed.length}: ${typed.join('; ')}'
+                              : 'Add "${typed.first}"',
+                          style: Ob.strong(15)),
+                      onTap: _addTyped,
                     ),
                   for (final o in visible)
                     ListTile(
