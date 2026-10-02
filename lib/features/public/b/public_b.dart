@@ -9,6 +9,7 @@ import '../../../core/ui/ob_widgets.dart';
 import '../../../data/repositories/client/client_money_repository.dart'
     show moneyLabel;
 import '../../../data/repositories/public_repository.dart';
+import '../widgets/visitor_assistant.dart';
 
 /// DIRECTION B, PUBLIC (DD-26, boards S01–S04).
 ///
@@ -123,6 +124,16 @@ class FrontDoorScreen extends StatelessWidget {
               ],
               const SizedBox(height: 44),
               _LiveStrip(live: live, phone: phone),
+              // Questions before starting, answered about their own kind of
+              // business (founder, 2 Oct 2026).
+              SizedBox(height: phone ? 40 : 64),
+              Align(
+                alignment: Alignment.topLeft,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: const VisitorAssistant(page: '/'),
+                ),
+              ),
             ],
           ),
         );

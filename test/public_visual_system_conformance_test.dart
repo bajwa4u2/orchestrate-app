@@ -18,15 +18,6 @@ void main() {
     expect(register, contains('listed route is mounted through `PublicShell`'));
   });
 
-  test('estate owns the ending and no legacy Home close remains', () {
-    final shell = read('lib/app/shell/public_shell.dart');
-    final home = read('lib/features/public/screens/public_home_screen.dart');
-    expect(shell, contains('const _CommercialClosingBand()'));
-    expect(home, isNot(contains('_ClosingSection')));
-    expect(home,
-        isNot(contains('Ready to activate revenue automation infrastructure')));
-  });
-
   test('no product shows startup programme marks', () {
     final shell = read('lib/app/shell/public_shell.dart');
     final visuals =
@@ -181,27 +172,6 @@ void main() {
     expect(content, isNot(contains('visualChapter!')));
     expect(content, contains('ObHeadline(title'));
     expect(content, isNot(contains('publicDeepField')));
-  });
-
-  test('Home restores the live lifecycle flagship before the hero', () {
-    final home = read('lib/features/public/screens/public_home_screen.dart');
-    final flagship =
-        read('lib/features/public/widgets/public_overview_widget.dart');
-    final flagshipIndex = home.indexOf('const PublicOverviewWidget()');
-    final heroIndex = home.indexOf('CommercialHero(');
-    expect(flagshipIndex, greaterThan(-1));
-    expect(heroIndex, greaterThan(flagshipIndex));
-    expect(flagship, contains("fetchLifecycle()"));
-    expect(flagship, contains("_payload?['cards']"));
-    expect(flagship, contains("node.kind == 'ASSET'"));
-    expect(flagship, contains('MediaQuery.disableAnimationsOf(context)'));
-    expect(flagship, contains('The public authority could not be reached'));
-    expect(flagship, contains('class _NetworkPainter'));
-    expect(flagship, contains('OPERATING NOW'));
-    expect(flagship, contains('SingleTickerProviderStateMixin'));
-    expect(flagship, isNot(contains("'283'")));
-    expect(flagship, isNot(contains("'220'")));
-    expect(flagship, isNot(contains("'78'")));
   });
 
   test('public footer follows the current destination contract', () {

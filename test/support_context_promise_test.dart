@@ -15,8 +15,6 @@ import 'support/sibling_backend.dart';
 void main() {
   final screen = File('lib/features/client/screens/client_support_screen.dart')
       .readAsStringSync();
-  final service =
-      File('lib/features/support/services/support_service.dart').readAsStringSync();
 
   // DD-35: the screen's promises are now that Support sees where the business
   // stands, and that a person replies by email. Each is tied to the code
@@ -34,12 +32,6 @@ void main() {
     expect(assistant.contains('one business day'), isTrue);
     expect(assistant.contains('sendDirectEmail'), isTrue);
   }, skip: backendSkipReason);
-
-  test('the transport carries every promised field', () {
-    for (final field in ['sourcePage', 'message']) {
-      expect(service.contains(field), isTrue, reason: 'missing: $field');
-    }
-  });
 
   test('the endpoint attaches the identity the screen names', () {
     final controller =

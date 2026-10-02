@@ -34,7 +34,6 @@ import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart
 import 'package:orchestrate_app/features/public/screens/public_diagnostics_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
-import 'package:orchestrate_app/features/public/screens/public_home_screen.dart';
 import 'package:orchestrate_app/app/shell/operator_shell.dart';
 import 'package:orchestrate_app/app/shell/client_shell.dart';
 import 'package:orchestrate_app/app/shell/public_shell.dart';

@@ -3,71 +3,16 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:orchestrate_app/core/ui/ob_widgets.dart';
-import 'package:orchestrate_app/features/support/screens/support_drawer.dart';
-import 'package:orchestrate_app/features/support/services/support_service.dart';
-import 'package:orchestrate_app/features/support/state/support_controller.dart';
-import 'package:orchestrate_app/features/support/widgets/intake_card.dart';
-import 'package:orchestrate_app/features/support/widgets/response_stream.dart';
-import 'package:orchestrate_app/features/support/widgets/support_footer.dart';
+import 'package:orchestrate_app/features/public/widgets/visitor_assistant.dart';
 
-class ContactScreen extends StatefulWidget {
+/// CONTACT (DD-26, rebuilt 2 Oct 2026).
+///
+/// The visitor assistant is the support here: answered on the spot from what
+/// Orchestrate is today, about the visitor's own kind of business, with a
+/// person when they want one. It replaced a conversation that described
+/// retired plans ("Opportunity", "Revenue", "Focused", "Multi", "Precision").
+class ContactScreen extends StatelessWidget {
   const ContactScreen({super.key});
-
-  @override
-  State<ContactScreen> createState() => _ContactScreenState();
-}
-
-class _ContactScreenState extends State<ContactScreen> {
-  late final SupportController _controller;
-  String _draft = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = SupportController(
-      publicMode: true,
-      service: SupportService(),
-    )..addListener(_refresh);
-  }
-
-  void _refresh() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _controller.removeListener(_refresh);
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _openSupportDrawer() async {
-    await showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close support',
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 220),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const SupportDrawer(
-          publicMode: true,
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final offset = Tween<Offset>(
-          begin: const Offset(0.08, 0),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-        );
-
-        return SlideTransition(
-          position: offset,
-          child: FadeTransition(opacity: animation, child: child),
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,30 +24,19 @@ class _ContactScreenState extends State<ContactScreen> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final stacked = constraints.maxWidth < 980;
-
-              final intro = _ContactIntro(onOpenDrawer: _openSupportDrawer);
-              final support = _ContactSupportSurface(
-                controller: _controller,
-                draft: _draft,
-                onDraftChanged: (value) => setState(() => _draft = value),
-              );
-
+              const intro = _ContactIntro();
+              const support = VisitorAssistant(page: '/contact');
               if (stacked) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    intro,
-                    const SizedBox(height: 20),
-                    support,
-                  ],
+                return const Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [intro, SizedBox(height: 20), support],
                 );
               }
-
-              return Row(
+              return const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(flex: 5, child: intro),
-                  const SizedBox(width: 24),
+                  SizedBox(width: 24),
                   Expanded(flex: 6, child: support),
                 ],
               );
@@ -114,16 +48,10 @@ class _ContactScreenState extends State<ContactScreen> {
   }
 }
 
-/// DD-26: one support surface, the way support works now. The conversation
-/// on the right is the support; this side only says what it is for and the
-/// two other doors: email, and signing in for anything about an account.
-/// The explanatory cards and the second "quick answers" tray that opened the
-/// same conversation again are gone.
+/// What the page is for, and the two other doors: email, and signing in for
+/// anything about an account.
 class _ContactIntro extends StatelessWidget {
-  const _ContactIntro({required this.onOpenDrawer});
-
-  // Kept for the call site; the tray is no longer offered here.
-  final VoidCallback onOpenDrawer;
+  const _ContactIntro();
 
   @override
   Widget build(BuildContext context) {
@@ -150,9 +78,9 @@ class _ContactIntro extends StatelessWidget {
         const SizedBox(height: 14),
         const ObHeadline('Ask us anything.', size: 44),
         const SizedBox(height: 14),
-        Text('Price, how Orchestrate would find customers for your business, '
-            'or setting up your email. Ask in the box and an answer comes '
-            'back straight away.',
+        Text('Whether Orchestrate fits your kind of business, what it costs, '
+            'or how your email is connected. Ask in the box and an answer '
+            'comes back straight away; a person whenever you want one.',
             style: Ob.body(17)),
         const SizedBox(height: 28),
         door(Icons.mail_outline, 'Email',
@@ -170,76 +98,6 @@ class _ContactIntro extends StatelessWidget {
               ),
             ])),
       ],
-    );
-  }
-}
-
-class _ContactSupportSurface extends StatelessWidget {
-  const _ContactSupportSurface({
-    required this.controller,
-    required this.draft,
-    required this.onDraftChanged,
-  });
-
-  final SupportController controller;
-  final String draft;
-  final ValueChanged<String> onDraftChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 600,
-      decoration: BoxDecoration(
-        color: Ob.card,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: Ob.liftHigh,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 28, 28, 10),
-            child: Text('Write to us', style: Ob.name(26)),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 0, 28, 18),
-            child: Text(
-              'Your message reaches the Orchestrate team, and a first answer appears here.',
-              style: Ob.body(15, color: Ob.inkMuted),
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-              child: ResponseStream(
-                messages: controller.session.messages,
-                isLoading: controller.session.isLoading,
-                onFollowUpTap: (_) {},
-              ),
-            ),
-          ),
-          IntakeCard(
-            publicMode: true,
-            isLoading: controller.session.isLoading,
-            initialValue: draft,
-            onChanged: onDraftChanged,
-            onSubmit: (message, name, email) async {
-              onDraftChanged('');
-              await controller.sendMessage(
-                message: message,
-                name: name,
-                email: email,
-              );
-            },
-          ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
-            child: SupportFooter(showStripe: false),
-          ),
-        ],
-      ),
     );
   }
 }

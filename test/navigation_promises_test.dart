@@ -151,6 +151,21 @@ void main() {
     }
   }, skip: backendSkipReason);
 
+  /// THE VISITOR ASSISTANT SENDS VISITORS ONLY TO PUBLIC PAGES (2 Oct 2026).
+  test('every place the visitor assistant names is a public page', () {
+    final places = backendSource('src/support/visitor-knowledge.ts');
+    final routes = RegExp(r"route: '([^']+)'")
+        .allMatches(places)
+        .map((m) => m.group(1)!.split('?').first)
+        .toSet();
+    expect(routes.length, greaterThan(4));
+    for (final path in routes) {
+      expect(router.contains("path: '$path'"), isTrue, reason: '$path is named for visitors but not routed');
+      expect(path.startsWith('/client') || path.startsWith('/account'), isFalse,
+          reason: '$path needs an account');
+    }
+  }, skip: backendSkipReason);
+
   /// The server names where a blocker is resolved. Each must be a page the
   /// app shows today, or the button that should help lands on nothing.
   test('every route the server sends a client to is a page the app shows', () {
