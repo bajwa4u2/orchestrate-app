@@ -157,6 +157,8 @@ class EntitlementSummary extends StatefulWidget {
 /// something the heading has not already stated.
 String? _footnoteFor(Entitlement entitlement) {
   if (entitlement.source == EntitlementSource.paid) return null;
+  // "No plan active" under "No plan yet." says it twice.
+  if (entitlement.source == EntitlementSource.none) return null;
   final label = entitlement.source.label;
   final says = entitlement.says;
   String bare(String v) =>
