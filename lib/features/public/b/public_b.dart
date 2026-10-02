@@ -551,8 +551,8 @@ class PricingBScreen extends StatelessWidget {
               child: Text(
                   'No seats to count. Ordinary use is included; only unusually '
                   'heavy use costs more, counted in businesses researched and '
-                  'messages sent. Setting up your workspace is free, so you see '
-                  'what Orchestrate finds before you pay.',
+                  'messages sent. Setting up your workspace is free; you choose '
+                  'a plan when you want Orchestrate to start working.',
                   style: Ob.body(18)),
             ),
             const SizedBox(height: 22),

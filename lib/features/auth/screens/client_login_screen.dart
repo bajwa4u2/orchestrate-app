@@ -801,8 +801,9 @@ class _AuthCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 state._isJoin
-                    ? 'Setting up is free. You choose a plan only when you want '
-                        'Orchestrate to start sending; cancel any time.'
+                    ? 'Setting up is free. You choose a plan when you want '
+                        'Orchestrate to start finding businesses and sending '
+                        'notes; cancel any time.'
                     : 'Use your work email to continue.',
                 style: Theme.of(
                   context,

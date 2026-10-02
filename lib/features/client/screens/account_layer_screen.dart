@@ -5,6 +5,8 @@ import 'package:orchestrate_app/core/auth/auth_session.dart';
 import 'package:orchestrate_app/core/layout/workspace.dart';
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
 import 'package:orchestrate_app/core/theme/workspace_theme.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
+import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/screens/client_authorised_people_screen.dart';
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
@@ -67,10 +69,11 @@ class _PeopleAndAuthority extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _AccountFrame(
+    return _AccountFrame(
       title: 'People & authority',
       context_: 'Who your business recognises as able to decide for it.',
-      child: ClientAuthorisedPeopleScreen(embedded: true),
+      // In the design Setup and Support use (founder, 2 Oct 2026).
+      child: Theme(data: Ob.theme(), child: const ClientAuthorisedPeopleScreen(embedded: true)),
     );
   }
 }
@@ -195,16 +198,16 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
           // On a phone, the only place a plan can be bought; renders nothing
           // on web, where the payment provider's own page is used instead.
           const StoreSubscribePanel(),
-          WorkspaceBand(
+          _Band(
             title: 'PAYMENT AND RECORDS',
             children: [
               if (externalPurchaseAllowed &&
                   _entitlementKnown &&
                   !_holdsPlatform() &&
                   (_activation?.open ?? false))
-                WorkspaceRow(
+                _Row(
                   title: 'Choose a plan',
-                  detail: 'Finding businesses is free. A plan sends notes, '
+                  detail: 'Setting up is free. A plan finds and checks businesses, sends notes, '
                       'follows replies and runs your money.',
                   onTap: () => context.go('/client/setup?step=plan'),
                   action: const Icon(Icons.chevron_right,
@@ -217,7 +220,7 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
                   !_holdsPlatform() &&
                   _activation != null &&
                   !_activation!.open)
-                WorkspaceRow(
+                _Row(
                   title: 'Talk to us about commercial terms',
                   detail: [_activation!.says, _activation!.resolution]
                       .where((s) => s.isNotEmpty)
@@ -233,7 +236,7 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
               if (externalPurchaseAllowed &&
                   _holdsPlatform() &&
                   _owningRail() == OwningRail.stripe)
-                WorkspaceRow(
+                _Row(
                   title: 'Payment method and receipts',
                   detail: _portalError ??
                       'Change the card, download receipts or cancel, on the '
@@ -246,7 +249,7 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.open_in_new, size: 18, color: Ws.inkSubtle),
                 ),
-              WorkspaceRow(
+              _Row(
                 title: 'Your record with Orchestrate',
                 detail: 'Service agreement, invoices and statements from '
                     'Orchestrate. Separate from invoices you issue to your own '
@@ -338,10 +341,10 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          WorkspaceBand(
+          _Band(
             title: 'YOU',
             children: [
-              WorkspaceRow(
+              _Row(
                 title: 'Your name',
                 detail: session.fullName.isNotEmpty
                     ? session.fullName
@@ -357,7 +360,7 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
               // This row used to end "…before you can be recognised as
               // authorised for the business", which reads as a promise that
               // confirming an address produces authority. It does not.
-              WorkspaceRow(
+              _Row(
                 title: 'Email confirmed',
                 detail: session.emailVerified
                     ? 'This address has been confirmed. That establishes who '
@@ -380,10 +383,10 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
           // Its own band, because the distinction is the point. A person with
           // a confirmed address and no authority previously had nothing to
           // read except a green tick, and drew the obvious wrong conclusion.
-          WorkspaceBand(
+          _Band(
             title: 'WHAT THE BUSINESS PERMITS',
             children: [
-              WorkspaceRow(
+              _Row(
                 title: 'Authority to act for the business',
                 detail: 'Being signed in, and confirmed, is not the same as '
                     'the business having authorised you to act in its name. '
@@ -396,17 +399,17 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
             ],
           ),
           // LEAVING. Reachable inside the app, as the app stores require.
-          WorkspaceBand(
+          _Band(
             title: 'LEAVING ORCHESTRATE',
             children: [
-              WorkspaceRow(
+              _Row(
                 title: 'Deactivate account',
                 detail: 'Close your access. Your business\'s records are kept.',
                 onTap: () => showDeactivateAccount(context),
                 action: const Icon(Icons.chevron_right,
                     size: 18, color: Ws.inkSubtle),
               ),
-              WorkspaceRow(
+              _Row(
                 title: 'Delete account',
                 detail: 'Permanently delete your sign-in and personal profile. '
                     'This cannot be undone.',
@@ -424,7 +427,7 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
 }
 
 /// Where this person is signed in, and what they can end.
-class _TrustedDevices extends StatelessWidget {
+class _TrustedDevices extends StatefulWidget {
   const _TrustedDevices({
     required this.devices,
     required this.revoking,
@@ -438,6 +441,18 @@ class _TrustedDevices extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
+  State<_TrustedDevices> createState() => _TrustedDevicesState();
+}
+
+class _TrustedDevicesState extends State<_TrustedDevices> {
+  bool _showEnded = false;
+
+  Future<Map<String, dynamic>>? get devices => widget.devices;
+  bool get revoking => widget.revoking;
+  Future<void> Function(String deviceId) get onRevoke => widget.onRevoke;
+  VoidCallback get onRetry => widget.onRetry;
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
       future: devices,
@@ -445,7 +460,7 @@ class _TrustedDevices extends StatelessWidget {
         final children = <Widget>[];
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          children.add(const WorkspaceRow(
+          children.add(const _Row(
             title: 'Trusted devices',
             detail: 'Checking where this account is signed in.',
           ));
@@ -455,7 +470,7 @@ class _TrustedDevices extends StatelessWidget {
           // Reporting "no trusted devices" when the request failed would tell
           // somebody their account is trusted nowhere, which is the opposite
           // of what a failure means.
-          children.add(WorkspaceRow(
+          children.add(_Row(
             title: 'Trusted devices could not be read',
             detail: 'This is not the same as having none. Nothing has changed '
                 'about where you are signed in.',
@@ -465,23 +480,38 @@ class _TrustedDevices extends StatelessWidget {
         } else {
           final list = (snapshot.data?['devices'] as List?) ?? const [];
           if (list.isEmpty) {
-            children.add(const WorkspaceRow(
+            children.add(const _Row(
               title: 'No trusted devices',
               detail: 'Every sign-in asks for an email code. After entering '
                   'one you can trust that device for 60 days.',
             ));
           } else {
-            for (final raw in list) {
-              children.add(_TrustedDeviceRow(
-                device: Map<String, dynamic>.from(raw as Map),
-                busy: revoking,
-                onRevoke: onRevoke,
+            // Active sign-ins first; ended ones are history, folded away.
+            final all = [for (final raw in list) Map<String, dynamic>.from(raw as Map)];
+            final active = all.where((d) => d['active'] == true).toList();
+            final ended = all.where((d) => d['active'] != true).toList();
+            for (final d in active) {
+              children.add(_TrustedDeviceRow(device: d, busy: revoking, onRevoke: onRevoke));
+            }
+            if (ended.isNotEmpty) {
+              children.add(_Row(
+                title: _showEnded
+                    ? 'Hide ended sign-ins'
+                    : 'Show ${ended.length} ended ${ended.length == 1 ? 'sign-in' : 'sign-ins'}',
+                onTap: () => setState(() => _showEnded = !_showEnded),
+                action: Icon(_showEnded ? Icons.expand_less : Icons.expand_more,
+                    size: 18, color: Ob.inkMuted),
               ));
+              if (_showEnded) {
+                for (final d in ended) {
+                  children.add(_TrustedDeviceRow(device: d, busy: revoking, onRevoke: onRevoke));
+                }
+              }
             }
           }
         }
 
-        return WorkspaceBand(
+        return _Band(
           title: 'WHERE YOU ARE SIGNED IN',
           children: children,
         );
@@ -522,20 +552,24 @@ class _TrustedDeviceRow extends StatelessWidget {
     // Revoke ended which session. New sign-ins now carry a real name; devices
     // trusted before this still do not, so the dates are shown too — they are
     // what separates one old row from another.
-    final created = dateLabel(device['createdAt']);
-    final expires = dateLabel(device['expiresAt']);
+    final created = _plainWhen(device['createdAt']);
+    final expires = _plainWhen(device['expiresAt']);
     final parts = <String>[
-      active ? 'Active' : 'Inactive',
-      if (platform.isNotEmpty) platform,
+      active ? 'Signed in' : 'Ended',
       if (lastUsed.isNotEmpty)
-        'last used ${dateLabel(lastUsed)}'
+        'last used ${_plainWhen(lastUsed)}'
       else if (created.isNotEmpty)
         'trusted $created',
       if (active && expires.isNotEmpty) 'until $expires',
     ];
+    // "Current device" was a placeholder every early sign-in carried; the
+    // platform says more.
+    final named = name.isEmpty || name == 'Current device'
+        ? (platform.isNotEmpty ? _platformName(platform) : 'A browser')
+        : name;
 
-    return WorkspaceRow(
-      title: name.isEmpty ? 'Trusted device' : name,
+    return _Row(
+      title: named,
       detail: parts.join(' · '),
       // ENDING A DEVICE IS NOT DELETING ACCESS, AND MUST NOT LOOK LIKE IT.
       //
@@ -558,6 +592,103 @@ class _TrustedDeviceRow extends StatelessWidget {
               ),
             )
           : null,
+    );
+  }
+}
+
+/// "2 Oct 2026 · 12:56 PM", or "today · 12:56 PM".
+String _plainWhen(dynamic value) {
+  final at = DateTime.tryParse('${value ?? ''}')?.toLocal();
+  if (at == null) return '';
+  final now = DateTime.now();
+  final h = at.hour % 12 == 0 ? 12 : at.hour % 12;
+  final time = '$h:${at.minute.toString().padLeft(2, '0')} ${at.hour < 12 ? 'AM' : 'PM'}';
+  if (at.year == now.year && at.month == now.month && at.day == now.day) return 'today · $time';
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return '${at.day} ${months[at.month - 1]} ${at.year} · $time';
+}
+
+String _platformName(String platform) => switch (platform.toLowerCase()) {
+      'web' => 'A web browser',
+      'ios' => 'An iPhone or iPad',
+      'android' => 'An Android phone',
+      'windows' => 'A Windows computer',
+      'macos' => 'A Mac',
+      _ => platform,
+    };
+
+/// A titled group on the Account pages, in the design Setup and Support use.
+class _Band extends StatelessWidget {
+  const _Band({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 26),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(title.toUpperCase(), style: Ob.eyebrow()),
+        const SizedBox(height: 10),
+        ObCard(
+          padding: EdgeInsets.zero,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0) const Divider(height: 1, color: Ob.line),
+              children[i],
+            ],
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+/// One line in a group: what it is, what it says, and the one thing to do.
+class _Row extends StatelessWidget {
+  const _Row({
+    required this.title,
+    this.detail,
+    this.action,
+    this.onTap,
+    this.tone = RowTone.neutral,
+  });
+
+  final String title;
+  final String? detail;
+  final Widget? action;
+  final VoidCallback? onTap;
+  final RowTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final mark = switch (tone) {
+      RowTone.attention || RowTone.problem => Ob.refused,
+      RowTone.good => Ob.ink,
+      _ => null,
+    };
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (mark != null) ...[
+            Container(width: 3, height: 36, color: mark),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: Ob.strong(15)),
+              if (detail != null && detail!.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(detail!, style: Ob.body(14, color: Ob.inkSoft)),
+              ],
+            ]),
+          ),
+          if (action != null) ...[const SizedBox(width: 10), action!],
+        ]),
+      ),
     );
   }
 }
@@ -618,12 +749,16 @@ class _AccountFrameState extends State<_AccountFrame> {
       ('Account & security', '/account/security'),
     ];
 
+    final phone = Workspace.sizeOf(context, MediaQuery.sizeOf(context).width).isPhone;
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        WorkspaceHeader(
-          title: title,
-          context_: context_,
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, foregroundColor: Ob.inkMuted),
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: const Text('Back'),
           // THE TWO RETURNS DISAGREED.
           //
           // This arrow went to Today while Android's Back went to the
@@ -633,11 +768,17 @@ class _AccountFrameState extends State<_AccountFrame> {
           // navigation bar.
           //
           // Both now ask the same map, so they cannot drift apart again.
-          onBack: () => context.go(
-            semanticParentOf(GoRouterState.of(context).uri.path) ??
-                canonicalWorkspaceHome,
+            onPressed: () => context.go(
+              semanticParentOf(GoRouterState.of(context).uri.path) ??
+                  canonicalWorkspaceHome,
+            ),
           ),
         ),
+        const SizedBox(height: 6),
+        ObHeadline(title, size: phone ? 30 : 40),
+        const SizedBox(height: 6),
+        Text(context_, style: Ob.body(16, color: Ob.inkSoft)),
+        const SizedBox(height: 18),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -660,9 +801,12 @@ class _AccountFrameState extends State<_AccountFrame> {
             ],
           ),
         ),
-        const SizedBox(height: 20),
-        child,
         const SizedBox(height: 24),
+        Align(
+          alignment: Alignment.topLeft,
+          child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 860), child: child),
+        ),
+        const SizedBox(height: 32),
       ],
     );
   }
@@ -687,20 +831,13 @@ class _AreaChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? Ws.accentSoft : Colors.transparent,
-            border: Border.all(
-                color: selected ? Ws.accent : Ws.hairlineStrong),
-            borderRadius: BorderRadius.circular(20),
+            color: selected ? Ob.ink : Colors.transparent,
+            border: Border.all(color: selected ? Ob.ink : Ob.line, width: 1.2),
+            borderRadius: BorderRadius.circular(Ob.radiusPill),
           ),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: selected ? Ws.accent : Ws.inkMuted,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-          ),
+          child: Text(label, style: Ob.body(14, color: selected ? Ob.onInk : Ob.ink)),
         ),
       ),
     );

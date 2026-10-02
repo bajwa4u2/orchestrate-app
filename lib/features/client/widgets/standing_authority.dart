@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:flutter/material.dart';
 
 import 'package:orchestrate_app/core/authority/client_authority.dart';
@@ -56,7 +57,7 @@ class _Standing extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            border: Border.all(color: AppTheme.publicMuted.withValues(alpha: 0.25)),
+            border: Border.all(color: Ob.inkMuted.withValues(alpha: 0.25)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -77,7 +78,7 @@ class _Standing extends StatelessWidget {
                         'decide for it.'
                     : authority.organizationMeaning,
               ),
-              const Divider(height: 28, color: AppTheme.publicLine, thickness: 1),
+              const Divider(height: 28, color: Ob.line, thickness: 1),
               _Part(
                 title: 'You',
                 settled: authority.youAreRecognised,
@@ -88,7 +89,7 @@ class _Standing extends StatelessWidget {
                 // an oversight; an area shown as not held reads as an answer.
                 areas: authority.youAreRecognised ? authority.areas : const [],
               ),
-              const Divider(height: 28, color: AppTheme.publicLine, thickness: 1),
+              const Divider(height: 28, color: Ob.line, thickness: 1),
               _Part(
                 title: 'Orchestrate',
                 settled: authority.orchestrateEverGranted,
@@ -130,7 +131,7 @@ class _Standing extends StatelessWidget {
             'Your business describes you as "${authority.describedAs}". '
             'A job title is recorded, and carries no authority by itself — '
             'the areas above are what govern.',
-            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+            style: text.bodySmall?.copyWith(color: Ob.inkMuted),
           ),
         ],
       ],
@@ -172,7 +173,7 @@ class _Part extends StatelessWidget {
             children: [
               Text(title, style: text.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(meaning, style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+              Text(meaning, style: text.bodySmall?.copyWith(color: Ob.inkMuted)),
               if (provenance != null) ...[
                 const SizedBox(height: 6),
                 Text(provenance!.say,
@@ -180,7 +181,7 @@ class _Part extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(provenance!.why,
                     style: text.bodySmall
-                        ?.copyWith(color: AppTheme.publicMuted, height: 1.5)),
+                        ?.copyWith(color: Ob.inkMuted, height: 1.5)),
               ],
               if (areas.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -216,7 +217,7 @@ class _AreaLine extends StatelessWidget {
           Icon(
             held ? Icons.check_circle_outline : Icons.remove_circle_outline,
             size: 15,
-            color: held ? AppTheme.publicAccent : AppTheme.publicMuted,
+            color: held ? Ob.ink : Ob.inkMuted,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -227,22 +228,22 @@ class _AreaLine extends StatelessWidget {
                     text: area.label,
                     style: text.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: held ? null : AppTheme.publicMuted,
+                      color: held ? null : Ob.inkMuted,
                     ),
                   ),
                   TextSpan(
                     text: held ? ' — you may approve these' : ' — not yours to approve',
-                    style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                    style: text.bodySmall?.copyWith(color: Ob.inkMuted),
                   ),
                   if (held && area.canAuthoriseOrchestrate)
                     TextSpan(
                       text: ', and you may let Orchestrate do it',
-                      style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                      style: text.bodySmall?.copyWith(color: Ob.inkMuted),
                     ),
                   if (held && area.canRecogniseOthers)
                     TextSpan(
                       text: ', and you may recognise others',
-                      style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                      style: text.bodySmall?.copyWith(color: Ob.inkMuted),
                     ),
                 ],
               ),
@@ -265,10 +266,10 @@ class _Mark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, color) = settled
-        ? (Icons.check_circle, AppTheme.publicAccent)
+        ? (Icons.check_circle, Ob.ink)
         : pending
-            ? (Icons.schedule, AppTheme.amber)
-            : (Icons.circle_outlined, AppTheme.publicMuted);
+            ? (Icons.schedule, Ob.ink)
+            : (Icons.circle_outlined, Ob.inkMuted);
     return Padding(
       padding: const EdgeInsets.only(top: 3),
       child: Icon(icon, size: 16, color: color),
@@ -292,10 +293,10 @@ class _SubmissionStanding extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final needsYou = submission.state.needsYou;
     final accent = needsYou
-        ? AppTheme.amber
+        ? Ob.ink
         : submission.state == SubmissionState.admitted
-            ? AppTheme.publicAccent
-            : AppTheme.publicMuted;
+            ? Ob.ink
+            : Ob.inkMuted;
 
     return Container(
       width: double.infinity,
@@ -324,7 +325,7 @@ class _SubmissionStanding extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(submission.meaning,
-                    style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+                    style: text.bodySmall?.copyWith(color: Ob.inkMuted)),
                 // The operator's own words, verbatim. Paraphrasing either of
                 // these would lose the only part that says what to do next.
                 if (submission.operatorAsked != null) ...[
@@ -344,7 +345,7 @@ class _SubmissionStanding extends StatelessWidget {
                 if (submission.asserted != null) ...[
                   const SizedBox(height: 10),
                   Text('You asked to be recognised for: ${submission.asserted}',
-                      style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+                      style: text.bodySmall?.copyWith(color: Ob.inkMuted)),
                 ],
               ],
             ),
@@ -391,7 +392,7 @@ class _Blocker extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.amber.withValues(alpha: 0.4)),
+        border: Border.all(color: Ob.ink.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -399,7 +400,7 @@ class _Blocker extends StatelessWidget {
         children: [
           Text(step.say, style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
-          Text(step.because, style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+          Text(step.because, style: text.bodySmall?.copyWith(color: Ob.inkMuted)),
           if (onResolve != null) ...[
             const SizedBox(height: 12),
             OutlinedButton(onPressed: onResolve, child: const Text('Sort this out')),

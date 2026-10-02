@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -113,7 +114,7 @@ class _AuthorityEvidencePanelState extends State<AuthorityEvidencePanel> {
     }
     if (_error != null) {
       return Text(_error!,
-          style: text.bodySmall?.copyWith(color: AppTheme.publicMuted));
+          style: text.bodySmall?.copyWith(color: Ob.inkMuted));
     }
     if (standing == null || standing.state == SubmissionState.notSubmitted) {
       return const SizedBox.shrink();
@@ -123,7 +124,7 @@ class _AuthorityEvidencePanelState extends State<AuthorityEvidencePanel> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.publicLine),
+        border: Border.all(color: Ob.line),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -141,7 +142,7 @@ class _AuthorityEvidencePanelState extends State<AuthorityEvidencePanel> {
               children: [
                 const Padding(
                   padding: EdgeInsets.only(top: 3),
-                  child: Icon(Icons.check, size: 13, color: AppTheme.publicAccent),
+                  child: Icon(Icons.check, size: 13, color: Ob.ink),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -154,7 +155,7 @@ class _AuthorityEvidencePanelState extends State<AuthorityEvidencePanel> {
                       const SizedBox(height: 1),
                       Text(item.detail,
                           style: text.bodySmall
-                              ?.copyWith(color: AppTheme.publicMuted, height: 1.45)),
+                              ?.copyWith(color: Ob.inkMuted, height: 1.45)),
                     ],
                   ),
                 ),
@@ -181,7 +182,7 @@ class _AuthorityEvidencePanelState extends State<AuthorityEvidencePanel> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.amber.withValues(alpha: 0.45)),
+                border: Border.all(color: Ob.ink.withValues(alpha: 0.45)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
@@ -196,7 +197,7 @@ class _AuthorityEvidencePanelState extends State<AuthorityEvidencePanel> {
                   const SizedBox(height: 6),
                   Text(standing.asking!.why,
                       style: text.bodySmall
-                          ?.copyWith(color: AppTheme.publicMuted, height: 1.5)),
+                          ?.copyWith(color: Ob.inkMuted, height: 1.5)),
                 ],
               ),
             ),
@@ -210,7 +211,7 @@ class _AuthorityEvidencePanelState extends State<AuthorityEvidencePanel> {
                       'authorisation lives, who signed it, a record we can check — '
                       'you can add it. It does not have to be a document.',
               style: text.bodySmall
-                  ?.copyWith(color: AppTheme.publicMuted, height: 1.5),
+                  ?.copyWith(color: Ob.inkMuted, height: 1.5),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -226,7 +227,7 @@ class _AuthorityEvidencePanelState extends State<AuthorityEvidencePanel> {
             if (_refusal != null) ...[
               const SizedBox(height: 8),
               Text(_refusal!,
-                  style: text.bodySmall?.copyWith(color: AppTheme.amber)),
+                  style: text.bodySmall?.copyWith(color: Ob.ink)),
             ],
             const SizedBox(height: 10),
             Align(

@@ -18,17 +18,22 @@ void main() {
   final service =
       File('lib/features/support/services/support_service.dart').readAsStringSync();
 
-  test('the screen still makes the promise', () {
-    expect(screen.contains('are attached'), isTrue);
-  });
+  // DD-35: the screen's promises are now that Support sees where the business
+  // stands, and that a person replies by email. Each is tied to the code
+  // that keeps it.
+  test('the screen promises Support sees the business, and it does', () {
+    expect(screen.contains('Support sees where'), isTrue);
+    final assistant = backendSource('src/support/support-assistant.service.ts');
+    expect(assistant.contains('this.standing.forClient('), isTrue,
+        reason: "an answer must be built from the business's standing");
+  }, skip: backendSkipReason);
 
-  test('the client sends the surface it promises to send', () {
-    expect(
-      screen.contains('sourcePage:'),
-      isTrue,
-      reason: 'the screen promises the surface travels and must send it',
-    );
-  });
+  test('the screen promises a person by email, and the handoff emails support', () {
+    expect(screen.contains('A person replies by email within one business day.'), isTrue);
+    final assistant = backendSource('src/support/support-assistant.service.ts');
+    expect(assistant.contains('one business day'), isTrue);
+    expect(assistant.contains('sendDirectEmail'), isTrue);
+  }, skip: backendSkipReason);
 
   test('the transport carries every promised field', () {
     for (final field in ['sourcePage', 'message']) {

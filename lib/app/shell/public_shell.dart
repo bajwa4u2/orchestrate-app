@@ -387,12 +387,12 @@ class _CommercialClosingBand extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Set up free. See who needs you before you pay.',
+                    Text('Set up free. Choose a plan when you are ready.',
                         style: Ob.name(stacked ? 21 : 24)),
                     const SizedBox(height: 4),
                     Text(
-                        'Orchestrate starts finding businesses as soon as your '
-                        'setup is done.',
+                        'With a plan, Orchestrate finds and checks businesses '
+                        'for you and sends the notes you approve.',
                         style: Ob.body(14.5)),
                   ],
                 );

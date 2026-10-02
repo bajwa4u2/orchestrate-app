@@ -55,7 +55,7 @@ List<OwnerStep> ownerStepsFrom(Object? eligibility, {String? authority}) {
     OwnerStep(
       key: 'plan',
       title: 'Choose your plan',
-      line: 'Finding businesses is free. Sending starts the day you choose.',
+      line: 'Setting up is free. A plan starts finding businesses and sending your notes.',
       cta: 'Choose a plan',
       route: '/client/setup?step=plan',
       done: ready.contains('subscription'),

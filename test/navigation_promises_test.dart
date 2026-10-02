@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/sibling_backend.dart';
+
 /// A DESTINATION MUST BE THE PLACE IT SAYS IT IS.
 ///
 /// Opening every client route found two navigation entry points promising
@@ -138,4 +140,22 @@ void main() {
           reason: '$path is retired and must not be offered');
     }
   });
+
+  /// SUPPORT SENDS PEOPLE ONLY TO PAGES THAT EXIST (DD-35).
+  ///
+  /// Support's answers name places from one backend table. Each must be a
+  /// page this app shows today, never a retired one.
+  test('every place Support can send a client is a page the app shows', () {
+    final places = backendSource('src/support/client-places.ts');
+    final routes = RegExp(r"route: '([^']+)'")
+        .allMatches(places)
+        .map((m) => m.group(1)!.split('?').first)
+        .toSet();
+    expect(routes.length, greaterThan(8));
+    for (final path in routes) {
+      expect(router.contains("path: '$path'"), isTrue, reason: '$path is named by Support but not routed');
+      expect(retired.containsKey(path), isFalse, reason: '$path is retired');
+    }
+  }, skip: backendSkipReason);
+
 }

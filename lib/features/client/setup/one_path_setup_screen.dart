@@ -2887,8 +2887,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         _head(_planActive ? 'Your plan is active.' : 'Choose when to start sending.',
             _planActive
                 ? 'Orchestrate can send the notes you approve.'
-                : 'Setting up is free. Orchestrate can start finding businesses '
-                    'for you now; sending notes begins when you choose a plan.',
+                : 'Setting up is free. A plan starts Orchestrate finding and '
+                    'checking businesses for you, and sending the notes you approve.',
             phone: phone),
         _gap(),
         if (!_planActive && (_awaitingPayment || widget.checkoutStatus != null)) ...[
@@ -4163,8 +4163,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         return _SideCard(
           label: 'WHAT YOU GET EITHER WAY',
           children: [
-            _row('Businesses found and explained', 'Now, free'),
-            _row('First notes written for you to read', 'Now, free'),
+            _row('Your setup, kept', 'Now, free'),
+            _row('Businesses found, checked and explained', 'With a plan'),
+            _row('First notes written for you to approve', 'With a plan'),
             _row('Notes sent, replies followed up', 'With a plan'),
             _row('Proposals, invoices, payments', 'With a plan'),
             Text('Pay by card, or through the App Store or Google Play on '
@@ -4256,7 +4257,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         case SetupStep.plan:
           return _planActive
               ? 'Active'
-              : 'Not chosen yet. Finding businesses is free.';
+              : 'Not chosen yet. A plan starts finding businesses.';
         case SetupStep.ready:
           return '';
       }

@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:flutter/material.dart';
 import 'package:orchestrate_app/core/authority/client_authority.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
@@ -107,7 +108,7 @@ class _ClientAuthorisedPeopleScreenState
           Text(
             'Who your business recognises as able to make decisions on its '
             'behalf, and what each of them is recognised for.',
-            style: text.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+            style: text.bodyMedium?.copyWith(color: Ob.inkMuted),
           ),
           const SizedBox(height: 24),
         ],
@@ -160,7 +161,7 @@ class _ClientAuthorisedPeopleScreenState
               const SizedBox(height: 12),
               Text(
                 _peopleNote!,
-                style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                style: text.bodySmall?.copyWith(color: Ob.inkMuted),
               ),
             ],
             const SizedBox(height: 20),
@@ -199,7 +200,7 @@ class _ClientAuthorisedPeopleScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              "Your business's legal name is set in Business. Someone can only "
+              "Your business's legal name is set in Setup, on Your business. Someone can only "
               "be recognised as authorised to act for a named business.",
             ),
           ),
@@ -258,7 +259,7 @@ class _ClientAuthorisedPeopleScreenState
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Withdraw', style: TextStyle(color: Colors.red)),
+            child: const Text('Withdraw', style: TextStyle(color: Ob.refused)),
           ),
         ],
       ),
@@ -302,7 +303,7 @@ class _NobodyYetCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.publicMuted.withValues(alpha: 0.25)),
+        border: Border.all(color: Ob.inkMuted.withValues(alpha: 0.25)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -323,7 +324,7 @@ class _NobodyYetCard extends StatelessWidget {
                     'Orchestrate will not act on them just because someone is '
                     'signed in. Until a person is named, those stay unavailable '
                     '— which is deliberate.',
-            style: text.bodyMedium?.copyWith(color: AppTheme.publicMuted),
+            style: text.bodyMedium?.copyWith(color: Ob.inkMuted),
           ),
           if (!underReview) ...[
             const SizedBox(height: 20),
@@ -365,7 +366,7 @@ class _PersonCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.publicMuted.withValues(alpha: 0.25)),
+        border: Border.all(color: Ob.inkMuted.withValues(alpha: 0.25)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -375,7 +376,7 @@ class _PersonCard extends StatelessWidget {
               style: text.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
           if (person['describedAs'] != null)
             Text(person['describedAs'].toString(),
-                style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+                style: text.bodySmall?.copyWith(color: Ob.inkMuted)),
           const SizedBox(height: 14),
           for (final a in areas) ...[
             Row(
@@ -406,7 +407,7 @@ class _PersonCard extends StatelessWidget {
                           child: Text(
                             'Recorded from: ${a['establishedFrom']}',
                             style: text.bodySmall
-                                ?.copyWith(color: AppTheme.publicMuted),
+                                ?.copyWith(color: Ob.inkMuted),
                           ),
                         ),
                     ],
@@ -419,7 +420,7 @@ class _PersonCard extends StatelessWidget {
               ],
             ),
             if (a != areas.last)
-              const Divider(height: 24, color: AppTheme.publicLine, thickness: 1),
+              const Divider(height: 24, color: Ob.line, thickness: 1),
           ],
         ],
       ),
@@ -441,13 +442,13 @@ class _Permission extends StatelessWidget {
         children: [
           Icon(on ? Icons.check : Icons.remove,
               size: 14,
-              color: on ? Colors.green : AppTheme.publicMuted),
+              color: on ? Ob.ink : Ob.inkMuted),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: on ? null : AppTheme.publicMuted,
+                    color: on ? null : Ob.inkMuted,
                   ),
             ),
           ),
@@ -518,7 +519,7 @@ class _DesignationDialogState extends State<_DesignationDialog> {
                 'Ask only for what is true. Whoever reviews this can reduce it '
                 'and cannot increase it, so asking for more costs you time '
                 'rather than gaining anything.',
-                style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                style: text.bodySmall?.copyWith(color: Ob.inkMuted),
               ),
               const SizedBox(height: 12),
               for (final entry in _copy.entries)
@@ -570,8 +571,8 @@ class _DesignationDialogState extends State<_DesignationDialog> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   border: Border.all(
-                      color: AppTheme.publicMuted.withValues(alpha: 0.3)),
-                  borderRadius: BorderRadius.circular(AppTheme.radius),
+                      color: Ob.inkMuted.withValues(alpha: 0.3)),
+                  borderRadius: BorderRadius.circular(Ob.radiusCard),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,7 +587,7 @@ class _DesignationDialogState extends State<_DesignationDialog> {
                       'claim and holding the authority are different things, '
                       'and Orchestrate keeps them apart on purpose.',
                       style: text.bodySmall
-                          ?.copyWith(color: AppTheme.publicMuted),
+                          ?.copyWith(color: Ob.inkMuted),
                     ),
                   ],
                 ),
@@ -685,7 +686,7 @@ class _CapabilityBlock extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.publicMuted.withValues(alpha: 0.25)),
+        border: Border.all(color: Ob.inkMuted.withValues(alpha: 0.25)),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -695,7 +696,7 @@ class _CapabilityBlock extends StatelessWidget {
               style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 2),
           Text(copy['meaning']?.toString() ?? '',
-              style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+              style: text.bodySmall?.copyWith(color: Ob.inkMuted)),
           const SizedBox(height: 8),
           // Three separate choices, never one. Being able to approve something
           // yourself and being able to let software do it are different
@@ -762,7 +763,7 @@ class _ErrorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+        border: Border.all(color: Ob.refused.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -774,7 +775,7 @@ class _ErrorCard extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
-                  ?.copyWith(color: AppTheme.publicMuted)),
+                  ?.copyWith(color: Ob.inkMuted)),
           const SizedBox(height: 12),
           OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
         ],
@@ -840,8 +841,8 @@ class _ConfirmEmailBandState extends State<_ConfirmEmailBand> {
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.amber.withValues(alpha: 0.45)),
-        borderRadius: BorderRadius.circular(AppTheme.radius),
+        border: Border.all(color: Ob.ink.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(Ob.radiusCard),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -853,7 +854,7 @@ class _ConfirmEmailBandState extends State<_ConfirmEmailBand> {
             widget.identity['meaning']?.toString() ??
                 'Someone stating that they can commit a business needs to be '
                     'reachable at a confirmed address.',
-            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+            style: text.bodySmall?.copyWith(color: Ob.inkMuted),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -875,7 +876,7 @@ class _ConfirmEmailBandState extends State<_ConfirmEmailBand> {
               if (_result != null)
                 Text(_result!,
                     style:
-                        text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+                        text.bodySmall?.copyWith(color: Ob.inkMuted)),
             ],
           ),
         ],
@@ -935,7 +936,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                 'You are telling us who your business believes can decide for '
                 'it. They confirm it themselves, and nothing changes until they '
                 'do, so this gives them nothing on its own.',
-                style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                style: text.bodySmall?.copyWith(color: Ob.inkMuted),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -988,13 +989,13 @@ class _InviteDialogState extends State<_InviteDialog> {
                             ?.toString() ??
                         '',
                     style:
-                        text.bodySmall?.copyWith(color: AppTheme.publicMuted),
+                        text.bodySmall?.copyWith(color: Ob.inkMuted),
                   ),
                 ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!,
-                    style: text.bodySmall?.copyWith(color: Colors.red)),
+                    style: text.bodySmall?.copyWith(color: Ob.refused)),
               ],
             ],
           ),
