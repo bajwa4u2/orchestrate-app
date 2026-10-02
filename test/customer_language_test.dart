@@ -54,16 +54,6 @@ void main() {
     }, skip: backendSkipReason);
   }
 
-  test('a provider code is rendered as a name', () {
-    final screen = File('lib/features/client/screens/client_mailbox_screen.dart')
-        .readAsStringSync();
-    expect(screen.contains('String _providerName('), isTrue);
-    expect(screen.contains("'IMAP_SMTP': 'SMTP and IMAP'"), isTrue);
-    // An unknown code is still shown — knowing it is something beats knowing
-    // nothing — but spelled as words.
-    expect(screen.contains('split(RegExp('), isTrue);
-  });
-
   /// A REMEMBERED CHOICE IS NOT A PLAN.
   ///
   /// The plan fields fell back to the plan the session remembers someone
@@ -73,21 +63,13 @@ void main() {
   /// the one a person reads first.
   test('no surface states a plan from a remembered selection', () {
     for (final path in <String>[
-      'lib/features/client/screens/client_billing_screen.dart',
-      'lib/features/client/screens/client_settings_screen.dart',
+      // Billing and Workspace settings retired into these two (DD-34).
+      'lib/features/client/screens/account_layer_screen.dart',
+      'lib/features/client/setup/one_path_setup_screen.dart',
     ]) {
       expect(File(path).readAsStringSync().contains('selectedPlanDisplay'),
           isFalse,
           reason: '$path states a subscription from browsing history');
     }
-  });
-
-  test('a readiness section is rendered as a place', () {
-    final screen =
-        File('lib/features/client/screens/client_business_identity_screen.dart')
-            .readAsStringSync();
-    expect(screen.contains('String _sectionName('), isTrue);
-    expect(screen.contains(r"'Section: ${"), isFalse);
-    expect(screen.contains('field(s)'), isFalse);
   });
 }

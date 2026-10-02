@@ -36,7 +36,7 @@ enum WorkspaceArea {
   market('Market', '/client/market'),
   relationships('Customers', '/client/relationships'),
   money('Money', '/client/money'),
-  business('Setup', '/client/business'),
+  business('Setup', '/client/setup'),
   account('Account', '/account/people');
 
   const WorkspaceArea(this.label, this.root);
@@ -62,46 +62,16 @@ class _Surface {
 /// and is a bug for anything else. `surfacesMissingOwnership` exists so that
 /// is measurable rather than a matter of opinion.
 const Map<String, _Surface> _surfaces = {
-  // ── BUSINESS ─────────────────────────────────────────────────────────
-  '/client/representation': _Surface(
-      'Business identity', WorkspaceArea.business, parent: '/client/business'),
-  '/app/branding':
-      _Surface('Branding', WorkspaceArea.business, parent: '/client/business'),
-  // The hub's "Market and targeting" row. Caught by the hub-destination test
-  // rather than by eye — the bottom bar already absorbed this path, so it
-  // highlighted Business correctly and only the return was missing.
-  '/client/business-identity': _Surface(
-      'Market and targeting', WorkspaceArea.business,
-      parent: '/client/business'),
-  '/client/infrastructure': _Surface('Mailbox and sending',
-      WorkspaceArea.business, parent: '/client/business'),
-  // The Business hub opens /app/trust, not /client/trust — the latter is a
-  // generic backend diagnostic. Only the /client path was mapped, so the real
-  // Credentials screen had no return and the bottom bar fell back to Today.
-  // Both are kept: they are different screens.
-  '/app/trust':
-      _Surface('Credentials', WorkspaceArea.business, parent: '/client/business'),
-  '/client/trust':
-      _Surface('Credentials', WorkspaceArea.business, parent: '/client/business'),
-  '/app/evidence':
-      _Surface('Evidence', WorkspaceArea.business, parent: '/client/business'),
-  '/app/artifacts':
-      _Surface('Artifacts', WorkspaceArea.business, parent: '/client/business'),
-  '/client/records':
-      _Surface('Records', WorkspaceArea.business, parent: '/client/business'),
-  '/client/newsletter':
-      _Surface('Newsletter', WorkspaceArea.business, parent: '/client/business'),
-  '/app/newsletter':
-      _Surface('Newsletter', WorkspaceArea.business, parent: '/client/business'),
+  // ── SETUP ────────────────────────────────────────────────────────
+  // The Business pages that lived here (identity, branding, targeting,
+  // mailbox, credentials, evidence, artifacts, records, newsletter) are
+  // retired; each address redirects into Setup or Account (DD-34).
 
   // ── RELATIONSHIPS ────────────────────────────────────────────────────
   // One name, one home: the page says "Waiting on you" and is reached from
   // Today, so its trail and its tab say the same (2 Oct 2026).
   '/client/inbound': _Surface('Waiting on you', WorkspaceArea.today,
       parent: '/client/today'),
-  '/client/contacts/inventory': _Surface(
-      'Contacts', WorkspaceArea.relationships,
-      parent: '/client/relationships'),
   '/client/activity': _Surface('Activity', WorkspaceArea.relationships,
       parent: '/client/relationships'),
   '/client/meetings': _Surface('Meetings', WorkspaceArea.relationships,
@@ -117,21 +87,8 @@ const Map<String, _Surface> _surfaces = {
   '/client/support':
       _Surface('Support', WorkspaceArea.account, parent: canonicalWorkspaceHome),
 
-  // SURFACES THAT WERE ON NO MAP AT ALL.
-  //
-  // Reached from Account & security, and absent here, so the shell drew them
-  // no return and system Back had no parent to resolve. Workspace settings
-  // opened with no title, no breadcrumb and no way back that did not involve
-  // leaving the app — found by opening it on a Pixel.
-  //
-  // Each returns to the account surface that offers it, which is where a
-  // person came from and what contains it.
-  '/client/settings': _Surface('Workspace settings', WorkspaceArea.account,
-      parent: '/account/security'),
-  '/client/account': _Surface('Your account', WorkspaceArea.account,
-      parent: '/account/security'),
-  '/client/billing': _Surface('Plan and billing', WorkspaceArea.account,
-      parent: '/account/plan'),
+  '/account/record': _Surface('Your record with Orchestrate',
+      WorkspaceArea.account, parent: '/account/plan'),
 };
 
 /// The area landings. These are destinations in their own right and offer no
@@ -141,7 +98,8 @@ const Set<String> _landings = {
   '/client/market',
   '/client/relationships',
   '/client/money',
-  '/client/business',
+  '/client/setup',
+  '/client/setup/workspace',
   '/account/people',
 };
 

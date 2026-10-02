@@ -72,13 +72,34 @@ class _Command {
 }
 
 /// Human actions and places, not endpoints.
+///
+/// ONLY PLACES THAT EXIST TODAY (DD-34, founder, 2 Oct 2026). Search kept
+/// offering the retired Business pages (business settings, targeting,
+/// credentials, evidence) after Setup replaced them, so a client searching
+/// found yesterday's product. Each command is a current place; a test holds
+/// every path here to a mounted, current screen.
 const List<_Command> _commands = [
   _Command('What needs me', '/client/today', Icons.today_outlined),
+  _Command('Market', '/client/market', Icons.travel_explore_outlined,
+      hint: 'Businesses worth your time'),
   _Command('Customers', '/client/relationships', Icons.people_outline),
   _Command('Money', '/client/money', Icons.payments_outlined,
       hint: 'Agreed, invoiced, paid'),
-  _Command('Getting ready', '/client/setup', Icons.flag_outlined,
+  _Command('Setup', '/client/setup?step=ready', Icons.tune_outlined,
       hint: 'Where your setup stands'),
+  _Command('Your business', '/client/setup?step=business', Icons.storefront_outlined,
+      hint: 'Name, address, kind of business, logo'),
+  _Command('Who you want', '/client/setup?step=want', Icons.groups_outlined,
+      hint: 'Buyers, places, people to reach, who never to contact'),
+  _Command("When they're ready", '/client/setup?step=moments', Icons.bolt_outlined,
+      hint: 'The moments that bring you work'),
+  _Command('What you offer and your proof', '/client/setup?step=offer',
+      Icons.verified_outlined,
+      hint: 'Offer, licences, insurance, references, how notes sound'),
+  _Command('How you get paid', '/client/setup?step=payment', Icons.request_quote_outlined,
+      hint: 'Deposits, terms, retainage'),
+  _Command('Email and sign-off', '/client/setup?step=email', Icons.mark_email_read_outlined,
+      hint: 'Where notes are sent from, and how you sign them'),
   // NO PIPELINE, NO WAITING VIEW.
   //
   // Both pointed at ?view= values nothing reads. The relationships screen has
@@ -87,23 +108,14 @@ const List<_Command> _commands = [
   // not offering them: a person searches the palette for the view they were
   // promised, lands on the ordinary list, and concludes the product is broken
   // rather than that the view was never built.
-  _Command('Business settings', '/client/business', Icons.tune_outlined),
-  // These were fragments — #targeting, #infrastructure, #trust — and nothing
-  // in the app reads a fragment, so all three landed on the Business hub. The
-  // sections are real routes; the palette now names them.
-  _Command('Targeting and discovery', '/client/business-identity',
-      Icons.travel_explore_outlined),
-  _Command('Mailbox and sending', '/client/infrastructure',
-      Icons.mark_email_read_outlined),
-  _Command('Credentials', '/app/trust', Icons.verified_outlined,
-      hint: 'Certifications, licences, insurance'),
-  _Command('Evidence', '/app/evidence', Icons.folder_copy_outlined,
-      hint: 'What your business can show for itself'),
   _Command('People and authority', '/account/people', Icons.badge_outlined,
       hint: 'Who can decide for the business'),
   _Command('Plan and billing', '/account/plan', Icons.receipt_long_outlined,
       hint: 'Your subscription to Orchestrate'),
-  _Command('Account and security', '/account/security', Icons.lock_outline),
+  _Command('Your record with Orchestrate', '/account/record', Icons.folder_outlined,
+      hint: "Orchestrate's agreement and invoices to you"),
+  _Command('Account and security', '/account/security', Icons.lock_outline,
+      hint: 'Your name, signed-in devices, delete account'),
   _Command('Support', '/client/support', Icons.help_outline),
 ];
 

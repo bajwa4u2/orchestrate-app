@@ -156,6 +156,7 @@ class Candidate {
     required this.dispositionNote,
     required this.discoveredRepresentations,
     this.checks,
+    this.moments = const [],
   });
 
   /// Canonical counterparty identity. Server-derived and stable — never a
@@ -197,6 +198,9 @@ class Candidate {
 
   /// What was proven about it, and when. Present only when every test passed.
   final ProspectChecks? checks;
+
+  /// The owner's moments seen for this business, newest first (DD-34).
+  final List<CandidateMoment> moments;
 
   /// Whether this is waiting on a person's judgement.
   ///
@@ -251,6 +255,82 @@ class Candidate {
       checks: json['checks'] is Map
           ? ProspectChecks.fromJson(Map<String, dynamic>.from(json['checks'] as Map))
           : null,
+      moments: ((json['moments'] as List?) ?? const [])
+          .whereType<Map>()
+          .map((m) => CandidateMoment.fromJson(Map<String, dynamic>.from(m)))
+          .where((m) => m.said.isNotEmpty)
+          .toList(growable: false),
+    );
+  }
+}
+
+/// One of the owner's moments, seen for this business: what was seen, where,
+/// and when. "Why now", as a fact a person can open and check.
+class CandidateMoment {
+  const CandidateMoment({
+    required this.key,
+    required this.label,
+    required this.said,
+    required this.at,
+    required this.url,
+    required this.source,
+  });
+
+  final String key;
+
+  /// The moment as the owner chose it.
+  final String label;
+
+  /// What was seen: "Won the Lakewood school renovation".
+  final String said;
+  final DateTime? at;
+  final String? url;
+
+  /// Where it was seen: "SAM.gov contract awards".
+  final String source;
+
+  static CandidateMoment fromJson(Map<String, dynamic> j) => CandidateMoment(
+        key: (j['key'] as String?) ?? '',
+        label: (j['label'] as String?) ?? '',
+        said: ((j['said'] as String?) ?? '').trim(),
+        at: DateTime.tryParse(j['at']?.toString() ?? '')?.toLocal(),
+        url: _text(j['url']),
+        source: (j['source'] as String?) ?? '',
+      );
+}
+
+/// The moments a business chose in Setup, and whether each is watched yet.
+class MarketWatching {
+  const MarketWatching({
+    required this.kindLabel,
+    required this.moments,
+    required this.customMoments,
+    required this.anyWatched,
+    required this.note,
+  });
+
+  final String? kindLabel;
+  final List<({String label, bool watching, String? coverageSaid})> moments;
+  final List<String> customMoments;
+  final bool anyWatched;
+  final String? note;
+
+  static MarketWatching? fromJson(dynamic raw) {
+    if (raw is! Map) return null;
+    final j = Map<String, dynamic>.from(raw);
+    return MarketWatching(
+      kindLabel: _text(j['kindLabel']),
+      moments: [
+        for (final m in ((j['moments'] as List?) ?? const []).whereType<Map>())
+          (
+            label: (m['label'] as String?) ?? '',
+            watching: m['watching'] == true,
+            coverageSaid: _text(m['coverageSaid']),
+          ),
+      ],
+      customMoments: ((j['customMoments'] as List?) ?? const []).map((e) => '$e').toList(),
+      anyWatched: j['anyWatched'] == true,
+      note: _text(j['note']),
     );
   }
 }
@@ -463,9 +543,13 @@ class MarketView {
     required this.excludedNote,
     required this.counts,
     this.research = MarketResearch.none,
+    this.watching,
   });
 
   final BusinessIntent? intent;
+
+  /// The moments this business chose; null before Setup chose them.
+  final MarketWatching? watching;
 
   final MarketResearch research;
 
@@ -516,6 +600,7 @@ class MarketView {
       ),
       intent: BusinessIntent.fromJson(
           json['intent'] is Map ? Map<String, dynamic>.from(json['intent'] as Map) : null),
+      watching: MarketWatching.fromJson(json['watching']),
       coverage: MarketCoverage.fromJson(json['coverage'] is Map
           ? Map<String, dynamic>.from(json['coverage'] as Map)
           : null),

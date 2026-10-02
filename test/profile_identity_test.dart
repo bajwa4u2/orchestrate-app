@@ -34,8 +34,8 @@ void main() {
 
   test('the form offers it, and it is about the person', () {
     final screen =
-        app('lib/features/client/screens/client_account_screen.dart');
-    expect(screen.contains("label: 'Your name'"), isTrue);
+        app('lib/features/client/widgets/account_actions.dart');
+    expect(screen.contains("labelText: 'Your name'"), isTrue);
     expect(screen.contains('updateOwnName('), isTrue);
     // Its own call, not a field on the client profile: a workspace can have
     // several people, and one renaming themselves must not rename the company.
@@ -61,15 +61,15 @@ void main() {
 
   test('the session is refreshed from the server after a save', () {
     final screen =
-        app('lib/features/client/screens/client_account_screen.dart');
-    expect(screen.contains('applyAuthResponse(await widget.repository.fetchMe())'),
+        app('lib/features/client/widgets/account_actions.dart');
+    expect(screen.contains('applyAuthResponse(await _repo.fetchMe())'),
         isTrue,
         reason: 'the rail and the account menu read the session, not the screen');
   });
 
   test('a refusal is shown in the words the server used', () {
     final screen =
-        app('lib/features/client/screens/client_account_screen.dart');
+        app('lib/features/client/widgets/account_actions.dart');
     expect(screen.contains('String? _refusalText('), isTrue);
     // 4xx only. A 5xx or a dropped connection has nothing worth quoting.
     expect(screen.contains('statusCode < 400 || error.statusCode >= 500'), isTrue);

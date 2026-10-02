@@ -64,11 +64,11 @@ void main() {
     await tester.pump();
     drain(tester);
 
-    r.go('/client/settings');
+    r.go('/account/record');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     drain(tester);
-    expect(where(r), '/client/settings');
+    expect(where(r), '/account/record');
 
     // The same call the engine makes when Android delivers Back.
     final handled = await tester.binding.handlePopRoute();
@@ -83,7 +83,7 @@ void main() {
     );
     expect(
       where(r),
-      isNot('/client/settings'),
+      isNot('/account/record'),
       reason: 'Back was claimed but the workspace did not move',
     );
   });

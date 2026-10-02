@@ -19,15 +19,11 @@ import 'support/sibling_backend.dart';
 void main() {
   String read(String path) => File(path).readAsStringSync();
 
-  final settings =
-      read('lib/features/client/screens/client_settings_screen.dart');
   final accountLayer =
       read('lib/features/client/screens/account_layer_screen.dart');
-  final mailbox = read('lib/features/client/screens/client_mailbox_screen.dart');
-  final identity =
-      read('lib/features/client/screens/client_business_identity_screen.dart');
-  final signature =
-      read('lib/features/client/widgets/signature_identity_card.dart');
+  final setup = read('lib/features/client/setup/one_path_setup_screen.dart');
+  final signOff = read('lib/features/client/widgets/sign_off_section.dart');
+  final actions = read('lib/features/client/widgets/account_actions.dart');
 
   group('Account & security owns personal security', () {
     test('it holds the trusted devices, not a link to them', () {
@@ -55,35 +51,26 @@ void main() {
     });
   });
 
-  group('Workspace settings owns preferences only', () {
-    test('it no longer holds a person\'s sessions', () {
-      expect(settings.contains('_TrustedDeviceRow'), isFalse);
-      expect(settings.contains('revokeTrustedDevice'), isFalse);
-      expect(settings.contains('fetchTrustedDevices'), isFalse);
+  // DD-34: the retired Workspace settings and Your account pages are gone;
+  // what only they could do lives on Account & security.
+  group('leaving is reachable inside the app', () {
+    test('Account & security offers deactivate and delete', () {
+      expect(accountLayer.contains('showDeactivateAccount(context)'), isTrue);
+      expect(accountLayer.contains('showDeleteAccount(context)'), isTrue);
+      expect(actions.contains('deleteClientAccount'), isTrue,
+          reason: 'the app stores require account deletion inside the app');
     });
 
-    test('it no longer restates business readiness', () {
-      expect(settings.contains('BlockerResolutionList'), isFalse);
-      expect(settings.contains('ClientMetricStrip'), isFalse);
-    });
-
-    test('it no longer carries the outbound signature', () {
-      expect(settings.contains('SignatureIdentityCard'), isFalse);
-    });
-
-    test('it points at owners instead of reproducing them', () {
-      expect(settings.contains('Where things are configured'), isTrue);
+    test('a person edits their own name there', () {
+      expect(accountLayer.contains('showOwnNameEditor(context)'), isTrue);
+      expect(actions.contains('updateOwnName'), isTrue);
     });
   });
 
   group('the business name has exactly one writer', () {
-    test('the signature card cannot write it', () {
-      expect(
-        signature.contains('businessName: _trimToNull'),
-        isFalse,
-        reason: 'the signature may display the name, never write it',
-      );
-      expect(signature.contains('_ReadOnlyLine'), isTrue);
+    test('the sign-off cannot write it', () {
+      expect(signOff.contains('businessName'), isFalse,
+          reason: 'the signature may display the name, never write it');
     });
 
     test('the endpoint does not persist a signature business name', () {
@@ -108,9 +95,10 @@ void main() {
   });
 
   group('the postal address is owned where it is judged', () {
-    test('Business identity can set it', () {
-      expect(identity.contains('Registered address'), isTrue);
-      expect(identity.contains('postalAddress'), isTrue);
+    test('Setup sets it, every line of it', () {
+      expect(setup.contains("'postalAddress'"), isTrue);
+      expect(setup.contains("'line2'"), isTrue);
+      expect(setup.contains("'region'"), isTrue);
     });
 
     test('it writes through the canonical designated-address record', () {
@@ -121,8 +109,12 @@ void main() {
   });
 
   group('the signature sits with communication', () {
-    test('Mailbox renders it', () {
-      expect(mailbox.contains('SignatureIdentityCard'), isTrue);
+    test("Setup's email step renders it", () {
+      expect(setup.contains('const SignOffSection()'), isTrue);
+    });
+
+    test('a save keeps the fields it does not show', () {
+      expect(signOff.contains("complianceFooter: _k('complianceFooter')"), isTrue);
     });
   });
 }

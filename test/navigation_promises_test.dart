@@ -57,29 +57,85 @@ void main() {
     );
   });
 
-  /// AND THE HUB MUST OPEN THE CAPABILITY IT NAMES.
+  /// RETIRED MEANS RETIRED (DD-34, founder, 2 Oct 2026).
   ///
-  /// "Credentials — certifications, licences, insurance" opened a diagnostic,
-  /// while the real Credentials screen sat unlinked at /app/trust. The entry
-  /// was not wrong about the capability; it was wrong about the address, and
-  /// deleting it would have retired a screen the product actually has.
-  test('the business hub opens the real credentials screen', () {
-    final hub = File('lib/features/client/screens/business_screen.dart')
-        .readAsStringSync();
-    final start = hub.indexOf("label: 'Credentials'");
-    final entry = hub.substring(start, hub.indexOf("label: 'Evidence'", start));
-    expect(entry.contains("path: '/app/trust'"), isTrue);
-    expect(router.contains("path: '/app/trust'"), isTrue);
+  /// Search kept offering Business settings, Targeting, Credentials and
+  /// Evidence after Setup and Account replaced them, and those pages still
+  /// rendered. Every retired address now redirects to its new home, so an old
+  /// email, bookmark or installed app still arrives somewhere real, and none
+  /// of them can open a retired page again.
+  const retired = {
+    '/client/business': '/client/setup',
+    '/client/representation': '/client/setup?step=business',
+    '/client/infrastructure': '/client/setup?step=email',
+    '/client/billing': '/account/plan',
+    '/client/subscribe': '/account/plan',
+    '/client/records': '/account/record',
+    '/client/settings': '/account/security',
+    '/client/account': '/account/security',
+    '/app/account': '/account/security',
+    '/app/trust': '/client/setup?step=offer',
+    '/app/evidence': '/client/setup?step=offer',
+    '/app/branding': '/client/setup?step=business',
+    '/app/artifacts': '/client/money',
+    '/client/contacts/inventory': '/client/relationships',
+    '/client/sequences/:sequenceId': '/client/relationships',
+  };
+
+  test('every retired address redirects to its new home', () {
+    for (final entry in retired.entries) {
+      expect(
+        // Line endings and indentation are not the point; the pairing is.
+        router.replaceAll(RegExp(r'\s+'), ' ').contains(
+            "path: '${entry.key}', redirect: (context, state) => _retired(state, '${entry.value}'))"),
+        isTrue,
+        reason: '${entry.key} must redirect to ${entry.value}',
+      );
+    }
   });
 
-  test('every palette destination is a route the app defines', () {
-    final commands = RegExp(r"_Command\('[^']+', '([^']+)'")
+  test('no retired page is mounted anywhere', () {
+    const screens = [
+      'BusinessScreen(', 'ClientBusinessIdentityScreen(', 'ClientMailboxScreen(',
+      'ClientTrustScreen(', 'ClientEvidenceScreen(', 'ClientArtifactsScreen(',
+      'ClientBrandingScreen(', 'ClientBillingScreen(', 'ClientSubscribeScreen(',
+      'ClientSettingsScreen(', 'ClientAccountScreen(', 'ClientSequenceAuthorScreen(',
+      'ClientRelationshipsScreen(',
+    ];
+    for (final s in screens) {
+      expect(RegExp(r'(^|[^A-Za-z])' + RegExp.escape(s)).hasMatch(router), isFalse,
+          reason: '$s is retired and must not be mounted');
+    }
+  });
+
+  test('nothing in the app links to a retired address', () {
+    final offenders = <String>[];
+    for (final f in Directory('lib').listSync(recursive: true).whereType<File>()) {
+      if (!f.path.endsWith('.dart') || f.path.contains('app_router.dart')) continue;
+      final src = f.readAsStringSync();
+      for (final path in retired.keys) {
+        final p = RegExp.escape(path.split('/:').first);
+        final link = RegExp("go\\('$p(['?/])");
+        final command = RegExp("_Command\\((?:'[^']*'|\"[^\"]*\"), '$p['?]");
+        if (link.hasMatch(src) || command.hasMatch(src)) {
+          offenders.add('${f.path}: $path');
+        }
+      }
+    }
+    expect(offenders, isEmpty);
+  });
+
+  test('every palette destination is a page the app shows today', () {
+    final commands = RegExp("_Command\\((?:'[^']*'|\"[^\"]*\"), '([^']+)'")
         .allMatches(palette)
         .map((m) => m.group(1)!.split('?').first)
         .toSet();
+    expect(commands.length, greaterThan(5));
     for (final path in commands) {
       expect(router.contains("path: '$path'"), isTrue,
           reason: '$path is offered but not routed');
+      expect(retired.containsKey(path), isFalse,
+          reason: '$path is retired and must not be offered');
     }
   });
 }

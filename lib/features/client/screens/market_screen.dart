@@ -11,6 +11,7 @@ import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/candidate_sheet.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
+import 'package:orchestrate_app/features/client/widgets/prospect_facts.dart';
 
 /// MARKET — WHO MAY BE WORTH ENTERING INTO COMMERCIAL RELATIONSHIP WITH.
 ///
@@ -151,7 +152,7 @@ class _MarketScreenState extends State<MarketScreen> {
           hint: 'Until it does, there is nothing to judge a counterparty '
               'against. Describe your offer in Business identity.',
           action: OutlinedButton(
-            onPressed: () => context.go('/client/representation'),
+            onPressed: () => context.go('/client/setup?step=offer'),
             child: const Text('Describe what you sell'),
           ),
         );
@@ -360,13 +361,17 @@ class _MarketHeader extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: Ob.body(15, color: Ob.inkSoft)),
-          if (v.intent!.triggers.isNotEmpty) ...[
+          if (v.watching == null && v.intent!.triggers.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text('We watch for: ${v.intent!.triggers.join(', ').toLowerCase()}.',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Ob.body(13.5, color: Ob.inkMuted)),
           ],
+        ],
+        if (v?.watching != null) ...[
+          const SizedBox(height: 10),
+          _Watching(watching: v!.watching!),
         ],
         if (researching) ...[
           const SizedBox(height: 10),
@@ -387,6 +392,45 @@ class _MarketHeader extends StatelessWidget {
               ),
             ),
           ]),
+        ],
+      ],
+    );
+  }
+}
+
+/// THE MOMENTS THIS BUSINESS CHOSE, AND WHETHER EACH IS WATCHED YET (DD-34).
+///
+/// A moment nobody is watching must never look watched: until its source is
+/// read, the line says so, and businesses are found by fit alone.
+class _Watching extends StatelessWidget {
+  const _Watching({required this.watching});
+  final MarketWatching watching;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = [
+      ...watching.moments.map((m) => m.label),
+      ...watching.customMoments,
+    ];
+    if (labels.isEmpty) return const SizedBox.shrink();
+    final first = labels.first[0].toLowerCase() + labels.first.substring(1);
+    final said = labels.length == 1
+        ? 'Ready when $first.'
+        : 'Ready when $first, and ${labels.length - 1} more '
+            '${labels.length == 2 ? 'moment' : 'moments'} you chose.';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          Text(said, style: Ob.body(13.5, color: Ob.inkSoft)),
+          InkWell(
+            onTap: () => context.go('/client/setup?step=moments'),
+            child: Text('Change', style: Ob.strong(13.5).copyWith(decoration: TextDecoration.underline)),
+          ),
+        ]),
+        if (watching.note != null) ...[
+          const SizedBox(height: 3),
+          Text(watching.note!, style: Ob.body(13, color: Ob.inkMuted)),
         ],
       ],
     );
@@ -648,6 +692,21 @@ class _CandidateCard extends StatelessWidget {
               pill,
             ]),
             const SizedBox(height: 10),
+            // Why now, when a moment was seen: it leads, with where and when.
+            if (c.moments.isNotEmpty) ...[
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Icon(Icons.bolt, size: 17, color: Ob.ink),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(momentSaid(c.moments.first),
+                      maxLines: 3, overflow: TextOverflow.ellipsis, style: Ob.strong(14.5)),
+                ),
+              ]),
+              const SizedBox(height: 6),
+            ],
             Text(reason,
                 maxLines: 4, overflow: TextOverflow.ellipsis, style: Ob.body(14.5)),
             const SizedBox(height: 6),

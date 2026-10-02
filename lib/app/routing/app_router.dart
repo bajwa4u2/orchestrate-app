@@ -4,34 +4,21 @@ import 'package:go_router/go_router.dart';
 
 import 'package:orchestrate_app/features/auth/screens/client_login_screen.dart';
 import 'package:orchestrate_app/features/auth/screens/ops_login_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_artifacts_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_branding_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_evidence_screen.dart';
 import 'package:orchestrate_app/core/auth/return_path.dart';
 import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 import 'package:orchestrate_app/features/client/screens/account_layer_screen.dart';
 import 'package:orchestrate_app/features/client/screens/attention_screen.dart';
 import 'package:orchestrate_app/features/client/screens/market_screen.dart';
-import 'package:orchestrate_app/features/client/screens/business_screen.dart';
 import 'package:orchestrate_app/features/client/screens/relationships_workspace_screen.dart';
 import 'package:orchestrate_app/features/client/screens/today_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_authorised_people_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_trust_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_relationships_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_mailbox_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_account_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_billing_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_business_identity_screen.dart';
 import 'package:orchestrate_app/features/client/setup/one_path_setup_screen.dart';
 import 'package:orchestrate_app/features/client/money/money_screen.dart';
 import 'package:orchestrate_app/features/public/b/public_b.dart';
-import 'package:orchestrate_app/features/client/screens/client_subscribe_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_backend_surface_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_notifications_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_outreach_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_records_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_replies_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_settings_screen.dart';
 import 'package:orchestrate_app/features/client/screens/leads_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/inquiry_detail_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/audit_timeline_screen.dart';
@@ -45,7 +32,6 @@ import 'package:orchestrate_app/features/operator/screens/operator_workspace_scr
 import 'package:orchestrate_app/features/public/screens/contact_screen.dart';
 import 'package:orchestrate_app/features/public/screens/commercial_model_screen.dart';
 import 'package:orchestrate_app/features/client/screens/oauth_return_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_sequence_author_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_diagnostics_screen.dart';
 import 'package:orchestrate_app/features/public/screens/public_content_screen.dart';
 import 'package:orchestrate_app/features/public/widgets/execution_visual_chapters.dart';
@@ -1065,7 +1051,7 @@ GoRouter _buildRouter() {
         redirect: (context, state) => '/client/setup'),
     GoRoute(
         path: '/app/subscribe',
-        builder: (context, state) => const ClientSubscribeScreen()),
+        redirect: (context, state) => '/client/setup?step=plan'),
     ShellRoute(
       navigatorKey: _clientShellNavigatorKey,
       builder: (context, state, child) =>
@@ -1133,8 +1119,7 @@ GoRouter _buildRouter() {
             NoTransitionPage(child: const AttentionScreen())),
         GoRoute(
             path: '/client/business',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const BusinessScreen())),
+            redirect: (context, state) => _retired(state, '/client/setup')),
 
         // ── THE ACCOUNT LAYER ──────────────────────────────────────────
         // Deliberately NOT subject to the setup or subscription gates below.
@@ -1152,6 +1137,12 @@ GoRouter _buildRouter() {
             path: '/account/plan',
             pageBuilder: (context, state) =>
             NoTransitionPage(child: const AccountLayerScreen(section: AccountSection.plan))),
+        // Orchestrate's own record with the business: agreements, charges,
+        // authority granted. Moved here from /client/records (DD-34).
+        GoRoute(
+            path: '/account/record',
+            pageBuilder: (context, state) =>
+            NoTransitionPage(child: const ClientRecordsScreen())),
         GoRoute(
             path: '/account/security',
             pageBuilder: (context, state) =>
@@ -1165,8 +1156,7 @@ GoRouter _buildRouter() {
         // redirect here so the operational IA stays single-source.
         GoRoute(
             path: '/client/representation',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientBusinessIdentityScreen())),
+            redirect: (context, state) => _retired(state, '/client/setup?step=business')),
         // OAuth return surface — backend's ORCH_APP_OAUTH_RETURN_URL
         // should be configured to land here so the result is rendered
         // with operation-scoped mailbox disclosure + next-action CTAs
@@ -1199,16 +1189,16 @@ GoRouter _buildRouter() {
                 ))),
         GoRoute(
             path: '/client/business-identity',
-            redirect: (context, state) => '/client/representation'),
+            redirect: (context, state) => '/client/setup?step=want'),
         GoRoute(
             path: '/client/campaign',
-            redirect: (context, state) => '/client/representation'),
+            redirect: (context, state) => '/client/setup?step=want'),
         GoRoute(
             path: '/client/campaign/targeting',
-            redirect: (context, state) => '/client/representation'),
+            redirect: (context, state) => '/client/setup?step=want'),
         GoRoute(
             path: '/client/campaigns',
-            redirect: (context, state) => '/client/representation'),
+            redirect: (context, state) => '/client/setup?step=want'),
         // Targeting scope editor (geographies + industries). Kept under
         // /app/campaigns for now; representation links to it as
         // "refine targeting".
@@ -1224,7 +1214,7 @@ GoRouter _buildRouter() {
             // editor, and survived the retirement of the /app screens as two
             // redirects with nothing left underneath either.
             path: '/client/representation/targeting',
-            redirect: (context, state) => '/client/business-identity'),
+            redirect: (context, state) => '/client/setup?step=want'),
         // Sequence authoring (governed template vs legacy custom body).
         // Mounted under the client shell so the workspace chrome wraps
         // it. Step CRUD posts directly to the new ClientPortalService
@@ -1233,19 +1223,14 @@ GoRouter _buildRouter() {
         // DELETE /client/sequence-steps/:stepId).
         GoRoute(
             path: '/client/sequences/:sequenceId',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: ClientSequenceAuthorScreen(
-                  sequenceId: state.pathParameters['sequenceId'] ?? '',
-                ))),
+            redirect: (context, state) => _retired(state, '/client/relationships')),
         GoRoute(
             path: '/client/subscribe',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientSubscribeScreen(insideWorkspace: true))),
+            redirect: (context, state) => _retired(state, '/account/plan')),
         // Relationships — mailbox-derived relationship intelligence.
         GoRoute(
             path: '/client/contacts/inventory',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientRelationshipsScreen())),
+            redirect: (context, state) => _retired(state, '/client/relationships')),
         GoRoute(
             path: '/client/contacts',
             redirect: (context, state) => '/client/relationships'),
@@ -1275,40 +1260,35 @@ GoRouter _buildRouter() {
         // consolidated under one surface (was /client/mailbox).
         GoRoute(
             path: '/client/infrastructure',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: ClientMailboxScreen(
-                  focus: state.uri.queryParameters['focus'],
-                ))),
+            redirect: (context, state) => _retired(state, '/client/setup?step=email')),
         GoRoute(
             path: '/client/mailbox',
-            redirect: (context, state) => '/client/infrastructure'),
+            redirect: (context, state) => '/client/setup?step=email'),
         GoRoute(
             // Meetings are timeline events inside a relationship.
             path: '/client/meetings',
             redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/client/billing',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientBillingScreen())),
+            redirect: (context, state) => _retired(state, '/account/plan')),
         GoRoute(
             path: '/client/records',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientRecordsScreen())),
+            redirect: (context, state) => _retired(state, '/account/record')),
         GoRoute(
             path: '/client/invoices',
-            redirect: (context, state) => '/client/records'),
+            redirect: (context, state) => '/account/record'),
         GoRoute(
             path: '/client/receipts',
-            redirect: (context, state) => '/client/records'),
+            redirect: (context, state) => '/account/record'),
         GoRoute(
             path: '/client/agreements',
-            redirect: (context, state) => '/client/records'),
+            redirect: (context, state) => '/account/record'),
         GoRoute(
             path: '/client/statements',
-            redirect: (context, state) => '/client/records'),
+            redirect: (context, state) => '/account/record'),
         GoRoute(
             path: '/client/reminders',
-            redirect: (context, state) => '/client/records'),
+            redirect: (context, state) => '/account/record'),
         GoRoute(
             // Notifications became Attention, which lives in Today.
             path: '/client/notifications',
@@ -1319,12 +1299,10 @@ GoRouter _buildRouter() {
             NoTransitionPage(child: const ClientSupportScreen())),
         GoRoute(
             path: '/client/settings',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientSettingsScreen())),
+            redirect: (context, state) => _retired(state, '/account/security')),
         GoRoute(
             path: '/client/account',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientAccountScreen())),
+            redirect: (context, state) => _retired(state, '/account/security')),
         GoRoute(
             path: '/client/help',
             redirect: (context, state) => '/client/support'),
@@ -1342,7 +1320,7 @@ GoRouter _buildRouter() {
         // show about itself.
         GoRoute(
             path: '/client/trust',
-            redirect: (context, state) => '/app/trust'),
+            redirect: (context, state) => '/client/setup?step=offer'),
         // THE LEGACY HOME IS RETIRED, NOT LEFT LYING AROUND.
         //
         // It predates the reconstructed workspace and was never one of its
@@ -1370,13 +1348,13 @@ GoRouter _buildRouter() {
         // Business hub maintains.
         GoRoute(
             path: '/app/campaigns',
-            redirect: (context, state) => '/client/business-identity'),
+            redirect: (context, state) => '/client/setup?step=want'),
         GoRoute(
             path: '/app/campaigns/create',
-            redirect: (context, state) => '/client/representation/targeting'),
+            redirect: (context, state) => '/client/setup?step=want'),
         GoRoute(
             path: '/app/campaigns/:campaignId',
-            redirect: (context, state) => '/client/representation/targeting'),
+            redirect: (context, state) => '/client/setup?step=want'),
         // A SECOND EXECUTION SURFACE, LINKED FROM NOWHERE. What has actually
         // moved belongs on the relationship it moved on, which is where the
         // reconstructed workspace puts it.
@@ -1385,59 +1363,54 @@ GoRouter _buildRouter() {
             redirect: (context, state) => '/client/relationships'),
         GoRoute(
             path: '/app/mailbox',
-            redirect: (context, state) => '/client/infrastructure'),
+            redirect: (context, state) => '/client/setup?step=email'),
         // A PLACEHOLDER IS NOT A FEATURE. This said "Update controls are
         // available later" and nothing else, and nothing linked to it. A
         // customer who found it learned only that something might exist one
         // day.
         GoRoute(
             path: '/app/newsletter',
-            redirect: (context, state) => '/client/business'),
+            redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/app/newsletter/audience',
-            redirect: (context, state) => '/client/business'),
+            redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/app/newsletter/issues',
-            redirect: (context, state) => '/client/business'),
+            redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/app/newsletter/settings',
-            redirect: (context, state) => '/client/business'),
+            redirect: (context, state) => '/client/today'),
         GoRoute(
             path: '/app/branding',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientBrandingScreen())),
+            redirect: (context, state) => _retired(state, '/client/setup?step=business')),
         GoRoute(
             path: '/app/branding/identity',
-            redirect: (context, state) => '/app/branding'),
+            redirect: (context, state) => '/client/setup?step=business'),
         GoRoute(
             path: '/app/branding/templates',
-            redirect: (context, state) => '/app/branding'),
+            redirect: (context, state) => '/client/setup?step=business'),
         GoRoute(
             path: '/app/branding/signatures',
-            redirect: (context, state) => '/app/branding'),
+            redirect: (context, state) => '/client/setup?step=business'),
         GoRoute(
             path: '/app/trust',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientTrustScreen())),
+            redirect: (context, state) => _retired(state, '/client/setup?step=offer')),
         GoRoute(
             path: '/app/evidence',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientEvidenceScreen())),
+            redirect: (context, state) => _retired(state, '/client/setup?step=offer')),
         GoRoute(
             path: '/app/artifacts',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientArtifactsScreen())),
+            redirect: (context, state) => _retired(state, '/client/money')),
         // Retired with the home it belonged to. It carried no title, no
         // breadcrumb, buttons in a colour the design system does not use, and
         // "ICP" as a word shown to a customer — while /client/billing is the
         // billing surface the product actually maintains.
         GoRoute(
             path: '/app/billing',
-            redirect: (context, state) => '/client/billing'),
+            redirect: (context, state) => '/account/plan'),
         GoRoute(
             path: '/app/account',
-            pageBuilder: (context, state) =>
-            NoTransitionPage(child: const ClientAccountScreen())),
+            redirect: (context, state) => _retired(state, '/account/security')),
       ],
     ),
     ShellRoute(
@@ -1749,6 +1722,16 @@ String _clientRoute(String path, {String? returnTo}) =>
 /// Found on 2026-09-17 by clicking a real confirmation link from a real
 /// mailbox. It could not be found any other way: the token only exists in
 /// mail, so no amount of clicking inside the app reaches this path.
+/// A retired page's address, kept so old emails, bookmarks and installed apps
+/// still arrive somewhere real (DD-34). The new home's own `?step=` wins; any
+/// other query the old link carried travels with it.
+String _retired(GoRouterState state, String home) {
+  final target = Uri.parse(home);
+  final query = {...state.uri.queryParameters}..remove('focus');
+  query.addAll(target.queryParameters);
+  return Uri(path: target.path, queryParameters: query.isEmpty ? null : query).toString();
+}
+
 String _alias(GoRouterState state, String destination) {
   final query = state.uri.query;
   if (query.isEmpty) return destination;

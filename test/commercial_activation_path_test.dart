@@ -19,8 +19,9 @@ import 'package:orchestrate_app/core/commercial/commercial_model.dart';
 /// it became a voluntary account action.
 void main() {
   final router = File('lib/app/routing/app_router.dart').readAsStringSync();
+  // Billing moved onto Account → Plan and billing (DD-34).
   final billing =
-      File('lib/features/client/screens/client_billing_screen.dart').readAsStringSync();
+      File('lib/features/client/screens/account_layer_screen.dart').readAsStringSync();
 
   test('a signed-in customer is not redirected away from activation', () {
     // The gate list that bounces an authenticated session home.
@@ -61,9 +62,9 @@ void main() {
     // entitlement, two charges.
     expect(billing.contains('bool _holdsPlatform()'), isTrue);
     expect(billing.contains('!_holdsPlatform()'), isTrue);
-    expect(billing.contains("context.go('/client/subscribe')"), isTrue);
+    expect(billing.contains("context.go('/client/setup?step=plan')"), isTrue);
     expect(
-      billing.contains('data.subscription;'),
+      billing.contains('fetchSubscription'),
       isFalse,
       reason: 'a Stripe row must not decide whether to sell a second time',
     );
@@ -85,7 +86,7 @@ void main() {
   /// with a Retry that could only fail again.
   test('activation is offered only when activation is actually open', () {
     expect(
-      billing.contains('data.activation.open'),
+      billing.contains('_activation?.open ?? false'),
       isTrue,
       reason: '"no subscription exists" is a different fact from '
           '"activation is open"',
@@ -96,15 +97,10 @@ void main() {
   });
 
   test('the closed state uses the server words, not the client guess', () {
-    final subscribe = File(
-      'lib/features/client/screens/client_subscribe_screen.dart',
-    ).readAsStringSync();
-    expect(subscribe.contains('_ActivationClosedCard'), isTrue);
-    expect(subscribe.contains('activation.says'), isTrue);
-    expect(subscribe.contains('activation.resolution'), isTrue);
+    expect(billing.contains('_activation!.says'), isTrue);
+    expect(billing.contains('_activation!.resolution'), isTrue);
     // No screen may invent a commercial reason of its own.
-    expect(subscribe.contains('early access'), isFalse);
-    expect(billing.contains('activation.says'), isTrue);
+    expect(billing.contains('early access'), isFalse);
   });
 
   test('an older server is assumed to be selling, not shut', () {
@@ -176,17 +172,12 @@ void main() {
     );
   }, skip: backendSkipReason);
 
-  test('a single chrome, wherever the screen is reached from', () {
-    // Reached from Billing by a signed-in customer, the screen wrapped itself
-    // in the signed-out funnel's AuthShell inside the client shell: a page
-    // inside a page, two Orchestrate headers, and a "Back to site" exit out of
-    // the workspace.
-    final subscribe = File(
-      'lib/features/client/screens/client_subscribe_screen.dart',
-    ).readAsStringSync();
-    expect(subscribe.contains('this.insideWorkspace = false'), isTrue);
-    expect(subscribe.contains('if (widget.insideWorkspace)'), isTrue);
-    expect(router.contains('ClientSubscribeScreen(insideWorkspace: true)'), isTrue);
+  test('there is one place to buy, and it is not a second page', () {
+    // The separate Subscribe page is retired (DD-34): Setup's plan step takes
+    // the payment, and its old addresses arrive there or on Plan and billing.
+    expect(File('lib/features/client/screens/client_subscribe_screen.dart').existsSync(), isFalse);
+    expect(router.contains("redirect: (context, state) => '/client/setup?step=plan'"), isTrue);
+    expect(router.contains("_retired(state, '/account/plan')"), isTrue);
   });
 
   test('iOS reaches activation, and what it finds there is in-app', () {

@@ -210,14 +210,14 @@ class _SupportContextCardState extends State<SupportContextCard> {
           runSpacing: 10,
           children: [
             OutlinedButton.icon(
-              onPressed: () => context.go('/client/infrastructure'),
-              icon: const Icon(Icons.dns_outlined, size: 16),
-              label: const Text('Open infrastructure'),
+              onPressed: () => context.go('/client/setup?step=email'),
+              icon: const Icon(Icons.mark_email_read_outlined, size: 16),
+              label: const Text('Your email'),
             ),
             OutlinedButton.icon(
-              onPressed: () => context.go('/client/billing'),
+              onPressed: () => context.go('/account/plan'),
               icon: const Icon(Icons.receipt_long_outlined, size: 16),
-              label: const Text('Open billing'),
+              label: const Text('Plan and billing'),
             ),
             OutlinedButton.icon(
               onPressed: () => context.go('/app/activity'),

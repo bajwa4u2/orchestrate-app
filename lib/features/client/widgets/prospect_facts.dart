@@ -34,10 +34,21 @@ String prospectSummary(Candidate c) {
   return '$who$match'.trim();
 }
 
+/// "Won the Lakewood school renovation · SAM.gov contract awards, 20 Sep
+/// 2026": what happened, where it was seen, when. Led with on every card.
+String momentSaid(CandidateMoment m) => [
+      m.said,
+      [
+        if (m.source.isNotEmpty) m.source,
+        if (m.at != null) whenSaid(m.at!),
+      ].join(', '),
+    ].where((s) => s.isNotEmpty).join(' · ');
+
 List<ProspectFact> prospectFacts(Candidate c) {
   final checks = c.checks;
   if (checks == null) return const [];
   return [
+    for (final m in c.moments.take(2)) ProspectFact(Icons.bolt, momentSaid(m)),
     if (c.domain.isNotEmpty && !c.domain.startsWith('name:'))
       ProspectFact(Icons.language,
           '${c.domain}${checks.websiteAnswers ? ': its own site, answering' : ''}'),

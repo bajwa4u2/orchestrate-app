@@ -7,6 +7,8 @@ export '../../data/repositories/client/client_market_repository.dart'
     show
         BusinessIntent,
         Candidate,
+        CandidateMoment,
+        MarketWatching,
         MarketResearch,
         ProspectChecks,
         CandidateDepth,

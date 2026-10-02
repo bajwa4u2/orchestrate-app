@@ -87,6 +87,20 @@ class _CandidateSheetState extends State<CandidateSheet> {
 
           const SizedBox(height: 18),
 
+          // ── WHY NOW: one of the owner's moments, seen for this business ──
+          if (c.moments.isNotEmpty) ...[
+            _Panel(
+              icon: Icons.bolt,
+              accent: AppTheme.publicAccent,
+              title: 'Why now',
+              body: [
+                for (final m in c.moments.take(3))
+                  [momentSaid(m), if (m.url != null) m.url!].join('\n'),
+              ].join('\n\n'),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // ── WHY THIS BUSINESS (it passed every check) ──────────────────
           if (c.checks != null) ...[
             _Panel(
@@ -103,7 +117,7 @@ class _CandidateSheetState extends State<CandidateSheet> {
             Text('What was checked',
                 style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            for (final f in prospectFacts(c))
+            for (final f in prospectFacts(c).where((f) => f.icon != Icons.bolt))
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

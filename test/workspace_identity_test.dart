@@ -109,13 +109,14 @@ void main() {
       // the Business hub reading identity off the wrong level of its
       // envelope. 'logo_primary' is the asset TYPE in the URL; the response
       // names the same asset 'logo'.
+      // The logo is set in Setup now (DD-34); it reads the same key.
       final branding = File(
-        'lib/features/client/screens/client_branding_screen.dart',
+        'lib/features/client/setup/one_path_setup_screen.dart',
       ).readAsStringSync();
       expect(
-        branding.contains("branding['logo']"),
+        branding.contains("b['logo']"),
         isTrue,
-        reason: 'the screen that renders this logo reads this key',
+        reason: 'the screen that sets this logo reads this key',
       );
       expect(
         mark.contains("branding['logo']"),

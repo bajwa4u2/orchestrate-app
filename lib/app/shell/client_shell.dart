@@ -107,25 +107,16 @@ class _ClientShellState extends State<ClientShell> {
       path: '/client/money',
       icon: Icons.payments_outlined,
       selectedIcon: Icons.payments,
-      absorbs: {'/client/records'},
+      absorbs: {},
     ),
     _Destination(
       label: 'Setup',
       path: '/client/setup',
       icon: Icons.tune_outlined,
       selectedIcon: Icons.tune,
-      absorbs: {
-        '/client/business',
-        '/client/representation',
-        '/client/business-identity',
-        '/client/infrastructure',
-        '/client/mailbox',
-        '/client/trust',
-        '/app/trust',
-        '/app/evidence',
-        '/app/artifacts',
-        '/app/branding',
-      },
+      // Every older Business page now redirects into Setup (DD-34); only
+      // Setup's own addresses are left to highlight it.
+      absorbs: {'/client/setup/workspace'},
     ),
   ];
 

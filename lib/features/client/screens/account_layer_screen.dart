@@ -10,6 +10,12 @@ import 'package:orchestrate_app/features/client/screens/client_authorised_people
 import 'package:orchestrate_app/data/repositories/auth_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/client_workspace_widgets.dart';
 import 'package:orchestrate_app/core/navigation/workspace_map.dart';
+import 'package:orchestrate_app/core/platform/billing_gate.dart';
+import 'package:orchestrate_app/core/commercial/commercial_model.dart';
+import 'package:orchestrate_app/data/repositories/client/client_billing_repository.dart';
+import 'package:orchestrate_app/features/client/widgets/account_actions.dart';
+import 'package:orchestrate_app/features/client/widgets/store_subscribe_panel.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// THE ACCOUNT LAYER — OUTSIDE THE OPERATIONAL WORKSPACE.
 ///
@@ -126,6 +132,46 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
     if (mounted) setState(() {});
   }
 
+  bool _openingPortal = false;
+  String? _portalError;
+
+  /// Whether a plan can be bought at all, from the one commercial authority.
+  CommercialActivation? _activation;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_activation != null) return;
+    ClientBillingRepository().fetchCommercialModel().then((m) {
+      if (mounted) setState(() => _activation = m.activation);
+    }, onError: (Object _) {});
+  }
+
+  // ACTIVATION AND MANAGEMENT ARE DIFFERENT ACTIONS (from the retired Billing
+  // page, DD-34). Nothing is offered until the entitlement is known: offer a
+  // purchase before the answer and a subscriber can buy twice; offer nothing
+  // after a failed read and someone who wants to pay cannot.
+  bool get _entitlementKnown => _capabilities.hasAnswer;
+  bool _holdsPlatform() => _capabilities.entitlement?.state.operating ?? false;
+  OwningRail? _owningRail() => _capabilities.entitlement?.ownedByRail;
+
+  Future<void> _openPortal() async {
+    setState(() {
+      _openingPortal = true;
+      _portalError = null;
+    });
+    try {
+      final url = await ClientBillingRepository().createBillingPortalSession();
+      final uri = Uri.tryParse(url.trim());
+      if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      _portalError = 'The payment page could not be opened. It opens once a '
+          'plan has been paid for by card.';
+    } finally {
+      if (mounted) setState(() => _openingPortal = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     _askIfUnanswered();
@@ -146,22 +192,66 @@ class _PlanAndBillingState extends State<_PlanAndBilling> {
           // Contained, like the other Account sections. Two rows in a bare
           // column read as leftovers under the summary rather than as the
           // places those questions are answered.
+          // On a phone, the only place a plan can be bought; renders nothing
+          // on web, where the payment provider's own page is used instead.
+          const StoreSubscribePanel(),
           WorkspaceBand(
-            title: 'WHERE THIS IS MANAGED',
+            title: 'PAYMENT AND RECORDS',
             children: [
+              if (externalPurchaseAllowed &&
+                  _entitlementKnown &&
+                  !_holdsPlatform() &&
+                  (_activation?.open ?? false))
+                WorkspaceRow(
+                  title: 'Choose a plan',
+                  detail: 'Finding businesses is free. A plan sends notes, '
+                      'follows replies and runs your money.',
+                  onTap: () => context.go('/client/setup?step=plan'),
+                  action: const Icon(Icons.chevron_right,
+                      size: 18, color: Ws.inkSubtle),
+                ),
+              // Closed is not a dead end: the server says why, and the
+              // conversation that sets terms is offered.
+              if (externalPurchaseAllowed &&
+                  _entitlementKnown &&
+                  !_holdsPlatform() &&
+                  _activation != null &&
+                  !_activation!.open)
+                WorkspaceRow(
+                  title: 'Talk to us about commercial terms',
+                  detail: [_activation!.says, _activation!.resolution]
+                      .where((s) => s.isNotEmpty)
+                      .join(' '),
+                  onTap: () => context.go('/client/support'),
+                  action: const Icon(Icons.chevron_right,
+                      size: 18, color: Ws.inkSubtle),
+                ),
+              // MANAGE IT WHERE IT IS BILLED, OR NOT AT ALL. The portal is
+              // Stripe's: offered to a store subscriber or a granted business
+              // it is a page about somebody else's money, or it fails.
+              // App Store 3.1.1: never on a store build.
+              if (externalPurchaseAllowed &&
+                  _holdsPlatform() &&
+                  _owningRail() == OwningRail.stripe)
+                WorkspaceRow(
+                  title: 'Payment method and receipts',
+                  detail: _portalError ??
+                      'Change the card, download receipts or cancel, on the '
+                          'payment provider\'s own page.',
+                  tone: _portalError == null ? RowTone.neutral : RowTone.attention,
+                  onTap: _openingPortal ? null : _openPortal,
+                  action: _openingPortal
+                      ? const SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.open_in_new, size: 18, color: Ws.inkSubtle),
+                ),
               WorkspaceRow(
-                title: 'Subscription and payment',
-                detail: 'Manage the subscription, payment method and receipts.',
-                onTap: () => context.go('/client/billing'),
-                action: const Icon(Icons.chevron_right,
-                    size: 18, color: Ws.inkSubtle),
-              ),
-              WorkspaceRow(
-                title: "Orchestrate's invoices to you",
+                title: 'Your record with Orchestrate',
                 detail: 'Service agreement, invoices and statements from '
                     'Orchestrate. Separate from invoices you issue to your own '
                     'customers.',
-                onTap: () => context.go('/client/records'),
+                onTap: () => context.go('/account/record'),
                 action: const Icon(Icons.chevron_right,
                     size: 18, color: Ws.inkSubtle),
               ),
@@ -252,12 +342,14 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
             title: 'YOU',
             children: [
               WorkspaceRow(
-                title: 'Your account',
+                title: 'Your name',
                 detail: session.fullName.isNotEmpty
                     ? session.fullName
-                    : session.email,
-                onTap: () => context.go('/client/account'),
-                action: const Icon(Icons.chevron_right,
+                    : 'Not set. It signs the notes you approve.',
+                onTap: () async {
+                  if (await showOwnNameEditor(context) && mounted) setState(() {});
+                },
+                action: const Icon(Icons.edit_outlined,
                     size: 18, color: Ws.inkSubtle),
               ),
               // WHO YOU ARE. Nothing more, and it must not imply more.
@@ -303,14 +395,23 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
               ),
             ],
           ),
+          // LEAVING. Reachable inside the app, as the app stores require.
           WorkspaceBand(
-            title: 'THIS WORKSPACE',
+            title: 'LEAVING ORCHESTRATE',
             children: [
               WorkspaceRow(
-                title: 'Workspace settings',
-                detail: 'How this workspace behaves. Nothing about you or '
-                    'your sign-in is decided there.',
-                onTap: () => context.go('/client/settings'),
+                title: 'Deactivate account',
+                detail: 'Close your access. Your business\'s records are kept.',
+                onTap: () => showDeactivateAccount(context),
+                action: const Icon(Icons.chevron_right,
+                    size: 18, color: Ws.inkSubtle),
+              ),
+              WorkspaceRow(
+                title: 'Delete account',
+                detail: 'Permanently delete your sign-in and personal profile. '
+                    'This cannot be undone.',
+                tone: RowTone.attention,
+                onTap: () => showDeleteAccount(context),
                 action: const Icon(Icons.chevron_right,
                     size: 18, color: Ws.inkSubtle),
               ),

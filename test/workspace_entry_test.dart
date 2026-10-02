@@ -90,7 +90,7 @@ void main() {
       '/client/market',
       '/client/relationships',
       '/client/inbound',
-      '/client/business',
+      '/client/setup/workspace',
     ]) {
       r.go(destination);
       await tester.pump();
@@ -159,7 +159,7 @@ void main() {
       '/client/today',
       '/client/market',
       '/client/relationships',
-      '/client/business',
+      '/client/setup/workspace',
       '/account/plan',
     ]) {
       r.go(destination);

@@ -76,10 +76,11 @@ void main() {
     // and that no redirect returns to its own origin, is checked across the
     // whole table in router_redirect_integrity_test.
     const retired = <String, String>{
-      '/app/campaigns': '/client/business-identity',
+      // DD-34: straight to the new homes, never through a retired page.
+      '/app/campaigns': '/client/setup?step=want',
       '/app/activity': '/client/relationships',
-      '/app/mailbox': '/client/infrastructure',
-      '/app/newsletter': '/client/business',
+      '/app/mailbox': '/client/setup?step=email',
+      '/app/newsletter': '/client/today',
     };
     retired.forEach((from, to) {
       final at = router.indexOf("path: '$from'");
@@ -96,30 +97,9 @@ void main() {
     }
   });
 
-  /// The screens that stayed are the ones the Business hub actually opens.
-  test('the linked /app surfaces are not retired by mistake', () {
-    // /app/setup is deliberately NOT in this list any more. Setup had two
-    // routes to one screen; /client/setup is now the canonical one and
-    // /app/setup redirects to it. The screen is not retired — the second
-    // name for it is.
-    for (final kept in <String>['/app/trust', '/app/evidence', '/app/artifacts',
-        '/app/branding', '/app/subscribe']) {
-      final at = router.indexOf("path: '$kept'");
-      expect(at, greaterThan(-1), reason: '$kept must exist');
-      // builder: or pageBuilder: — the workspace routes were converted to
-      // NoTransitionPage so the content area stops animating between screens.
-      // What matters here is that they render rather than redirect.
-      // Bounded by the next route, not by a character count — a fixed window
-      // spilled into the following GoRoute, which is a redirect, and read as
-      // this one having been retired.
-      final next = router.indexOf('GoRoute(', at);
-      final decl = router.substring(at, next == -1 ? at + 260 : next);
-      expect(decl.contains('uilder:'), isTrue,
-          reason: '$kept is a real surface and must still render');
-      expect(decl.contains('redirect:'), isFalse,
-          reason: '$kept must not have been retired');
-    }
-  });
+  // The /app surfaces the Business hub opened (trust, evidence, artifacts,
+  // branding, subscribe) are now retired on purpose (DD-34); the guard in
+  // navigation_promises_test holds each to its new home.
 
   test('nothing else points at the retired home', () {
     final offenders = <String>[];

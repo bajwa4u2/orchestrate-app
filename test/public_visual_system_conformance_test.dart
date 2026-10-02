@@ -97,8 +97,6 @@ void main() {
     final authShell = read('lib/app/shell/auth_shell.dart');
     final router = read('lib/app/routing/app_router.dart');
     final setup = read('lib/features/client/screens/client_setup_screen.dart');
-    final subscribe =
-        read('lib/features/client/screens/client_subscribe_screen.dart');
     final ops = read('lib/features/auth/screens/ops_login_screen.dart');
     final journey = read('docs/ORCHESTRATE_VISIBLE_JOURNEY_REGISTER.md');
     expect(authShell, contains('class AuthShell'));
@@ -109,7 +107,6 @@ void main() {
     expect(router, contains("path: '/app/setup'"));
     expect(router, contains("path: '/app/subscribe'"));
     expect(setup, contains('setupFlow: true'));
-    expect(subscribe, contains('setupFlow: true'));
     expect(ops, contains('AuthShell'));
     expect(journey, contains('Orchestrate visible journey register'));
   });

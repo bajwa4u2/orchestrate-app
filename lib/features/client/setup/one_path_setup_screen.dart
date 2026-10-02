@@ -13,17 +13,21 @@ import '../../../core/ui/ob_widgets.dart';
 import '../../../core/ui/screen_memory.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../core/commercial/commercial_model.dart';
+import '../../../core/commercial/client_capabilities.dart';
 import '../../../core/platform/billing_gate.dart';
 import '../../../data/repositories/client/client_billing_repository.dart';
 import '../../../data/repositories/client/client_business_identity_repository.dart';
 import '../../../data/repositories/client/client_campaign_repository.dart';
 import '../../../data/repositories/client/client_mailbox_repository.dart';
 import '../../../data/repositories/client/client_outreach_repository.dart';
+import '../../../data/repositories/client/client_playbook_repository.dart';
 import '../../../data/repositories/client/client_representative_repository.dart';
 import '../../../data/setup/buyer_suggestions.dart';
 import '../../../data/setup/global_setup_options.dart';
 import '../screens/client_setup_screen.dart' show metroSuggestionsFor;
 import '../widgets/smtp_connect_dialog.dart';
+import '../widgets/sign_off_section.dart';
+import '../../../data/repositories/client/client_branding_repository.dart';
 
 /// GETTING READY: ONE PATH (DD-26, founder, 2026-09-30).
 ///
@@ -53,7 +57,14 @@ import '../widgets/smtp_connect_dialog.dart';
 /// eligibility. Nothing is inferred to look finished.
 // DD-27: "permission" is now the last step, "Who acts for this business"; the
 // name stays so older links and drafts keep working.
-enum SetupStep { business, want, offer, email, plan, permission, ready }
+//
+// DD-34 (2 Oct 2026): every business is set up by the playbook for its kind.
+// "When they're ready" asks which moments bring it work, and "How you get
+// paid" how the work is billed; the choices themselves come from the server.
+enum SetupStep { business, want, moments, offer, payment, email, plan, permission, ready }
+
+/// The steps a person works through; "ready" is where they land.
+const int _setupSteps = 8;
 
 extension on SetupStep {
   String get key => name;
@@ -61,7 +72,9 @@ extension on SetupStep {
   String get title => const [
         'Your business',
         'Who you want',
+        'When they\'re ready',
         'What you offer',
+        'How you get paid',
         'Your email',
         'Your plan',
         'Who acts for it',
@@ -70,7 +83,9 @@ extension on SetupStep {
   String get subtitle => const [
         'Name, website, address',
         'Buyers and where they are',
-        'One sentence, in your words',
+        'The moments that bring you work',
+        'In your words, with your proof',
+        'Deposits, terms, retainage',
         'Where notes are sent from',
         'Only when you want to send',
         'You, your document, your yes',
@@ -172,9 +187,55 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   /// "Add the records for me", when the domain's host takes our template.
   Map<String, dynamic> _autoRecords = const {};
 
-  // Step 3
+  // Details that used to live only on the retired Business identity page
+  // (DD-34): asked here, each beside the step it belongs to.
+  final _legalName = TextEditingController();
+  final _line2 = TextEditingController();
+  final _stateRegion = TextEditingController();
+  final _timezone = TextEditingController();
+  final _titles = TextEditingController();
+  final _neverKinds = TextEditingController();
+  final _neverMarkets = TextEditingController();
+  final _valueProps = TextEditingController();
+  final _differentiators = TextEditingController();
+  final _forbidden = TextEditingController();
+  final _rules = TextEditingController();
+  final _disclaimers = TextEditingController();
+  String _tone = '';
+  String _posture = '';
+  String _pace = '';
+  String _followUp = '';
+  String _replies = '';
+  bool _moreBusiness = false;
+  bool _moreSound = false;
+  final _branding = ClientBrandingRepository();
+  bool _hasLogo = false;
+  bool _logoBusy = false;
+  String? _logoNote;
+
+  // Step 3: what you offer, and the result a customer gets.
   final _offer = TextEditingController();
+  final _offerResult = TextEditingController();
   String _lane = 'opportunity';
+
+  // How this business wins work (DD-34). Every choice is the server's.
+  final _playbooks = ClientPlaybookRepository();
+  PlaybookState _playbook = PlaybookState.empty;
+  String? _kindKey;
+  final List<String> _roles = [];
+  final List<String> _customBuyers = [];
+  bool _businessesOnly = true;
+  String _sizeBand = 'any';
+  final Set<String> _moments = {};
+  final List<String> _customMoments = [];
+  final List<ProofItem> _proof = [];
+  PaymentTerms? _payment;
+
+  /// The playbook's choices, once the server has said what they are.
+  bool get _guided => !_playbook.isEmpty;
+  PlaybookOption? get _book => _playbook.playbookOf(_kindKey);
+  Set<String> get _confirmed =>
+      (_playbook.saved?.confirmed ?? const <String>[]).toSet();
 
   // Server truth
   Map<String, dynamic> _profile = const {};
@@ -205,7 +266,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   @override
   void initState() {
     super.initState();
-    for (final c in [_name, _website, _line1, _city, _postcode, _offer]) {
+    for (final c in [_name, _website, _line1, _city, _postcode, _offer, _offerResult]) {
       c.addListener(_keepDraft);
     }
     // The address they signed up with is usually the one notes come from.
@@ -219,8 +280,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     _domainPoll?.cancel();
     _draftTimer?.cancel();
     for (final c in [
-      _name, _website, _line1, _city, _postcode, _offer,
+      _name, _website, _line1, _city, _postcode, _offer, _offerResult,
       _address, _appPassword, _server,
+      _deposit, _retainage, _termsDays, ..._textAnswers.values,
+      _legalName, _line2, _timezone, _titles, _neverKinds,
+      _neverMarkets, _valueProps, _differentiators, _forbidden, _rules, _stateRegion,
+      _disclaimers,
     ]) {
       c.dispose();
     }
@@ -262,7 +327,13 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             .catchError((_) => null),
         _representative.fetchCurrent().catchError((_) => <String, dynamic>{}),
         _representative.documentStatus().catchError((_) => <String, dynamic>{}),
+        // Never fatal: without it Setup asks as it did before playbooks.
+        _playbooks.fetch().catchError((_) => PlaybookState.empty),
       ]);
+      // Who holds the platform, asked so the plan step never prices it twice.
+      ClientCapabilities.instance.load().then((_) {
+        if (mounted) setState(() {});
+      }, onError: (Object _) {});
       if (!mounted) return;
       final rawProfile = _map(results[0]);
       final profile = _map(rawProfile['profile']).isNotEmpty
@@ -281,6 +352,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         _providers = List<Map<String, dynamic>>.from(
             _list(results[5]).map(_map));
         _pricing = results[6] as CommercialModel?;
+        _playbook = results.length > 9 && results[9] is PlaybookState
+            ? results[9] as PlaybookState
+            : PlaybookState.empty;
         _setupCompleted = session.hasSetupCompleted;
         _planDeferred = draft['planDeferred'] == true;
         _hydrate(profile, setup, draft);
@@ -404,6 +478,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     if (_towns.isEmpty) _towns.addAll(_list(draft['towns']).map((e) => '$e'));
 
     _offer.text = pick(_text(p, 'outboundOffer'), 'offer');
+    _hydratePlaybook(draft);
+    _hydrateDetails(p);
     final lane = (setup['serviceType'] ?? setup['selectedPlan'] ?? draft['lane'] ?? '')
         .toString()
         .toLowerCase();
@@ -427,6 +503,104 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         _addressCountry = region;
       }
     }
+  }
+
+  /// The playbook as saved; a business saved before playbooks starts from
+  /// the kind its industry implies, chosen by nobody until it is saved.
+  void _hydratePlaybook(Map<String, dynamic> draft, {bool keepText = false}) {
+    final saved = _playbook.saved;
+    _kindKey = saved?.kindKey ??
+        (draft['kindKey'] as String?) ??
+        _playbook.suggestedKind;
+    if (_playbook.kind(_kindKey) == null) _kindKey = null;
+    _roles
+      ..clear()
+      ..addAll(saved?.buyerRoles ?? const []);
+    _customBuyers
+      ..clear()
+      ..addAll(saved?.customBuyers ?? const []);
+    // Buyers listed before playbooks are carried over, never replaced by the
+    // playbook's defaults: a known buyer is chosen, anything else is kept in
+    // the owner's own words.
+    final book = _book;
+    if (book != null && !_confirmed.contains('buyers') && _buyerKinds.isNotEmpty) {
+      final byLabel = {for (final r in _kindBuyers) r.label.toLowerCase(): r.key};
+      _roles.clear();
+      _customBuyers.clear();
+      for (final kind in _buyerKinds) {
+        final key = byLabel[kind.trim().toLowerCase()];
+        if (key != null) {
+          if (!_roles.contains(key)) _roles.add(key);
+        } else if (_customBuyers.length < 24 &&
+            !_customBuyers.any((c) => c.toLowerCase() == kind.trim().toLowerCase())) {
+          _customBuyers.add(kind.trim());
+        }
+      }
+    }
+    _businessesOnly = saved?.businessesOnly ?? true;
+    _sizeBand = saved?.sizeBand ?? 'any';
+    _moments
+      ..clear()
+      ..addAll(saved?.moments ?? _playbook.kind(_kindKey)?.defaultMoments ?? const []);
+    _customMoments
+      ..clear()
+      ..addAll(saved?.customMoments ?? const []);
+    _proof
+      ..clear()
+      ..addAll(saved?.proof ?? const []);
+    _payment = saved?.payment ?? _book?.payment;
+    _paymentFields();
+    _hydrateAnswers(saved?.answers ?? const {});
+    if (!keepText) {
+      _offerResult.text = saved?.offerResult ?? (draft['offerResult'] ?? '').toString();
+    }
+  }
+
+  /// The server's answer after a save. A new kind may bring a new playbook,
+  /// whose buyers and moments start from its own defaults.
+  void _applyPlaybook(PlaybookState state) {
+    _playbook = state;
+    _hydratePlaybook(const {}, keepText: true);
+  }
+
+  String _words(dynamic v) => _list(v).map((e) => '$e'.trim()).where((e) => e.isNotEmpty).join(', ');
+  List<String> _wordList(TextEditingController c) => c.text
+      .split(RegExp(r'[,;\n]'))
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toSet()
+      .toList();
+
+  void _hydrateDetails(Map<String, dynamic> p) {
+    final legal = _text(p, 'legalName');
+    _legalName.text = legal == _text(p, 'displayName') ? '' : legal;
+    final a = _map(p['postalAddress']);
+    _line2.text = _text(a, 'line2');
+    _stateRegion.text = _text(a, 'region');
+    _timezone.text = _text(p, 'primaryTimezone');
+    final icp = _map(p['icp']);
+    _titles.text = _words(icp['titleKeywords']);
+    _neverKinds.text = _words(icp['exclusionKeywords']);
+    _neverMarkets.text = _words(icp['disallowedMarkets']);
+    _valueProps.text = _words(p['valuePropositions']);
+    _differentiators.text = _words(p['differentiators']);
+    _forbidden.text = _words(p['forbiddenClaims']);
+    _rules.text = _words(p['complianceConstraints']);
+    _disclaimers.text = _words(p['requiredDisclaimers']);
+    _tone = _text(p, 'voiceTone').toLowerCase();
+    _posture = _text(p, 'outreachPosture').toLowerCase();
+    _pace = _text(p, 'pacingPreference').toLowerCase();
+    _followUp = _text(p, 'followUpSensitivity').toLowerCase();
+    _replies = _text(p, 'replyHandlingPreference').toLowerCase();
+    // Groups holding answers open by themselves: nothing saved looks missing.
+    _moreBusiness = [_legalName, _line2, _stateRegion].any((c) => c.text.isNotEmpty);
+    _openReach = [_titles, _neverKinds, _neverMarkets].any((c) => c.text.isNotEmpty);
+    _moreSound = [_forbidden, _rules, _disclaimers].any((c) => c.text.isNotEmpty) ||
+        [_tone, _pace, _followUp, _replies].any((v) => v.isNotEmpty);
+    _branding.fetchBranding().then((b) {
+      final logo = b['logo'] ?? _map(b['branding'])['logo'];
+      if (mounted) setState(() => _hasLogo = logo is Map && logo.isNotEmpty);
+    }, onError: (Object _) {});
   }
 
   /// Personal mailboxes: their domain is nobody's business website.
@@ -476,6 +650,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       'regions': _regions.toList(),
       'towns': _towns,
       'offer': _offer.text,
+      'offerResult': _offerResult.text,
+      'kindKey': _kindKey,
       'lane': _lane,
       'planDeferred': _planDeferred,
       // Read by the OAuth return screen: a connect started here comes back here.
@@ -522,6 +698,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     'PLAN_LAPSED',
   };
 
+  bool get _holdsPlatform =>
+      ClientCapabilities.instance.entitlement?.state.operating ?? false;
+
   bool get _planActive =>
       _eligibility.isNotEmpty &&
       !_blockers.any((b) => _planCodes.contains((b['code'] ?? '').toString()));
@@ -533,6 +712,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         final ok = _text(p, 'displayName').isNotEmpty &&
             _text(p, 'websiteUrl').isNotEmpty &&
             _text(p, 'industry').isNotEmpty &&
+            (!_guided || _playbook.saved != null) &&
             _map(p['postalAddress']).isNotEmpty &&
             _text(_map(p['postalAddress']), 'line1').isNotEmpty;
         return ok ? StepState.done : StepState.todo;
@@ -540,13 +720,20 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         final icp = _map(_profile['icp']);
         return _setupCompleted &&
                 _list(icp['industryTags']).isNotEmpty &&
-                _list(icp['geoTargets']).isNotEmpty
+                _list(icp['geoTargets']).isNotEmpty &&
+                (!_guided || _confirmed.contains('buyers'))
             ? StepState.done
             : StepState.todo;
+      case SetupStep.moments:
+        if (!_guided) return StepState.done;
+        return _confirmed.contains('moments') ? StepState.done : StepState.todo;
       case SetupStep.offer:
         return _setupCompleted && _text(_profile, 'outboundOffer').isNotEmpty
             ? StepState.done
             : StepState.todo;
+      case SetupStep.payment:
+        if (!_guided) return StepState.done;
+        return _confirmed.contains('payment') ? StepState.done : StepState.todo;
       case SetupStep.email:
         if (!_emailConnected) return StepState.todo;
         if (_personalMailbox || _domainReady) return StepState.done;
@@ -578,14 +765,14 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   SetupStep _firstOpenStep() {
-    for (final s in SetupStep.values.take(6)) {
+    for (final s in SetupStep.values.take(_setupSteps)) {
       if (_stateOf(s) == StepState.todo) return s;
     }
     return SetupStep.ready;
   }
 
   int get _doneCount => SetupStep.values
-      .take(6)
+      .take(_setupSteps)
       .where((s) => _stateOf(s) == StepState.done)
       .length;
 
@@ -629,7 +816,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   SetupStep _next(SetupStep s) {
     // After a save, the next step still to do; ready once nothing is left.
-    for (final candidate in SetupStep.values.skip(s.index + 1).take(6)) {
+    for (final candidate in SetupStep.values.skip(s.index + 1).take(_setupSteps)) {
       if (candidate == SetupStep.ready) break;
       if (_stateOf(candidate) != StepState.done) return candidate;
     }
@@ -682,7 +869,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     if (_website.text.trim().isEmpty) {
       errors['website'] = 'Add your website, for example yourbusiness.com.';
     }
-    if (_industryCode == null) {
+    if (_guided ? _kindKey == null : _industryCode == null) {
       errors['industry'] = 'Choose what kind of business it is.';
     }
     if (_line1.text.trim().isEmpty) {
@@ -710,20 +897,31 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       final existingLegal = _text(_profile, 'legalName');
       final result = await _identity.patchProfile({
         'displayName': _name.text.trim(),
-        if (existingLegal.isEmpty) 'legalName': _name.text.trim(),
+        if (_legalName.text.trim().isNotEmpty)
+          'legalName': _legalName.text.trim()
+        else if (existingLegal.isEmpty)
+          'legalName': _name.text.trim(),
+        if (_timezone.text.trim().isNotEmpty) 'primaryTimezone': _timezone.text.trim(),
         'websiteUrl': website,
         if (industry != null) 'industry': industry.label,
         'postalAddress': {
           'line1': _line1.text.trim(),
+          if (_line2.text.trim().isNotEmpty) 'line2': _line2.text.trim(),
+          if (_stateRegion.text.trim().isNotEmpty) 'region': _stateRegion.text.trim(),
           'locality': _city.text.trim(),
           'postalCode': _postcode.text.trim(),
           'countryCode': _addressCountry,
         },
       });
       final profile = _map(result['profile']);
+      // The kind decides the playbook every later step offers.
+      final playbook = _guided && _kindKey != null
+          ? await _playbooks.save({'kindKey': _kindKey})
+          : null;
       if (!mounted) return;
       setState(() {
         if (profile.isNotEmpty) _profile = profile;
+        if (playbook != null) _applyPlaybook(playbook);
         _busy = false;
         _markSaved();
       });
@@ -901,7 +1099,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   Future<void> _saveWant() async {
-    if (_buyerKinds.isEmpty) {
+    if (_guided && _book == null) {
+      setState(() => _stepError = 'Choose what kind of business it is first.');
+      return;
+    }
+    if (_guided ? _roles.isEmpty && _customBuyers.isEmpty : _buyerKinds.isEmpty) {
       setState(() => _stepError =
           'Add at least one kind of business that buys from you.');
       return;
@@ -914,19 +1116,39 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           : 'Add at least one country, or choose anywhere in the world.');
       return;
     }
+    final answersWant = _answersOn('want');
+    if (answersWant == null) return;
     setState(() {
       _busy = true;
       _stepError = null;
     });
     try {
       await _postSetup();
+      // Guided, the server writes the buyer list from the chosen buyers, in
+      // their own words; only the places are sent here.
+      final playbook = _guided
+          ? await _playbooks.save({
+              'buyerRoles': _roles,
+              'customBuyers': _customBuyers,
+              'businessesOnly': _businessesOnly,
+              'sizeBand': _sizeBand,
+              if (answersWant.isNotEmpty) 'answers': answersWant,
+            })
+          : null;
       final result = await _identity.patchProfile({
-        'icp': {'industryTags': _buyerKinds, 'geoTargets': _geoTargets},
+        'icp': {
+          if (!_guided) 'industryTags': _buyerKinds,
+          'geoTargets': _geoTargets,
+          'titleKeywords': _wordList(_titles),
+          'exclusionKeywords': _wordList(_neverKinds),
+          'disallowedMarkets': _wordList(_neverMarkets),
+        },
       });
       final profile = _map(result['profile']);
       if (!mounted) return;
       setState(() {
         if (profile.isNotEmpty) _profile = profile;
+        if (playbook != null) _playbook = playbook;
         _busy = false;
         _markSaved();
       });
@@ -944,6 +1166,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   Future<void> _saveOffer() async {
     final offer = _offer.text.trim();
+    final answersOffer = _answersOn('offer');
+    if (answersOffer == null) return;
     if (offer.isEmpty) {
       setState(() => _fieldErrors = {
             'offer': 'Say what you offer in a sentence or two. Every first '
@@ -957,12 +1181,32 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       _stepError = null;
     });
     try {
-      final result = await _identity.patchProfile({'outboundOffer': offer});
+      final result = await _identity.patchProfile({
+        'outboundOffer': offer,
+        'valuePropositions': _wordList(_valueProps),
+        'differentiators': _wordList(_differentiators),
+        'forbiddenClaims': _wordList(_forbidden),
+        'complianceConstraints': _wordList(_rules),
+        'requiredDisclaimers': _wordList(_disclaimers),
+        if (_tone.isNotEmpty) 'voiceTone': _tone,
+        if (_posture.isNotEmpty) 'outreachPosture': _posture,
+        if (_pace.isNotEmpty) 'pacingPreference': _pace,
+        if (_followUp.isNotEmpty) 'followUpSensitivity': _followUp,
+        if (_replies.isNotEmpty) 'replyHandlingPreference': _replies,
+      });
       if (_countries.isNotEmpty) await _postSetup();
       final profile = _map(result['profile']);
+      final playbook = _guided && _book != null
+          ? await _playbooks.save({
+              'offerResult': _offerResult.text.trim(),
+              'proof': [for (final p in _proof) p.toJson()],
+              if (answersOffer.isNotEmpty) 'answers': answersOffer,
+            })
+          : null;
       if (!mounted) return;
       setState(() {
         if (profile.isNotEmpty) _profile = profile;
+        if (playbook != null) _playbook = playbook;
         _busy = false;
         _markSaved();
       });
@@ -1220,11 +1464,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   /// Straight from the plan step to secure checkout: no second price page.
-  /// A store build sends nobody out to pay, so it opens Billing, where the
-  /// store's own purchase sheet lives.
+  /// A store build sends nobody out to pay, so it opens Plan and billing,
+  /// where the store's own purchase sheet lives.
   Future<void> _startCheckout() async {
     if (!externalPurchaseAllowed) {
-      context.go('/client/billing');
+      context.go('/account/plan');
       return;
     }
     setState(() {
@@ -1491,8 +1735,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       children: [
         Text(
             phone
-                ? 'STEP ${_step.number} OF 6 · ${_step.title.toUpperCase()}'
-                : 'STEP ${_step.number} OF 6',
+                ? 'STEP ${_step.number} OF $_setupSteps · ${_step.title.toUpperCase()}'
+                : 'STEP ${_step.number} OF $_setupSteps',
             style: Ob.eyebrow()),
         const SizedBox(height: 10),
         ObHeadline(title, size: phone ? 32 : 46),
@@ -1545,8 +1789,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         return _businessStep(phone);
       case SetupStep.want:
         return _wantStep(phone);
+      case SetupStep.moments:
+        return _momentsStep(phone);
       case SetupStep.offer:
         return _offerStep(phone);
+      case SetupStep.payment:
+        return _paymentStep(phone);
       case SetupStep.email:
         return _emailStep(phone);
       case SetupStep.permission:
@@ -1595,6 +1843,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ),
         ),
         _gap(),
+        if (_guided)
+          _kindPicker()
+        else ...[
         Text('What kind of business is it?', style: Ob.strong(15)),
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
@@ -1616,6 +1867,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             _keepDraft();
           }),
         ]),
+        ],
         if (_fieldErrors['industry'] != null) ...[
           const SizedBox(height: 6),
           Text(_fieldErrors['industry']!, style: Ob.body(13.5, color: Ob.refused)),
@@ -1681,6 +1933,30 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           style: Ob.body(13.5,
               color: _fieldErrors['address'] != null ? Ob.refused : Ob.inkMuted),
         ),
+        _gap(),
+        _more('More about your business', _moreBusiness,
+            () => setState(() => _moreBusiness = !_moreBusiness), [
+          ObField(
+            label: 'Legal name, if different',
+            controller: _legalName,
+            placeholder: 'For example: Harbour Property Group LLC',
+          ),
+          const SizedBox(height: 12),
+          _pair(
+            phone,
+            ObField(label: 'Address line 2', controller: _line2, placeholder: 'Suite or floor'),
+            ObField(label: 'State or region', controller: _stateRegion),
+          ),
+          const SizedBox(height: 12),
+          ObField(
+            label: 'Time zone',
+            controller: _timezone,
+            placeholder: 'America/Detroit',
+            hint: 'Notes go out and Today\'s email arrives in your working hours.',
+          ),
+          const SizedBox(height: 16),
+          _logoRow(),
+        ]),
         _errorLine(),
         _gap(26),
         ObActions(
@@ -1706,6 +1982,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                 'are. Start small; you can widen it later.',
             phone: phone),
         _gap(),
+        if (_guided)
+          _buyerPicker()
+        else ...[
         Text('Businesses that buy from you', style: Ob.strong(15)),
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
@@ -1746,6 +2025,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             _keepDraft();
           }),
         ]),
+        ],
         _gap(),
         Text('Where they are', style: Ob.strong(15)),
         const SizedBox(height: 8),
@@ -1894,6 +2174,29 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             _keepDraft();
           }),
         ]),
+        _gap(),
+        _more('People to reach, and who never to contact', _hasReachAnswers,
+            () => setState(() => _openReach = !_openReach), [
+          ObField(
+            label: 'The people to reach',
+            controller: _titles,
+            placeholder: 'Estimator, facilities manager, office manager',
+            hint: 'Job titles, separated by commas. Orchestrate writes to the '
+                'person a business itself names for that role.',
+          ),
+          const SizedBox(height: 12),
+          ObField(
+            label: 'Kinds of business you never sell to',
+            controller: _neverKinds,
+            placeholder: 'Homeowners, franchises',
+          ),
+          const SizedBox(height: 12),
+          ObField(
+            label: 'Markets you stay out of',
+            controller: _neverMarkets,
+            placeholder: 'Gambling, tobacco',
+          ),
+        ]),
         _errorLine(),
         _gap(26),
         ObActions(
@@ -1945,13 +2248,50 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             ],
           ),
         ),
+        if (_guided) ...[
+          _gap(),
+          ObField(
+            label: 'What your customer gets (optional)',
+            controller: _offerResult,
+            maxLength: 300,
+            maxLines: 2,
+            placeholder: switch (_book?.key) {
+              'trade_contractor' || 'general_contractor' =>
+                'For example: inspection-ready in one visit, with photos the same day.',
+              'insurance_agency' =>
+                'For example: cover in place before your first load.',
+              _ => 'For example: the work done when promised, with one person to call.',
+            },
+          ),
+          ..._questionsOn('offer'),
+          _gap(),
+          ObField(
+            label: 'What customers value most (optional)',
+            controller: _valueProps,
+            placeholder: 'Same-day answers, one invoice a month',
+            hint: 'Separated by commas.',
+          ),
+          const SizedBox(height: 12),
+          ObField(
+            label: 'What makes you different (optional)',
+            controller: _differentiators,
+            placeholder: 'Family-owned since 1998, union crews',
+          ),
+          if (_book != null) ...[
+            _gap(),
+            _proofSection(),
+          ],
+          _gap(),
+          _more('How your notes sound', _moreSound,
+              () => setState(() => _moreSound = !_moreSound), _soundFields()),
+        ],
         _errorLine(),
         _gap(26),
         ObActions(
           primary: 'Save and continue',
           onPrimary: _saveOffer,
           secondary: 'Back',
-          onSecondary: () => _goTo(SetupStep.want),
+          onSecondary: () => _goTo(SetupStep.moments),
           busy: _busy,
         ),
       ],
@@ -2038,6 +2378,10 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               'Orchestrate sends at a careful pace from it.',
               style: Ob.body(13.5, color: Ob.inkMuted)),
         ],
+        if (connected) ...[
+          _gap(),
+          const SignOffSection(),
+        ],
         _errorLine(),
         _gap(26),
         if (connected)
@@ -2045,7 +2389,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             primary: 'Continue',
             onPrimary: () => _goTo(_next(SetupStep.email)),
             secondary: 'Back',
-            onSecondary: () => _goTo(SetupStep.offer),
+            onSecondary: () => _goTo(SetupStep.payment),
           )
         else ...[
           ObActions(
@@ -2056,7 +2400,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                     : 'Continue',
             onPrimary: needsPassword ? _connectWithPassword : _continueWithAddress,
             secondary: 'Back',
-            onSecondary: () => _goTo(SetupStep.offer),
+            onSecondary: () => _goTo(SetupStep.payment),
             busy: _busy,
           ),
           const SizedBox(height: 14),
@@ -2194,6 +2538,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               ]),
             ),
         ],
+        _gap(),
+        const SignOffSection(),
         _errorLine(),
         _gap(26),
         ObActions(
@@ -2202,7 +2548,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           secondary: _domainAttached && !_domainReady ? 'Check now' : 'Back',
           onSecondary: _domainAttached && !_domainReady
               ? _checkDomainNow
-              : () => _goTo(SetupStep.offer),
+              : () => _goTo(SetupStep.payment),
           busy: _busy,
         ),
       ],
@@ -2527,7 +2873,10 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                   : 'Checkout was closed before paying. Nothing was charged.'),
           const SizedBox(height: 16),
         ],
-        if (!_planActive && _offers.isNotEmpty) ...[
+        // Never price what the organisation already holds, on any rail: the
+        // entitlement decides, not a Stripe row (from the retired Subscribe
+        // page, DD-34).
+        if (!_planActive && !_holdsPlatform && _offers.isNotEmpty) ...[
           const EarlyPriceLine(),
           const SizedBox(height: 14),
           // Prices are the server's (`/public/pricing`), never written here.
@@ -2586,6 +2935,1016 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   String _numberWord(int n) =>
       const ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'].elementAtOrNull(n) ?? '$n';
 
+  // ── Playbook steps (DD-34) ───────────────────────────────────────
+
+  BusinessKindOption? get _kind => _playbook.kind(_kindKey);
+
+  /// This kind's own buyers; the playbook's for a server that sends none.
+  List<Labelled> get _kindBuyers =>
+      (_kind?.buyerRoles.isNotEmpty ?? false) ? _kind!.buyerRoles : (_book?.buyerRoles ?? const []);
+  List<ProofKind> get _kindProof =>
+      (_kind?.proofKinds.isNotEmpty ?? false) ? _kind!.proofKinds : (_book?.proofKinds ?? const []);
+
+  /// What the buyers are, said in the owner's words.
+  List<String> get _buyerWords => _guided
+      ? [
+          for (final r in _kindBuyers)
+            if (_roles.contains(r.key)) r.label,
+          ..._customBuyers,
+        ]
+      : _buyerKinds;
+
+  bool _kindOpen = false;
+
+  Widget _kindPicker() {
+    final chosen = _playbook.kind(_kindKey);
+    final groups = <String, List<BusinessKindOption>>{};
+    for (final k in _playbook.kinds) {
+      groups.putIfAbsent(k.group, () => []).add(k);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('What kind of business is it?', style: Ob.strong(15)),
+        const SizedBox(height: 4),
+        Text('Orchestrate looks for buyers the way businesses like yours win '
+            'work. Not listed? Choose the nearest.',
+            style: Ob.body(13.5, color: Ob.inkMuted)),
+        const SizedBox(height: 10),
+        if (chosen != null && !_kindOpen)
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            ObChoice(chosen.label),
+            ObAddChoice('Change', onTap: () => setState(() => _kindOpen = true)),
+          ])
+        else
+          for (final g in groups.entries) ...[
+            Text(g.key.toUpperCase(), style: Ob.eyebrow()),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final k in g.value)
+                _Toggle(k.label, on: k.key == _kindKey, onTap: () {
+                  setState(() {
+                    _kindKey = k.key;
+                    _industryCode = k.industryCode;
+                    _kindOpen = false;
+                    _fieldErrors = {..._fieldErrors}..remove('industry');
+                  });
+                  _keepDraft();
+                }),
+            ]),
+            const SizedBox(height: 14),
+          ],
+      ],
+    );
+  }
+
+  Widget _needKind() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Choose what kind of business it is first; the choices here '
+              'follow from it.',
+              style: Ob.body(15, color: Ob.ink)),
+          const SizedBox(height: 10),
+          OutlinedButton(
+            onPressed: () => _goTo(SetupStep.business),
+            child: const Text('Choose the kind of business'),
+          ),
+        ],
+      );
+
+  static const _sizeLabels = {
+    'any': 'Any size',
+    '1-9': '1 to 9 people',
+    '10-49': '10 to 49',
+    '50-249': '50 to 249',
+    '250+': '250 or more',
+  };
+
+  Widget _buyerPicker() {
+    final book = _book;
+    if (book == null) return _needKind();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Who buys from you', style: Ob.strong(15)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final r in _kindBuyers)
+            _Toggle(r.label, on: _roles.contains(r.key), onTap: () {
+              setState(() {
+                _roles.contains(r.key) ? _roles.remove(r.key) : _roles.add(r.key);
+                _stepError = null;
+              });
+              _keepDraft();
+            }),
+          for (final c in _customBuyers)
+            ObChoice(c, onRemove: () {
+              setState(() => _customBuyers.remove(c));
+              _keepDraft();
+            }),
+          if (_customBuyers.length < 24)
+            ObAddChoice('In your own words', onTap: () async {
+              final typed = await _askText(
+                  title: 'Who else buys from you?',
+                  hint: 'For example: hospitals in Ohio',
+                  maxLength: 60);
+              if (typed == null || !mounted) return;
+              setState(() {
+                if (!_customBuyers.any((c) => c.toLowerCase() == typed.toLowerCase())) {
+                  _customBuyers.add(typed);
+                }
+                _stepError = null;
+              });
+              _keepDraft();
+            }),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: [
+          Switch.adaptive(
+            value: _businessesOnly,
+            onChanged: (v) {
+              setState(() => _businessesOnly = v);
+              _keepDraft();
+            },
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('Businesses and public bodies only, never homeowners',
+                style: Ob.body(15, color: Ob.ink)),
+          ),
+        ]),
+        _gap(),
+        Text('How big are they?', style: Ob.strong(15)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final band in _playbook.sizeBands)
+            _Toggle(_sizeLabels[band] ?? band, on: _sizeBand == band, onTap: () {
+              setState(() => _sizeBand = band);
+              _keepDraft();
+            }),
+        ]),
+        ..._questionsOn('want'),
+      ],
+    );
+  }
+
+  /// An example in this business's own world, never a builder for an accountant.
+  (String, String) get _example => switch (_book?.key) {
+        'trade_contractor' || 'general_contractor' => (
+            'A builder near you won a school renovation on 20 September.',
+            'a winner hires its trades within weeks, and the first credible '
+                'one to ask is often the one used.'
+          ),
+        'insurance_agency' => (
+            'A trucking company near you got its operating authority on 20 September.',
+            'it must file insurance before it can haul a single load.'
+          ),
+        _ => (
+            'A business near you announced a second location on 20 September.',
+            'growth means new space, new staff and new suppliers.'
+          ),
+      };
+
+  Widget _momentsStep(bool phone) {
+    final book = _book;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _head('When is a buyer ready for you?',
+            'Businesses like yours win work at moments: a project awarded, a '
+                'permit issued, a policy coming up for renewal. Keep the ones '
+                'that bring you work, and Orchestrate tells you which business '
+                'is at one.',
+            phone: phone),
+        _gap(),
+        if (book == null)
+          _needKind()
+        else ...[
+          for (final m in book.moments) ...[
+            _MomentTile(
+              moment: m,
+              on: _moments.contains(m.key),
+              onTap: () {
+                setState(() {
+                  _moments.contains(m.key) ? _moments.remove(m.key) : _moments.add(m.key);
+                  _stepError = null;
+                });
+                _keepDraft();
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+          const SizedBox(height: 4),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final c in _customMoments)
+              ObChoice(c, onRemove: () {
+                setState(() => _customMoments.remove(c));
+                _keepDraft();
+              }),
+            if (_customMoments.length < 5)
+              ObAddChoice('A moment in your own words', onTap: () async {
+                final typed = await _askText(
+                    title: 'What happens just before a business buys from you?',
+                    hint: 'For example: a restaurant changes owner',
+                    maxLength: 160);
+                if (typed == null || !mounted) return;
+                setState(() {
+                  _customMoments.add(typed);
+                  _stepError = null;
+                });
+                _keepDraft();
+              }),
+          ]),
+          if (_customMoments.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text('Moments in your own words are kept with your setup. '
+                'Orchestrate watches for them once there is a public source '
+                'to read them from.',
+                style: Ob.body(13, color: Ob.inkMuted)),
+          ],
+          ..._questionsOn('moments'),
+        ],
+        _errorLine(),
+        _gap(26),
+        ObActions(
+          primary: 'Save and continue',
+          onPrimary: _saveMoments,
+          secondary: 'Back',
+          onSecondary: () => _goTo(SetupStep.want),
+          busy: _busy,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveMoments() async {
+    if (_book == null) {
+      setState(() => _stepError = 'Choose what kind of business it is first.');
+      return;
+    }
+    if (_moments.isEmpty && _customMoments.isEmpty) {
+      setState(() => _stepError = 'Keep at least one moment, or write your own.');
+      return;
+    }
+    final answers = _answersOn('moments');
+    if (answers == null) return;
+    await _savePlaybookStep(SetupStep.moments, {
+      'moments': _moments.toList(),
+      'customMoments': _customMoments,
+      if (answers.isNotEmpty) 'answers': answers,
+    });
+  }
+
+  /// Saves one playbook step and moves on; a refusal is the server's own.
+  Future<void> _savePlaybookStep(SetupStep step, Map<String, dynamic> patch) async {
+    setState(() {
+      _busy = true;
+      _stepError = null;
+    });
+    try {
+      final state = await _playbooks.save(patch);
+      if (!mounted) return;
+      setState(() {
+        _playbook = state;
+        _busy = false;
+        _markSaved();
+      });
+      _goTo(_next(step));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _stepError = _reasonFor(error,
+            fallback: 'This step could not be saved just now. Your choices '
+                'are kept; try again in a moment.');
+      });
+    }
+  }
+
+  String _momentLine() {
+    final labels = [
+      for (final m in _book?.moments ?? const <MomentOption>[])
+        if (_moments.contains(m.key)) m.label,
+      ..._customMoments,
+    ];
+    if (labels.isEmpty) return 'Not chosen yet';
+    return labels.length == 1 ? labels.first : '${labels.first} and ${labels.length - 1} more';
+  }
+
+  // Proof
+
+  Widget _proofSection() {
+    final kinds = {for (final k in _kindProof) k.key: k};
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(children: [
+          Text('Your proof ', style: Ob.strong(15)),
+          Text('(optional)', style: Ob.body(15, color: Ob.inkMuted)),
+        ]),
+        const SizedBox(height: 4),
+        Text('What buyers ask to see before they hire you. Orchestrate can '
+            'mention it in a note, and you see every note before it goes.',
+            style: Ob.body(13.5, color: Ob.inkMuted)),
+        const SizedBox(height: 10),
+        for (final p in _proof) ...[
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: Ob.line),
+              borderRadius: BorderRadius.circular(Ob.radiusControl),
+            ),
+            child: Row(children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Flexible(child: Text(p.label, style: Ob.strong(14.5))),
+                      if (p.hasFile) ...[
+                        const SizedBox(width: 6),
+                        const Tooltip(
+                          message: 'A file is attached',
+                          child: Icon(Icons.attach_file, size: 15, color: Ob.inkMuted),
+                        ),
+                      ],
+                    ]),
+                    Text(
+                        [
+                          p.kindLabel ?? kinds[p.kind]?.label ?? p.kind,
+                          if (kinds[p.kind]?.isEvidence ?? false)
+                            p.mentionable ? 'may be mentioned in notes' : 'kept private',
+                          if (p.number != null) p.number!,
+                          if (p.issuer != null) p.issuer!,
+                          if (p.expiresOn != null) 'expires ${_dateWords(p.expiresOn!)}',
+                        ].join(' · '),
+                        style: Ob.body(13, color: Ob.inkMuted)),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Remove ${p.label}',
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () => setState(() => _proof.remove(p)),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 8),
+        ],
+        if (_proof.length < 60)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ObAddChoice('Add proof', onTap: _addProof),
+          ),
+      ],
+    );
+  }
+
+  static String _dateWords(String iso) {
+    final d = DateTime.tryParse(iso);
+    if (d == null) return iso;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${d.day} ${months[d.month - 1]} ${d.year}';
+  }
+
+  Future<void> _addProof() async {
+    final kinds = _kindProof;
+    if (kinds.isEmpty) return;
+    var kind = kinds.first;
+    final label = TextEditingController();
+    final number = TextEditingController();
+    final issuer = TextEditingController();
+    DateTime? expires;
+    String? problem;
+    var mentionable = true;
+    final added = await showDialog<ProofItem>(
+      context: context,
+      builder: (context) => Theme(
+        data: Ob.theme(),
+        child: StatefulBuilder(
+          builder: (context, set) => AlertDialog(
+            backgroundColor: Ob.paper,
+            title: Text('Add proof', style: Ob.strong(18)),
+            content: SizedBox(
+              width: 460,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(spacing: 8, runSpacing: 8, children: [
+                      for (final k in kinds)
+                        _Toggle(k.label, on: k.key == kind.key, onTap: () => set(() {
+                              kind = k;
+                              if (!k.expires) expires = null;
+                            })),
+                    ]),
+                    const SizedBox(height: 16),
+                    ObField(label: 'What it is', controller: label, placeholder: kind.hint, error: problem),
+                    const SizedBox(height: 12),
+                    if (!kind.isEvidence) ...[
+                      ObField(label: 'Number (optional)', controller: number),
+                      const SizedBox(height: 12),
+                    ],
+                    ObField(
+                        label: kind.isEvidence
+                            ? 'What you did, and for whom (optional)'
+                            : 'Issued by (optional)',
+                        controller: issuer),
+                    if (kind.isEvidence) ...[
+                      const SizedBox(height: 8),
+                      Row(children: [
+                        Switch.adaptive(
+                          value: mentionable,
+                          onChanged: (v) => set(() => mentionable = v),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Orchestrate may mention it in a note',
+                              style: Ob.body(14.5, color: Ob.ink)),
+                        ),
+                      ]),
+                    ],
+                    if (kind.expires && !kind.isEvidence) ...[
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.event, size: 18),
+                          label: Text(expires == null
+                              ? 'Expiry date (optional)'
+                              : 'Expires ${_dateWords(expires!.toIso8601String())}'),
+                          onPressed: () async {
+                            final now = DateTime.now();
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: expires ?? now.add(const Duration(days: 365)),
+                              firstDate: now.subtract(const Duration(days: 30)),
+                              lastDate: DateTime(now.year + 10),
+                            );
+                            if (picked != null) set(() => expires = picked);
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: () {
+                  if (label.text.trim().isEmpty) {
+                    set(() => problem = 'Say what it is, for example: ${kind.hint.toLowerCase()}.');
+                    return;
+                  }
+                  String? two(int n) => n.toString().padLeft(2, '0');
+                  Navigator.pop(
+                    context,
+                    ProofItem(
+                      id: '',
+                      kind: kind.key,
+                      kindLabel: kind.label,
+                      mentionable: kind.isEvidence ? mentionable : true,
+                      label: label.text.trim(),
+                      number: kind.isEvidence || number.text.trim().isEmpty ? null : number.text.trim(),
+                      issuer: issuer.text.trim().isEmpty ? null : issuer.text.trim(),
+                      expiresOn: expires == null
+                          ? null
+                          : '${expires!.year}-${two(expires!.month)}-${two(expires!.day)}',
+                    ),
+                  );
+                },
+                child: const Text('Add'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    for (final c in [label, number, issuer]) {
+      c.dispose();
+    }
+    if (added == null || !mounted) return;
+    setState(() => _proof.add(added));
+  }
+
+  // Payment
+
+  final _deposit = TextEditingController();
+  final _retainage = TextEditingController();
+  final _termsDays = TextEditingController();
+  String _paymentModel = 'terms';
+
+  void _paymentFields() {
+    final p = _payment;
+    if (p == null) return;
+    String n(double? v) => v == null ? '' : (v == v.roundToDouble() ? '${v.round()}' : '$v');
+    _paymentModel = p.model;
+    _deposit.text = n(p.depositPercent);
+    _retainage.text = n(p.retainagePercent);
+    _termsDays.text = '${p.termsDays}';
+  }
+
+  static const _paymentModels = {
+    'recurring': 'A monthly or yearly subscription',
+    'progress': 'Monthly, as the work progresses',
+    'terms': 'An invoice when the work is done',
+    'commission': 'Commission from the insurer',
+  };
+
+  Widget _paymentStep(bool phone) {
+    final model = _paymentModel;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _head('How do you get paid?',
+            'So your agreements and invoices follow the way your work is '
+                'billed. Change it on any single agreement when a job differs.',
+            phone: phone),
+        _gap(),
+        if (_book == null)
+          _needKind()
+        else ...[
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final e in _paymentModels.entries)
+              if (_book!.paymentModels.contains(e.key) || e.key == model)
+              _Toggle(e.value, on: model == e.key, onTap: () {
+                setState(() => _paymentModel = e.key);
+              }),
+          ]),
+          const SizedBox(height: 8),
+          Text(
+              switch (model) {
+                'progress' => 'Each month you bill for the work done so far, '
+                    'and the customer holds back a share until the job is '
+                    'finished.',
+                'commission' => 'The insurer pays your commission. Fees you '
+                    'bill yourself follow the terms below.',
+                'recurring' => 'Billed every month or year, in advance, until '
+                    'the customer stops.',
+                _ => 'One invoice, or one per stage, due after the work is done.',
+              },
+              style: Ob.body(13.5, color: Ob.inkMuted)),
+          _gap(),
+          _pair(
+            phone,
+            ObField(
+              label: 'Payment due after (days)',
+              controller: _termsDays,
+              keyboardType: TextInputType.number,
+              placeholder: '30',
+            ),
+            model == 'commission' || model == 'recurring'
+                ? const SizedBox.shrink()
+                : ObField(
+                    label: 'Deposit (%, optional)',
+                    controller: _deposit,
+                    keyboardType: TextInputType.number,
+                    placeholder: 'None',
+                  ),
+          ),
+          if (model == 'progress') ...[
+            _gap(),
+            ObField(
+              label: 'Retainage held until the job is finished (%)',
+              controller: _retainage,
+              keyboardType: TextInputType.number,
+              placeholder: '10',
+              hint: 'Usually 5 or 10. Leave empty if your customers hold none.',
+            ),
+          ],
+        ],
+        _errorLine(),
+        _gap(26),
+        ObActions(
+          primary: 'Save and continue',
+          onPrimary: _savePayment,
+          secondary: 'Back',
+          onSecondary: () => _goTo(SetupStep.offer),
+          busy: _busy,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _savePayment() async {
+    if (_book == null) {
+      setState(() => _stepError = 'Choose what kind of business it is first.');
+      return;
+    }
+    double? pct(TextEditingController c) =>
+        c.text.trim().isEmpty ? null : double.tryParse(c.text.trim().replaceAll('%', ''));
+    final days = int.tryParse(_termsDays.text.trim().isEmpty ? '30' : _termsDays.text.trim());
+    if (days == null) {
+      setState(() => _stepError = 'Say in how many days payment is due, for example 30.');
+      return;
+    }
+    if ((_deposit.text.trim().isNotEmpty && pct(_deposit) == null) ||
+        (_retainage.text.trim().isNotEmpty && pct(_retainage) == null)) {
+      setState(() => _stepError = 'Give percentages as numbers, for example 10.');
+      return;
+    }
+    await _savePlaybookStep(SetupStep.payment, {
+      'payment': {
+        'model': _paymentModel,
+        'termsDays': days,
+        'depositPercent': _paymentModel == 'commission' || _paymentModel == 'recurring' ? null : pct(_deposit),
+        'retainagePercent': _paymentModel == 'progress' ? pct(_retainage) : null,
+      },
+    });
+  }
+
+  String _paymentLine() {
+    if (!_confirmed.contains('payment')) return 'Not chosen yet';
+    final p = _playbook.saved?.payment;
+    if (p == null) return 'Not chosen yet';
+    return [
+      _paymentModels[p.model] ?? p.model,
+      if (p.depositPercent != null && p.depositPercent! > 0) '${_pctWords(p.depositPercent!)} deposit',
+      if (p.retainagePercent != null && p.retainagePercent! > 0) '${_pctWords(p.retainagePercent!)} retainage',
+      'due in ${p.termsDays} days',
+    ].join(' · ');
+  }
+
+  static String _pctWords(double v) => '${v == v.roundToDouble() ? v.round() : v}%';
+
+  /// One line of the owner's own words, or null when they cancel.
+  Future<String?> _askText({required String title, required String hint, required int maxLength}) async {
+    final c = TextEditingController();
+    final typed = await showDialog<String>(
+      context: context,
+      builder: (context) => Theme(
+        data: Ob.theme(),
+        child: AlertDialog(
+          backgroundColor: Ob.paper,
+          title: Text(title, style: Ob.strong(18)),
+          content: SizedBox(
+            width: 420,
+            child: TextField(
+              controller: c,
+              autofocus: true,
+              maxLength: maxLength,
+              style: Ob.body(16, color: Ob.ink),
+              decoration: InputDecoration(hintText: hint),
+              onSubmitted: (v) => Navigator.pop(context, v),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(context, c.text), child: const Text('Add')),
+          ],
+        ),
+      ),
+    );
+    c.dispose();
+    final t = (typed ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+    return t.isEmpty ? null : t;
+  }
+
+  // ── Details from the retired Business identity page (DD-34) ────────
+
+  bool _openReach = false;
+  bool get _hasReachAnswers => _openReach;
+
+  /// A quiet, optional group that opens in place; nothing in it is required.
+  Widget _more(String title, bool open, VoidCallback toggle, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: toggle,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(children: [
+              Icon(open ? Icons.expand_less : Icons.expand_more, size: 20, color: Ob.ink),
+              const SizedBox(width: 6),
+              Flexible(child: Text(title, style: Ob.strong(15))),
+              Text('  (optional)', style: Ob.body(15, color: Ob.inkMuted)),
+            ]),
+          ),
+        ),
+        if (open) ...[
+          const SizedBox(height: 10),
+          ...children,
+        ],
+      ],
+    );
+  }
+
+  Widget _choiceRow(String label, Map<String, String> options, String value,
+      ValueChanged<String> onPick) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(label, style: Ob.strong(14.5)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final e in options.entries)
+            _Toggle(e.value, on: value == e.key, onTap: () {
+              setState(() => onPick(value == e.key ? '' : e.key));
+              _keepDraft();
+            }),
+        ]),
+      ],
+    );
+  }
+
+  List<Widget> _soundFields() => [
+        _choiceRow('Tone', const {
+          'professional': 'Professional',
+          'friendly': 'Friendly',
+          'plain': 'Plain and short',
+          'technical': 'Technical',
+        }, _tone, (v) => _tone = v),
+        const SizedBox(height: 14),
+        _choiceRow('How often to follow up', const {
+          'low': 'Once, lightly',
+          'medium': 'A couple of times',
+          'high': 'Until they answer',
+        }, _followUp, (v) => _followUp = v),
+        const SizedBox(height: 14),
+        _choiceRow('Pace', const {
+          'gentle': 'A few at a time',
+          'standard': 'Steady',
+          'accelerated': 'As many as are ready',
+        }, _pace, (v) => _pace = v),
+        const SizedBox(height: 14),
+        _choiceRow('When someone replies', const {
+          'human-review': 'Show me every reply first',
+          'auto-acknowledge': 'Thank them for me, then show me',
+          'hand-off-to-meeting': 'Offer a time to talk',
+        }, _replies, (v) => _replies = v),
+        const SizedBox(height: 14),
+        ObField(
+          label: 'Claims never to make',
+          controller: _forbidden,
+          placeholder: 'Cheapest in town, guaranteed results',
+          hint: 'Separated by commas. Orchestrate leaves them out of every note.',
+        ),
+        const SizedBox(height: 12),
+        ObField(
+          label: 'Rules your notes must follow',
+          controller: _rules,
+          placeholder: 'No pricing in a first note',
+        ),
+        const SizedBox(height: 12),
+        ObField(
+          label: 'Wording every note must carry',
+          controller: _disclaimers,
+          placeholder: 'Licensed in Michigan, licence 12345',
+        ),
+      ];
+
+  Widget _logoRow() {
+    return Row(children: [
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Your logo', style: Ob.strong(14.5)),
+          const SizedBox(height: 2),
+          Text(
+              _logoNote ??
+                  (_hasLogo
+                      ? 'On your proposals and invoices.'
+                      : 'Shown on your proposals and invoices. PNG or JPG.'),
+              style: Ob.body(13, color: Ob.inkMuted)),
+        ]),
+      ),
+      const SizedBox(width: 12),
+      if (_hasLogo)
+        TextButton(
+          onPressed: _logoBusy ? null : _removeLogo,
+          child: const Text('Remove'),
+        ),
+      OutlinedButton(
+        onPressed: _logoBusy ? null : _pickLogo,
+        child: Text(_logoBusy ? 'Working…' : _hasLogo ? 'Replace' : 'Add logo'),
+      ),
+    ]);
+  }
+
+  Future<void> _pickLogo() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['png', 'jpg', 'jpeg'],
+      withData: true,
+    );
+    final file = picked?.files.firstOrNull;
+    if (file == null || file.bytes == null) return;
+    setState(() {
+      _logoBusy = true;
+      _logoNote = null;
+    });
+    try {
+      final ext = (file.extension ?? '').toLowerCase();
+      await _branding.uploadLogo(
+        fileBytes: file.bytes!,
+        filename: file.name,
+        mimeType: ext == 'png' ? 'image/png' : 'image/jpeg',
+        assetType: 'logo_primary',
+      );
+      _hasLogo = true;
+      _logoNote = 'Saved. It appears on your proposals and invoices.';
+    } catch (error) {
+      _logoNote = _reasonFor(error, fallback: 'The logo could not be saved. Try a PNG or JPG under 2 MB.');
+    } finally {
+      if (mounted) setState(() => _logoBusy = false);
+    }
+  }
+
+  Future<void> _removeLogo() async {
+    setState(() => _logoBusy = true);
+    try {
+      await _branding.removeLogo(assetType: 'logo_primary');
+      _hasLogo = false;
+      _logoNote = null;
+    } catch (error) {
+      _logoNote = _reasonFor(error, fallback: 'The logo could not be removed just now.');
+    } finally {
+      if (mounted) setState(() => _logoBusy = false);
+    }
+  }
+
+  // ── Questions only this kind is asked (DD-34) ─────────────────────
+
+  final Map<String, Set<String>> _choiceAnswers = {};
+  final Map<String, TextEditingController> _textAnswers = {};
+
+  TextEditingController _answerText(String key) =>
+      _textAnswers.putIfAbsent(key, TextEditingController.new);
+
+  List<SetupQuestion> _questionsFor(String step) =>
+      (_kind?.questions ?? const <SetupQuestion>[]).where((q) => q.step == step).toList();
+
+  void _hydrateAnswers(Map<String, dynamic> answers) {
+    _choiceAnswers.clear();
+    for (final c in _textAnswers.values) {
+      c.clear();
+    }
+    String n(dynamic v) => v is num ? '${v.round()}' : '';
+    for (final q in _kind?.questions ?? const <SetupQuestion>[]) {
+      final v = answers[q.key];
+      if (v == null) continue;
+      switch (q.type) {
+        case 'choices':
+          _choiceAnswers[q.key] = {for (final x in (v is List ? v : const [])) '$x'};
+        case 'number':
+          _answerText(q.key).text = n(v);
+        case 'range':
+          final m = v is Map ? v : const {};
+          _answerText('${q.key}.min').text = n(m['min']);
+          _answerText('${q.key}.max').text = n(m['max']);
+        case 'dated_names':
+          _answerText(q.key).text = [
+            for (final r in (v is List ? v : const []))
+              if (r is Map) '${r['name']}, ${r['date']}'
+          ].join('\n');
+        default:
+          _answerText(q.key).text = '$v';
+      }
+    }
+  }
+
+  /// This step's answers as the server takes them, or null with the reason
+  /// shown when a line cannot be read.
+  Map<String, dynamic>? _answersOn(String step) {
+    final out = <String, dynamic>{};
+    num? number(String text) {
+      final t = text.replaceAll(RegExp(r'[\s,$]'), '');
+      return t.isEmpty ? null : num.tryParse(t);
+    }
+
+    for (final q in _questionsFor(step)) {
+      switch (q.type) {
+        case 'choices':
+          out[q.key] = (_choiceAnswers[q.key] ?? const <String>{}).toList();
+        case 'number':
+          final raw = _answerText(q.key).text;
+          final v = number(raw);
+          if (raw.trim().isNotEmpty && v == null) {
+            setState(() => _stepError = '${q.label}: give a number.');
+            return null;
+          }
+          out[q.key] = v;
+        case 'range':
+          final lo = _answerText('${q.key}.min').text;
+          final hi = _answerText('${q.key}.max').text;
+          final a = number(lo);
+          final b = number(hi);
+          if ((lo.trim().isNotEmpty && a == null) || (hi.trim().isNotEmpty && b == null)) {
+            setState(() => _stepError = '${q.label}: give amounts as numbers.');
+            return null;
+          }
+          out[q.key] = a == null && b == null ? null : {'min': a, 'max': b};
+        case 'dated_names':
+          final rows = <Map<String, String>>[];
+          final lines = _answerText(q.key).text.split('\n');
+          for (var i = 0; i < lines.length; i++) {
+            final line = lines[i].trim();
+            if (line.isEmpty) continue;
+            final cut = line.lastIndexOf(',');
+            final name = cut < 0 ? '' : line.substring(0, cut).trim();
+            final date = cut < 0 ? '' : line.substring(cut + 1).trim();
+            if (name.isEmpty || DateTime.tryParse(date) == null || date.length != 10) {
+              setState(() => _stepError = '${q.label}, line ${i + 1}: write the '
+                  'business, a comma, then the date, for example: Acme Trucking, 2027-01-15');
+              return null;
+            }
+            rows.add({'name': name, 'date': date});
+          }
+          out[q.key] = rows;
+        default:
+          final t = _answerText(q.key).text.trim();
+          out[q.key] = t.isEmpty ? null : t;
+      }
+    }
+    return out;
+  }
+
+  List<Widget> _questionsOn(String step) {
+    final qs = _questionsFor(step);
+    if (qs.isEmpty) return const [];
+    return [
+      for (final q in qs) ...[
+        _gap(),
+        _questionField(q),
+      ],
+    ];
+  }
+
+  Widget _questionField(SetupQuestion q) {
+    final label = Row(children: [
+      Flexible(child: Text('${q.label} ', style: Ob.strong(15))),
+      Text('(optional)', style: Ob.body(15, color: Ob.inkMuted)),
+    ]);
+    final hint = q.hint == null
+        ? null
+        : Text(q.hint!, style: Ob.body(13, color: Ob.inkMuted));
+    Widget field(TextEditingController c, {String? placeholder, String? prefix, String? suffix, int lines = 1}) =>
+        TextField(
+          controller: c,
+          maxLines: lines,
+          minLines: lines > 1 ? 3 : 1,
+          keyboardType: lines > 1
+              ? TextInputType.multiline
+              : (q.type == 'number' || q.type == 'range' ? TextInputType.number : TextInputType.text),
+          style: Ob.body(16, color: Ob.ink),
+          onChanged: (_) => _keepDraft(),
+          decoration: InputDecoration(
+            hintText: placeholder,
+            prefixText: prefix,
+            suffixText: suffix,
+          ),
+        );
+    final Widget control;
+    switch (q.type) {
+      case 'choices':
+        final on = _choiceAnswers.putIfAbsent(q.key, () => <String>{});
+        control = Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final o in q.options)
+            _Toggle(o.label, on: on.contains(o.key), onTap: () {
+              setState(() => on.contains(o.key) ? on.remove(o.key) : on.add(o.key));
+              _keepDraft();
+            }),
+        ]);
+      case 'number':
+        control = SizedBox(
+          width: 220,
+          child: field(_answerText(q.key), suffix: q.unit),
+        );
+      case 'range':
+        final money = q.unit == r'$';
+        control = Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          SizedBox(
+            width: 200,
+            child: field(_answerText('${q.key}.min'),
+                placeholder: 'From', prefix: money ? r'$ ' : null, suffix: money ? null : q.unit),
+          ),
+          Text('to', style: Ob.body(15, color: Ob.inkMuted)),
+          SizedBox(
+            width: 200,
+            child: field(_answerText('${q.key}.max'),
+                placeholder: 'Up to', prefix: money ? r'$ ' : null, suffix: money ? null : q.unit),
+          ),
+        ]);
+      case 'dated_names':
+        control = field(_answerText(q.key), lines: 6, placeholder: 'Acme Trucking, 2027-01-15');
+      default:
+        control = field(_answerText(q.key));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        label,
+        if (hint != null) ...[const SizedBox(height: 4), hint],
+        const SizedBox(height: 8),
+        control,
+      ],
+    );
+  }
+
   Widget? _sideCard() {
     switch (_step) {
       case SetupStep.business:
@@ -2636,9 +3995,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ],
         );
       case SetupStep.want:
-        final kinds = _buyerKinds.isEmpty
+        final kinds = _buyerWords.isEmpty
             ? 'Businesses that buy from you'
-            : _joinWords(_buyerKinds);
+            : _joinWords(_buyerWords);
         // Worldwide is said as that: naming four towns hid it (2 Oct 2026).
         final where = _worldwide
             ? (_geoTargets.isEmpty
@@ -2655,6 +4014,29 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             const ObAssurance('Orchestrate checks each business before it is '
                 'shown to you, and says why it fits. Nobody is contacted '
                 'without your yes.'),
+          ],
+        );
+      case SetupStep.moments:
+        return _SideCard(
+          label: 'HOW A BUSINESS AT A MOMENT APPEARS',
+          children: [
+            Text('An example', style: Ob.body(13, color: Ob.inkMuted)),
+            Text(_example.$1, style: Ob.name(20).copyWith(height: 1.35)),
+            Text('Why now: ${_example.$2}', style: Ob.body(14.5, color: Ob.ink)),
+            const Divider(),
+            const ObAssurance('Every moment shows where it was seen and when. '
+                'Nobody is contacted without your yes.'),
+          ],
+        );
+      case SetupStep.payment:
+        return _SideCard(
+          label: 'WHERE THIS IS USED',
+          children: [
+            Text('Kept with your business, so your agreements and invoices '
+                'can follow the way your work is paid.',
+                style: Ob.body(15, color: Ob.ink)),
+            Text('You can change the terms on any single agreement.',
+                style: Ob.body(13, color: Ob.inkMuted)),
           ],
         );
       case SetupStep.offer:
@@ -2764,13 +4146,13 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   String _openCountLine() {
     final open =
-        SetupStep.values.take(6).where((s) => _stateOf(s) == StepState.todo).length;
-    const words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+        SetupStep.values.take(_setupSteps).where((s) => _stateOf(s) == StepState.todo).length;
+    const words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
     return open == 1 ? 'One thing is still open.' : '${words[open]} things are still open.';
   }
 
   Widget _readyView({required bool phone}) {
-    final allDone = SetupStep.values.take(6).every((s) => _stateOf(s) != StepState.todo);
+    final allDone = SetupStep.values.take(_setupSteps).every((s) => _stateOf(s) != StepState.todo);
     String line(SetupStep s) {
       switch (s) {
         case SetupStep.business:
@@ -2797,8 +4179,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             _joinWords(_list(icp['industryTags']).map((e) => '$e').take(3).toList()),
             where,
           ].where((e) => e.isNotEmpty).join(' · ');
+        case SetupStep.moments:
+          return _momentLine();
         case SetupStep.offer:
           return _text(_profile, 'outboundOffer');
+        case SetupStep.payment:
+          return _paymentLine();
         case SetupStep.email:
           if (!_emailConnected) return 'Not connected yet';
           if (_stateOf(s) == StepState.waiting) {
@@ -2832,7 +4218,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         children: [
           Text('YOUR SETUP', style: Ob.eyebrow()),
           const SizedBox(height: 8),
-          for (final s in SetupStep.values.take(6))
+          for (final s in SetupStep.values.take(_setupSteps))
             InkWell(
               onTap: () => _goTo(s),
               child: Container(
@@ -2991,6 +4377,104 @@ String _clock(String iso) {
   return '$h:$m ${t.hour < 12 ? 'AM' : 'PM'}';
 }
 
+/// A choice that is on or off, in the same pill as the chosen chips.
+class _Toggle extends StatelessWidget {
+  const _Toggle(this.label, {required this.on, required this.onTap});
+  final String label;
+  final bool on;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: on,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Ob.radiusPill),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: on ? Ob.ink : Colors.transparent,
+            border: Border.all(color: on ? Ob.ink : Ob.line, width: 1.2),
+            borderRadius: BorderRadius.circular(Ob.radiusPill),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            if (on) ...[
+              const Icon(Icons.check, size: 15, color: Ob.onInk),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(label,
+                  style: Ob.body(14, color: on ? Ob.onInk : Ob.ink)),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// One moment: what happens, why it matters, and whether it is watched yet.
+class _MomentTile extends StatelessWidget {
+  const _MomentTile({required this.moment, required this.on, required this.onTap});
+  final MomentOption moment;
+  final bool on;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: on,
+      label: moment.label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: BoxDecoration(
+            color: on ? Ob.cardSoft : Colors.transparent,
+            border: Border.all(color: on ? Ob.ink : Ob.line, width: on ? 1.6 : 1.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(on ? Icons.check_box : Icons.check_box_outline_blank,
+                  size: 20, color: on ? Ob.ink : Ob.inkFaint),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(moment.label, style: Ob.strong(15)),
+                  const SizedBox(height: 3),
+                  Text(moment.why, style: Ob.body(13.5, color: Ob.ink)),
+                  const SizedBox(height: 6),
+                  Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                    ObPill(moment.watching ? 'Watched now' : 'Not watched yet',
+                        tone: moment.watching ? PillTone.yes : PillTone.plain),
+                    Text('From ${_joinWords(moment.sources)}',
+                        style: Ob.body(12.5, color: Ob.inkMuted)),
+                  ]),
+                  if (moment.coverageSaid != null) ...[
+                    const SizedBox(height: 3),
+                    Text('${moment.coverageSaid}.',
+                        style: Ob.body(12.5, color: Ob.inkMuted)),
+                  ],
+                ],
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
 /// "Early-onboarding price" line, shared by pricing and the plan step.
 class EarlyPriceLine extends StatelessWidget {
   const EarlyPriceLine({super.key});
@@ -3143,7 +4627,7 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(children: [
-      for (var i = 0; i < 6; i++) ...[
+      for (var i = 0; i < _setupSteps; i++) ...[
         if (i > 0) const SizedBox(width: 4),
         Expanded(
           child: Container(
@@ -3235,13 +4719,13 @@ class _Rail extends StatelessWidget {
                 Text(
                     done >= 6
                         ? 'All 6 done'
-                        : '$done of 6 done · about ${6 - done} ${6 - done == 1 ? 'minute' : 'minutes'} left',
+                        : '$done of $_setupSteps done · about ${_setupSteps - done} ${_setupSteps - done == 1 ? 'minute' : 'minutes'} left',
                     style: Ob.body(13, color: Ob.inkMuted)),
               ],
             ),
           ),
           const SizedBox(height: 14),
-          for (final s in SetupStep.values.take(6))
+          for (final s in SetupStep.values.take(_setupSteps))
             _RailRow(
               step: s,
               state: stateOf(s),

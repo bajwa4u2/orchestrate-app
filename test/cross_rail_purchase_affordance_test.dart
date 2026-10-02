@@ -95,8 +95,9 @@ void main() {
   group('neither web surface may go back to reading a Stripe row', () {
     String read(String path) => File(path).readAsStringSync();
 
-    const billing = 'lib/features/client/screens/client_billing_screen.dart';
-    const subscribe = 'lib/features/client/screens/client_subscribe_screen.dart';
+    // DD-34: Billing is Account → Plan and billing; buying is Setup's plan step.
+    const billing = 'lib/features/client/screens/account_layer_screen.dart';
+    const subscribe = 'lib/features/client/setup/one_path_setup_screen.dart';
 
     test('Billing decides from the entitlement, not from a subscription record',
         () {
@@ -107,7 +108,7 @@ void main() {
         reason: 'the purchase affordance must ask whether the platform is held',
       );
       expect(
-        source.contains("data.subscription;"),
+        source.contains('fetchSubscription'),
         isFalse,
         reason: 'the Stripe record must not decide whether to sell again',
       );
@@ -132,9 +133,10 @@ void main() {
 
     test('Subscribe refuses to price what the organisation already holds', () {
       final source = read(subscribe);
-      expect(source.contains('holdsPlatform'), isTrue);
+      expect(source.contains('!_holdsPlatform && _offers.isNotEmpty'), isTrue);
       expect(
-        source.indexOf('holdsPlatform') < source.indexOf('_CadenceCard('),
+        source.indexOf('!_holdsPlatform && _offers.isNotEmpty') <
+            source.indexOf("price(_offers.first.period"),
         isTrue,
         reason: 'the check must come before the cadence cards are built',
       );

@@ -13,30 +13,26 @@ import 'package:orchestrate_app/core/navigation/workspace_map.dart';
 /// answer has to be the same everywhere. A per-screen back button is a
 /// per-screen opinion, and twenty of those is what produced the estate above.
 void main() {
-  // Every destination Business offers. Kept here rather than read from the
-  // screen so that adding a Business row without placing it on the map is a
-  // failing test rather than another surface a person gets lost in.
-  const businessDestinations = <String>[
-    '/client/representation',
-    '/app/branding',
-    '/client/infrastructure',
-    '/client/trust',
-    '/app/evidence',
-    '/app/artifacts',
-  ];
+  // Every working surface that is not an area landing. Business's own pages
+  // are retired into Setup and Account (DD-34); these remain, and each must
+  // say what contains it.
+  const surfaces = <String, String>{
+    '/client/inbound': '/client/today',
+    '/account/plan': '/account/people',
+    '/account/security': '/account/people',
+    '/account/record': '/account/plan',
+  };
 
-  test('every Business surface knows what contains it', () {
-    final orphans = surfacesMissingOwnership(businessDestinations);
+  test('every working surface knows what contains it', () {
+    final orphans = surfacesMissingOwnership(surfaces.keys);
     expect(orphans, isEmpty,
         reason: 'a surface with no owner is a surface with no way back');
-
-    for (final route in businessDestinations) {
-      expect(semanticParentOf(route), '/client/business',
-          reason: '$route belongs to Business and must return there');
+    surfaces.forEach((route, parent) {
+      expect(semanticParentOf(route), parent,
+          reason: '$route must return to $parent');
       expect(titleOf(route), isNotNull,
           reason: '$route must be able to say what it is');
-      expect(areaOf(route), WorkspaceArea.business);
-    }
+    });
   });
 
   test('an area landing offers no return to itself', () {
@@ -51,7 +47,7 @@ void main() {
     // The case that strands people: an emailed link opened in a new tab. There
     // is no history to go back through, so the return has to come from what
     // the product knows about itself rather than from the navigation stack.
-    const cold = '/client/infrastructure';
+    const cold = '/account/record';
     expect(semanticParentOf(cold), isNotNull);
     expect(semanticParentOf(cold), isNot(cold));
   });
@@ -60,8 +56,8 @@ void main() {
     // Sub-routes appear over time. Inheriting ownership means a new one is
     // orientable on the day it ships, instead of being a dead end until
     // somebody notices.
-    expect(semanticParentOf('/client/infrastructure/smtp'), '/client/business');
-    expect(areaOf('/client/infrastructure/smtp'), WorkspaceArea.business);
+    expect(semanticParentOf('/account/record/2026'), '/account/plan');
+    expect(areaOf('/account/record/2026'), WorkspaceArea.account);
   });
 
   test('home is one place, and it is a real destination', () {

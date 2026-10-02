@@ -814,7 +814,7 @@ class _ClientRelationshipsScreenState
             'inventory from your email activity. Orchestrate analyzes only '
             'header information — message content is never read.',
         action: FilledButton(
-          onPressed: () => context.go('/client/infrastructure'),
+          onPressed: () => context.go('/client/setup?step=email'),
           child: const Text('Open Infrastructure'),
         ),
       ),

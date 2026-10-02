@@ -45,45 +45,9 @@ void main() {
     expect(signOut.contains('ScreenMemory.forget()'), isTrue);
   });
 
-  test('every screen that blinked now recalls', () {
-    const screens = <String, String>{
-      'client_evidence_screen': 'evidence',
-      'client_trust_screen': 'credentials',
-      'client_artifacts_screen': 'artifacts',
-      'client_branding_screen': 'branding',
-      'client_billing_screen': 'billing',
-      'client_account_screen': 'account',
-      // Workspace settings is absent on purpose. It fetched six things to
-      // render readiness, billing, records and a signature it did not own;
-      // after the ownership correction it fetches nothing at all, so there
-      // is no request to remember and nothing that can blink.
-      'client_business_identity_screen': 'representation',
-      'client_mailbox_screen': 'mailbox',
-    };
-    screens.forEach((file, key) {
-      final s = source('lib/features/client/screens/$file.dart');
-      expect(s.contains("'$key'"), isTrue, reason: '$file must recall');
-      expect(s.contains('ScreenMemory'), isTrue, reason: '$file must recall');
-    });
-  });
+  // The screens these two tests named (Evidence, Credentials, Artifacts,
+  // Branding, Billing, Your account, Business identity, Mailbox) are retired
+  // (DD-34); their work moved into Setup and Account.
 
-  test('a FutureBuilder screen paints data rather than waiting on a state', () {
-    // With initialData supplied the connection state is still `waiting`, so a
-    // `connectionState != done` check would go on showing the loading view
-    // over data that is already there.
-    for (final file in <String>[
-      'client_billing_screen',
-      'client_account_screen',
-      'client_business_identity_screen',
-      'client_mailbox_screen',
-    ]) {
-      final s = source('lib/features/client/screens/$file.dart');
-      expect(s.contains('initialData: ScreenMemory.recall'), isTrue,
-          reason: '$file must seed from memory');
-      expect(s.contains('!snapshot.hasData && !snapshot.hasError'), isTrue,
-          reason: '$file must ask whether there is anything to paint');
-      expect(s.contains('connectionState != ConnectionState.done'), isFalse,
-          reason: '$file must not wait on the connection state');
-    }
-  });
+
 }
