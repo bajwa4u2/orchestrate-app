@@ -810,6 +810,14 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     }).toList();
   }
 
+  /// "Lahore · Pakistan" when the business sells in more than one country,
+  /// so a town filed under the wrong one is visible before it is saved.
+  String _townLabel(String town) {
+    if (_countries.length < 2) return town;
+    final cc = _townCountry(town);
+    return '$town · ${GlobalSetupOptions.countryByCode(cc)?.label ?? cc}';
+  }
+
   static String _shout(String s) =>
       s.toUpperCase().replaceAll(RegExp(r'[^A-Z]+'), '_').replaceAll(RegExp(r'^_|_$'), '');
 
@@ -1833,7 +1841,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final t in _towns)
-            ObChoice(t, onRemove: () {
+            ObChoice(_townLabel(t), onRemove: () {
               setState(() => _towns.remove(t));
               _keepDraft();
             }),
@@ -1841,17 +1849,34 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             final picked = await _pick(
               title: 'Towns to start with',
               options: [
-                for (final s in {...suggestions, ..._towns}) (s, s)
+                for (final s in {...suggestions, ..._towns}) (s, _townLabel(s))
               ],
               selected: _towns.toSet(),
               allowCustom: true,
+              hint: _countries.length > 1
+                  ? 'Search, or type a town and its country: Lahore, Pakistan'
+                  : null,
             );
             if (picked == null || !mounted) return;
             setState(() {
               _towns.clear();
               for (final raw in picked.take(120)) {
-                final t = _titleCase(raw.trim());
+                // "Lahore, Pakistan": the town, filed under that country.
+                final parts = raw.split(',').map((p) => p.trim()).toList();
+                String? said;
+                if (parts.length > 1) {
+                  for (final cc in _countries) {
+                    final label = GlobalSetupOptions.countryByCode(cc)?.label.toLowerCase();
+                    if (label == parts.last.toLowerCase() || cc.toLowerCase() == parts.last.toLowerCase()) {
+                      said = cc;
+                    }
+                  }
+                }
+                final t = _titleCase(said != null
+                    ? parts.sublist(0, parts.length - 1).join(', ')
+                    : raw.trim());
                 if (t.isEmpty) continue;
+                if (said != null) _townCountries[t.toLowerCase()] = said;
                 // A state or province typed as a town is an area: file it
                 // there, where it is searched as the whole area it is.
                 final area = _areaNamed(t);
@@ -2889,6 +2914,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     required Set<String> selected,
     bool single = false,
     bool allowCustom = false,
+    String? hint,
   }) {
     return showModalBottomSheet<Set<String>>(
       context: context,
@@ -2904,6 +2930,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           selected: selected,
           single: single,
           allowCustom: allowCustom,
+          hint: hint,
         ),
       ),
     );
@@ -3441,6 +3468,7 @@ class _PickerSheet extends StatefulWidget {
     required this.selected,
     required this.single,
     required this.allowCustom,
+    this.hint,
   });
 
   final String title;
@@ -3448,6 +3476,7 @@ class _PickerSheet extends StatefulWidget {
   final Set<String> selected;
   final bool single;
   final bool allowCustom;
+  final String? hint;
 
   @override
   State<_PickerSheet> createState() => _PickerSheetState();
@@ -3534,7 +3563,8 @@ class _PickerSheetState extends State<_PickerSheet> {
                 style: Ob.body(16, color: Ob.ink),
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search, color: Ob.inkMuted),
-                  hintText: widget.allowCustom ? 'Search or type your own' : 'Search',
+                  hintText: widget.hint ??
+                      (widget.allowCustom ? 'Search or type your own' : 'Search'),
                 ),
               ),
             ),
