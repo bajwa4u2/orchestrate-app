@@ -211,6 +211,7 @@ class AuthRepository {
     List<String> priorityMarkets = const [],
     String? notes,
     Map<String, dynamic>? metadata,
+    bool worldwide = false,
   }) async {
     final json = await _apiClient.postJson(
       '/clients/me/setup',
@@ -222,6 +223,7 @@ class AuthRepository {
         'regions': regions,
         'metros': metros,
         'industries': industries,
+        'worldwide': worldwide,
         if (includeGeo.isNotEmpty) 'includeGeo': includeGeo,
         if (excludeGeo.isNotEmpty) 'excludeGeo': excludeGeo,
         if (priorityMarkets.isNotEmpty) 'priorityMarkets': priorityMarkets,

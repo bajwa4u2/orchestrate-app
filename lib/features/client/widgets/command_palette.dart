@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:orchestrate_app/core/market/client_market.dart';
+import 'package:orchestrate_app/core/relationships/client_relationships.dart';
 import 'package:orchestrate_app/core/theme/app_theme.dart';
 
 /// FAST ACCESS TO THINGS A PERSON MEANS TO DO.
@@ -117,19 +119,58 @@ class _CommandPaletteState extends State<_CommandPalette> {
   String _query = '';
 
   @override
+  void initState() {
+    super.initState();
+    // Customers and Market businesses are searched too; ask for both once,
+    // quietly, so typing finds them even when neither screen was opened yet.
+    final rel = ClientRelationships.instance;
+    if (!rel.hasAnswer && !rel.isLoading) {
+      rel.load().then((_) {
+        if (mounted) setState(() {});
+      }, onError: (Object _) {});
+    }
+    final market = ClientMarket.instance;
+    if (!market.hasAnswer && !market.isLoading && market.error == null) {
+      market.load().then((_) {
+        if (mounted) setState(() {});
+      }, onError: (Object _) {});
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
+  /// Places, then the businesses themselves: a customer by name or domain,
+  /// and anyone on Market. Search used to know only page names, so typing a
+  /// customer's name said "Nothing matches that." (2 Oct 2026).
   List<_Command> get _results {
     final q = _query.trim().toLowerCase();
     if (q.isEmpty) return _commands;
-    return _commands
+    final places = _commands
         .where((c) =>
             c.label.toLowerCase().contains(q) ||
             (c.hint?.toLowerCase().contains(q) ?? false))
         .toList();
+    final customers = [
+      for (final r in ClientRelationships.instance.list?.relationships ?? const [])
+        if (r.counterparty.toLowerCase().contains(q) ||
+            r.counterpartyKey.toLowerCase().contains(q))
+          _Command(r.counterparty, '/client/relationships/${r.id}',
+              Icons.people_outline,
+              hint: 'Customer'),
+    ];
+    final market = [
+      for (final c in ClientMarket.instance.view?.candidates ?? const [])
+        if (!c.hasRelationship &&
+            (c.name.toLowerCase().contains(q) || c.domain.toLowerCase().contains(q)))
+          _Command(c.name, Uri(path: '/client/market', queryParameters: {'focus': c.key}).toString(),
+              Icons.travel_explore_outlined,
+              hint: c.geography == null ? 'On Market' : 'On Market · ${c.geography}'),
+    ];
+    return [...customers.take(8), ...market.take(8), ...places];
   }
 
   @override

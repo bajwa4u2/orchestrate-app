@@ -227,7 +227,7 @@ void main() {
     // Condition stays canonical. Reachability is its own word beside it, and
     // neither is allowed to stand in for the other.
     expect(find.textContaining('active'), findsOneWidget);
-    expect(find.textContaining('no confirmed reachability'), findsOneWidget);
+    expect(find.textContaining('mail is not getting through'), findsOneWidget);
     expect(find.textContaining('came back undelivered'), findsOneWidget);
     // Nothing claims they responded.
     expect(find.textContaining('in touch'), findsNothing);
@@ -259,7 +259,7 @@ void main() {
     // Condition is canonical and stays out of the channel's business.
     expect(find.textContaining('came back undelivered'), findsWidgets);
     // The channel gets its own heading and its own sentence.
-    expect(find.text('No confirmed reachability'), findsOneWidget);
+    expect(find.text('Mail is not getting through'), findsOneWidget);
     expect(find.textContaining('Nothing has been shown to arrive'), findsOneWidget);
     // And nothing anywhere claims the recipient responded.
     expect(find.textContaining('written back'), findsNothing);
@@ -291,7 +291,7 @@ void main() {
     expect(find.text('There has been recent activity on this relationship.'),
         findsNothing);
     // An unknown channel is stated plainly and does not alarm anyone.
-    expect(find.text('No confirmed reachability'), findsNothing);
+    expect(find.text('Mail is not getting through'), findsNothing);
   });
 
   testWidgets('6. a relationship with no undertaking is still meaningful',
@@ -333,12 +333,12 @@ void main() {
 
     // Inside the relationship, under its own heading, and reached without
     // leaving the relationship. No route, no top-level list.
-    expect(find.text('UNDERTAKINGS'), findsOneWidget);
+    expect(find.text('WORK FOR THEM'), findsOneWidget);
     expect(find.text('Q4 pilot'), findsOneWidget);
     // It used to say the lifecycle was not built. It is built: the acts that
     // end an undertaking are here, on the undertaking, inside the relationship.
     expect(find.textContaining('not built yet'), findsNothing);
-    expect(find.text('Open an undertaking'), findsOneWidget);
+    expect(find.text('Start a piece of work'), findsOneWidget);
   });
 
   testWidgets('8. several undertakings, and only the open one is current',
@@ -718,7 +718,7 @@ class _Undertakings implements ClientEngagementRepository {
         'relationshipId': relationshipId,
         'counterparty': 'DFW Crossdock Xpress',
         'says': rows.isEmpty
-            ? 'No bounded undertaking has been established here yet.'
+            ? 'Nothing is under way for them yet.'
             : '${rows.where((r) => r['state'] == 'OPEN').length} of '
                 '${rows.length} under way.',
         'engagements': rows,

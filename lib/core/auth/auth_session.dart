@@ -172,8 +172,11 @@ class AuthSessionController extends ChangeNotifier {
       'emailVerified': user.containsKey('emailVerified')
           ? user['emailVerified'] == true
           : previous['emailVerified'] == true,
-      'workspaceName': _readString(workspace, const ['displayName', 'name']) ??
-          _readString(client, const ['displayName', 'legalName']) ??
+      // The business's own name, as its customers see it on correspondence.
+      // The account's name ("Orchestrate (Aura Platform LLC)") came first and
+      // gave one business three names across the workspace (2 Oct 2026).
+      'workspaceName': _readString(client, const ['displayName', 'legalName']) ??
+          _readString(workspace, const ['displayName', 'name']) ??
           previous['workspaceName']?.toString() ??
           '',
       'setupCompleted': user['setupCompleted'] == true ||

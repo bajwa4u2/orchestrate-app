@@ -95,7 +95,9 @@ const Map<String, _Surface> _surfaces = {
       _Surface('Newsletter', WorkspaceArea.business, parent: '/client/business'),
 
   // ── RELATIONSHIPS ────────────────────────────────────────────────────
-  '/client/inbound': _Surface('Waiting on someone', WorkspaceArea.relationships,
+  // One name, one home: the page says "Waiting on you" and is reached from
+  // Today, so its trail and its tab say the same (2 Oct 2026).
+  '/client/inbound': _Surface('Waiting on you', WorkspaceArea.today,
       parent: '/client/today'),
   '/client/contacts/inventory': _Surface(
       'Contacts', WorkspaceArea.relationships,

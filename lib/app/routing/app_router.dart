@@ -62,6 +62,7 @@ import 'package:orchestrate_app/features/ops_console/ops_inventory_screen.dart';
 import 'package:orchestrate_app/features/ops_console/ops_jobs_screen.dart';
 import 'package:orchestrate_app/features/ops_console/ops_history_screen.dart';
 import 'package:orchestrate_app/core/auth/auth_session.dart';
+import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:orchestrate_app/core/platform/billing_gate.dart';
 import '../../features/feedback/feedback_screen.dart';
 import '../../features/feedback/feedback_queue_screen.dart';
@@ -1686,10 +1687,34 @@ GoRouter _buildRouter() {
       ],
     ),
   ],
+  // A link that leads nowhere says so, and offers the way back. It used to be
+  // a bare "This surface is unavailable." with no way out (2 Oct 2026).
   errorBuilder: (context, state) => Theme(
-    data: ThemeData.light(useMaterial3: true),
-    child: const Scaffold(
-        body: Center(child: Text('This surface is unavailable.'))),
+    data: Ob.theme(),
+    child: Scaffold(
+      backgroundColor: Ob.paper,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('This page does not exist.', style: Ob.name(24)),
+            const SizedBox(height: 8),
+            Text('The link may be old or mistyped. Nothing has changed.',
+                style: Ob.body(15, color: Ob.inkMuted)),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: () => GoRouter.of(context).go(
+                  AuthSessionController.instance.surface == 'operator'
+                      ? '/ops/overview'
+                      : AuthSessionController.instance.isAuthenticated
+                          ? '/client/today'
+                          : '/'),
+              child: const Text('Go to your workspace'),
+            ),
+          ]),
+        ),
+      ),
+    ),
   ),
   );
 }

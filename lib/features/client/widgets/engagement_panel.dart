@@ -241,14 +241,14 @@ class _EngagementPanelState extends State<EngagementPanel> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const WorkspaceBand(
-        title: 'UNDERTAKINGS',
-        children: [QuietState(message: 'Reading undertakings')],
+        title: 'WORK FOR THEM',
+        children: [QuietState(message: 'Reading the work')],
       );
     }
 
     if (_loadFailure != null) {
       return WorkspaceBand(
-        title: 'UNDERTAKINGS',
+        title: 'WORK FOR THEM',
         children: [
           RefusalNotice(refusal: _loadFailure!, onRetry: _load),
         ],
@@ -265,12 +265,12 @@ class _EngagementPanelState extends State<EngagementPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         WorkspaceBand(
-          title: 'UNDERTAKINGS',
+          title: 'WORK FOR THEM',
           // The server's sentence, including for the zero state. A relationship
           // holding none is a legitimate condition, not an empty list to fill.
           subtitle: engagements.says,
           trailing: GovernedAction(
-            label: 'Open an undertaking',
+            label: 'Start a piece of work',
             // Internal business organisation. Nothing leaves the building and
             // nobody is bound, so this is deliberately a quiet button — the
             // acts inside the undertaking are the ones that carry weight.
@@ -281,9 +281,9 @@ class _EngagementPanelState extends State<EngagementPanel> {
           children: [
             if (open.isEmpty && concluded.isEmpty)
               const QuietState(
-                message: 'Nothing has been taken on here',
-                hint: 'Contact, correspondence and commercial context all exist '
-                    'without a bounded undertaking. This is not a gap.',
+                // The band's own line already says nothing is under way.
+                message: 'Start a piece of work when you agree to do '
+                    'something for them.',
               ),
             for (final engagement in open)
               _EngagementRow(
@@ -552,7 +552,7 @@ class _OpenUndertakingDialogState extends State<_OpenUndertakingDialog> {
   Widget build(BuildContext context) {
     final counterparty = widget.counterparty;
     return AlertDialog(
-      title: const Text('Open an undertaking'),
+      title: const Text('Start a piece of work'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -151,6 +151,10 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   // Step 2
   final List<String> _buyerKinds = [];
   final Set<String> _countries = {};
+
+  /// "Anywhere in the world": the chosen countries and towns are searched
+  /// first, then the world's main business cities.
+  bool _worldwide = false;
   final Set<String> _regions = {};
   final List<String> _towns = [];
 
@@ -352,7 +356,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       ..clear()
       ..addAll(_list(setup['countries'])
           .map((c) => c is Map ? '${c['code']}' : '$c')
-          .map((c) => c.toUpperCase())
+          .map(_countryCodeOf)
           .where((c) => c.isNotEmpty));
     if (_countries.isEmpty) {
       _countries.addAll(_list(draft['countries']).map((e) => '$e'));
@@ -360,11 +364,15 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     _regions
       ..clear()
       ..addAll(_list(setup['regions'])
-          .map((r) => r is Map ? '${r['regionCode'] ?? r['code']}' : '$r')
+          .map((r) => r is Map
+              ? _regionCodeOf('${r['regionCode'] ?? r['code']}',
+                  '${r['regionLabel'] ?? ''}', '${r['countryCode'] ?? ''}')
+              : '$r')
           .where((c) => c.isNotEmpty));
     if (_regions.isEmpty) {
       _regions.addAll(_list(draft['regions']).map((e) => '$e'));
     }
+    _worldwide = setup['worldwide'] == true || draft['worldwide'] == true;
     _towns
       ..clear()
       ..addAll(_list(setup['metros'])
@@ -441,6 +449,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       'industryCode': _industryCode,
       'buyerKinds': _buyerKinds,
       'countries': _countries.toList(),
+      'worldwide': _worldwide,
       'regions': _regions.toList(),
       'towns': _towns,
       'offer': _offer.text,
@@ -761,7 +770,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     // A town is filed under a region of its own country when one is chosen;
     // with no regions it rides on the country alone.
     return _towns.map((t) {
-      final country = _countries.first;
+      final country = _townCountry(t);
       // Filed under a region only when exactly one was chosen in its
       // country. Taking the first of many filed every town under whichever
       // region sorted first (Alabama, for a business that picked all states).
@@ -776,6 +785,55 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         'label': t,
       };
     }).toList();
+  }
+
+  static String _shout(String s) =>
+      s.toUpperCase().replaceAll(RegExp(r'[^A-Z]+'), '_').replaceAll(RegExp(r'^_|_$'), '');
+
+  /// A country as this screen knows it. The two oldest workspaces saved names
+  /// ("UNITED_STATES"), which showed as raw chips and could not be saved back,
+  /// because setup takes two-letter codes (2 Oct 2026).
+  static String _countryCodeOf(String raw) {
+    final code = raw.trim().toUpperCase();
+    if (GlobalSetupOptions.countryByCode(code) != null) return code;
+    for (final c in GlobalSetupOptions.countries) {
+      if (_shout(c.label) == _shout(code)) return c.code;
+    }
+    return code;
+  }
+
+  /// An area as this screen knows it, recovered by name for the same records.
+  static String _regionCodeOf(String raw, String label, String country) {
+    final cc = _countryCodeOf(country);
+    final options = GlobalSetupOptions.regionsForCountry(cc);
+    if (options.any((r) => r.code == raw)) return raw;
+    final want = _shout(label.isNotEmpty ? label : raw);
+    for (final r in options) {
+      if (_shout(r.label) == want) return r.code;
+    }
+    return raw;
+  }
+
+  /// The chosen country a town lies in: the one whose area list names it, or
+  /// the one written after a comma ("Lahore, Pakistan"). Every town used to be
+  /// filed under the first country, so a business selling in the United
+  /// States and Pakistan had Lahore searched for in the United States.
+  String _townCountry(String town) {
+    final parts = town.split(',').map((p) => p.trim()).toList();
+    if (parts.length > 1) {
+      final said = parts.last.toLowerCase();
+      for (final cc in _countries) {
+        final label = GlobalSetupOptions.countryByCode(cc)?.label.toLowerCase();
+        if (label == said || cc.toLowerCase() == said) return cc;
+      }
+    }
+    final name = parts.first.toLowerCase();
+    for (final cc in _countries) {
+      for (final r in GlobalSetupOptions.regionsForCountry(cc)) {
+        if (r.label.toLowerCase() == name) return cc;
+      }
+    }
+    return _countries.first;
   }
 
   String get _scopeMode {
@@ -803,6 +861,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       industries: [
         if (industry != null) {'code': industry.code, 'label': industry.label},
       ],
+      worldwide: _worldwide,
     );
     await AuthSessionController.instance.applyClientSetupResponse(response);
     _setupCompleted = AuthSessionController.instance.hasSetupCompleted;
@@ -1243,7 +1302,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     final twoColumns = c.maxWidth >= 1080;
     final content = _stepContent(phone: phone);
     final side = _sideCard();
-    return Column(
+    // The steps scroll with the page. Pinned above it, their two rows took
+    // about 40% of a narrow screen (2 Oct 2026).
+    return SingleChildScrollView(
+      key: ValueKey('setup-embedded-${_step.key}'),
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Wrap(
@@ -1261,11 +1325,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ],
         ),
         const SizedBox(height: 18),
-        Expanded(
-          child: SingleChildScrollView(
-            key: ValueKey('setup-embedded-${_step.key}'),
-            padding: const EdgeInsets.only(bottom: 32),
-            child: _step == SetupStep.ready
+        Builder(
+            builder: (_) => _step == SetupStep.ready
                 ? _readyView(phone: phone)
                 : twoColumns && side != null
                     ? Row(
@@ -1283,9 +1344,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                           if (side != null) ...[const SizedBox(height: 28), side],
                         ],
                       ),
-          ),
         ),
       ],
+      ),
     );
   }
 
@@ -1652,6 +1713,19 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         Text('Where they are', style: Ob.strong(15)),
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
+          if (_worldwide)
+            ObChoice('Anywhere in the world', onRemove: () {
+              setState(() => _worldwide = false);
+              _keepDraft();
+            })
+          else
+            ObAddChoice('Anywhere in the world', onTap: () {
+              setState(() {
+                _worldwide = true;
+                _stepError = null;
+              });
+              _keepDraft();
+            }),
           for (final cc in _countries)
             ObChoice(GlobalSetupOptions.countryByCode(cc)?.label ?? cc,
                 onRemove: () {
@@ -1673,7 +1747,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             setState(() {
               _countries
                 ..clear()
-                ..addAll(picked.take(12));
+                ..addAll(picked.take(30));
               _regions.removeWhere(
                   (r) => !_countries.contains(r.split('-').first.toUpperCase()));
               _stepError = null;
@@ -1681,6 +1755,13 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             _keepDraft();
           }),
         ]),
+        if (_worldwide) ...[
+          const SizedBox(height: 6),
+          Text(
+              'Your countries and towns are searched first, then the world\'s '
+              'main business cities.',
+              style: Ob.body(13, color: Ob.inkMuted)),
+        ],
         if (_countries.isNotEmpty) ...[
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [

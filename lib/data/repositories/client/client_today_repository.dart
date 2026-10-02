@@ -376,9 +376,11 @@ class TodayState {
   /// Movement worth reading, within the window.
   List<TodayItem> get changed {
     final cutoff = DateTime.now().subtract(_recently);
+    // An item with no date cannot show it is recent, so it is not shown as
+    // news: undated delivery rows kept month-old refusals on Today (2 Oct 2026).
     return orderForToday(_everythingChanged.where((i) {
       final at = i.at;
-      return at == null || at.isAfter(cutoff);
+      return at != null && at.isAfter(cutoff);
     }).toList());
   }
 
@@ -437,6 +439,7 @@ class TodayState {
             'This is about your sending identity, not the person you wrote to.',
           ].whereType<String>().where((t) => t.isNotEmpty).join(' '),
           meta: _ago(m['updatedAt'] ?? m['sentAt']),
+          at: DateTime.tryParse('${m['updatedAt'] ?? m['sentAt'] ?? ''}'),
           severity: 'WARNING',
           category: 'delivery',
         ));
@@ -454,6 +457,7 @@ class TodayState {
           title: 'Not sent to ${m['toEmail'] ?? 'a recipient'}',
           detail: _refusalInPlainWords(m['failureReason']?.toString()),
           meta: _ago(m['updatedAt'] ?? m['sentAt']),
+          at: DateTime.tryParse('${m['updatedAt'] ?? m['sentAt'] ?? ''}'),
           // Not a warning. Nothing went wrong, and a row of amber flags across
           // the first screen of the day says otherwise.
           severity: 'INFO',
@@ -467,6 +471,7 @@ class TodayState {
           title: 'Delivery failed to ${m['toEmail'] ?? 'a recipient'}',
           detail: m['failureReason']?.toString(),
           meta: _ago(m['updatedAt'] ?? m['sentAt']),
+          at: DateTime.tryParse('${m['updatedAt'] ?? m['sentAt'] ?? ''}'),
           severity: 'WARNING',
           category: 'delivery',
         ));

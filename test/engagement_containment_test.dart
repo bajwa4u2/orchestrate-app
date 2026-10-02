@@ -37,18 +37,18 @@ void main() {
     final canned = _Canned(list: {
       'relationshipId': 'rel-1',
       'counterparty': 'Trainwell',
-      'says': 'No bounded undertaking has been established here yet.',
+      'says': 'Nothing is under way for them yet.',
       'engagements': const [],
     });
     await mount(tester, canned);
 
     // The server's sentence, verbatim. Not "No engagements", which reads as an
     // absence of something that ought to be there.
-    expect(find.textContaining('No bounded undertaking has been established'),
+    expect(find.textContaining('Nothing is under way for them yet'),
         findsOneWidget);
-    expect(find.textContaining('This is not a gap'), findsOneWidget);
+    expect(find.textContaining('when you agree to do something'), findsOneWidget);
     // And the way in is still offered, because having none is not a refusal.
-    expect(find.text('Open an undertaking'), findsOneWidget);
+    expect(find.text('Start a piece of work'), findsOneWidget);
   });
 
   testWidgets('the server decides whether a purpose says anything', (tester) async {
@@ -64,7 +64,7 @@ void main() {
     );
     await mount(tester, canned);
 
-    await tester.tap(find.text('Open an undertaking'));
+    await tester.tap(find.text('Start a piece of work'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Engagement with Trainwell');
     await tester.tap(find.text('Record it'));
@@ -93,7 +93,7 @@ void main() {
     );
     await mount(tester, canned);
 
-    await tester.tap(find.text('Open an undertaking'));
+    await tester.tap(find.text('Start a piece of work'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Q4 fitness pilot');
     await tester.tap(find.text('Record it'));
@@ -120,7 +120,7 @@ void main() {
     );
     await mount(tester, canned);
 
-    await tester.tap(find.text('Open an undertaking'));
+    await tester.tap(find.text('Start a piece of work'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Q4 fitness pilot');
     await tester.tap(find.text('Record it'));
@@ -265,7 +265,7 @@ Map<String, dynamic> _listWith(List<Map<String, dynamic>> engagements) => {
       'relationshipId': 'rel-1',
       'counterparty': 'Trainwell',
       'says': engagements.isEmpty
-          ? 'No bounded undertaking has been established here yet.'
+          ? 'Nothing is under way for them yet.'
           : '${engagements.where((e) => e['state'] == 'OPEN').length} of '
               '${engagements.length} under way.',
       'engagements': engagements,

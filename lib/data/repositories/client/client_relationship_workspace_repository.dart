@@ -73,8 +73,8 @@ enum RelationshipCondition {
 /// bounced.
 enum Reachability {
   confirmed('CONFIRMED', 'Reaching them'),
-  failed('FAILED', 'No confirmed reachability'),
-  unknown('UNKNOWN', 'No confirmed reachability'),
+  failed('FAILED', 'Mail is not getting through'),
+  unknown('UNKNOWN', 'Not confirmed yet'),
   notAttempted('NOT_ATTEMPTED', 'Nothing sent');
 
   const Reachability(this.wire, this.label);

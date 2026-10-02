@@ -444,8 +444,9 @@ class _TodayScreenState extends State<TodayScreen> {
               child: Center(
                   child: CircularProgressIndicator(color: Ob.ink, strokeWidth: 2)),
             )
+          // Nothing waiting: the headline has said so; saying it twice is noise.
           else if (shownCount == 0)
-            _quiet(_today.state)
+            const SizedBox.shrink()
           else
             LayoutBuilder(builder: (context, c) {
               var cols = c.maxWidth >= 1000 ? 3 : (c.maxWidth >= 640 ? 2 : 1);
