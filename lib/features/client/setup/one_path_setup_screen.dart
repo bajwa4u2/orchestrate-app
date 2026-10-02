@@ -2639,7 +2639,14 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         final kinds = _buyerKinds.isEmpty
             ? 'Businesses that buy from you'
             : _joinWords(_buyerKinds);
-        final where = _geoTargets.isEmpty ? '' : ' in ${_joinWords(_geoTargets.take(4).toList())}';
+        // Worldwide is said as that: naming four towns hid it (2 Oct 2026).
+        final where = _worldwide
+            ? (_geoTargets.isEmpty
+                ? ' anywhere in the world'
+                : ' anywhere in the world, starting with ${_joinWords(_geoTargets.take(3).toList())}')
+            : _geoTargets.isEmpty
+                ? ''
+                : ' in ${_joinWords(_geoTargets.take(4).toList())}';
         return _SideCard(
           label: 'WHAT ORCHESTRATE WILL LOOK FOR',
           children: [
