@@ -4027,13 +4027,21 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           label: 'HOW IT WILL LOOK AT THE FOOT OF EVERY NOTE',
           children: [
             AnimatedBuilder(
-              animation: Listenable.merge([_name, _website, _line1, _city, _postcode]),
+              animation: Listenable.merge(
+                  [_name, _website, _line1, _line2, _city, _stateRegion, _postcode]),
               builder: (context, _) {
                 final who = AuthSessionController.instance.fullName.trim();
+                // The order the server renders it in every note
+                // (postal-address.ts renderAddressLine): street, line 2,
+                // town, "state postcode", country.
                 final addressParts = [
                   _line1.text.trim(),
+                  _line2.text.trim(),
                   _city.text.trim(),
-                  _postcode.text.trim(),
+                  [_stateRegion.text.trim(), _postcode.text.trim()]
+                      .where((e) => e.isNotEmpty)
+                      .join(' '),
+                  _addressCountry.trim().toUpperCase(),
                 ].where((e) => e.isNotEmpty).join(', ');
                 return Container(
                   width: double.infinity,
