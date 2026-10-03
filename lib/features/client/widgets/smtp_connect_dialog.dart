@@ -655,7 +655,7 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
         ),
         if (_attachInbound) ...[
           const SizedBox(height: 14),
-          CheckboxListTile(
+          Material(type: MaterialType.transparency, child: CheckboxListTile(
             value: _imapMirrorsSmtpAuth,
             onChanged: _testing || _saving
                 ? null
@@ -669,7 +669,7 @@ class _SmtpConnectDialogState extends State<SmtpConnectDialog> {
             ),
             dense: true,
             contentPadding: EdgeInsets.zero,
-          ),
+          )),
           const SizedBox(height: 12),
           _row([
             _field(

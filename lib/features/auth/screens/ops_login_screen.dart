@@ -93,14 +93,14 @@ class _OpsLoginScreenState extends State<OpsLoginScreen> {
                               onFieldSubmitted:
                                   _busy ? null : (_) => _verifyCode(),
                               validator: _required),
-                          CheckboxListTile(
+                          Material(type: MaterialType.transparency, child: CheckboxListTile(
                             contentPadding: EdgeInsets.zero,
                             value: _trustDevice,
                             onChanged: (value) =>
                                 setState(() => _trustDevice = value == true),
                             controlAffinity: ListTileControlAffinity.leading,
                             title: const Text('Trust this device for 60 days'),
-                          ),
+                          )),
                           const SizedBox(height: 12),
                           FilledButton(
                               onPressed: _busy ? null : _verifyCode,

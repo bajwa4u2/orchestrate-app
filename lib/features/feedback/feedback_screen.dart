@@ -93,12 +93,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           child: Column(
             children: [
               for (final intent in FeedbackIntent.values)
-                RadioListTile<FeedbackIntent>(
+                Material(type: MaterialType.transparency, child: RadioListTile<FeedbackIntent>(
                   value: intent,
                   contentPadding: EdgeInsets.zero,
                   title: Text(intent.label),
                   subtitle: Text(intent.hint),
-                ),
+                )),
             ],
           ),
         ),

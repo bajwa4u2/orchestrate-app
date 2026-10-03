@@ -955,7 +955,7 @@ class _AuthCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                CheckboxListTile(
+                Material(type: MaterialType.transparency, child: CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: state._rememberEmail,
                   onChanged: (value) => state.setState(
@@ -964,7 +964,7 @@ class _AuthCard extends StatelessWidget {
                   controlAffinity: ListTileControlAffinity.leading,
                   title: const Text('Save email on this device'),
                   subtitle: const Text('Your password is never saved.'),
-                ),
+                )),
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
@@ -1067,7 +1067,7 @@ class _EmailCodeView extends StatelessWidget {
               onSubmitted: state._busy ? null : state.verifyLoginCode,
             ),
             const SizedBox(height: 8),
-            CheckboxListTile(
+            Material(type: MaterialType.transparency, child: CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               value: state._trustDevice,
               onChanged: (value) => state.setState(
@@ -1076,7 +1076,7 @@ class _EmailCodeView extends StatelessWidget {
               controlAffinity: ListTileControlAffinity.leading,
               title: Text('Remember this device for 60 days',
                   style: Ob.body(14.5, color: Ob.ink)),
-            ),
+            )),
             const SizedBox(height: 10),
             FilledButton(
               onPressed: state._busy ? null : state.verifyLoginCode,

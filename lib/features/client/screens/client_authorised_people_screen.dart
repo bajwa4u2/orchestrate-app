@@ -554,7 +554,7 @@ class _DesignationDialogState extends State<_DesignationDialog> {
                 ),
               ),
               const SizedBox(height: 20),
-              CheckboxListTile(
+              Material(type: MaterialType.transparency, child: CheckboxListTile(
                 value: _acknowledged,
                 onChanged: (v) => setState(() => _acknowledged = v ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
@@ -563,7 +563,7 @@ class _DesignationDialogState extends State<_DesignationDialog> {
                   widget.designation['representation']?.toString() ?? '',
                   style: text.bodyMedium,
                 ),
-              ),
+              )),
               const SizedBox(height: 16),
               // Submitting is a claim, not an outcome. Said here so nobody
               // closes this dialog believing they now hold the authority.
@@ -703,7 +703,7 @@ class _CapabilityBlock extends StatelessWidget {
           // decisions, and the backend treats them as such.
           for (final k in const ['exercise', 'delegate', 'subdelegate'])
             if (copy[k] != null)
-              CheckboxListTile(
+              Material(type: MaterialType.transparency, child: CheckboxListTile(
                 value: selection[k] ?? false,
                 onChanged: (v) {
                   selection[k] = v ?? false;
@@ -714,7 +714,7 @@ class _CapabilityBlock extends StatelessWidget {
                 dense: true,
                 visualDensity: VisualDensity.compact,
                 title: Text(copy[k].toString(), style: text.bodySmall),
-              ),
+              )),
         ],
       ),
     );
@@ -966,7 +966,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                       text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
               for (final entry in _copy.entries)
-                CheckboxListTile(
+                Material(type: MaterialType.transparency, child: CheckboxListTile(
                   value: _areas.contains(entry.key),
                   onChanged: (v) => setState(() {
                     if (v == true) {
@@ -991,7 +991,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                     style:
                         text.bodySmall?.copyWith(color: Ob.inkMuted),
                   ),
-                ),
+                )),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!,
