@@ -1,6 +1,6 @@
 Orchestrate 2.0, rebuilt around your kind of business.
 
-- Setup adapts to 32 kinds of business: the buyers you sell to, the moments that bring you work, the proof buyers ask for and how you get paid.
+- Setup adapts to 33 kinds of business: the buyers you sell to, the moments that bring you work, the proof buyers ask for and how you get paid.
 - Today shows only what needs your yes.
 - Support sees where your business stands, answers on the spot, and passes you to a person when needed.
 - Account, plan and security, redesigned.
