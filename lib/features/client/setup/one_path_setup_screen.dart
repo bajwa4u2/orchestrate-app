@@ -4243,9 +4243,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           final a = _map(_profile['postalAddress']);
           return [
             _text(_profile, 'displayName'),
-            [_text(a, 'line1'), _text(a, 'locality'), _text(a, 'postalCode')]
-                .where((e) => e.isNotEmpty)
-                .join(', '),
+            [
+              _text(a, 'line1'),
+              _text(a, 'locality'),
+              [_text(a, 'region'), _text(a, 'postalCode')].where((e) => e.isNotEmpty).join(' '),
+            ].where((e) => e.isNotEmpty).join(', '),
           ].where((e) => e.isNotEmpty).join(' · ');
         case SetupStep.want:
           final icp = _map(_profile['icp']);
