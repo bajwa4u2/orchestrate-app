@@ -774,6 +774,9 @@ class _AccountButtonState extends State<_AccountButton> {
             value: '/account/plan', child: Text('Plan & billing')),
         const PopupMenuItem(
             value: '/account/security', child: Text('Account & security')),
+        // On a phone the bottom bar has no room for Support, and Search was
+        // the only way to it (Pixel walk, 3 Oct 2026).
+        const PopupMenuItem(value: '/client/support', child: Text('Support')),
         const PopupMenuDivider(),
         // FEEDBACK, RATE AND VERSION LIVE HERE.
         //

@@ -424,6 +424,7 @@ class _StandingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final blocking = item.state == 'blocking';
+    final narrow = MediaQuery.sizeOf(context).width < 600;
     return ObCard(
       padding: const EdgeInsets.all(16),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -447,9 +448,15 @@ class _StandingRow extends StatelessWidget {
               const SizedBox(height: 4),
               Text(item.detail, style: Ob.body(14, color: Ob.inkSoft)),
             ],
+            // Beneath on a phone: beside the text it squeezed the reason
+            // into a narrow column (Pixel walk, 3 Oct 2026).
+            if (item.place != null && narrow) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(onPressed: () => onOpen(item.place!), child: Text(item.place!.label)),
+            ],
           ]),
         ),
-        if (item.place != null) ...[
+        if (item.place != null && !narrow) ...[
           const SizedBox(width: 12),
           OutlinedButton(onPressed: () => onOpen(item.place!), child: Text(item.place!.label)),
         ],
