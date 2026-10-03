@@ -162,12 +162,14 @@ void main() {
       return;
     }
 
+    // Today's places (DD-36, 2 Oct 2026: the legacy addresses are retired
+    // outright, so they are not visited here).
     for (final destination in <String>[
       '/client/today',
       '/client/market',
       '/client/relationships',
-      '/client/business',
-      '/client/billing',
+      '/client/money',
+      '/client/support',
       '/account/plan',
     ]) {
       expect(
@@ -175,18 +177,6 @@ void main() {
         destination,
         reason: '$destination must not redirect on this platform',
       );
-    }
-
-    const retired = <String, String>{
-      '/app/home': '/client/today',
-      '/app/billing': '/client/billing',
-      '/app/campaigns': '/client/representation/targeting',
-      '/client/trust': '/app/trust',
-      '/client/opportunities': '/client/relationships',
-    };
-    for (final entry in retired.entries) {
-      expect(await settleTo(tester, entry.key), entry.value,
-          reason: '${entry.key} must lead to ${entry.value}');
     }
 
     // And a business with no plan still reaches its workspace on this
@@ -249,6 +239,12 @@ void main() {
     // against it anyway would compare the rail to a login screen and fail for
     // a reason that has nothing to do with layout.
     if (!authenticated) {
+      // Since 3 Oct 2026 a 401 ends the session only after the server
+      // confirms it (/auth/me), so the sign-out lands a moment later.
+      for (var i = 0; i < 50 && !where().startsWith('/auth/login'); i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        tester.takeException();
+      }
       // The front door carries where it was going, so the path is a prefix
       // rather than an equality.
       expect(where(), startsWith('/auth/login'),
