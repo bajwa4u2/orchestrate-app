@@ -141,5 +141,16 @@ void main() {
         reason: 'the check must come before the cadence cards are built',
       );
     });
+
+    // 3 Oct 2026: on a phone the store charges in the person's own currency,
+    // so setup's plan step shows the store's offer, never the web's dollars.
+    test('a store build prices the plan step with the store, not the web', () {
+      final source = read(subscribe);
+      expect(
+          RegExp(r'inAppPurchaseAllowed\)\s+const StoreSubscribePanel\(\)').hasMatch(source),
+          isTrue);
+      expect(source.contains('!inAppPurchaseAllowed && !_holdsPlatform && _offers.isNotEmpty'), isTrue,
+          reason: 'the dollar cards are for the web rail only');
+    });
   });
 }

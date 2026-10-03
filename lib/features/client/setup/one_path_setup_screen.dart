@@ -15,6 +15,7 @@ import '../../../data/repositories/auth_repository.dart';
 import '../../../core/commercial/commercial_model.dart';
 import '../../../core/commercial/client_capabilities.dart';
 import '../../../core/platform/billing_gate.dart';
+import '../widgets/store_subscribe_panel.dart';
 import '../../../data/repositories/client/client_billing_repository.dart';
 import '../../../data/repositories/client/client_business_identity_repository.dart';
 import '../../../data/repositories/client/client_campaign_repository.dart';
@@ -2926,7 +2927,13 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         // Never price what the organisation already holds, on any rail: the
         // entitlement decides, not a Stripe row (from the retired Subscribe
         // page, DD-34).
-        if (!_planActive && !_holdsPlatform && _offers.isNotEmpty) ...[
+        // A STORE BUILD SHOWS THE STORE'S PRICE (3 Oct 2026). The dollar
+        // figures below are the web's, charged by card; on a phone the store
+        // charges in the person's own currency, so the store's own offer is
+        // shown and bought here instead.
+        if (!_planActive && !_holdsPlatform && inAppPurchaseAllowed)
+          const StoreSubscribePanel(),
+        if (!_planActive && !inAppPurchaseAllowed && !_holdsPlatform && _offers.isNotEmpty) ...[
           const EarlyPriceLine(),
           const SizedBox(height: 14),
           // Prices are the server's (`/public/pricing`), never written here.
@@ -2947,6 +2954,13 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ObActions(
             primary: 'Continue',
             onPrimary: () => _goTo(_next(SetupStep.plan)),
+            secondary: 'Back',
+            onSecondary: () => _goTo(SetupStep.email),
+          )
+        else if (inAppPurchaseAllowed)
+          ObActions(
+            primary: 'Not yet, look around first',
+            onPrimary: _deferPlan,
             secondary: 'Back',
             onSecondary: () => _goTo(SetupStep.email),
           )

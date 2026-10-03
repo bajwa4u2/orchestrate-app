@@ -5,7 +5,8 @@ import '../../../core/commercial/client_capabilities.dart';
 import '../../../core/commercial/store_purchase.dart';
 import '../../../core/platform/billing_gate.dart';
 import '../../../data/repositories/client/store_purchase_repository.dart';
-import 'client_workspace_widgets.dart';
+import '../../../core/theme/ob.dart';
+import '../../../core/ui/ob_widgets.dart';
 
 /// SUBSCRIBING FROM INSIDE THE APP.
 ///
@@ -265,17 +266,17 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
     if (!inAppPurchaseAllowed) return const SizedBox.shrink();
 
     if (_loading) {
-      return const ClientPanel(
+      return const _StorePanel(
         title: 'Subscription',
-        children: [ClientEmptyState(message: 'Checking with the store…')],
+        children: [_StoreNote(message: 'Checking with the store…')],
       );
     }
 
     if (_loadError != null) {
-      return ClientPanel(
+      return _StorePanel(
         title: 'Subscription',
         children: [
-          const ClientEmptyState(
+          const _StoreNote(
             message: 'We could not reach the store just now. Any subscription '
                 'you already have is unaffected.',
           ),
@@ -289,12 +290,12 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
 
     // An organisation that already operates is not sold to again, on any rail.
     if (offerings != null && offerings.alreadyActive) {
-      return ClientPanel(
+      return _StorePanel(
         title: 'Subscription',
         children: [
           // The server's sentence, said once. Repeating it as both a heading
           // and a body reads as two facts when it is one.
-          ClientInfoRow(
+          _StoreRow(
             title: offerings.entitlement?.says ??
                 'Orchestrate is active for your organisation.',
             primary: offerings.entitlement?.because ?? '',
@@ -302,7 +303,7 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
           const SizedBox(height: 12),
           Text(
             kStorePlanManagementNotice,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Ob.body(13.5, color: Ob.inkMuted),
           ),
         ],
       );
@@ -317,10 +318,10 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
     // rendering a Subscribe button that leads somewhere bad.
     final availability = _offerings?.rails[_rail];
     if (availability != null && !availability.live) {
-      return ClientPanel(
+      return _StorePanel(
         title: 'Subscription',
         children: [
-          ClientEmptyState(
+          _StoreNote(
             message: availability.says ??
                 'Subscribing is not available on this device yet.',
           ),
@@ -329,23 +330,23 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
     }
 
     if (_purchasable.isEmpty) {
-      return const ClientPanel(
+      return const _StorePanel(
         title: 'Subscription',
         children: [
-          ClientEmptyState(
+          _StoreNote(
             message: 'Nothing is available to purchase on this device yet.',
           ),
         ],
       );
     }
 
-    return ClientPanel(
+    return _StorePanel(
       title: 'Subscription',
       subtitle: 'Billed by ${isIosAppStorePlatform ? 'the App Store' : 'Google Play'}, '
           'to your organisation. One subscription covers everyone in it.',
       children: [
         for (final offer in _purchasable) ...[
-          ClientInfoRow(
+          _StoreRow(
             // The cadence, said by us, because it is the one thing on this row
             // the store cannot be relied on to phrase consistently across
             // countries. Everything else on the row is the store's own words.
@@ -359,9 +360,12 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
             secondary: offer.product.description,
           ),
           const SizedBox(height: 12),
-          FilledButton(
-            onPressed: _buying ? null : () => _subscribe(offer),
-            child: Text(_buying ? 'Working…' : 'Subscribe'),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton(
+              onPressed: _buying ? null : () => _subscribe(offer),
+              child: Text(_buying ? 'Working…' : 'Subscribe'),
+            ),
           ),
           const SizedBox(height: 18),
         ],
@@ -371,25 +375,24 @@ class _StoreSubscribePanelState extends State<StoreSubscribePanel> {
         Text(
           'Both give your organisation the whole of Orchestrate. The only '
           'difference is how often you are billed.',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Ob.body(13.5, color: Ob.inkMuted),
         ),
         const SizedBox(height: 12),
         // Required by both stores, and the right thing anyway: someone who
         // already paid, on another device or before a reinstall, must be able
         // to get their service back without paying twice.
-        TextButton(
-          onPressed: _buying ? null : _restore,
-          child: const Text('Restore a purchase'),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: _buying ? null : _restore,
+            child: const Text('Restore a purchase'),
+          ),
         ),
         if (_message != null) ...[
           const SizedBox(height: 12),
           Text(
             _message!,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: _messageIsGood
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.error,
-                ),
+            style: Ob.body(14.5, color: _messageIsGood ? Ob.ink : Ob.refused),
           ),
         ],
       ],
@@ -407,4 +410,64 @@ class _Purchasable {
 
   final StorePlan plan;
   final ProductDetails product;
+}
+
+
+// ── In the current design (DD-35 Account, 3 Oct 2026) ─────────────────
+// Same parameters the old workspace widgets took, so the purchase logic above
+// is unchanged; only how it is drawn.
+
+class _StorePanel extends StatelessWidget {
+  const _StorePanel({required this.title, this.subtitle, required this.children});
+  final String title;
+  final String? subtitle;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 26),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(title.toUpperCase(), style: Ob.eyebrow()),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          Text(subtitle!, style: Ob.body(13.5, color: Ob.inkMuted)),
+        ],
+        const SizedBox(height: 10),
+        ObCard(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+        ),
+      ]),
+    );
+  }
+}
+
+class _StoreRow extends StatelessWidget {
+  const _StoreRow({required this.title, this.primary = '', this.secondary});
+  final String title;
+  final String primary;
+  final String? secondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+        Expanded(child: Text(title, style: Ob.strong(15.5))),
+        if (primary.isNotEmpty) Text(primary, style: Ob.figure(22)),
+      ]),
+      if ((secondary ?? '').isNotEmpty) ...[
+        const SizedBox(height: 3),
+        Text(secondary!, style: Ob.body(13.5, color: Ob.inkMuted)),
+      ],
+    ]);
+  }
+}
+
+class _StoreNote extends StatelessWidget {
+  const _StoreNote({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Text(message, style: Ob.body(14.5, color: Ob.inkSoft));
 }
