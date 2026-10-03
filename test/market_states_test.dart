@@ -223,7 +223,7 @@ void main() {
     expect(find.text('Ready for you'), findsOneWidget);
     expect(find.text('You decided'), findsOneWidget);
     // DD-30: a pursued business is on the owner's Today list, said so.
-    expect(find.text('On your Today list'), findsOneWidget);
+    expect(find.text('Writing to them'), findsOneWidget);
     expect(find.text('Keep in view'), findsOneWidget);
   });
 

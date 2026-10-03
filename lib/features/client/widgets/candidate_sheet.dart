@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/features/client/widgets/pursuit_outcome.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -449,6 +450,7 @@ class _CandidateSheetState extends State<CandidateSheet> {
         return;
       }
       widget.onChanged();
+      showPursuitOutcome(context, result);
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;

@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/features/client/widgets/pursuit_outcome.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -287,6 +288,7 @@ class _MarketScreenState extends State<MarketScreen> {
     });
     try {
       final result = await _market.setPursuit(key: c.key, disposition: d);
+      if (result['ok'] == true && mounted) showPursuitOutcome(context, result);
       if (result['ok'] != true && mounted) {
         setState(() => _decisionFailure = (result['says'] ??
                 result['message'] ??
@@ -590,7 +592,7 @@ class _DecidedRow extends StatelessWidget {
     final state = c.hasRelationship
         ? 'Customer'
         : switch (c.disposition) {
-            PursuitDisposition.pursuing => 'On your Today list',
+            PursuitDisposition.pursuing => 'Writing to them',
             _ => c.disposition.label,
           };
     final where = [

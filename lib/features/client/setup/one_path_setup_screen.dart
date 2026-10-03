@@ -4368,7 +4368,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           child: Text(
               allDone
                   ? 'New businesses appear in Market as Orchestrate finds them. '
-                      'When a note is ready, it waits on Today for your yes.'
+                      'Say yes to one and Orchestrate writes to them from your email.'
                   : 'Everything you have done is saved. Open any line to finish '
                       'it; the rest of the workspace is yours meanwhile.',
               style: Ob.body(18)),

@@ -18,6 +18,7 @@ import 'package:orchestrate_app/data/repositories/client/client_money_repository
 import 'package:orchestrate_app/data/repositories/client/client_representative_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_today_repository.dart';
 import 'package:orchestrate_app/features/client/widgets/candidate_sheet.dart';
+import 'package:orchestrate_app/features/client/widgets/pursuit_outcome.dart';
 import 'package:orchestrate_app/features/client/widgets/prospect_facts.dart';
 
 /// TODAY (DD-26, board S07): "N things need your yes."
@@ -217,6 +218,7 @@ class _TodayScreenState extends State<TodayScreen> {
     });
     try {
       final result = await _market.setPursuit(key: c.key, disposition: d);
+      if (result['ok'] == true && mounted) showPursuitOutcome(context, result);
       if (result['ok'] != true && mounted) {
         setState(() => _decisionFailure =
             (result['says'] ?? result['message'] ?? 'That decision was not recorded.')
