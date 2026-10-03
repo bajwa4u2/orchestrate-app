@@ -46,9 +46,11 @@ void main() {
     // The detail is reached by state, and there is always a way back out of it.
     expect(screen.contains('Back to the queue'), isTrue);
     // And it carries what a decision needs.
+    // 3 Oct 2026: the decision leads and the record folds beneath it, so the
+    // evidence, the check and the history are all still here, under one fold.
     for (final section in [
-      'Why this exists',
-      'Evidence',
+      'The record',
+      '_EvidenceTable',
       'Actions',
       'How you will know',
       'What has been done',
@@ -88,7 +90,7 @@ void main() {
     // The case leads with what it is about; the case type and row id live under
     // Details, which is where an engineer looks and a person does not.
     expect(detail.contains('class _Fingerprint'), isTrue);
-    final headline = detail.substring(0, detail.indexOf('Why this exists'));
+    final headline = detail.substring(0, detail.indexOf('The record'));
     for (final raw in ["c['caseType']", "c['entityId']", "c['entityType']"]) {
       expect(
         headline.contains(raw),

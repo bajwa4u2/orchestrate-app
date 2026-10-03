@@ -33,6 +33,8 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
   static const _pageSize = 25;
 
   List<Map<String, dynamic>> _cases = [];
+  List<Map<String, dynamic>> _sweeps = const [];
+  bool _sweeping = false;
   List<Map<String, dynamic>> _workTypes = const [];
   List<Map<String, dynamic>> _businesses = const [];
   Map<String, dynamic> _bySeverity = const {};
@@ -80,6 +82,7 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
       final totals = Map<String, dynamic>.from((data['totals'] as Map?) ?? {});
       setState(() {
         _cases = _mapList(data['cases']);
+        _sweeps = _mapList(data['sweeps']);
         _workTypes = _mapList(data['workTypes']);
         _businesses = _mapList(totals['byClient']);
         _bySeverity = Map<String, dynamic>.from((totals['bySeverity'] as Map?) ?? {});
@@ -139,6 +142,8 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
         wqCase: open,
         action: _action[open['id'] as String? ?? ''],
         onAction: (a) => _runAction(open['id'] as String? ?? '', open, a),
+        onDecide: (a, reason) =>
+            _runAction(open['id'] as String? ?? '', open, a, decided: reason),
         onBack: () => setState(() => _reviewing = null),
       );
     }
@@ -222,31 +227,72 @@ class _OpsWorkQueueScreenState extends State<OpsWorkQueueScreen> {
             'signed in as.',
       );
     }
-    return ListView.separated(
-      padding: EdgeInsets.zero,
-      itemCount: _cases.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, i) {
-        final c = _cases[i];
-        final id = c['id'] as String? ?? '$i';
-        return _QueueRow(
-          wqCase: c,
-          onReview: () => setState(() => _reviewing = id),
-        );
-      },
-    );
+    // ONE HEADING PER KIND OF WORK (3 Oct 2026).
+    //
+    // Twenty-four held messages read as twenty-four unrelated cases, each
+    // repeating the same explanation. Cases that share a group sit under one
+    // heading with its count, and each row answers in place.
+    final children = <Widget>[];
+    for (final s in _sweeps) {
+      children.add(_SweepBanner(
+        sweep: s,
+        working: _sweeping,
+        onRun: () => _runSweep(s),
+      ));
+      children.add(const SizedBox(height: 14));
+    }
+    String? lastGroup;
+    for (var i = 0; i < _cases.length; i++) {
+      final c = _cases[i];
+      final id = c['id'] as String? ?? '$i';
+      final group = (c['group'] as String?)?.trim();
+      if (group != null && group.isNotEmpty && group != lastGroup) {
+        final count = _cases.where((x) => x['group'] == group).length;
+        if (children.isNotEmpty) children.add(const SizedBox(height: 6));
+        children.add(_GroupHeading(label: group, count: count));
+        children.add(const SizedBox(height: 8));
+      }
+      lastGroup = group;
+      children.add(_QueueRow(
+        wqCase: c,
+        action: _action[id],
+        onReview: () => setState(() => _reviewing = id),
+        onDecide: (a, reason) => _runAction(id, c, a, decided: reason),
+      ));
+      children.add(const SizedBox(height: 8));
+    }
+    return ListView(padding: EdgeInsets.zero, children: children);
+  }
+
+  Future<void> _runSweep(Map<String, dynamic> sweep) async {
+    setState(() => _sweeping = true);
+    try {
+      await _repo.rawPost('/operator/${sweep['endpoint'] ?? ''}');
+      if (!mounted) return;
+      setState(() => _sweeping = false);
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sweeping = false;
+        _error = _readable(e);
+      });
+    }
   }
 
   Future<void> _runAction(
     String caseId,
     Map<String, dynamic> wqCase,
-    Map<String, dynamic> action,
-  ) async {
+    Map<String, dynamic> action, {
+    /// The reason already agreed in place. Null means ask in a dialog, as
+    /// cases without plain answers still do.
+    String? decided,
+  }) async {
     final requiresConfirmation = action['requiresConfirmation'] as bool? ?? false;
     final requiresReason = action['requiresReason'] as bool? ?? false;
 
-    String? reason;
-    if (requiresConfirmation || requiresReason) {
+    String? reason = decided;
+    if (decided == null && (requiresConfirmation || requiresReason)) {
       final result = await _showActionDialog(
         context,
         label: action['label'] as String? ?? 'Confirm',
@@ -694,17 +740,24 @@ class _Pill extends StatelessWidget {
       );
 }
 
-/// ONE LINE PER CASE, ONE WAY IN.
+/// ONE LINE PER CASE, ANSWERED IN PLACE (3 Oct 2026).
 ///
-/// Whose it is, what kind of work, what needs deciding, how long it has waited,
-/// how urgent, and Review. The old row rendered the entire diagnosis, evidence
-/// table and action grid inline, which made a queue of thirty into several
-/// thousand pixels of decision surface nobody had asked to see yet.
+/// A case that asks a plain question carries its answers on the row: what it
+/// is, who it is from, how long it has waited, and the two or three things a
+/// person would say about it. Opening the case is for when the row is not
+/// enough. Cases without plain answers keep the single way in, Review.
 class _QueueRow extends StatelessWidget {
-  const _QueueRow({required this.wqCase, required this.onReview});
+  const _QueueRow({
+    required this.wqCase,
+    required this.action,
+    required this.onReview,
+    required this.onDecide,
+  });
 
   final Map<String, dynamic> wqCase;
+  final _CaseAction? action;
   final VoidCallback onReview;
+  final void Function(Map<String, dynamic> action, String reason) onDecide;
 
   @override
   Widget build(BuildContext context) {
@@ -718,58 +771,69 @@ class _QueueRow extends StatelessWidget {
     final since = DateTime.tryParse('${state['since'] ?? ''}');
     final waited = since == null ? null : _howLong(DateTime.now().difference(since));
     final client = (wqCase['clientName'] as String?)?.trim();
+    final summary = (wqCase['summary'] as String?)?.trim();
+    final answers = _answersOf(wqCase);
+    final grouped = (wqCase['group'] as String?)?.trim().isNotEmpty == true;
 
-    return InkWell(
-      onTap: onReview,
-      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-        decoration: BoxDecoration(
-          color: AppTheme.panel,
-          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-          border: Border.all(color: AppTheme.line),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 3,
-              height: 34,
-              margin: const EdgeInsets.only(right: 12),
-              decoration:
-                  BoxDecoration(color: colour, borderRadius: BorderRadius.circular(2)),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+    final line = [
+      if (summary != null && summary.isNotEmpty) summary,
+      if (!grouped && severity != 'info') _urgency(severity),
+      if (client != null && client.isNotEmpty) client,
+      if (!grouped) '${(state['label'] ?? state['value'] ?? '—')}',
+      if (waited != null) waited,
+    ].join(' · ');
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: AppTheme.panel,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(color: AppTheme.line),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 3,
+            height: 34,
+            margin: const EdgeInsets.only(right: 12),
+            decoration:
+                BoxDecoration(color: colour, borderRadius: BorderRadius.circular(2)),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: onReview,
+                  child: Text(
                     '${wqCase['entityLabel'] ?? wqCase['entityId'] ?? '—'}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w600, height: 1.2),
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    // Urgency in words as well as colour. A three-pixel stripe
-                    // is the whole difference between "somebody is waiting" and
-                    // "this has been waiting four days", and a header saying
-                    // "1 critical" above rows that all look alike does not tell
-                    // an operator which one.
-                    [
-                      if (severity != 'info') _urgency(severity),
-                      if (client != null && client.isNotEmpty) client,
-                      '${(state['label'] ?? state['value'] ?? '—')}',
-                      if (waited != null) waited,
-                    ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.subdued),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  line,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: AppTheme.subdued),
+                ),
+                if (answers.primary.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _DecisionBar(
+                    answers: answers,
+                    action: action,
+                    onDecide: onDecide,
+                    onOpen: onReview,
                   ),
                 ],
-              ),
+              ],
             ),
+          ),
+          if (answers.primary.isEmpty) ...[
             const SizedBox(width: 12),
             TextButton(
               onPressed: onReview,
@@ -782,7 +846,277 @@ class _QueueRow extends StatelessWidget {
               child: const Text('Review', style: TextStyle(fontSize: 12)),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The answers a case offers, split the way a person reads them.
+class _Answers {
+  const _Answers(this.primary, this.more, this.inspect);
+  final List<Map<String, dynamic>> primary;
+  final List<Map<String, dynamic>> more;
+  final List<Map<String, dynamic>> inspect;
+}
+
+/// Only cases whose server marked plain answers get them. Everything else is
+/// unchanged, so no case type is interpreted here.
+_Answers _answersOf(Map<String, dynamic> wqCase) {
+  final all = (wqCase['actions'] as List? ?? [])
+      .whereType<Map>()
+      .map((a) => Map<String, dynamic>.from(a))
+      .toList();
+  final marked = all.any((a) => a['primary'] == true);
+  if (!marked) return const _Answers([], [], []);
+  return _Answers(
+    all.where((a) => a['primary'] == true).toList(),
+    all.where((a) => a['primary'] != true && a['outcome'] != 'INSPECT').toList(),
+    all.where((a) => a['outcome'] == 'INSPECT').toList(),
+  );
+}
+
+/// THE ANSWER, THEN ONE CONFIRMATION, IN PLACE.
+///
+/// Choosing an answer shows what it records and the sentence that goes with
+/// it, already written and editable. One more press records it. No dialog, no
+/// blank box to compose an audit entry in.
+class _DecisionBar extends StatefulWidget {
+  const _DecisionBar({
+    required this.answers,
+    required this.action,
+    required this.onDecide,
+    required this.onOpen,
+  });
+
+  final _Answers answers;
+  final _CaseAction? action;
+  final void Function(Map<String, dynamic> action, String reason) onDecide;
+  final VoidCallback onOpen;
+
+  @override
+  State<_DecisionBar> createState() => _DecisionBarState();
+}
+
+class _DecisionBarState extends State<_DecisionBar> {
+  Map<String, dynamic>? _chosen;
+  final _reason = TextEditingController();
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  void _choose(Map<String, dynamic> a) {
+    setState(() {
+      _chosen = a;
+      _reason.text = (a['defaultReason'] as String?) ?? '';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final action = widget.action;
+    if (action != null && action.isWorking) {
+      return Row(children: [
+        const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent)),
+        const SizedBox(width: 8),
+        Text(action.message ?? 'Recording…',
+            style: const TextStyle(fontSize: 12, color: AppTheme.muted)),
+      ]);
+    }
+    if (action != null && action.isDone) {
+      return Text('Recorded: ${action.message ?? ''}',
+          style: const TextStyle(fontSize: 12, color: AppTheme.emerald));
+    }
+
+    final chosen = _chosen;
+    if (chosen != null) {
+      final needsReason = chosen['requiresReason'] == true;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${chosen['label']} — ${chosen['records'] ?? ''}',
+            style: const TextStyle(fontSize: 12, color: AppTheme.muted, height: 1.4),
+          ),
+          if (needsReason) ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _reason,
+              minLines: 1,
+              maxLines: 3,
+              style: const TextStyle(fontSize: 12),
+              decoration: const InputDecoration(
+                isDense: true,
+                labelText: 'Recorded with it',
+                labelStyle: TextStyle(fontSize: 11),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            FilledButton(
+              onPressed: needsReason && _reason.text.trim().isEmpty
+                  ? null
+                  : () => widget.onDecide(chosen, _reason.text.trim()),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.accent,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                minimumSize: Size.zero,
+              ),
+              child: const Text('Record',
+                  style: TextStyle(fontSize: 12, color: AppTheme.background)),
+            ),
+            TextButton(
+              onPressed: () => setState(() => _chosen = null),
+              style: TextButton.styleFrom(foregroundColor: AppTheme.muted),
+              child: const Text('Cancel', style: TextStyle(fontSize: 12)),
+            ),
+          ]),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (action != null && action.isError) ...[
+          Text(action.message ?? 'That did not go through.',
+              style: const TextStyle(fontSize: 12, color: AppTheme.rose)),
+          const SizedBox(height: 6),
+        ],
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final a in widget.answers.primary)
+              OutlinedButton(
+                onPressed: () => _choose(a),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.text,
+                  side: const BorderSide(color: AppTheme.line),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size.zero,
+                ),
+                child: Text('${a['label']}', style: const TextStyle(fontSize: 12)),
+              ),
+            if (widget.answers.more.isNotEmpty || widget.answers.inspect.isNotEmpty)
+              PopupMenuButton<Map<String, dynamic>>(
+                tooltip: 'More answers',
+                color: AppTheme.panel,
+                onSelected: (a) =>
+                    a['outcome'] == 'INSPECT' ? widget.onOpen() : _choose(a),
+                itemBuilder: (context) => [
+                  for (final a in widget.answers.more)
+                    PopupMenuItem(
+                        value: a,
+                        child: Text('${a['label']}', style: const TextStyle(fontSize: 12))),
+                  PopupMenuItem(
+                      value: const {'outcome': 'INSPECT'},
+                      child: const Text('Open the case',
+                          style: TextStyle(fontSize: 12))),
+                ],
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('More', style: TextStyle(fontSize: 12, color: AppTheme.muted)),
+                    Icon(Icons.expand_more, size: 14, color: AppTheme.muted),
+                  ]),
+                ),
+              ),
+          ],
         ),
+      ],
+    );
+  }
+}
+
+/// A heading over cases of one kind, with how many there are.
+class _GroupHeading extends StatelessWidget {
+  const _GroupHeading({required this.label, required this.count});
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        '$label · $count',
+        style: const TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.muted),
+      );
+}
+
+/// WORK A RULE TAKES BACK IN ONE STEP.
+///
+/// Offered above the list because it is not a decision about any one case:
+/// it is Orchestrate correcting what it should never have held.
+class _SweepBanner extends StatefulWidget {
+  const _SweepBanner({required this.sweep, required this.working, required this.onRun});
+  final Map<String, dynamic> sweep;
+  final bool working;
+  final VoidCallback onRun;
+
+  @override
+  State<_SweepBanner> createState() => _SweepBannerState();
+}
+
+class _SweepBannerState extends State<_SweepBanner> {
+  bool _confirming = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.sweep;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.accent.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(color: AppTheme.accent.withOpacity(0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${s['describes'] ?? ''}',
+              style: const TextStyle(fontSize: 13, color: AppTheme.muted, height: 1.45)),
+          if (_confirming) ...[
+            const SizedBox(height: 6),
+            Text('${s['confirm'] ?? ''}',
+                style: const TextStyle(fontSize: 12, color: AppTheme.subdued, height: 1.4)),
+          ],
+          const SizedBox(height: 10),
+          if (widget.working)
+            const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent))
+          else
+            Wrap(spacing: 8, children: [
+              FilledButton(
+                onPressed: _confirming
+                    ? widget.onRun
+                    : () => setState(() => _confirming = true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.accent,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  minimumSize: Size.zero,
+                ),
+                child: Text(_confirming ? 'Take them back' : '${s['label'] ?? ''}',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.background)),
+              ),
+              if (_confirming)
+                TextButton(
+                  onPressed: () => setState(() => _confirming = false),
+                  style: TextButton.styleFrom(foregroundColor: AppTheme.muted),
+                  child: const Text('Cancel', style: TextStyle(fontSize: 12)),
+                ),
+            ]),
+        ],
       ),
     );
   }
@@ -844,30 +1178,29 @@ class _CaseDetail extends StatelessWidget {
     required this.wqCase,
     required this.action,
     required this.onAction,
+    required this.onDecide,
     required this.onBack,
   });
 
   final Map<String, dynamic> wqCase;
   final _CaseAction? action;
   final void Function(Map<String, dynamic>) onAction;
+  final void Function(Map<String, dynamic> action, String reason) onDecide;
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     final c = wqCase;
-    final severity = c['severity'] as String? ?? 'info';
-    final colour = severity == 'critical'
-        ? AppTheme.rose
-        : severity == 'warning'
-            ? AppTheme.amber
-            : AppTheme.accent;
     final state = c['state'] as Map? ?? {};
     final actions = (c['actions'] as List? ?? [])
         .whereType<Map>()
         .map((a) => Map<String, dynamic>.from(a))
         .toList();
+    final answers = _answersOf(c);
     final isWorking = action?.isWorking ?? false;
     final client = (c['clientName'] as String?)?.trim();
+    final summary = (c['summary'] as String?)?.trim();
+    final question = (c['question'] as String?)?.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -895,6 +1228,7 @@ class _CaseDetail extends StatelessWidget {
         const SizedBox(height: 5),
         Text(
           [
+            if (summary != null && summary.isNotEmpty) summary,
             if (client != null && client.isNotEmpty) client,
             '${state['label'] ?? state['value'] ?? '—'}',
           ].join(' · '),
@@ -905,18 +1239,33 @@ class _CaseDetail extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              _SectionLabel('Why this exists'),
-              const SizedBox(height: 6),
               Text(
                 c['diagnosis'] as String? ?? '—',
                 style: const TextStyle(fontSize: 13, color: AppTheme.muted, height: 1.55),
               ),
               const SizedBox(height: 18),
-              _SectionLabel('Evidence'),
-              const SizedBox(height: 6),
-              _EvidenceTable(evidence: c['evidence'] as List? ?? []),
-              const SizedBox(height: 18),
-              if (actions.isNotEmpty) ...[
+              // THE DECISION FIRST, THE RECORD AFTER (3 Oct 2026).
+              //
+              // The page used to read as a form: why, evidence, six actions,
+              // how you will know, history, details. A person came to answer
+              // one question, so the question and its answers lead, and the
+              // record folds away beneath them.
+              if (answers.primary.isNotEmpty) ...[
+                Text(question ?? 'What is this?',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 10),
+                for (final a in answers.inspect) ...[
+                  _InspectButton(action: a, onTap: () => onAction(a)),
+                  const SizedBox(height: 10),
+                ],
+                _DecisionBar(
+                  answers: answers,
+                  action: action,
+                  onDecide: onDecide,
+                  onOpen: () {},
+                ),
+                const SizedBox(height: 18),
+              ] else if (actions.isNotEmpty) ...[
                 _SectionLabel('Actions'),
                 const SizedBox(height: 8),
                 if (isWorking)
@@ -940,29 +1289,42 @@ class _CaseDetail extends StatelessWidget {
                 ],
                 const SizedBox(height: 18),
               ],
-              _SectionLabel('How you will know'),
-              const SizedBox(height: 6),
-              _VerificationSourceRow(source: c['verificationSource'] as Map? ?? {}),
-              const SizedBox(height: 18),
-              _SectionLabel('What has been done'),
-              const SizedBox(height: 6),
-              _HistoryList(rows: c['history'] as List? ?? []),
-              const SizedBox(height: 18),
-              // TECHNICAL IDENTITY, LAST AND QUIET.
-              //
-              // A case type and a row id are how an engineer finds this again;
-              // they are not what a person needs to decide it, and leading with
-              // them is how an operator surface starts reading like a log.
-              _Fingerprint(
-                caseType: c['caseType'] as String? ?? '',
-                entityType: c['entityType'] as String? ?? '',
-                entityId: c['entityId'] as String? ?? '',
+              Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: const EdgeInsets.only(bottom: 8),
+                  iconColor: AppTheme.subdued,
+                  collapsedIconColor: AppTheme.subdued,
+                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                  title: const Text(
+                    'The record',
+                    style: TextStyle(fontSize: 12, color: AppTheme.subdued, letterSpacing: 0.4),
+                  ),
+                  children: [
+                    _EvidenceTable(evidence: c['evidence'] as List? ?? []),
+                    const SizedBox(height: 14),
+                    _SectionLabel('How you will know'),
+                    const SizedBox(height: 6),
+                    _VerificationSourceRow(source: c['verificationSource'] as Map? ?? {}),
+                    const SizedBox(height: 14),
+                    _SectionLabel('What has been done'),
+                    const SizedBox(height: 6),
+                    _HistoryList(rows: c['history'] as List? ?? []),
+                    const SizedBox(height: 8),
+                    // TECHNICAL IDENTITY, LAST AND QUIET.
+                    _Fingerprint(
+                      caseType: c['caseType'] as String? ?? '',
+                      entityType: c['entityType'] as String? ?? '',
+                      entityId: c['entityId'] as String? ?? '',
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
             ],
           ),
         ),
-        Container(height: 2, color: colour.withOpacity(0.0)),
       ],
     );
   }
