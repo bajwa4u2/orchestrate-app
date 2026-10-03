@@ -27,11 +27,12 @@ class ApiClient {
     Map<String, String>? query,
     ApiSurface surface = ApiSurface.public,
   }) async {
+    final sentToken = _token();
     final response = await _httpClient.get(
       _uri(path, query),
       headers: await _headers(surface),
     ).timeout(AppConfig.apiTimeout);
-    return _decode(response);
+    return _decode(response, sentToken);
   }
 
   Future<dynamic> postJson(
@@ -40,12 +41,13 @@ class ApiClient {
     ApiSurface surface = ApiSurface.public,
     Duration? timeout,
   }) async {
+    final sentToken = _token();
     final response = await _httpClient.post(
       _uri(path),
       headers: await _headers(surface),
       body: jsonEncode(body),
     ).timeout(timeout ?? AppConfig.apiTimeout);
-    return _decode(response);
+    return _decode(response, sentToken);
   }
 
   Future<dynamic> postMultipart(
@@ -59,6 +61,7 @@ class ApiClient {
     Duration? timeout,
   }) async {
     final uri = _uri(path);
+    final sentToken = _token();
     final authHeaders = await _headersNoContentType(surface);
     final request = http.MultipartRequest('POST', uri)
       ..headers.addAll(authHeaders)
@@ -71,7 +74,7 @@ class ApiClient {
     if (fields != null) request.fields.addAll(fields);
     final streamed = await request.send().timeout(timeout ?? AppConfig.apiTimeout);
     final response = await http.Response.fromStream(streamed);
-    return _decode(response);
+    return _decode(response, sentToken);
   }
 
   Future<dynamic> patchJson(
@@ -79,12 +82,13 @@ class ApiClient {
     required Map<String, dynamic> body,
     ApiSurface surface = ApiSurface.public,
   }) async {
+    final sentToken = _token();
     final response = await _httpClient.patch(
       _uri(path),
       headers: await _headers(surface),
       body: jsonEncode(body),
     ).timeout(AppConfig.apiTimeout);
-    return _decode(response);
+    return _decode(response, sentToken);
   }
 
   Future<dynamic> deleteJson(
@@ -92,12 +96,13 @@ class ApiClient {
     Map<String, dynamic>? body,
     ApiSurface surface = ApiSurface.public,
   }) async {
+    final sentToken = _token();
     final response = await _httpClient.delete(
       _uri(path),
       headers: await _headers(surface),
       body: body != null ? jsonEncode(body) : null,
     ).timeout(AppConfig.apiTimeout);
-    return _decode(response);
+    return _decode(response, sentToken);
   }
 
   Future<Map<String, String>> _headers(ApiSurface surface) async {
@@ -113,19 +118,70 @@ class ApiClient {
     return headers;
   }
 
-  dynamic _decode(http.Response response) {
+  String _token() => AuthSessionController.instance.token.trim();
+
+  dynamic _decode(http.Response response, String sentToken) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final exception = ApiException.fromResponse(response);
       if (response.statusCode == 401) {
-        AuthSessionController.instance.handleAuthFailure(
-          surface: AuthSessionController.instance.surface,
-          message: 'Your session has ended. Please sign in again to continue.',
-        );
+        SessionEndCheck.instance.afterRefusal(sentToken, _httpClient);
       }
       throw exception;
     }
     if (response.body.trim().isEmpty) return null;
     return jsonDecode(response.body);
+  }
+}
+
+/// A 401 IS NOT PROOF THE SESSION ENDED (founder walk, 3 Oct 2026).
+///
+/// Any 401 used to delete the saved session. But the server also answers 401
+/// for "this endpoint is not for you" (an operator-only route, a missing
+/// membership), and a request sent before the saved session was read carries
+/// no token at all. Either one signed a person out of a valid session on a
+/// page reload. Now: a refused request that carried no token, or a token that
+/// is no longer the current one, changes nothing; otherwise the session is
+/// asked about once, and only a session the server itself refuses is ended.
+class SessionEndCheck {
+  SessionEndCheck._();
+  static final SessionEndCheck instance = SessionEndCheck._();
+
+  Future<void>? _inFlight;
+
+  /// For tests: how the session is asked about.
+  Future<int> Function(String token, http.Client client)? probe;
+
+  void afterRefusal(String sentToken, http.Client client) {
+    if (sentToken.isEmpty) return;
+    final session = AuthSessionController.instance;
+    if (session.token.trim() != sentToken) return;
+    _inFlight ??= _check(sentToken, client).whenComplete(() => _inFlight = null);
+  }
+
+  Future<void> _check(String token, http.Client client) async {
+    int status;
+    try {
+      status = await (probe ?? _askServer)(token, client);
+    } catch (_) {
+      // No answer is not a refusal: keep the session.
+      return;
+    }
+    final session = AuthSessionController.instance;
+    if (status == 401 && session.token.trim() == token) {
+      await session.handleAuthFailure(
+        surface: session.surface,
+        message: 'Your session has ended. Please sign in again to continue.',
+      );
+    }
+  }
+
+  static Future<int> _askServer(String token, http.Client client) async {
+    final base = AppConfig.normalizedApiBaseUrl;
+    final response = await client.get(
+      Uri.parse('$base/auth/me'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    ).timeout(AppConfig.apiTimeout);
+    return response.statusCode;
   }
 }
 

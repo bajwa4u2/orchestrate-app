@@ -94,6 +94,10 @@ extension on SetupStep {
       ][index];
 }
 
+/// Countries whose postal address is incomplete without a state or province.
+bool _needsState(String countryCode) =>
+    const {'US', 'CA', 'AU'}.contains(countryCode.trim().toUpperCase());
+
 SetupStep? _stepFromKey(String? key) {
   if (key == 'act') return SetupStep.permission;
   for (final s in SetupStep.values) {
@@ -607,7 +611,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     _followUp = _text(p, 'followUpSensitivity').toLowerCase();
     _replies = _text(p, 'replyHandlingPreference').toLowerCase();
     // Groups holding answers open by themselves: nothing saved looks missing.
-    _moreBusiness = [_legalName, _line2, _stateRegion].any((c) => c.text.isNotEmpty);
+    _moreBusiness = [_legalName, _line2].any((c) => c.text.isNotEmpty);
     _openReach = [_titles, _neverKinds, _neverMarkets].any((c) => c.text.isNotEmpty);
     _moreSound = [_forbidden, _rules, _disclaimers].any((c) => c.text.isNotEmpty) ||
         [_tone, _pace, _followUp, _replies].any((v) => v.isNotEmpty);
@@ -907,6 +911,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       errors['address'] = 'This address needs a town or a postcode.';
     } else if (_addressCountry.isEmpty) {
       errors['address'] = 'Choose the country this address is in.';
+    } else if (_needsState(_addressCountry) && _stateRegion.text.trim().isEmpty) {
+      errors['address'] = 'Add the state. A postal address there is not complete without it.';
     }
     if (errors.isNotEmpty) {
       setState(() => _fieldErrors = errors);
@@ -1916,6 +1922,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ),
         ),
         const SizedBox(height: 10),
+        // State sits with the town (founder walk, 3 Oct 2026): it was folded
+        // under "More about your business", so a US address went into every
+        // note's footer without its state.
         _pair(
           phone,
           TextField(
@@ -1925,12 +1934,30 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             decoration: const InputDecoration(hintText: 'Town or city'),
           ),
           TextField(
+            controller: _stateRegion,
+            autofillHints: const [AutofillHints.addressState],
+            style: Ob.body(16, color: Ob.ink),
+            decoration: InputDecoration(
+              hintText: _needsState(_addressCountry) ? 'State' : 'State or region (if any)',
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Builder(builder: (context) {
+          final postcode = TextField(
             controller: _postcode,
             autofillHints: const [AutofillHints.postalCode],
             style: Ob.body(16, color: Ob.ink),
             decoration: const InputDecoration(hintText: 'Postcode or ZIP'),
-          ),
-        ),
+          );
+          return phone
+              ? postcode
+              : Row(children: [
+                  Expanded(child: postcode),
+                  const SizedBox(width: 16),
+                  const Expanded(child: SizedBox.shrink()),
+                ]);
+        }),
         const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerLeft,
@@ -1969,11 +1996,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             placeholder: 'For example: Harbour Property Group LLC',
           ),
           const SizedBox(height: 12),
-          _pair(
-            phone,
-            ObField(label: 'Address line 2', controller: _line2, placeholder: 'Suite or floor'),
-            ObField(label: 'State or region', controller: _stateRegion),
-          ),
+          ObField(label: 'Address line 2', controller: _line2, placeholder: 'Suite or floor'),
           const SizedBox(height: 12),
           ObField(
             label: 'Time zone',
