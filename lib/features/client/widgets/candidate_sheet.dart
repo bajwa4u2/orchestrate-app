@@ -11,16 +11,11 @@ import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart
 import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
 import 'package:orchestrate_app/features/client/widgets/prospect_facts.dart';
 
-/// ONE COUNTERPARTY, IN DEPTH.
+/// ONE BUSINESS, AND THE ONE DECISION ABOUT IT.
 ///
-/// Layered the way the questions arrive: why this may matter, what was actually
-/// observed, what judgement exists, what the business decided, and — on
-/// demand — where it all came from.
-///
-/// Not a record-editing form. The only thing a person writes here is their own
-/// view, and that view is internal: it sends nothing, admits nothing, and does
-/// not create a relationship. Reaching out is a separate question with a
-/// separate answer, and this sheet asks it rather than assuming it.
+/// Who they are, why they would need you, who would be written to, what a yes
+/// does; then Yes, write to them / Not now / Not for us. A yes starts the first
+/// note through the governed send path. Everything checked folds under Details.
 class CandidateSheet extends StatefulWidget {
   const CandidateSheet({super.key, required this.candidate, required this.onChanged});
 
@@ -57,10 +52,38 @@ class _CandidateSheetState extends State<CandidateSheet> {
     }
   }
 
+  /// ONE DECISION, ENOUGH TO MAKE IT (3 Oct 2026).
+  ///
+  /// Founder: "pursue card its opening details has to be enough good so it
+  /// must be easier for client to decide. not this and that". The sheet read
+  /// as nine sections and three verdict buttons, with a "Reach out" control
+  /// that did nothing. It now answers, in order, the four things a person asks
+  /// before saying yes: who they are, why they would need you, who exactly
+  /// would be written to, and what a yes does. Then one choice. Everything we
+  /// checked and where it came from folds under Details.
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final c = _depth?.candidate ?? widget.candidate;
+    final checks = c.checks;
+    final writing = c.disposition == PursuitDisposition.pursuing;
+
+    final whoWhere = [
+      if (c.domain.isNotEmpty && !c.domain.startsWith('name:')) c.domain,
+      if ((c.geography ?? '').isNotEmpty) c.geography!,
+    ].join(' · ');
+    final why = [
+      prospectSummary(c),
+      if (c.whyItMatters != null && (checks == null || checks.matchesYour.isEmpty))
+        c.whyItMatters!,
+    ].where((s) => s.trim().isNotEmpty).join(' ');
+    final recipient = checks == null
+        ? null
+        : [
+            if (c.contactName != null)
+              c.contactRole != null ? '${c.contactName}, ${c.contactRole}' : c.contactName!,
+            checks.email,
+          ].join(' · ');
 
     return DraggableScrollableSheet(
       expand: false,
@@ -73,177 +96,43 @@ class _CandidateSheetState extends State<CandidateSheet> {
           Semantics(
             header: true,
             child: Text(c.name,
-                style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
           ),
-          const SizedBox(height: 4),
-          Text(
-            [
-              c.domain,
-              if (c.geography != null) c.geography!,
-              if (c.contactName != null)
-                c.contactRole != null ? '${c.contactName} · ${c.contactRole}' : c.contactName!,
-            ].join(' · '),
-            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
-          ),
-
-          const SizedBox(height: 18),
-
-          // ── WHY NOW: one of the owner's moments, seen for this business ──
-          if (c.moments.isNotEmpty) ...[
-            _Panel(
-              icon: Icons.bolt,
-              accent: AppTheme.publicAccent,
-              title: 'Why now',
-              body: [
-                for (final m in c.moments.take(3))
-                  [momentSaid(m), if (m.url != null) m.url!].join('\n'),
-              ].join('\n\n'),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // ── WHY THIS BUSINESS (it passed every check) ──────────────────
-          if (c.checks != null) ...[
-            _Panel(
-              icon: Icons.verified_outlined,
-              accent: AppTheme.publicAccent,
-              title: 'Why this business',
-              body: [
-                prospectSummary(c),
-                // The older fit sentence only when no buyer kind was matched.
-                if (c.whyItMatters != null && c.checks!.matchesYour.isEmpty) c.whyItMatters!,
-              ].where((s) => s.isNotEmpty).join(' '),
-            ),
-            const SizedBox(height: 12),
-            Text('What was checked',
-                style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            for (final f in prospectFacts(c).where((f) => f.icon != Icons.bolt))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(f.icon, size: 16, color: AppTheme.publicMuted),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(f.text, style: text.bodySmall)),
-                ]),
-              ),
-            Text(
-                'It exists, its own website answers, it fits what you sell to, '
-                'its published address accepts mail, and why it fits can be said '
-                'in plain words. Nothing is sent without your yes.',
+          if (whoWhere.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(whoWhere,
                 style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
-          ]
-          // ── WHY THIS MAY MATTER ──────────────────────────────────────────
-          else if (c.whyItMatters != null)
-            _Panel(
-              icon: Icons.insights_outlined,
-              accent: AppTheme.publicAccent,
-              title: 'Why this may matter',
-              // The server's evidence-citing rationale, verbatim. It names the
-              // offer, the situation and the observation behind the link.
-              body: c.whyItMatters!,
-              footnote: c.opportunityStrength != null
-                  ? 'Read as a ${c.opportunityStrength!.toLowerCase()} fit'
-                      '${c.opportunityConfidence != null ? ', ${c.opportunityConfidence}% confidence' : ''}.'
-                  : null,
-            )
-          else
-            _Panel(
-              icon: Icons.help_outline,
-              accent: AppTheme.publicMuted,
-              title: 'We have not established why this would matter',
-              body: 'Nothing we observed connects this company to what your '
-                  'business sells. They may still be worth a look — we just '
-                  'cannot say so from evidence.',
-            ),
-
-          const SizedBox(height: 12),
-
-          // ── HOW SURE ─────────────────────────────────────────────────────
-          // A checked business's facts are above; the older grades are not.
-          if (c.checks == null) ...[
-          _Panel(
-            icon: switch (c.certainty) {
-              Certainty.evidenced => Icons.verified_outlined,
-              Certainty.thin => Icons.remove_circle_outline,
-              Certainty.stale => Icons.history_toggle_off,
-              Certainty.insufficient => Icons.help_outline,
-            },
-            accent: c.certainty == Certainty.evidenced
-                ? AppTheme.publicAccent
-                : AppTheme.amber,
-            title: c.certainty.label,
-            body: c.certaintyMeans,
-          ),
-
+          ],
           const SizedBox(height: 20),
 
-          // ── EVIDENCE ─────────────────────────────────────────────────────
-          Text('What we observed',
-              style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          _evidence(text),
+          if (why.isNotEmpty) ...[
+            _Answer(title: 'Why they would need you', body: why),
+            const SizedBox(height: 16),
           ],
-
-          // ── JUDGEMENT ────────────────────────────────────────────────────
-          if (c.reasons.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text('What held this back',
-                style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            for (final reason in c.reasons)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 5, right: 8),
-                      child: Icon(Icons.circle, size: 5, color: AppTheme.publicMuted),
-                    ),
-                    Expanded(child: Text(reason, style: text.bodySmall)),
-                  ],
-                ),
-              ),
-          ],
-
-          const SizedBox(height: 24),
-
-          // ── YOUR VIEW ────────────────────────────────────────────────────
-          Text('Your view',
-              style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(
-            c.dispositionMeans,
-            style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
-          ),
-          if (c.dispositionNote != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('"${c.dispositionNote}"', style: text.bodySmall),
+          if (c.moments.isNotEmpty) ...[
+            _Answer(
+              title: 'Why now',
+              body: c.moments.take(2).map(momentSaid).join('\n'),
             ),
-          const SizedBox(height: 12),
-          _dispositions(c),
-          // Where the commercial boundary belongs: at the act, not above the
-          // screen. A business with no plan can still read what Orchestrate
-          // found and why — it just cannot put the company's name to a
-          // decision to pursue.
-          const CommercialBoundary(
-              capability: Capabilities.operateCommercially, compact: true),
+            const SizedBox(height: 16),
+          ],
+          if (recipient != null) ...[
+            _Answer(
+              title: 'Who you would be writing to',
+              body: recipient,
+              footnote: checks!.mailboxConfirmed
+                  ? 'Published by them ${checks.addressFoundInSaid}; it accepts mail.'
+                  : 'Published by them ${checks.addressFoundInSaid}.',
+            ),
+            const SizedBox(height: 16),
+          ],
 
-          if (_refusal != null) RefusalNotice(refusal: _refusal!),
-
-          // ── WHERE THIS GOES NEXT ─────────────────────────────────────────
           if (c.hasRelationship) ...[
-            const SizedBox(height: 20),
-            _Panel(
-              icon: Icons.link,
-              accent: AppTheme.publicAccent,
-              title: 'You already have a relationship here',
-              body: 'What happens next with this counterparty lives in '
-                  'Relationships, not in Market.',
+            _Answer(
+              title: 'You already work with them',
+              body: 'What happens next lives with that relationship.',
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             OutlinedButton(
               onPressed: c.relationshipId == null
                   ? null
@@ -253,41 +142,86 @@ class _CandidateSheetState extends State<CandidateSheet> {
                     },
               child: const Text('Open the relationship'),
             ),
-          ] else ...[
-            const SizedBox(height: 20),
-            Text('Reaching out',
-                style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            // Whether we have a way to reach them at all, before whether we
-            // are allowed to. Two separate questions, and a business can be
-            // blocked on either — most are currently blocked on both.
-            ContactReadinessPanel(
-              counterpartyKey: c.key,
-              counterpartyName: c.name,
-              onChanged: () => ClientMarket.instance.refresh(),
+          ] else if (writing) ...[
+            _Answer(
+              title: 'Orchestrate is writing to them',
+              body: 'From your own email. Replies come straight to you.',
             ),
             const SizedBox(height: 12),
-            // Market may make the opportunity visible. It may not act on it —
-            // the authority contract answers, and today it refuses for every
-            // client in production.
-            AuthorityGate(
-              consequence: Consequence.externallyCommunicated,
-              label: 'Reach out to ${c.name}',
-              onProceed: () {},
+            TextButton(
+              onPressed: _busy ? null : () => _set(PursuitDisposition.holding),
+              child: const Text('Stop: not now'),
             ),
+          ] else ...[
+            _Answer(
+              title: 'If you say yes',
+              body: 'Orchestrate writes them a short first note from your own '
+                  'email, and follows up if they do not answer. Replies come '
+                  'straight to you.',
+            ),
+            const SizedBox(height: 16),
+            Wrap(spacing: 10, runSpacing: 10, children: [
+              FilledButton(
+                onPressed: _busy ? null : () => _set(PursuitDisposition.pursuing),
+                child: Text(_busy ? 'Saving…' : 'Yes, write to them'),
+              ),
+              OutlinedButton(
+                onPressed: _busy || c.disposition == PursuitDisposition.holding
+                    ? null
+                    : () => _set(PursuitDisposition.holding),
+                child: const Text('Not now'),
+              ),
+              TextButton(
+                onPressed: _busy || c.disposition == PursuitDisposition.declined
+                    ? null
+                    : () => _set(PursuitDisposition.declined),
+                child: const Text('Not for us'),
+              ),
+            ]),
           ],
+          // Where the commercial boundary belongs: at the act. A business with
+          // no plan can still read why; it cannot yet say yes.
+          const CommercialBoundary(
+              capability: Capabilities.operateCommercially, compact: true),
+          if (_refusal != null) RefusalNotice(refusal: _refusal!),
 
           const SizedBox(height: 20),
-          TextButton.icon(
-            onPressed: () => setState(() => _showProvenance = !_showProvenance),
-            icon: Icon(_showProvenance ? Icons.expand_less : Icons.expand_more, size: 18),
-            label: const Text('Where this came from'),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _showProvenance = !_showProvenance),
+              icon: Icon(_showProvenance ? Icons.expand_less : Icons.expand_more, size: 18),
+              label: const Text('Details'),
+            ),
           ),
-          if (_showProvenance) _provenance(text, c),
+          if (_showProvenance) ..._details(text, c),
         ],
       ),
     );
   }
+
+  /// Everything checked and where it came from, for whoever wants it.
+  List<Widget> _details(TextTheme text, Candidate c) => [
+        for (final f in prospectFacts(c).where((f) => f.icon != Icons.bolt))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(f.icon, size: 16, color: AppTheme.publicMuted),
+              const SizedBox(width: 8),
+              Expanded(child: Text(f.text, style: text.bodySmall)),
+            ]),
+          ),
+        if (c.checks == null) ...[
+          const SizedBox(height: 6),
+          _evidence(text),
+        ],
+        for (final reason in c.reasons)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(reason, style: text.bodySmall),
+          ),
+        _provenance(text, c),
+      ];
 
   Widget _evidence(TextTheme text) {
     if (_error != null) {
@@ -356,30 +290,6 @@ class _CandidateSheetState extends State<CandidateSheet> {
     );
   }
 
-  Widget _dispositions(Candidate c) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final d in PursuitDisposition.values)
-          if (d != PursuitDisposition.unreviewed)
-            OutlinedButton(
-              onPressed: _busy || c.disposition == d ? null : () => _set(d),
-              style: OutlinedButton.styleFrom(
-                foregroundColor:
-                    c.disposition == d ? AppTheme.publicAccent : null,
-                side: BorderSide(
-                  color: c.disposition == d
-                      ? AppTheme.publicAccent
-                      : AppTheme.publicLine,
-                ),
-              ),
-              child: Text(d.label),
-            ),
-      ],
-    );
-  }
-
   Widget _provenance(TextTheme text, Candidate c) {
     final depth = _depth;
     return Container(
@@ -408,8 +318,8 @@ class _CandidateSheetState extends State<CandidateSheet> {
                 '${c.decision!.toLowerCase()}${c.decidedAt != null ? ', ${_when(c.decidedAt!)}' : ''}'),
           const SizedBox(height: 8),
           Text(
-            'Deciding your view here is internal to your business. Nothing is '
-            'sent and no relationship is created by it.',
+            'A yes starts a first note from your own email. Not now and Not '
+            'for us send nothing.',
             style: text.bodySmall?.copyWith(color: AppTheme.publicMuted),
           ),
         ],
@@ -481,14 +391,12 @@ class _Panel extends StatelessWidget {
     required this.accent,
     required this.title,
     required this.body,
-    this.footnote,
   });
 
   final IconData icon;
   final Color accent;
   final String title;
   final String body;
-  final String? footnote;
 
   @override
   Widget build(BuildContext context) {
@@ -514,18 +422,36 @@ class _Panel extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(body,
                     style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
-                if (footnote != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(footnote!,
-                        style: text.bodySmall?.copyWith(
-                            color: AppTheme.publicMuted, fontSize: 11)),
-                  ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One answer to one question a person asks before deciding.
+class _Answer extends StatelessWidget {
+  const _Answer({required this.title, required this.body, this.footnote});
+  final String title;
+  final String body;
+  final String? footnote;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text(body, style: text.bodyMedium?.copyWith(height: 1.45)),
+        if (footnote != null) ...[
+          const SizedBox(height: 3),
+          Text(footnote!, style: text.bodySmall?.copyWith(color: AppTheme.publicMuted)),
+        ],
+      ],
     );
   }
 }

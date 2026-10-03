@@ -352,7 +352,7 @@ class _TodayScreenState extends State<TodayScreen> {
             onChanged: () => _market.refresh(),
           ),
         ),
-        primary: busy ? 'Saving…' : 'Yes, pursue',
+        primary: busy ? 'Saving…' : 'Yes, write to them',
         onPrimary: busy ? () {} : () => _decide(c, PursuitDisposition.pursuing),
         secondary: 'Not now',
         onSecondary: busy ? null : () => _decide(c, PursuitDisposition.holding),

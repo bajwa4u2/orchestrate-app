@@ -732,7 +732,7 @@ class _CandidateCard extends StatelessWidget {
                 Expanded(
                   child: FilledButton(
                     onPressed: busy ? null : () => decide(c, PursuitDisposition.pursuing),
-                    child: Text(busy ? 'Saving…' : 'Pursue'),
+                    child: Text(busy ? 'Saving…' : 'Yes, write to them'),
                   ),
                 ),
                 const SizedBox(width: 8),
