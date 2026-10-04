@@ -3743,7 +3743,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         _choiceRow('How often to follow up', const {
           'low': 'Once, lightly',
           'medium': 'A couple of times',
-          'high': 'Until they answer',
+          'high': 'Until they answer, up to four times',
         }, _followUp, (v) => _followUp = v),
         const SizedBox(height: 14),
         _choiceRow('Pace', const {
@@ -3753,9 +3753,11 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         }, _pace, (v) => _pace = v),
         const SizedBox(height: 14),
         _choiceRow('When someone replies', const {
-          'human-review': 'Show me every reply first',
-          'auto-acknowledge': 'Thank them for me, then show me',
-          'hand-off-to-meeting': 'Offer a time to talk',
+          // Every answer waits for the owner's yes (4 Oct 2026); the choice
+          // is what Orchestrate drafts for them to send.
+          'human-review': 'Draft an answer for me to send',
+          'auto-acknowledge': 'Draft a short thank-you for me to send',
+          'hand-off-to-meeting': 'Draft an offer of a time to talk',
         }, _replies, (v) => _replies = v),
         const SizedBox(height: 14),
         ObField(
