@@ -1209,6 +1209,16 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           });
       return;
     }
+    // Every note leads with this, so it is asked for, not optional (4 Oct
+    // 2026): without it notes describe how the work is done, not what the
+    // customer gets.
+    if (_guided && _offerResult.text.trim().isEmpty) {
+      setState(() => _fieldErrors = {
+            'offerResult': 'Say what your customer gets, in a few plain words. '
+                'Every note leads with it.'
+          });
+      return;
+    }
     setState(() {
       _busy = true;
       _fieldErrors = {};
@@ -2302,8 +2312,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         if (_guided) ...[
           _gap(),
           ObField(
-            label: 'What your customer gets (optional)',
+            label: 'What your customer gets',
             controller: _offerResult,
+            error: _fieldErrors['offerResult'],
             maxLength: 300,
             maxLines: 2,
             placeholder: switch (_book?.key) {
