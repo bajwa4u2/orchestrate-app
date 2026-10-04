@@ -233,6 +233,8 @@ class _MarketScreenState extends State<MarketScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const _AutomaticWritingCard(),
+        const SizedBox(height: 14),
         if (_decisionFailure != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
@@ -907,6 +909,106 @@ class _Unavailable extends StatelessWidget {
           ],
           const SizedBox(height: 12),
           OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
+}
+
+/// THE STANDING YES (founder, 4 Oct 2026): "Write to every business that
+/// passes all checks", up to a daily number. Off until the owner turns it on.
+class _AutomaticWritingCard extends StatefulWidget {
+  const _AutomaticWritingCard();
+
+  @override
+  State<_AutomaticWritingCard> createState() => _AutomaticWritingCardState();
+}
+
+class _AutomaticWritingCardState extends State<_AutomaticWritingCard> {
+  bool? _on;
+  int _daily = 10;
+  int _today = 0;
+  bool _saving = false;
+  String? _refusal;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(ClientMarket.instance.automaticWriting().then((j) {
+      if (!mounted) return;
+      setState(() {
+        _on = j['on'] == true;
+        _daily = (j['dailyLimit'] as num?)?.toInt() ?? 10;
+        _today = (j['writtenToday'] as num?)?.toInt() ?? 0;
+      });
+    }, onError: (Object _) {}));
+  }
+
+  Future<void> _save({required bool on, int? daily}) async {
+    setState(() {
+      _saving = true;
+      _refusal = null;
+    });
+    try {
+      final r = await ClientMarket.instance.setAutomaticWriting(on: on, dailyLimit: daily ?? _daily);
+      if (!mounted) return;
+      if (r['ok'] == true) {
+        setState(() {
+          _on = r['on'] == true;
+          _daily = (r['dailyLimit'] as num?)?.toInt() ?? _daily;
+        });
+      } else {
+        setState(() => _refusal = (r['reason'] ?? 'That could not be changed.').toString());
+      }
+    } catch (_) {
+      if (mounted) setState(() => _refusal = 'That could not be changed just now. Try again in a moment.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final on = _on;
+    if (on == null) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 14, 12, 14),
+      decoration: BoxDecoration(
+        color: Ob.card,
+        borderRadius: BorderRadius.circular(Ob.radiusCard),
+        border: Border.all(color: Ob.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(child: Text('Write automatically', style: Ob.strong(15))),
+            Switch(
+              value: on,
+              onChanged: _saving ? null : (v) => _save(on: v),
+            ),
+          ]),
+          Text(
+            on
+                ? 'Orchestrate writes to up to $_daily new businesses a day that pass every check, from your email, as if you had said yes to each. $_today so far today. Say Not now on any of them to stop.'
+                : 'Off: Orchestrate writes only to businesses you say yes to. Turn on to have it write to every business that passes all five checks, up to a number a day you choose.',
+            style: Ob.body(13.5, color: Ob.inkSoft),
+          ),
+          if (on) ...[
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, children: [
+              for (final n in const [5, 10, 25, 50])
+                ChoiceChip(
+                  label: Text('$n a day'),
+                  selected: _daily == n,
+                  onSelected: _saving ? null : (_) => _save(on: true, daily: n),
+                ),
+            ]),
+          ],
+          if (_refusal != null) ...[
+            const SizedBox(height: 6),
+            Text(_refusal!, style: Ob.body(13, color: Ob.refused)),
+          ],
         ],
       ),
     );

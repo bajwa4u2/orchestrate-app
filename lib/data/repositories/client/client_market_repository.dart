@@ -46,6 +46,25 @@ class ClientMarketRepository {
     return Map<String, dynamic>.from(json as Map);
   }
 
+  /// The business's standing yes: write to every business that passes all
+  /// checks, up to a daily number (founder, 4 Oct 2026).
+  Future<Map<String, dynamic>> automaticWriting() async {
+    final json = await _apiClient.getJson(
+      '/client/market/automatic-writing',
+      surface: ApiSurface.client,
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
+  Future<Map<String, dynamic>> setAutomaticWriting({required bool on, int? dailyLimit}) async {
+    final json = await _apiClient.postJson(
+      '/client/market/automatic-writing',
+      surface: ApiSurface.client,
+      body: {'on': on, if (dailyLimit != null) 'dailyLimit': dailyLimit},
+    );
+    return Map<String, dynamic>.from(json as Map);
+  }
+
   /// Whether reaching out could proceed. A read — asking causes nothing.
   Future<Map<String, dynamic>> outreachReadiness(String key) async {
     final json = await _apiClient.getJson(

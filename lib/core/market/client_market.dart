@@ -91,6 +91,11 @@ class ClientMarket extends ChangeNotifier {
 
   Future<CandidateDepth> candidate(String key) => _repository.candidate(key);
 
+  Future<Map<String, dynamic>> automaticWriting() => _repository.automaticWriting();
+
+  Future<Map<String, dynamic>> setAutomaticWriting({required bool on, int? dailyLimit}) =>
+      _repository.setAutomaticWriting(on: on, dailyLimit: dailyLimit);
+
   Future<Map<String, dynamic>> outreachReadiness(String key) =>
       _repository.outreachReadiness(key);
 
