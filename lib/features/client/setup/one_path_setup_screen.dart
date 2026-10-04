@@ -2418,8 +2418,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ],
           const SizedBox(height: 12),
           Text(
-              'Orchestrate sends only the notes you approve, and reads only '
-              'the replies to them.',
+              'Orchestrate writes only to the businesses you say yes to, and '
+              'reads only the replies to those notes.',
               style: Ob.body(13.5, color: Ob.inkMuted)),
         ],
         if (connected) ...[
@@ -2653,7 +2653,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                 : 'Checking your document.',
             state == StepState.done
                 ? 'Your document is confirmed and Orchestrate may write in the '
-                    "business's name, with your approval on each note."
+                    "business's name, to the businesses you say yes to."
                 : '${(doc['says'] ?? 'We are checking your document.').toString()} You can use the rest '
                     'of the workspace meanwhile; nothing is sent before this is done.',
             phone: phone),
@@ -2921,9 +2921,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       children: [
         _head(_planActive ? 'Your plan is active.' : 'Choose your plan.',
             _planActive
-                ? 'Orchestrate can send the notes you approve.'
+                ? 'Orchestrate can write to the businesses you say yes to.'
                 : 'Setting up is free. A plan starts Orchestrate finding and '
-                    'checking businesses for you, and sending the notes you approve.',
+                    'checking businesses for you, and writing to the ones you say yes to.',
             phone: phone),
         _gap(),
         if (!_planActive && (_awaitingPayment || widget.checkoutStatus != null)) ...[
@@ -3319,7 +3319,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         ]),
         const SizedBox(height: 4),
         Text('What buyers ask to see before they hire you. Orchestrate can '
-            'mention it in a note, and you see every note before it goes.',
+            'mention it in a note to a business you said yes to.',
             style: Ob.body(13.5, color: Ob.inkMuted)),
         const SizedBox(height: 10),
         for (final p in _proof) ...[
@@ -4098,8 +4098,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                 );
               },
             ),
-            const ObAssurance('Nothing is sent while you set up. You will see '
-                'every note before it goes.'),
+            const ObAssurance('Nothing is sent while you set up. Afterwards, '
+                'Orchestrate writes only to the businesses you say yes to.'),
           ],
         );
       case SetupStep.want:
@@ -4157,8 +4157,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                     ? 'Your offer appears here as you type it.'
                     : offer,
                 style: Ob.name(18).copyWith(height: 1.55)),
-            Text('Each note is written for the business it goes to, and you '
-                'approve every one before it is sent.',
+            Text('Each note is written for the business it goes to, and goes '
+                'only to a business you said yes to.',
                 style: Ob.body(13, color: Ob.inkMuted)),
           ],
         );
@@ -4168,7 +4168,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               ? (_domain['domain'] ?? '').toString()
               : _mailboxDomain;
           return _SideCard(
-            label: 'WHERE TO MAKE THE CHANGE',
+            label: _domainReady ? 'IF YOU CHANGE IT LATER' : 'WHERE TO MAKE THE CHANGE',
             children: [
               Text.rich(TextSpan(style: Ob.body(15, color: Ob.ink), children: [
                 const TextSpan(text: 'Sign in where you bought '),
@@ -4182,16 +4182,19 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               Text('If someone else runs your website, send them this page; '
                   'the records are all they need.',
                   style: Ob.body(14)),
-              Text('Until this is done, Orchestrate sends slowly and in small '
-                  'numbers so your address stays trusted.',
-                  style: Ob.body(13, color: Ob.inkMuted)),
+              // Only while a record is missing (4 Oct 2026): with all of
+              // them found, the line read as though it were still undone.
+              if (!_domainReady)
+                Text('Until this is done, Orchestrate sends slowly and in small '
+                    'numbers so your address stays trusted.',
+                    style: Ob.body(13, color: Ob.inkMuted)),
             ],
           );
         }
         return _SideCard(
           label: 'WHAT CONNECTING ALLOWS',
           children: [
-            _allow(true, 'Send the notes you approve, from your address'),
+            _allow(true, 'Write to the businesses you say yes to, from your address'),
             _allow(true, 'Replies arrive in your own inbox, as they always do'),
             _allow(false, 'Read or change anything else in your mailbox'),
             Text('Disconnect any time from Setup.',
@@ -4221,7 +4224,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           children: [
             _row('Your setup, kept', 'Now, free'),
             _row('Businesses found, checked and explained', 'With a plan'),
-            _row('First notes written for you to approve', 'With a plan'),
+            _row('Notes written to the businesses you say yes to', 'With a plan'),
             _row('Notes sent, replies followed up', 'With a plan'),
             _row('Proposals, invoices, payments', 'With a plan'),
             Text('Pay by card, or through the App Store or Google Play on '

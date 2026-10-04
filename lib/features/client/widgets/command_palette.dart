@@ -182,7 +182,12 @@ class _CommandPaletteState extends State<_CommandPalette> {
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 460),
+        // As tall as the window allows (4 Oct 2026): a fixed 460 cut the last
+        // entry in half on a desktop with room to spare.
+        constraints: BoxConstraints(
+          maxWidth: 520,
+          maxHeight: (MediaQuery.sizeOf(context).height * 0.75).clamp(300.0, 640.0),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

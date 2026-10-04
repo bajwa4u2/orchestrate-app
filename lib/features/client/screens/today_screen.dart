@@ -541,7 +541,7 @@ class _TodayScreenState extends State<TodayScreen> {
           ],
           const SizedBox(height: 22),
           LayoutBuilder(builder: (context, c) {
-            final moving = _MovingPanel(state: _today.state);
+            final moving = _MovingPanel(state: _today.state, motion: _digest?.motion);
             final month = _MonthPanel(view: _moneyView, known: _moneyKnown);
             if (c.maxWidth < 760) {
               return Column(children: [moving, const SizedBox(height: 18), month]);
@@ -783,12 +783,40 @@ class _Card extends StatelessWidget {
 }
 
 class _MovingPanel extends StatelessWidget {
-  const _MovingPanel({required this.state});
+  const _MovingPanel({required this.state, this.motion});
   final TodayState? state;
+  final DigestMotion? motion;
+
+  /// The notes moving without the owner, in plain words (4 Oct 2026).
+  List<TodayItem> _notes() {
+    final m = motion;
+    if (m == null) return const [];
+    String n(int c, String one, String many) => c == 1 ? '1 $one' : '$c $many';
+    return [
+      if (m.sentRecently > 0)
+        TodayItem(
+          title: 'Wrote ${n(m.sentRecently, 'note', 'notes')} in the last few days',
+          detail: m.sentTo.isEmpty ? null : 'To ${m.sentTo.join(', ')}${m.sentRecently > m.sentTo.length ? ' and others' : ''}.',
+        ),
+      if (m.firstNotesWaiting > 0)
+        TodayItem(
+          title: '${n(m.firstNotesWaiting, 'first note', 'first notes')} going out',
+          detail: "In each business's working hours.",
+          meta: m.firstNotesNextAt == null ? null : 'Next ${whenSaid(m.firstNotesNextAt!)}',
+        ),
+      if (m.followUpsWaiting > 0)
+        TodayItem(
+          title: '${n(m.followUpsWaiting, 'follow-up', 'follow-ups')} queued',
+          detail: 'Each stops if they reply.',
+          meta: m.followUpsNextAt == null ? null : 'Next ${whenSaid(m.followUpsNextAt!)}',
+        ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     final items = [
+      ..._notes(),
       ...?state?.inFlight,
       ...?state?.changed,
     ].take(6).toList();

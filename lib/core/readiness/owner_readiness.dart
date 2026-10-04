@@ -63,14 +63,6 @@ List<OwnerStep> ownerStepsFrom(Object? eligibility, {String? authority}) {
   final actLocked = !actDone && !actChecking && (!planDone || !emailDone);
   return [
     OwnerStep(
-      key: 'plan',
-      title: 'Choose your plan',
-      line: 'Setting up is free. A plan starts finding businesses and sending your notes.',
-      cta: 'Choose a plan',
-      route: '/client/setup?step=plan',
-      done: planDone,
-    ),
-    OwnerStep(
       key: 'act',
       title: 'Who acts for this business',
       line: actChecking
@@ -104,6 +96,15 @@ List<OwnerStep> ownerStepsFrom(Object? eligibility, {String? authority}) {
       cta: 'Check your domain',
       route: '/client/setup?step=email',
       done: ready.contains('trust'),
+    ),
+    // Last, on the founder's word (4 Oct 2026): the work first, the plan at the end.
+    OwnerStep(
+      key: 'plan',
+      title: 'Choose your plan',
+      line: 'Setting up is free. A plan starts finding businesses and writing to the ones you say yes to.',
+      cta: 'Choose a plan',
+      route: '/client/setup?step=plan',
+      done: planDone,
     ),
   ];
 }

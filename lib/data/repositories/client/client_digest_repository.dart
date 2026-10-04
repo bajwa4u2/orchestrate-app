@@ -57,7 +57,11 @@ class DigestView {
     required this.lines,
     required this.quietLine,
     required this.morningEmail,
+    this.motion,
   });
+
+  /// Notes moving without the owner (4 Oct 2026).
+  final DigestMotion? motion;
 
   final bool hasNews;
   final List<DigestLine> lines;
@@ -72,5 +76,34 @@ class DigestView {
             .toList(growable: false),
         quietLine: j['quietLine'] as String?,
         morningEmail: j['morningEmail'] != false,
+        motion: j['motion'] is Map ? DigestMotion.fromJson(Map<String, dynamic>.from(j['motion'] as Map)) : null,
+      );
+}
+
+/// What is moving without the owner: notes sent lately, and what goes next.
+class DigestMotion {
+  const DigestMotion({
+    required this.sentRecently,
+    required this.sentTo,
+    required this.firstNotesWaiting,
+    this.firstNotesNextAt,
+    required this.followUpsWaiting,
+    this.followUpsNextAt,
+  });
+
+  final int sentRecently;
+  final List<String> sentTo;
+  final int firstNotesWaiting;
+  final DateTime? firstNotesNextAt;
+  final int followUpsWaiting;
+  final DateTime? followUpsNextAt;
+
+  static DigestMotion fromJson(Map<String, dynamic> j) => DigestMotion(
+        sentRecently: (j['sentRecently'] as num?)?.toInt() ?? 0,
+        sentTo: ((j['sentTo'] as List?) ?? const []).map((e) => e.toString()).toList(growable: false),
+        firstNotesWaiting: (j['firstNotesWaiting'] as num?)?.toInt() ?? 0,
+        firstNotesNextAt: DateTime.tryParse(j['firstNotesNextAt']?.toString() ?? '')?.toLocal(),
+        followUpsWaiting: (j['followUpsWaiting'] as num?)?.toInt() ?? 0,
+        followUpsNextAt: DateTime.tryParse(j['followUpsNextAt']?.toString() ?? '')?.toLocal(),
       );
 }

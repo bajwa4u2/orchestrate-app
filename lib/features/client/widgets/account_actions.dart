@@ -257,7 +257,7 @@ class _OwnNameDialogState extends State<_OwnNameDialog> {
           autofocus: true,
           decoration: InputDecoration(
             labelText: 'Your name',
-            helperText: 'How you sign the notes you approve.',
+            helperText: 'How every note sent for you is signed.',
             errorText: _error,
           ),
           onSubmitted: (_) => _save(),

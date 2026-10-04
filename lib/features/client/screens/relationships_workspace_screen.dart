@@ -112,8 +112,8 @@ class _RelationshipsWorkspaceScreenState extends State<RelationshipsWorkspaceScr
     if (list.relationships.isEmpty && list.unattachedMeetings.isEmpty) {
       return const QuietState(
         message: 'No customers yet.',
-        hint: 'One begins when something durable passes between your business '
-            'and a counterparty.',
+        hint: 'A business you wrote to shows here once they write back, agree '
+            'to work with you, or pay you.',
       );
     }
 

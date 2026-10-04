@@ -761,7 +761,7 @@ class _AccountButtonState extends State<_AccountButton> {
         PopupMenuItem(
           enabled: false,
           height: 34,
-          child: Text(session.email,
+          child: Text(breakableEmail(session.email),
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -851,7 +851,8 @@ class _AccountButtonState extends State<_AccountButton> {
                     Text(
                       session.fullName.trim().isNotEmpty
                           ? session.fullName.trim()
-                          : session.email,
+                          : breakableEmail(session.email),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w600,
@@ -860,7 +861,8 @@ class _AccountButtonState extends State<_AccountButton> {
                     ),
                     if (session.fullName.trim().isNotEmpty)
                       Text(
-                        session.email,
+                        breakableEmail(session.email),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: Ws.inkSubtle,
@@ -972,3 +974,7 @@ class _SurfaceReturn extends StatelessWidget {
     );
   }
 }
+
+/// An email that wraps after its "@", never in the middle of a word
+/// ("support@orchestrateo / ps.com" in the account menu, 4 Oct 2026).
+String breakableEmail(String email) => email.replaceFirst('@', '@\u200B');

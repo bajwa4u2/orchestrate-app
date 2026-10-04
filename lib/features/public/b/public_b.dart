@@ -680,8 +680,8 @@ class TrustScreen extends StatelessWidget {
   static const _keeps = [
     (
       'Your email',
-      'Orchestrate sends only the notes you approve, from the address you '
-          'connect. With Google or Microsoft it asks for send-only access. It '
+      'Orchestrate writes only to the businesses you say yes to, from the '
+          'address you connect. With Google or Microsoft it asks for send-only access. It '
           'never reads the rest of your mailbox.'
     ),
     (

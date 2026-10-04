@@ -169,7 +169,9 @@ class _Tile extends StatelessWidget {
         color: paid ? Ob.money : Ob.card,
         borderRadius: BorderRadius.circular(Ob.radiusPanel),
         boxShadow: paid
-            ? const [BoxShadow(color: Color(0x4715803D), blurRadius: 48, offset: Offset(0, 24))]
+            // Kept under the card (4 Oct 2026): a 48px glow spilled onto the
+            // "Invoiced, due" card beside it.
+            ? const [BoxShadow(color: Color(0x3315803D), blurRadius: 18, offset: Offset(0, 10))]
             : null,
       ),
       child: Column(

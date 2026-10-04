@@ -392,7 +392,7 @@ class _CommercialClosingBand extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                         'With a plan, Orchestrate finds and checks businesses '
-                        'for you and sends the notes you approve.',
+                        'for you and writes to the ones you say yes to.',
                         style: Ob.body(14.5)),
                   ],
                 );

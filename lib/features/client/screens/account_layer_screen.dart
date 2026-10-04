@@ -348,7 +348,7 @@ class _AccountAndSecurityState extends State<_AccountAndSecurity> {
                 title: 'Your name',
                 detail: session.fullName.isNotEmpty
                     ? session.fullName
-                    : 'Not set. It signs the notes you approve.',
+                    : 'Not set. It signs every note sent for you.',
                 onTap: () async {
                   if (await showOwnNameEditor(context) && mounted) setState(() {});
                 },

@@ -14,7 +14,7 @@ void main() {
 
   test('a new workspace has all four owner steps open, in order', () {
     final steps = ownerStepsFrom(chain({'setup'}));
-    expect(steps.map((s) => s.key), ['plan', 'act', 'email', 'domain']);
+    expect(steps.map((s) => s.key), ['act', 'email', 'domain', 'plan']);
     expect(steps.every((s) => !s.done), isTrue);
   });
 
