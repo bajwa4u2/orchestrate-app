@@ -73,7 +73,7 @@ class _CandidateSheetState extends State<CandidateSheet> {
       if ((c.geography ?? '').isNotEmpty) c.geography!,
     ].join(' · ');
     final why = [
-      prospectSummary(c),
+      prospectProposal(c),
       if (c.whyItMatters != null && (checks == null || checks.matchesYour.isEmpty))
         c.whyItMatters!,
     ].where((s) => s.trim().isNotEmpty).join(' ');
@@ -106,7 +106,7 @@ class _CandidateSheetState extends State<CandidateSheet> {
           const SizedBox(height: 20),
 
           if (why.isNotEmpty) ...[
-            _Answer(title: 'Why they would need you', body: why),
+            _Answer(title: 'What we propose', body: why),
             const SizedBox(height: 16),
           ],
           if (c.moments.isNotEmpty) ...[
@@ -157,7 +157,8 @@ class _CandidateSheetState extends State<CandidateSheet> {
               title: 'If you say yes',
               body: 'Orchestrate writes them a short first note from your own '
                   'email, and follows up if they do not answer. Replies come '
-                  'straight to you.',
+                  'straight to you. Not now keeps them for later; Not for us '
+                  'means they are not proposed again.',
             ),
             const SizedBox(height: 16),
             Wrap(spacing: 10, runSpacing: 10, children: [

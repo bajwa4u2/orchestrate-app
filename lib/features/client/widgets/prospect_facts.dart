@@ -34,6 +34,29 @@ String prospectSummary(Candidate c) {
   return '$who$match'.trim();
 }
 
+/// WHAT ORCHESTRATE PROPOSES, FOR THE OWNER TO ACCEPT OR NOT (4 Oct 2026).
+///
+/// The sheet said "In this market because it is a manufacturing, which is
+/// what this business sells to": our own fit wording, read as a report. The
+/// owner is being asked a question, so it is put as one proposal built only
+/// from what they can check: who, what they are, where, and which of the
+/// owner's own buyers they match.
+String prospectProposal(Candidate c) {
+  final checks = c.checks;
+  final what = checks?.kind;
+  final where = (c.geography ?? '').trim();
+  final matches = checks?.matchesYour ?? const <String>[];
+  final who = what != null && what.isNotEmpty
+      ? ': ${_article(what).toLowerCase()} $what${where.isEmpty ? '' : ' in $where'}'
+      : where.isNotEmpty
+          ? ', based in $where'
+          : '';
+  final match = matches.isEmpty
+      ? ''
+      : '${who.isEmpty ? ',' : ''} matching ${matches.take(2).map((m) => '“$m”').join(' and ')} in your list of buyers';
+  return 'We propose writing to ${c.name}$who$match.';
+}
+
 /// "Won the Lakewood school renovation · SAM.gov contract awards, 20 Sep
 /// 2026": what happened, where it was seen, when. Led with on every card.
 String momentSaid(CandidateMoment m) => [

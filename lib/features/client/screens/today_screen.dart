@@ -339,7 +339,7 @@ class _TodayScreenState extends State<TodayScreen> {
       cards.add(_YesCard(
         name: c.name,
         reached: 1,
-        ask: 'Worth writing to?',
+        ask: 'We propose writing to them',
         // What it is and why it matches, not a sentence about the market.
         detail: summary.isNotEmpty ? summary : (c.whyItMatters ?? c.certaintyMeans),
         facts: prospectFacts(c),
