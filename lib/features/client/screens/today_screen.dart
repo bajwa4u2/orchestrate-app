@@ -221,7 +221,7 @@ class _TodayScreenState extends State<TodayScreen> {
       if (result['ok'] == true && mounted) showPursuitOutcome(context, result);
       if (result['ok'] != true && mounted) {
         setState(() => _decisionFailure =
-            (result['says'] ?? result['message'] ?? 'That decision was not recorded.')
+            (result['reason'] ?? result['says'] ?? result['message'] ?? 'That decision was not recorded.')
                 .toString());
       }
     } catch (_) {

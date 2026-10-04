@@ -24,7 +24,7 @@ class ClientMarketRepository {
 
   Future<CandidateDepth> candidate(String key) async {
     final json = await _apiClient.getJson(
-      '/client/market/candidate/$key',
+      '/client/market/candidate/${Uri.encodeComponent(key)}',
       surface: ApiSurface.client,
     );
     return CandidateDepth.fromJson(Map<String, dynamic>.from(json as Map));
@@ -36,7 +36,7 @@ class ClientMarketRepository {
     String? note,
   }) async {
     final json = await _apiClient.postJson(
-      '/client/market/candidate/$key/pursuit',
+      '/client/market/candidate/${Uri.encodeComponent(key)}/pursuit',
       surface: ApiSurface.client,
       body: {
         'disposition': disposition.wire,
@@ -49,7 +49,7 @@ class ClientMarketRepository {
   /// Whether reaching out could proceed. A read — asking causes nothing.
   Future<Map<String, dynamic>> outreachReadiness(String key) async {
     final json = await _apiClient.getJson(
-      '/client/market/candidate/$key/outreach-readiness',
+      '/client/market/candidate/${Uri.encodeComponent(key)}/outreach-readiness',
       surface: ApiSurface.client,
     );
     return Map<String, dynamic>.from(json as Map);

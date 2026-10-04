@@ -290,7 +290,7 @@ class _MarketScreenState extends State<MarketScreen> {
       final result = await _market.setPursuit(key: c.key, disposition: d);
       if (result['ok'] == true && mounted) showPursuitOutcome(context, result);
       if (result['ok'] != true && mounted) {
-        setState(() => _decisionFailure = (result['says'] ??
+        setState(() => _decisionFailure = (result['reason'] ?? result['says'] ??
                 result['message'] ??
                 'That decision was not recorded.')
             .toString());
