@@ -808,7 +808,9 @@ class _MovingPanel extends StatelessWidget {
         TodayItem(
           title: '${n(m.followUpsWaiting, 'follow-up', 'follow-ups')} queued',
           detail: 'Each stops if they reply.',
-          meta: m.followUpsNextAt == null ? null : 'Next ${whenSaid(m.followUpsNextAt!)}',
+          // The day only: it waits for the business's working hours, so the
+          // moment it falls due is not when it is sent.
+          meta: m.followUpsNextAt == null ? null : 'Next ${_daySaid(m.followUpsNextAt!)} · in working hours',
         ),
     ];
   }
@@ -1010,4 +1012,15 @@ class _ReplyAnswerSheetState extends State<_ReplyAnswerSheet> {
       ),
     );
   }
+}
+
+/// "today", "tomorrow" or "9 Oct": a day, for something sent in working hours.
+String _daySaid(DateTime at) {
+  final now = DateTime.now();
+  final d = DateTime(at.year, at.month, at.day);
+  final days = d.difference(DateTime(now.year, now.month, now.day)).inDays;
+  if (days <= 0) return 'today';
+  if (days == 1) return 'tomorrow';
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return '${at.day} ${months[at.month - 1]}';
 }

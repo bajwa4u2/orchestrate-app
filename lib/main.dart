@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:orchestrate_app/core/auth/session_refresh.dart';
 import 'package:flutter/foundation.dart'
     show LicenseEntryWithLineBreaks, LicenseRegistry, kIsWeb;
 import 'package:flutter/material.dart';
@@ -35,6 +37,8 @@ Future<void> main() async {
     }
   });
   await AuthSessionController.instance.init();
+  // Brought up to date in the background; the app opens at once.
+  unawaited(refreshRestoredSession());
   runApp(const OrchestrateApp());
 }
 
