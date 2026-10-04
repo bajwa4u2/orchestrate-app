@@ -66,6 +66,17 @@ class _MarketScreenState extends State<MarketScreen> {
     _focusIfAsked();
   }
 
+  // Search sends a business while Market is already open (4 Oct 2026): the
+  // same screen gets a new key and has to look again.
+  @override
+  void didUpdateWidget(covariant MarketScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusCounterpartyKey != widget.focusCounterpartyKey) {
+      _focused = false;
+      _focusIfAsked();
+    }
+  }
+
   @override
   void dispose() {
     _market.removeListener(_onChanged);
@@ -90,8 +101,16 @@ class _MarketScreenState extends State<MarketScreen> {
     for (final c in _market.view!.candidates) {
       if (c.key == key) match = c;
     }
-    if (match == null) return;
     _focused = true;
+    if (match == null) {
+      // Not on the list (a business answered "Not for us", or no longer
+      // proposed): asked for by itself, so any decision can be revisited.
+      unawaited(_market.candidate(key).then((depth) {
+        final found = depth.candidate;
+        if (found != null && mounted) _open(found);
+      }, onError: (Object _) {}));
+      return;
+    }
     final found = match;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _open(found);
@@ -221,7 +240,10 @@ class _MarketScreenState extends State<MarketScreen> {
                 style: Ob.body(14, color: Ob.refused)),
           ),
         if (ready.isEmpty)
-          _ChecksPromise(research: view.research, coverage: view.coverage)
+          _ChecksPromise(
+              research: view.research,
+              coverage: view.coverage,
+              allDecided: view.research.passed > 0 || decided.isNotEmpty)
         else ...[
           _Section('Ready for you',
               note: ready.length == 1
@@ -454,9 +476,17 @@ class _Pulse extends StatelessWidget {
 /// Before anything has passed: what every business must prove before it is
 /// shown here. The promise, said once, instead of an empty list.
 class _ChecksPromise extends StatelessWidget {
-  const _ChecksPromise({required this.research, required this.coverage});
+  const _ChecksPromise({
+    required this.research,
+    required this.coverage,
+    this.allDecided = false,
+  });
   final MarketResearch research;
   final MarketCoverage coverage;
+
+  /// Businesses have passed, and every one has the owner's answer: the page
+  /// must not then say nothing has passed (4 Oct 2026).
+  final bool allDecided;
 
   static const _checks = [
     ('It exists', 'Seen by two independent sources, or an official registry.'),
@@ -478,11 +508,18 @@ class _ChecksPromise extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Nothing has passed every check yet.', style: Ob.name(20)),
+          Text(
+              allDecided
+                  ? 'Nothing new waits for your yes.'
+                  : 'Nothing has passed every check yet.',
+              style: Ob.name(20)),
           const SizedBox(height: 6),
           Text(
-              'We show a business only when all five hold. Anything that passes '
-              'appears here with the reason, and on Today.',
+              allDecided
+                  ? 'Every business that passed has your answer, below. A new '
+                      'one appears here, and on Today, once all five hold.'
+                  : 'We show a business only when all five hold. Anything that '
+                      'passes appears here with the reason, and on Today.',
               style: Ob.body(14.5, color: Ob.inkSoft)),
           const SizedBox(height: 16),
           for (final (title, detail) in _checks)
