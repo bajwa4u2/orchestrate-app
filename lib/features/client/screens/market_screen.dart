@@ -632,6 +632,8 @@ class _DecidedRow extends StatelessWidget {
         ? 'Customer'
         : switch (c.disposition) {
             PursuitDisposition.pursuing => 'Writing to them',
+            PursuitDisposition.decided =>
+              c.dispositionMeans.isNotEmpty ? c.dispositionMeans : c.disposition.label,
             _ => c.disposition.label,
           };
     final where = [

@@ -64,6 +64,7 @@ void main() {
           PursuitDisposition.holding => 'Worth keeping in view, not now.',
           PursuitDisposition.declined =>
             'Your business decided against pursuing this.',
+          PursuitDisposition.decided => 'Already decided.',
         },
         dispositionNote: null,
         discoveredRepresentations: representations,

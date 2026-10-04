@@ -206,6 +206,52 @@ class PaymentTerms {
       };
 }
 
+/// One way of being paid, as the server says it (4 Oct 2026): a model the app
+/// has never heard of still shows, in the server's words, without a release.
+class PaymentChoice {
+  const PaymentChoice(this.key, this.label, this.says, this.asks);
+
+  final String key;
+  final String label;
+  final String says;
+
+  /// The percentages it asks for: "deposit", "retainage".
+  final List<String> asks;
+
+  /// The words this app has always used, for a server that sends none.
+  static const _known = {
+    'recurring': PaymentChoice('recurring', 'A monthly or yearly subscription',
+        'Billed every month or year, in advance, until the customer stops.', []),
+    'progress': PaymentChoice('progress', 'Monthly, as the work progresses',
+        'Each month you bill for the work done so far, and the customer holds '
+            'back a share until the job is finished.',
+        ['deposit', 'retainage']),
+    'terms': PaymentChoice('terms', 'An invoice when the work is done',
+        'One invoice, or one per stage, due after the work is done.', ['deposit']),
+    'commission': PaymentChoice('commission', 'Commission from the insurer',
+        'The insurer pays your commission. Fees you bill yourself follow the '
+            'terms below.',
+        []),
+  };
+
+  static PaymentChoice known(String key) =>
+      _known[key] ?? PaymentChoice(key, key, '', const ['deposit']);
+
+  static PaymentChoice fromJson(Map<String, dynamic> j) {
+    final key = '${j['key'] ?? ''}';
+    final fallback = known(key);
+    final label = '${j['label'] ?? ''}'.trim();
+    final says = '${j['says'] ?? ''}'.trim();
+    final asks = j['asks'];
+    return PaymentChoice(
+      key,
+      label.isEmpty ? fallback.label : label,
+      says.isEmpty ? fallback.says : says,
+      asks is List ? asks.map((a) => '$a').toList() : fallback.asks,
+    );
+  }
+}
+
 class PlaybookOption {
   const PlaybookOption({
     required this.key,
@@ -216,7 +262,14 @@ class PlaybookOption {
     required this.proofKinds,
     required this.payment,
     this.paymentModels = const ['terms'],
-  });
+    List<PaymentChoice>? paymentChoices,
+  }) : _paymentChoices = paymentChoices;
+
+  final List<PaymentChoice>? _paymentChoices;
+
+  /// The server's choices, in its words; else the models in this app's words.
+  List<PaymentChoice> get paymentChoices =>
+      _paymentChoices ?? paymentModels.map(PaymentChoice.known).toList();
 
   final String key;
   final String label;
@@ -244,6 +297,13 @@ class PlaybookOption {
         paymentModels: _strings(j['paymentModels']).isEmpty
             ? const ['terms']
             : _strings(j['paymentModels']),
+        paymentChoices: _list(j['paymentChoices']).isEmpty
+            ? null
+            : _list(j['paymentChoices'])
+                .map(_map)
+                .map(PaymentChoice.fromJson)
+                .where((c) => c.key.isNotEmpty)
+                .toList(),
       );
 }
 

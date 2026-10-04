@@ -297,8 +297,17 @@ class _TodayScreenState extends State<TodayScreen> {
                         : named
                             ? w.whatIsWaiting
                             : 'Approve just this one?',
-        detail: w.isNote && (w.draftSubject ?? '').isNotEmpty
-            ? '"${w.draftSubject}"  ${w.draftBody ?? ''}'
+        // Any draft the server sends is shown, whatever kind of decision it
+        // is (4 Oct 2026): a kind this app does not know yet must never be
+        // approved unseen. A reply answer with no draft says why it stopped.
+        detail: (w.draftBody ?? '').trim().isNotEmpty && !w.isInvoice && !w.isAgreement
+            ? [
+                if ((w.theirWords ?? '').trim().isNotEmpty) 'They wrote: “${_short(w.theirWords!, 280)}”',
+                [
+                  if ((w.draftSubject ?? '').trim().isNotEmpty) '"${w.draftSubject}"',
+                  _short(w.draftBody!, 320),
+                ].join('  '),
+              ].join('\n\n')
             : w.whyItStopped,
         primaryIsMoney: w.isInvoice && w.youCanDecide,
         primary: !w.youCanDecide

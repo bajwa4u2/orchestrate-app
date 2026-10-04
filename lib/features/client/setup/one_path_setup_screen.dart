@@ -3525,15 +3525,23 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     _termsDays.text = '${p.termsDays}';
   }
 
-  static const _paymentModels = {
-    'recurring': 'A monthly or yearly subscription',
-    'progress': 'Monthly, as the work progresses',
-    'terms': 'An invoice when the work is done',
-    'commission': 'Commission from the insurer',
-  };
+  /// The playbook's ways of being paid, in the server's words; the saved one
+  /// stays offered even if the playbook no longer lists it.
+  List<PaymentChoice> get _paymentChoices {
+    final offered = _book?.paymentChoices ?? const <PaymentChoice>[];
+    final model = _paymentModel;
+    return [
+      ...offered,
+      if (model.isNotEmpty && !offered.any((c) => c.key == model))
+        PaymentChoice.known(model),
+    ];
+  }
 
   Widget _paymentStep(bool phone) {
     final model = _paymentModel;
+    final choices = _paymentChoices;
+    final chosen = choices.where((c) => c.key == model).firstOrNull ??
+        PaymentChoice.known(model);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -3546,25 +3554,14 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           _needKind()
         else ...[
           Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final e in _paymentModels.entries)
-              if (_book!.paymentModels.contains(e.key) || e.key == model)
-              _Toggle(e.value, on: model == e.key, onTap: () {
-                setState(() => _paymentModel = e.key);
+            for (final c in choices)
+              _Toggle(c.label, on: model == c.key, onTap: () {
+                setState(() => _paymentModel = c.key);
               }),
           ]),
           const SizedBox(height: 8),
-          Text(
-              switch (model) {
-                'progress' => 'Each month you bill for the work done so far, '
-                    'and the customer holds back a share until the job is '
-                    'finished.',
-                'commission' => 'The insurer pays your commission. Fees you '
-                    'bill yourself follow the terms below.',
-                'recurring' => 'Billed every month or year, in advance, until '
-                    'the customer stops.',
-                _ => 'One invoice, or one per stage, due after the work is done.',
-              },
-              style: Ob.body(13.5, color: Ob.inkMuted)),
+          if (chosen.says.isNotEmpty)
+            Text(chosen.says, style: Ob.body(13.5, color: Ob.inkMuted)),
           _gap(),
           _pair(
             phone,
@@ -3574,7 +3571,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
               keyboardType: TextInputType.number,
               placeholder: '30',
             ),
-            model == 'commission' || model == 'recurring'
+            !chosen.asks.contains('deposit')
                 ? const SizedBox.shrink()
                 : ObField(
                     label: 'Deposit (%, optional)',
@@ -3583,7 +3580,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                     placeholder: 'None',
                   ),
           ),
-          if (model == 'progress') ...[
+          if (chosen.asks.contains('retainage')) ...[
             _gap(),
             ObField(
               label: 'Retainage held until the job is finished (%)',
@@ -3624,12 +3621,15 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       setState(() => _stepError = 'Give percentages as numbers, for example 10.');
       return;
     }
+    final asks = (_paymentChoices.where((c) => c.key == _paymentModel).firstOrNull ??
+            PaymentChoice.known(_paymentModel))
+        .asks;
     await _savePlaybookStep(SetupStep.payment, {
       'payment': {
         'model': _paymentModel,
         'termsDays': days,
-        'depositPercent': _paymentModel == 'commission' || _paymentModel == 'recurring' ? null : pct(_deposit),
-        'retainagePercent': _paymentModel == 'progress' ? pct(_retainage) : null,
+        'depositPercent': asks.contains('deposit') ? pct(_deposit) : null,
+        'retainagePercent': asks.contains('retainage') ? pct(_retainage) : null,
       },
     });
   }
@@ -3639,7 +3639,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     final p = _playbook.saved?.payment;
     if (p == null) return 'Not chosen yet';
     return [
-      _paymentModels[p.model] ?? p.model,
+      (_paymentChoices.where((c) => c.key == p.model).firstOrNull ??
+              PaymentChoice.known(p.model))
+          .label,
       if (p.depositPercent != null && p.depositPercent! > 0) '${_pctWords(p.depositPercent!)} deposit',
       if (p.retainagePercent != null && p.retainagePercent! > 0) '${_pctWords(p.retainagePercent!)} retainage',
       'due in ${p.termsDays} days',
@@ -3878,8 +3880,15 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   TextEditingController _answerText(String key) =>
       _textAnswers.putIfAbsent(key, TextEditingController.new);
 
+  /// The steps that ask a kind's own questions. A question the server places
+  /// on any other step is asked on "What you offer", never silently dropped
+  /// (4 Oct 2026).
+  static const _questionSteps = {'want', 'moments', 'offer'};
+
   List<SetupQuestion> _questionsFor(String step) =>
-      (_kind?.questions ?? const <SetupQuestion>[]).where((q) => q.step == step).toList();
+      (_kind?.questions ?? const <SetupQuestion>[])
+          .where((q) => (_questionSteps.contains(q.step) ? q.step : 'offer') == step)
+          .toList();
 
   void _hydrateAnswers(Map<String, dynamic> answers) {
     _choiceAnswers.clear();
@@ -3915,7 +3924,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   Map<String, dynamic>? _answersOn(String step) {
     final out = <String, dynamic>{};
     num? number(String text) {
-      final t = text.replaceAll(RegExp(r'[\s,$]'), '');
+      // Any currency sign or thousands space goes; the number stays.
+      final t = text.replaceAll(RegExp(r'[\s,$£€¥₹]'), '');
       return t.isEmpty ? null : num.tryParse(t);
     }
 

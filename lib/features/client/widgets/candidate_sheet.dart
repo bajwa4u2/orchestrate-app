@@ -142,6 +142,19 @@ class _CandidateSheetState extends State<CandidateSheet> {
                     },
               child: const Text('Open the relationship'),
             ),
+          ] else if (c.disposition == PursuitDisposition.decided) ...[
+            // A newer server's decision: said in its words, never a new yes.
+            _Answer(
+              title: 'Where it stands',
+              body: c.dispositionMeans.isNotEmpty
+                  ? c.dispositionMeans
+                  : 'Already decided. Nothing more is asked of you here.',
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _busy ? null : () => _set(PursuitDisposition.holding),
+              child: const Text('Stop: not now'),
+            ),
           ] else if (writing) ...[
             _Answer(
               title: 'Orchestrate is writing to them',

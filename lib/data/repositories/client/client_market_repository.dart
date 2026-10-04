@@ -35,6 +35,9 @@ class ClientMarketRepository {
     required PursuitDisposition disposition,
     String? note,
   }) async {
+    if (disposition.wire.isEmpty) {
+      throw ArgumentError('Only a known decision can be sent.');
+    }
     final json = await _apiClient.postJson(
       '/client/market/candidate/${Uri.encodeComponent(key)}/pursuit',
       surface: ApiSurface.client,
@@ -84,7 +87,13 @@ enum PursuitDisposition {
   unreviewed('UNREVIEWED', 'Not looked at'),
   pursuing('PURSUING', 'Worth pursuing'),
   holding('HOLDING', 'Keep in view'),
-  declined('DECLINED', 'Not pursuing');
+  declined('DECLINED', 'Not pursuing'),
+
+  /// A decision this app does not know yet (a newer server's). It is shown as
+  /// decided, in the server's words, and never offered as a new yes: reading
+  /// it as "not looked at" would put a business already being written to back
+  /// on Today as a proposal (4 Oct 2026). Never sent to the server.
+  decided('', 'Decided');
 
   const PursuitDisposition(this.wire, this.label);
   final String wire;
@@ -92,9 +101,11 @@ enum PursuitDisposition {
 
   static PursuitDisposition parse(String? value) {
     for (final d in PursuitDisposition.values) {
-      if (d.wire == value) return d;
+      if (d.wire.isNotEmpty && d.wire == value) return d;
     }
-    return PursuitDisposition.unreviewed;
+    return (value ?? '').trim().isEmpty
+        ? PursuitDisposition.unreviewed
+        : PursuitDisposition.decided;
   }
 }
 
