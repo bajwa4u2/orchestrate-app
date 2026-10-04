@@ -1,0 +1,20 @@
+Orchestrate is a B2B workspace for a business and the customers it wins. It is not a consumer app.
+
+SIGNING IN
+Use the demo account in the Sign-In Information above. It is on a reviewer allowlist, so it signs in directly without an emailed code.
+
+SUBSCRIPTIONS (Guideline 3.1.1)
+Orchestrate offers one auto-renewable subscription, "Orchestrate", in two durations: Monthly and Annual. Both give the organisation the whole product; only the billing period differs.
+Two places offer it, both bought through StoreKit inside the app, with the App Store's own prices:
+1. Setup, step 8 "Your plan", the last step (tap Setup, then "Your plan" in the step strip at the top).
+2. The account menu at the top right, then "Plan & billing".
+The demo account holds no active subscription, so both durations are offered. Please use an App Store sandbox account to complete a purchase; no real-money charge is needed for review. "Restore a purchase" is on the same screen.
+
+WHAT A SUCCESSFUL PURCHASE CHANGES
+After the sandbox purchase completes, the server verifies it with Apple. "Plan & billing" then states that Orchestrate is active for the organisation, and "Choose your plan" disappears from Today. Other steps can remain (for example, connecting the business's own email and confirming who acts for the business); the app states each one plainly, because a subscription makes the product available but never authorises anyone to act for the business. Nothing is sent to a business the account holder has not approved: either one by one, or by turning on "Write automatically" in Market, which writes within a daily limit they choose and can be turned off at any time. Every answer to a reply waits for their approval.
+
+PAYMENT ON OTHER PLATFORMS
+On the web, Orchestrate may also be purchased by card. The iOS app does not link to, mention, or steer users to that web payment; on iOS, purchasing is only through StoreKit.
+
+ACCOUNT DELETION (Guideline 5.1.1(v))
+Account menu (top right) > Account & security > "Leaving Orchestrate" > Delete account. Deletion is confirmed in the app by typing DELETE, happens immediately, and cannot be undone. The screen states what is erased and what business records are kept.
