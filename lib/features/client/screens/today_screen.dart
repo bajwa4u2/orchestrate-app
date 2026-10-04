@@ -182,13 +182,13 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   /// A decision on an agreement or invoice that stopped at the owner's limit.
-  Future<void> _decideWaiting(WaitingDecision w, bool approve) async {
+  Future<void> _decideWaiting(WaitingDecision w, bool approve, {String? editedBody}) async {
     setState(() {
       _deciding.add(w.id);
       _decisionFailure = null;
     });
     try {
-      final result = await _authority.decide(w.id, approve: approve);
+      final result = await _authority.decide(w.id, approve: approve, editedBody: editedBody);
       if (!mounted) return;
       final says = (result['message'] ?? result['reason'] ?? '').toString();
       if (result['ok'] == true) {
@@ -242,6 +242,41 @@ class _TodayScreenState extends State<TodayScreen> {
     for (final w in _waiting) {
       final busy = _deciding.contains(w.id);
       final named = (w.counterparty ?? '').trim().isNotEmpty;
+      // THEY WROTE BACK (4 Oct 2026): their words, the answer Orchestrate
+      // drafted, and the owner's three choices: send it, change it, or answer
+      // themselves. Nothing reaches the prospect without the owner's yes.
+      if (w.isReplyAnswer && (w.draftBody ?? '').isNotEmpty) {
+        cards.add(_YesCard(
+          name: named ? w.counterparty! : 'A prospect',
+          reached: 2,
+          eyebrow: 'THEY WROTE BACK',
+          ask: w.youCanDecide ? 'Send your answer?' : w.whoCanDecide,
+          detail: [
+            if ((w.theirWords ?? '').trim().isNotEmpty) 'They wrote: “${_short(w.theirWords!, 280)}”',
+            'Your answer: “${_short(w.draftBody!, 320)}”',
+          ].join('\n\n'),
+          primary: !w.youCanDecide ? 'Who can decide' : busy ? 'Sending…' : 'Send from my email',
+          onPrimary: !w.youCanDecide
+              ? () => context.go('/account/people')
+              : busy
+                  ? () {}
+                  : () => _decideWaiting(w, true),
+          secondary: w.youCanDecide ? "I'll answer myself" : null,
+          onSecondary: w.youCanDecide && !busy ? () => _decideWaiting(w, false) : null,
+          onOpen: w.youCanDecide
+              ? () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    useSafeArea: true,
+                    builder: (_) => _ReplyAnswerSheet(
+                      decision: w,
+                      onSend: (body) => _decideWaiting(w, true, editedBody: body),
+                    ),
+                  )
+              : null,
+        ));
+        continue;
+      }
       cards.add(_YesCard(
         name: named ? w.counterparty! : w.whatIsWaiting,
         // Where it sits on the path: a first note is the Wrote step, a
@@ -868,4 +903,83 @@ class _MonthPanel extends StatelessWidget {
           Flexible(child: Text(label, style: Ob.body(14, color: Ob.onInkMuted))),
         ]),
       );
+}
+
+String _short(String s, int max) {
+  final t = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return t.length <= max ? t : '${t.substring(0, max).trimRight()}…';
+}
+
+/// Their words in full, and the drafted answer, editable before it is sent.
+class _ReplyAnswerSheet extends StatefulWidget {
+  const _ReplyAnswerSheet({required this.decision, required this.onSend});
+  final WaitingDecision decision;
+  final Future<void> Function(String body) onSend;
+
+  @override
+  State<_ReplyAnswerSheet> createState() => _ReplyAnswerSheetState();
+}
+
+class _ReplyAnswerSheetState extends State<_ReplyAnswerSheet> {
+  late final TextEditingController _body =
+      TextEditingController(text: widget.decision.draftBody ?? '');
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _body.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final w = widget.decision;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(w.counterparty ?? 'They wrote back', style: Ob.name(20)),
+            if ((w.draftTo ?? '').isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text('To ${w.draftTo}', style: Ob.body(13, color: Ob.inkSoft)),
+            ],
+            if ((w.theirWords ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text('They wrote', style: Ob.strong(14)),
+              const SizedBox(height: 6),
+              Text(w.theirWords!.trim(), style: Ob.body(14.5, color: Ob.inkSoft)),
+            ],
+            const SizedBox(height: 18),
+            Text('Your answer', style: Ob.strong(14)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _body,
+              minLines: 6,
+              maxLines: 16,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 8),
+            Text('Sent from your own email, in the same conversation. Your signature is added.',
+                style: Ob.body(13, color: Ob.inkSoft)),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _sending || _body.text.trim().isEmpty
+                  ? null
+                  : () async {
+                      setState(() => _sending = true);
+                      final edited = _body.text.trim() != (w.draftBody ?? '').trim();
+                      final navigator = Navigator.of(context);
+                      await widget.onSend(edited ? _body.text.trim() : '');
+                      if (mounted) navigator.pop();
+                    },
+              child: Text(_sending ? 'Sending…' : 'Send from my email'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

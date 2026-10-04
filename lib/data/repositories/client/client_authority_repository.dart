@@ -40,13 +40,19 @@ class ClientAuthorityRepository {
   /// Decide one waiting item: approve just this one, or hold it. The answer
   /// carries the server's own sentence about what the decision means.
   Future<Map<String, dynamic>> decide(String requestId,
-      {required bool approve, String? note}) async {
+      {required bool approve, String? note, String? editedBody, String? editedSubject}) async {
     final json = await _apiClient.postJson(
       '/client/authority/waiting/$requestId/decide',
       surface: ApiSurface.client,
       body: {
         'outcome': approve ? 'ONE_TIME' : 'REFUSED',
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+        // A drafted answer the owner changed: what they approve is what is sent.
+        if (editedBody != null && editedBody.trim().isNotEmpty)
+          'draft': {
+            'body': editedBody.trim(),
+            if (editedSubject != null && editedSubject.trim().isNotEmpty) 'subject': editedSubject.trim(),
+          },
       },
     );
     return Map<String, dynamic>.from(json as Map);
@@ -549,6 +555,8 @@ class WaitingDecision {
     this.currencyCode,
     this.draftSubject,
     this.draftBody,
+    this.draftTo,
+    this.theirWords,
   });
 
   /// OUTREACH_MESSAGE, or the agreement / invoice subject. Null from a server
@@ -559,8 +567,15 @@ class WaitingDecision {
   final String? currencyCode;
   final String? draftSubject;
   final String? draftBody;
+  final String? draftTo;
+
+  /// What the prospect wrote, when this is an answer to their reply.
+  final String? theirWords;
 
   bool get isNote => subjectType == 'OUTREACH_MESSAGE';
+
+  /// A drafted answer to a prospect who wrote back (4 Oct 2026).
+  bool get isReplyAnswer => subjectType == 'REPLY_RESPONSE';
   bool get isInvoice => (subjectType ?? '').contains('INVOICE');
   bool get isAgreement => (subjectType ?? '').contains('AGREEMENT');
 
@@ -589,5 +604,8 @@ class WaitingDecision {
             j['draft'] is Map ? (j['draft'] as Map)['subject']?.toString() : null,
         draftBody:
             j['draft'] is Map ? (j['draft'] as Map)['body']?.toString() : null,
+        draftTo: j['draft'] is Map ? (j['draft'] as Map)['to']?.toString() : null,
+        theirWords:
+            j['reply'] is Map ? (j['reply'] as Map)['theirWords']?.toString() : null,
       );
 }
