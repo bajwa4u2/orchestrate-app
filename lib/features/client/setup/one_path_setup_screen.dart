@@ -63,7 +63,11 @@ import '../../../core/config/app_config.dart';
 // DD-34 (2 Oct 2026): every business is set up by the playbook for its kind.
 // "When they're ready" asks which moments bring it work, and "How you get
 // paid" how the work is billed; the choices themselves come from the server.
-enum SetupStep { business, want, moments, offer, payment, email, plan, permission, ready }
+//
+// THE PLAN IS LAST (founder, 4 Oct 2026): setup and readiness are free, so
+// nothing that sets the business up waits on a plan; "Your plan" follows
+// "Who acts for it".
+enum SetupStep { business, want, moments, offer, payment, email, permission, plan, ready }
 
 /// The steps a person works through; "ready" is where they land.
 const int _setupSteps = 8;
@@ -78,8 +82,8 @@ extension on SetupStep {
         'What you offer',
         'How you get paid',
         'Your email',
-        'Your plan',
         'Who acts for it',
+        'Your plan',
         'Ready',
       ][index];
   String get subtitle => const [
@@ -89,8 +93,8 @@ extension on SetupStep {
         'In your words, with your proof',
         'Deposits, terms, retainage',
         'Where notes are sent from',
-        'Only when you want to send',
         'You, your document, your yes',
+        'Only when you want to send',
         '',
       ][index];
 }
@@ -813,8 +817,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
 
   /// The last step opens only once every step before it is done or waiting.
   ///
-  /// Its conditions are the ones it always had: business, buyers, offer, email
-  /// and plan. The two steps added before it (moments, payment) are not among
+  /// Its conditions are business, buyers, offer and email; the plan comes
+  /// after it and never gates it (4 Oct 2026). The two steps added before it (moments, payment) are not among
   /// them: adding them locked every existing business out of its own
   /// authority document (founder, live walk, 2 Oct 2026). And once the step is
   /// under way, or its document sent, it never locks again.
@@ -826,7 +830,6 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         SetupStep.want,
         SetupStep.offer,
         SetupStep.email,
-        SetupStep.plan,
       ].every((s) => _stateOf(s) != StepState.todo);
 
   void _goTo(SetupStep s) {
@@ -1572,7 +1575,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   Future<void> _deferPlan() async {
     setState(() => _planDeferred = true);
     await _writeDraft();
-    _goTo(_actUnlocked ? SetupStep.permission : SetupStep.ready);
+    _goTo(SetupStep.ready);
   }
 
   Future<void> _signOut() async {
@@ -2675,9 +2678,9 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
         _gap(26),
         ObActions(
           primary: 'Continue',
-          onPrimary: () => _goTo(SetupStep.ready),
+          onPrimary: () => _goTo(_next(SetupStep.permission)),
           secondary: 'Back',
-          onSecondary: () => _goTo(SetupStep.plan),
+          onSecondary: () => _goTo(SetupStep.email),
         ),
       ]);
     }
@@ -2966,14 +2969,14 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
             primary: 'Continue',
             onPrimary: () => _goTo(_next(SetupStep.plan)),
             secondary: 'Back',
-            onSecondary: () => _goTo(SetupStep.email),
+            onSecondary: () => _goTo(SetupStep.permission),
           )
         else if (inAppPurchaseAllowed)
           ObActions(
             primary: 'Not yet, look around first',
             onPrimary: _deferPlan,
             secondary: 'Back',
-            onSecondary: () => _goTo(SetupStep.email),
+            onSecondary: () => _goTo(SetupStep.permission),
           )
         else
           ObActions(
