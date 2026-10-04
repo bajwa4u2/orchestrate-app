@@ -587,6 +587,14 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
   }
 
   String _words(dynamic v) => _list(v).map((e) => '$e'.trim()).where((e) => e.isNotEmpty).join(', ');
+  /// "Wording every note must carry", as the footer prints it: the pieces
+  /// joined with a comma, or a space after a finished sentence.
+  String get _requiredWordingLine => _wordList(_disclaimers).fold(
+      '',
+      (said, piece) => said.isEmpty
+          ? piece
+          : '$said${RegExp(r'[.!?]$').hasMatch(said) ? ' ' : ', '}$piece');
+
   List<String> _wordList(TextEditingController c) => c.text
       .split(RegExp(r'[,;\n]'))
       .map((e) => e.trim())
@@ -3777,6 +3785,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           label: 'Wording every note must carry',
           controller: _disclaimers,
           placeholder: 'Licensed in Michigan, licence 12345',
+          hint: 'Printed under your address at the foot of every note, '
+              'exactly as you type it.',
         ),
       ];
 
@@ -4068,7 +4078,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           children: [
             AnimatedBuilder(
               animation: Listenable.merge(
-                  [_name, _website, _line1, _line2, _city, _stateRegion, _postcode]),
+                  [_name, _website, _line1, _line2, _city, _stateRegion, _postcode, _disclaimers]),
               builder: (context, _) {
                 final who = AuthSessionController.instance.fullName.trim();
                 // The order the server renders it in every note
@@ -4108,6 +4118,12 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
                         if (addressParts.isNotEmpty && !_addressUsable)
                           const ObPill('town or postcode missing', tone: PillTone.refused),
                       ]),
+                      // The owner's required wording, joined as the server
+                      // prints it (compliance-footer.ts), under the address.
+                      if (_requiredWordingLine.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(_requiredWordingLine, style: Ob.body(14)),
+                      ],
                     ],
                   ),
                 );
