@@ -50,7 +50,58 @@ charter's Appendix A, never edit it here.
 
 ## Repo identity
 
-Flutter (single codebase: iOS + Android + Web). Three workspaces: Public showroom, Client workspace, Operator command center. Hard surface separation in `lib/app/routing/app_router.dart`. Out-of-scope: anything under `../../aura/`.
+Flutter (single codebase: iOS + Android + Web + Windows). Three workspaces: Public site, Client workspace, Operator console. Hard surface separation in `lib/app/routing/app_router.dart`. Out-of-scope: anything under `../../aura/`.
+
+## Current product, and what is retired (updated 4 Oct 2026) — read before any client work
+
+The client workspace is **Direction B** (DD-26, founder, 30 Sep 2026). The legacy workspace
+was retired on 2 Oct 2026 (DD-34, DD-35, DD-36). If a task, an old document or a field name
+points at a retired page, map it to today's place. **Never rebuild a retired page or route.**
+Full state and the dated RETIRED list: `audit/working-directory/CURRENT_STATE.md`. Design
+decisions: `company/docs/design/DESIGN_DECISIONS.md` (DD-26 to DD-39).
+
+- **Places** (`lib/app/shell/client_shell.dart`): Today, Customers (`/client/relationships`),
+  Market, Money, Setup, plus Search (`command_palette.dart`) and Support. The account menu holds
+  People & authority, Plan & billing, Account & security (and Support); Search also offers Your
+  record with Orchestrate. The only client addresses are `_clientCanonicalRoutes` in
+  `app_router.dart`.
+- **Setup** (`lib/features/client/setup/one_path_setup_screen.dart`): one path of 8 steps chosen
+  by kind of business (33 kinds): Your business, Who you want, When they're ready, What you offer,
+  How you get paid, Your email, Who acts for it, Your plan; then Where it stands. The plan is last;
+  setup and readiness are free. Buyer roles, moments, proof kinds, payment choices and kind
+  questions come from the server playbook.
+- **Market**: only businesses that passed five checks, each put to the owner as a proposal: Yes,
+  write to them / Not now / Not for us. "Write automatically" is the owner's standing yes within a
+  daily limit. A yes writes from the client's own mailbox; follow-ups are automatic per the Setup
+  choice; replies are drafted and every answer needs the owner's yes.
+- **Mailbox privacy promise:** Orchestrate never reads or comments on unrelated mail in a client's
+  inbox or sent folder.
+- **Retired, removed from the app:** the client names Home, Operations, Opportunities, Leads,
+  Replies, Meetings, Notifications, Infrastructure, Representation, Records, Billing, Settings,
+  Business hub/identity, Mailbox, Credentials, Evidence, Artifacts, Branding, Subscribe, Contacts,
+  Sequence author; every `/app/*` address and retired `/client/*` page (removed outright, not
+  redirected, `293f81a`); `ClientSequenceAuthorScreen`, `MessageGovernancePanel`,
+  `ClientBackendSurfaceScreen` on `/client/trust`, `WhyAffordance` and the guidance drawer,
+  `ClientMomentumCard`, `ClientConfidencePanel`; the seven-faculty operator workspace; lanes,
+  tiers and trials.
+- **Dead files still on disk** (imported or present, never routed): `leads_screen.dart`,
+  `meetings_screen.dart`, `client_replies_screen.dart`, `client_notifications_screen.dart` in
+  `lib/features/client/screens/`, and `public_overview_widget.dart`,
+  `commercial_execution_surface.dart` in `lib/features/public/widgets/`. Do not re-mount them.
+
+## Release toolchain and forward tolerance
+
+- **Toolchain:** analyze, test and build with Flutter 3.47.2 at `C:\flutter-release-3.47.2`
+  (`docs/RELEASE_TOOLCHAIN.md`). The global `C:\flutter` is a different version and produces false
+  test failures ("Unsupported runtime stages format"). Release records:
+  `store_assets/release_notes/<version>.md` (current: 2.1.0 (19), submitted 4 Oct 2026).
+- **A newer server needs no release** (`test/a_newer_server_needs_no_release_test.dart`): any
+  server value this app does not know (a decision, a payment choice, a question, a draft) must
+  degrade to something generic and usable. Never write client code that needs a store release
+  because the server said something new.
+- **Retired stays retired:** `test/navigation_promises_test.dart` and
+  `test/router_redirect_integrity_test.dart` assert retired addresses are not routed and that every
+  route the server names is a page the app shows.
 
 ## Category guardrail
 
@@ -71,32 +122,32 @@ lib/
   app/
     routing/app_router.dart         ← surface guard, separate ShellRoutes per workspace
     shell/
-      public_shell.dart             ← light theme
-      client_shell.dart             ← light theme
+      public_shell.dart             ← Direction B (paper)
+      client_shell.dart             ← Direction B (paper); places + account menu
       operator_shell.dart           ← dark theme
   core/
-    theme/app_theme.dart            ← dark / light tokens
+    theme/ob.dart                   ← Direction B tokens (paper, ink, amber = yes, green = money)
+    theme/app_theme.dart            ← operator dark tokens and shared theme
     network/                        ← Dio client + repositories
   features/
-    public/                         ← /, /product, /pricing, /diagnostics, /trust-architecture, /legal/*, /intake, /contact, /for-evaluators
-    client/                         ← Home, Operations, Opportunities, Replies, Meetings, Infrastructure, Representation, Records, Billing, Notifications, Support, Settings
-    operator_workspace/             ← seven faculties (cognition, trust_readiness, continuity, runtime_truth, adaptation, governance, platform_supervision)
-    operator/                       ← legacy operator surfaces (deprecate gradually)
-    guidance/                       ← WhyAffordance + guidance drawer
+    public/                         ← /, /how-it-works, /pricing, /trust, /about, /contact (visitor assistant), /diagnostics, /legal/*
+    client/                         ← Today, Customers, Market, Money, Inbound (in Today), Support, Account; setup/ = one-path Setup
+    ops_console/                    ← operator console: work queue, dispatch, transport, inventory, jobs, authority, history, clients, campaigns
+    operator/                       ← remaining operator screens (provenance, audit, system doctor, inquiries, debug)
+    support/                        ← client Support
 ```
+
+(Updated 4 Oct 2026. `operator_workspace/` and `guidance/` no longer exist.)
 
 ## Canonical abstractions (preserve)
 
-- **Surface-keyed routing** (`lib/app/routing/app_router.dart`): session carries `surface: operator | client`. Operator visiting `/client/*` or `/app/*` → forcibly redirected to `/ops/overview`. Client visiting `/ops/*` → forcibly redirected to `/app/home`. **Never bypass.**
+- **Surface-keyed routing** (`lib/app/routing/app_router.dart`): session carries `surface: operator | client`. An operator visiting `/client/*`, `/app/*` or `/auth/*` is sent to `/ops/work`. A client visiting `/ops/*` is sent to `/client/today`. Retired operator addresses (`_retiredOperatorSurfaces`) land on `/ops/work`. **Never bypass.**
 - **Separate ShellRoutes** with separate `GlobalKey<NavigatorState>` per workspace. **Do not merge.**
-- **Dark Operator theme** (`#090D14` abyss, teal `#6FD3C3` accent) vs **light Public/Client theme** (`#F7F8FA` cream, forest `#176B5D` accent). Theme is selected inside each shell.
-- **Subscription-degradation reachability**: `/app/home` remains reachable on `past_due` / `paused` / `canceled` so the workspace can explain degradation. Do not lock the user out.
-- **Client sidebar IA** (renamed away from CRM-shaped names; preserve):
-  - Home, Operations (was "Outreach"), Opportunities (was "Leads"), Replies, Meetings, Infrastructure (was "Mailbox" — consolidates mailbox + sending identity + provider trust), Representation (consolidates business identity + ICP + voice + constraints + authorization), Records (read-only), Billing, Notifications, Support, Settings.
-- **Operator sidebar IA** (seven faculties): Cognition, Trust & Readiness, Continuity, Runtime Truth, Adaptation, Governance, Platform Supervision + Developer drawer.
-- **Outcome-confidence framing** on Client surfaces. Replace lifecycle buttons with `ClientMomentumCard`, `ClientConfidencePanel` reads from `ClientPortalRepository.fetchClientExperience`. Never fake metrics.
-- **WhyAffordance** (`lib/features/guidance/widgets/why_affordance.dart`) — labeled button, opens a single drawer with one of ten explicit explain targets. No floating bubble, no popup, no auto-open.
-- **MessageGovernancePanel** — provenance disclosure on activity. Client-altitude language only.
+- **Themes:** dark Operator theme (`#090D14`, teal `#6FD3C3`, `app_theme.dart`) vs Direction B for Public and Client (paper `#F3EFE7`, ink `#17202B`, `ob.dart`; amber only for "waiting for your yes", green only for money, guarded by `test/design/colour_has_one_meaning_test.dart`). Theme is selected inside each shell.
+- **A place is never refused for want of a plan:** signed-in, verified members reach their workspace whatever the subscription state; entitlement refuses an action, at the server, and explains itself. Do not add a subscription gate to a route.
+- **Client IA (updated 4 Oct 2026; preserve):** Today, Customers, Market, Money, Setup, plus Search and Support; account menu: People & authority, Plan & billing, Account & security, Support. See "Current product, and what is retired" above. The earlier IA (Home, Operations, Opportunities, Replies, Meetings, Infrastructure, Representation, Records, Billing, Notifications, Settings) is retired; do not restore it.
+- **Operator IA:** the console in `operator_shell.dart` (Work queue, Authority, Clients, Contacts & imports, Transport, Dispatch, Campaigns, Message provenance, Audit history, Jobs, Inquiries, Feedback, Debug checks). The seven-faculty IA was retired in Sep 2026.
+- **Honest states on Client surfaces:** every number, status and card reads from the server; empty, loading and error states say what is true. Never fake metrics.
 
 ## Forbidden drift
 
@@ -108,7 +159,9 @@ lib/
 - **Introducing a fourth workspace shell.** Public / Client / Operator is the architecture.
 - **Manual operator tools in Client UI.** The Client authorizes; the platform operates. The Client sees outcome confidence, not lifecycle controls.
 - **Mounting `ClientBackendSurfaceScreen` (or any generic backend-surface wrapper) on a Client route** with operator-altitude vocabulary.
-- **New legacy `/app/*` routes.** The legacy fallback set (`/app/activity`, `/app/branding`, `/app/newsletter`, `/app/contacts`, `/app/campaigns`) should be deprecated, not extended.
+- **Any `/app/*` route, or any retired `/client/*` page.** All were removed on 2 Oct 2026 (DD-36). Do not add them back, even as redirects.
+- **Rebuilding a retired surface** (see the RETIRED list in `audit/working-directory/CURRENT_STATE.md`), or re-mounting the dead files listed above.
+- **Client code that needs a store release because the server said something new** (forward tolerance, above).
 - **Importing test packages in `lib/`** (test code belongs in `test/`).
 - **Hardcoded API URLs or tokens** in source.
 
@@ -129,11 +182,20 @@ Default load for agents:
 
 Opt-in (load only when the task requires):
 
-- `docs/OUTREACH_LEAD_CAMPAIGN_FLOW_AUDIT.md` — current outbound flow audit
-- `../docs/CLIENT_WORKSPACE_END_TO_END_AUDIT.md` (31K — heavy; load only for client-workspace work)
+- `audit/working-directory/CURRENT_STATE.md` — current product and the RETIRED list (read first for client work)
+- `company/docs/design/DESIGN_DECISIONS.md` (DD-26 onward) — approved client and public design
+- `store_assets/release_notes/<version>.md` — release records
+
+Historical only (they describe the retired workspace; never build from them):
+
+- `docs/OUTREACH_LEAD_CAMPAIGN_FLOW_AUDIT.md` (Apr 2026 outbound flow audit)
+- `../docs/CLIENT_WORKSPACE_END_TO_END_AUDIT.md` (31K)
 - `../docs/CLIENT_WORKSPACE_END_TO_END_IMPLEMENTATION.md`
 - `../docs/MAILBOX_ACTIVATION_AND_RESPONSE_SENDING.md`
-- `../orchestrate_docs/00_governance/OPERATOR_WORKSPACE_SPECIFICATION.md` (22K) — load for operator faculty work
+
+Operator and foundation references:
+
+- `../orchestrate_docs/00_governance/OPERATOR_WORKSPACE_SPECIFICATION.md` (22K) — operator doctrine; its seven-faculty IA is retired, the console in `operator_shell.dart` is current
 - `../orchestrate_docs/01_foundation/ORCHESTRATE_FOUNDATION_AND_EXECUTION_RECORD.md`
 
 Do not load by default:
@@ -147,7 +209,7 @@ Do not load by default:
 
 ## Required validation
 
-For Dart code changes:
+For Dart code changes (with the release toolchain, `C:\flutter-release-3.47.2\bin\flutter`):
 
 ```
 flutter analyze
@@ -195,18 +257,23 @@ A change is complete when:
 5. Vocabulary conforms to `../marketing/terminology-system.md`.
 6. No operator-altitude language leaks into Client routes.
 7. Surface-keyed routing remains structural; no merged ShellRoutes.
-8. No new legacy `/app/*` routes added.
+8. No `/app/*` route or retired page added back; unknown server values still degrade gracefully.
 9. A PR / commit message explains the change and the validation run.
 
-## Known live findings (verify before assuming fixed)
+## Known live findings (re-verified in code 4 Oct 2026)
 
-- `ClientSequenceAuthorScreen` (`lib/features/client/screens/client_sequence_author_screen.dart`) — exposes operator-altitude vocabulary to clients. Documented leak; needs paraphrase.
-- `MessageGovernancePanel` (`lib/features/client/widgets/message_governance_panel.dart`) — operator-altitude provenance language. Documented leak; needs paraphrase.
-- `ClientBackendSurfaceScreen(trust)` mounted at `/client/trust` (`lib/app/routing/app_router.dart:1163`) — generic backend-surface wrapper on a Client route. Replace with purpose-built client trust surface.
-- Legacy `/app/*` routes still mounted (`/app/activity`, `/app/branding`, `/app/newsletter`, `/app/contacts`, `/app/campaigns`) — deprecate-redirect to canonical successors.
-- `AiApprovalsScreen` and `PlatformSupervisionScreen` are intentional honest stubs per `OPERATIONAL_FULFILLMENT_DIRECTIVE §5.1` — do not "fill in" with fabricated state.
+The earlier findings are closed by removal (DD-36, `293f81a`, and the Sep 2026 operator retirement):
+`ClientSequenceAuthorScreen`, `MessageGovernancePanel`, `ClientBackendSurfaceScreen` on
+`/client/trust`, the legacy `/app/*` routes, and the `AiApprovalsScreen` / `PlatformSupervisionScreen`
+stubs no longer exist in `lib/`. Do not recreate them.
 
-These are tracked. Do not "fix" them in passing without scope.
+Open:
+
+- Dead client and public files still on disk (listed under "Current product, and what is
+  retired"). They carry retired vocabulary ("Opportunities", "commercial-intelligence outcomes").
+  Deletion needs founder approval; until then never route or construct them.
+- `OperatorBackendSurfaceScreen` remains on several `/operator/*` routes (operator surface only;
+  allowed there, never on a Client route).
 
 ## Repository Continuity Doctrine (workspace-wide, 2026-07-21)
 

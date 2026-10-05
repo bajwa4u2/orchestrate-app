@@ -1,44 +1,61 @@
 # Current State — orchestrate_app
 
-Last updated: 2026-08-31 UTC
+Last updated: 4 Oct 2026 (rewritten from code, git log and the design decision log; replaces the 31 Aug 2026 version)
 
-Repository documentation is authoritative. Conversation history is temporary. This continuity set was established 2026-07-21 (workspace-wide continuity doctrine); prior history is reconstructed from git history and the ROS Phase II record (in `../orchestrate_backend/representation/inventory/`).
+Repository documentation is authoritative. Conversation history is temporary.
 
 ## Identity
 
-Orchestrate Flutter frontend (single codebase: iOS + Android + Web). Three workspaces with hard surface separation in `lib/app/routing/app_router.dart`: Public showroom, Client workspace, Operator command center. Orchestrate is governed managed-outbound execution infrastructure; the public hero explicitly refuses "Not a CRM. Not an AI SDR. Not sequence software. Not a dashboard you operate manually." See `AGENTS.md`.
+Orchestrate Flutter client, one codebase for Web, Android, iOS and Windows. Three surfaces with hard separation in `lib/app/routing/app_router.dart`: Public site, Client workspace, Operator console. Category guardrail and governance: `AGENTS.md`.
 
-## Production baseline
+## The product as it is today (Direction B, DD-26 onward)
 
-- Production web at `orchestrateops.com`, behind Cloudflare edge cache (a deploy was once invisible for ~90 minutes behind a stale cached `main.dart.js` — always verify freshness with `Cf-Cache-Status`, purge if needed).
-- Last recorded release version: `0.2.2+11` (`4a3a8cd`). iOS/Codemagic upload is the founder's manual step.
-- Public web flagship verification was performed against the deployed site with
-  cache-busted browser renders at 1440, 1024, 768, 390, 360, and 320px.
+Look: paper `#F3EFE7`, white cards, ink `#17202B` (`lib/core/theme/ob.dart`). Amber means only "waiting for your yes"; green means only money (guard: `test/design/colour_has_one_meaning_test.dart`). The operator console keeps its own dark theme.
 
-## Implementation status
+**Client workspace** (`lib/app/shell/client_shell.dart`):
+- Places: **Today** (`/client/today`, absorbs `/client/inbound`), **Customers** (`/client/relationships`), **Market** (`/client/market`), **Money** (`/client/money`), **Setup** (`/client/setup`), plus **Search** (command palette) and **Support** (`/client/support`).
+- Account menu: People & authority (`/account/people`), Plan & billing (`/account/plan`), Account & security (`/account/security`), Support; Search also offers Your record with Orchestrate (`/account/record`).
+- The full list of client addresses is `_clientCanonicalRoutes` in `app_router.dart`. Anything else shows the not-found page with the way back.
 
-- `main` HEAD `7cf8ae7` is pushed to `origin/main`
-  (`bajwa4u2/orchestrate-app`); the latest flagship implementation is
-  `aa46ec4`.
-- The public Home lifecycle flagship is restored before the hero and consumes
-  the existing `/v1/public/lifecycle` projection without backend changes.
-- Flagship presentation uses a live broadcast rail, curve-native travelers,
-  an Opportunities → Dispatch packet branch, a Leads → Suppressed governed
-  branch, and a mobile width-adaptive serpentine topology. Desktop retains the
-  approved broad editorial curve.
-- Backend ordering, values, surfaced/hidden records, and zero behavior remain
-  authoritative. No operational values or events are fabricated in the
-  frontend.
-- Recent public-web commits: `c65f797`, `de6b282`, `309651f`, `3c05d40`,
-  `fd679c4`, `a8ff6e9`, `10c7d4d`, `9ce7d86`, `f8a155f`, `b9d08fc`,
-  `aa46ec4`.
-- `a71b39e` = ROS Phase II fidelity restoration (CLOSED, VERIFIED 2026-07-13): removed false "outreach active"/"no action needed" claims (frontend side of the CD-2 fix), 9-layer chain copy corrections. Live-verified on production with the real reviewer account after a founder cache purge.
-- `3a2a23b` = operator work queue + six-ring subsystem screens (post-closeout feature, committed and pushed).
+**Setup** (`lib/features/client/setup/one_path_setup_screen.dart`, DD-34): one path, 8 steps, chosen by kind of business (33 kinds): Your business · Who you want · When they're ready · What you offer · How you get paid · Your email · Who acts for it · Your plan, then "Where it stands". The plan is last; setting up and readiness are free. Buyer roles, moments, proof kinds, payment choices and kind questions come from the server playbook, so new kinds need no release.
 
-## Next implementation starting point
+**Market** (DD-30, DD-39): only businesses that passed five checks (exists, alive on its own website, fits, published address that accepts mail, explainable). Each is put to the owner as a proposal: Yes, write to them / Not now / Not for us. "Write automatically" is the owner's standing yes within a daily limit. A yes writes from the client's own mailbox. Follow-ups are automatic per the Setup choice. Replies are drafted and every answer needs the owner's yes (Today shows "They wrote back"). Required wording is printed in each note's footer.
 
-No founder-defined next milestone is recorded. See `NEXT_WORK.md`.
+**Mailbox privacy promise:** Orchestrate never reads or comments on unrelated mail in a client's inbox or sent folder (backend guard `orchestrate-never-reads-unrelated-mail.spec.ts`).
 
-## Outstanding founder approvals
+**Public site** (DD-26, DD-37): `/` front door, `/how-it-works` (One customer, start to paid), `/pricing`, `/trust`, `/about`, `/contact` (visitor assistant), `/diagnostics`, `/legal/*`, `/account-deletion`. Retired public addresses redirect to one of these.
 
-Prioritization of any next milestone; iOS store upload remains a founder manual step.
+**Operator console** (`lib/app/shell/operator_shell.dart`): Work queue (`/ops/work`, answers in place, DD-38), Authority, Clients, Contacts & imports, Transport, Dispatch, Campaigns, Message provenance, Audit history, Jobs, Inquiries, Feedback, Debug checks. Retired operator addresses land on `/ops/work` (`_retiredOperatorSurfaces`).
+
+## Release baseline
+
+- **2.1.0 (19)** submitted 4 Oct 2026, source `d8d45a3`, record `95fb7ef`: Microsoft in certification (about 8:21 PM ET), Google Play sent for review (about 8:26 PM ET, live on approval), iOS Codemagic TestFlight build started about 8:28 PM ET, to be submitted once processed. Web deployed from `main` 4 Oct 7:55 PM ET. Record: `store_assets/release_notes/2.1.0.md`.
+- 2.0.0 (17), 3 Oct 2026: the major transformation (DD-34 to DD-37). Record: `store_assets/release_notes/2.0.0.md`.
+- Release toolchain: Flutter 3.47.2 at `C:\flutter-release-3.47.2` (`docs/RELEASE_TOOLCHAIN.md`). The global `C:\flutter` is a different version and gives false test failures ("Unsupported runtime stages format"). Run analyze and tests with the release toolchain.
+
+## Rules that hold the current product
+
+- Forward tolerance (`test/a_newer_server_needs_no_release_test.dart`): a server value this app does not know degrades to something generic and usable; it never forces a store release.
+- Retired addresses stay retired (`test/navigation_promises_test.dart`, `test/router_redirect_integrity_test.dart`); every route the server names must be a page the app shows.
+
+## RETIRED — do not rebuild (recorded 4 Oct 2026)
+
+- Legacy client workspace and its names: Home, Operations, Opportunities, Leads, Replies, Meetings, Notifications, Infrastructure, Representation, Records, Billing, Settings, Business hub/identity, Mailbox, Credentials, Evidence, Artifacts, Branding, Subscribe, Workspace settings, Contacts inventory, Sequence author. Their jobs moved into Setup, Account, Customers and Money (DD-34, DD-35).
+- Every `/app/*` address and every retired `/client/*` page: removed outright, not redirected (DD-36, `293f81a`).
+- Widgets and surfaces deleted with them: `ClientSequenceAuthorScreen`, `MessageGovernancePanel`, `ClientBackendSurfaceScreen` on `/client/trust`, `WhyAffordance` and the guidance drawer, `ClientMomentumCard`, `ClientConfidencePanel`.
+- The six-step setup (DD-26 first version) and the setup where the plan came before "Who acts for it": the plan is now last (`d5553ad`).
+- The old public flagship lifecycle on Home (`PublicOverviewWidget`) and the public pages retired in DD-26 (`/product`, `/ai-governed-revenue`, `/lead-sourcing`, `/trust-architecture`, `/for-evaluators`, `/why-orchestrate`, `/answers`, `/journey/*`, newsletter and others), plus the four public knowledge feeds (`1c6e182`).
+- The seven-faculty operator workspace (Cognition, Trust & Readiness, Continuity, Runtime Truth, Adaptation, Governance, Platform Supervision) and `/ops/overview`.
+- Retired commercial packages: lanes, tiers (focused/multi/precision, opportunity/revenue), trials. Prices are $29.99 a month or $299.99 a year on the web; store builds show the store's own offer.
+- Dead files still on disk, not routed or constructed: `lib/features/client/screens/leads_screen.dart`, `meetings_screen.dart`, `client_replies_screen.dart`, `client_notifications_screen.dart`, `lib/features/public/widgets/public_overview_widget.dart`, `commercial_execution_surface.dart`. Do not re-mount them.
+
+## Where truth lives
+
+- Routes: `lib/app/routing/app_router.dart`. Navigation: `lib/app/shell/client_shell.dart`, `lib/features/client/widgets/command_palette.dart`.
+- Design decisions: `company/docs/design/DESIGN_DECISIONS.md` (DD-26 to DD-39 for Orchestrate).
+- Releases: `store_assets/release_notes/<version>.md`.
+- Backend continuity: `../orchestrate_backend/audit/working-directory/`.
+
+## Superseded
+
+The 31 Aug 2026 version described the public Home flagship lifecycle (`aa46ec4` and earlier), release `0.2.2+11` and the ROS Phase II closeout (`a71b39e`, 13 Jul 2026). All of it is history; see git log.

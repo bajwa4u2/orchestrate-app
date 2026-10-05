@@ -1,15 +1,23 @@
 # Next Work — orchestrate_app
 
-Last updated: 2026-07-21 UTC
+Last updated: 4 Oct 2026
 
-This document lists only remaining work. No item below is authorized as the next milestone until the founder prioritizes it.
+This document lists only remaining work. No item is the next milestone until the founder prioritizes it.
+
+## In flight
+
+1. 2.1.0 (19): submit to the App Store with `store_assets/release_notes/2.1.0_app_review_notes.txt` once the TestFlight build is processed; watch Microsoft certification and Google Play review.
 
 ## Recorded items (unprioritized)
 
-1. iOS/Codemagic App Store upload for the current release remains the founder's manual step (recorded at ROS Phase II closeout; not verified whether done since).
-2. Operator-facing status/momentum copy must stay derived from the backend's dispatch-chain terminal state — any new surface repeating "active/live" claims must consume that signal, never historical counts (see backend DECISIONS).
+1. Customer import moves into Customers (DD-34: "after this release").
+2. Artifacts return as proposals in Money (DD-34).
+3. More moments as their sources go live (permits, registrations); each moment says "Not watched yet" until its source is live (DD-34).
+4. The store app's public front page shows the web price ("From $29.99 a month…"); noted in the 2.1.0 record, not changed.
+5. Dead files still on disk (listed in `CURRENT_STATE.md`): delete them with founder approval, never re-mount them.
 
 ## Explicit non-work
 
 - Nothing under `../../aura/`.
-- No weakening of the public hero's category refusals.
+- No rebuilding of anything on the RETIRED list in `CURRENT_STATE.md`.
+- No weakening of the public category refusals.
