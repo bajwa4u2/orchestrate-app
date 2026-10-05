@@ -157,7 +157,10 @@ void main() {
       'direct setup intent begins with registration for unauthenticated visitors',
       () {
     final router = read('lib/app/routing/app_router.dart');
-    expect(router, contains("if (isSetup || isSubscribe)"));
+    // /client/setup is the one setup address (DD-36 retired /app/* and
+    // /client/subscribe); a visitor who is not signed in starts by registering.
+    expect(router, contains("final isSetup = path == '/client/setup';"));
+    expect(router, contains('if (isSetup) {'));
     expect(router, contains("_clientRoute('/auth/register'"));
   });
 

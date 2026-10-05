@@ -84,10 +84,10 @@ decisions: `company/docs/design/DESIGN_DECISIONS.md` (DD-26 to DD-39).
   `ClientBackendSurfaceScreen` on `/client/trust`, `WhyAffordance` and the guidance drawer,
   `ClientMomentumCard`, `ClientConfidencePanel`; the seven-faculty operator workspace; lanes,
   tiers and trials.
-- **Dead files still on disk** (imported or present, never routed): `leads_screen.dart`,
-  `meetings_screen.dart`, `client_replies_screen.dart`, `client_notifications_screen.dart` in
-  `lib/features/client/screens/`, and `public_overview_widget.dart`,
-  `commercial_execution_surface.dart` in `lib/features/public/widgets/`. Do not re-mount them.
+- **Deleted 4 Oct 2026** (dead, never routed): `leads_screen.dart`, `meetings_screen.dart`,
+  `client_replies_screen.dart`, `client_notifications_screen.dart`,
+  `public_overview_widget.dart`, `commercial_execution_surface.dart`. Do not recreate them; the
+  router names only `/client/setup` for setup (no `/app/*`, no `/client/subscribe`).
 
 ## Release toolchain and forward tolerance
 
@@ -107,7 +107,7 @@ decisions: `company/docs/design/DESIGN_DECISIONS.md` (DD-26 to DD-39).
 
 Orchestrate is **governed managed-outbound execution infrastructure**. The public hero explicitly refuses: **"Not a CRM. Not an AI SDR. Not sequence software. Not a dashboard you operate manually."** This frontend is **not**:
 
-- a CRM (no contact records as primary; Records are read-only operational artifacts)
+- a CRM (no contact records as primary; the business's own record with Orchestrate is read-only, under Account)
 - an AI SDR product (we have the substrate underneath — custodial dispatch + AI authority + enforcement + operator supervision)
 - sequence software (we run the operation; the Client doesn't operate the runtime)
 - a sales engagement productivity tool (the user is not the operator; the platform is)
@@ -160,7 +160,7 @@ lib/
 - **Manual operator tools in Client UI.** The Client authorizes; the platform operates. The Client sees outcome confidence, not lifecycle controls.
 - **Mounting `ClientBackendSurfaceScreen` (or any generic backend-surface wrapper) on a Client route** with operator-altitude vocabulary.
 - **Any `/app/*` route, or any retired `/client/*` page.** All were removed on 2 Oct 2026 (DD-36). Do not add them back, even as redirects.
-- **Rebuilding a retired surface** (see the RETIRED list in `audit/working-directory/CURRENT_STATE.md`), or re-mounting the dead files listed above.
+- **Rebuilding a retired surface** (see the RETIRED list in `audit/working-directory/CURRENT_STATE.md`), or recreating the deleted files listed above.
 - **Client code that needs a store release because the server said something new** (forward tolerance, above).
 - **Importing test packages in `lib/`** (test code belongs in `test/`).
 - **Hardcoded API URLs or tokens** in source.
@@ -233,7 +233,10 @@ Do not claim `flutter analyze` is clean unless it actually exited 0 with zero is
 
 ## Git discipline
 
-- Branch per task.
+- Work lands on `main`, and a push to `main` deploys the web app (Railway `orchestrate-app`).
+  Analyze and test on the release toolchain before pushing; confirm the deploy after. Use a
+  branch only for work that must not go live yet. Every store build is recorded
+  in `store_assets/release_notes/<version>.md` (source commit, artifact hashes, store state).
 - Commit messages: short imperative summary + body that explains the "why."
 - Never force-push to `main`.
 - Do not bypass hooks (`--no-verify`) without explicit user authorization.

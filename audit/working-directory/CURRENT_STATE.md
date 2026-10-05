@@ -29,7 +29,7 @@ Look: paper `#F3EFE7`, white cards, ink `#17202B` (`lib/core/theme/ob.dart`). Am
 
 ## Release baseline
 
-- **2.1.0 (19)** submitted 4 Oct 2026, source `d8d45a3`, record `95fb7ef`: Microsoft in certification (about 8:21 PM ET), Google Play sent for review (about 8:26 PM ET, live on approval), iOS Codemagic TestFlight build started about 8:28 PM ET, to be submitted once processed. Web deployed from `main` 4 Oct 7:55 PM ET. Record: `store_assets/release_notes/2.1.0.md`.
+- **2.1.0 (19)** submitted 4 Oct 2026, source `d8d45a3`, record `95fb7ef`: Microsoft in certification (about 8:21 PM ET), Google Play sent for review (about 8:26 PM ET, live on approval), iOS build 19 through Codemagic TestFlight, submitted to App Review 4 Oct 2026 · 9:00 PM ET (automatic release on approval). Web deployed from `main` 4 Oct 7:55 PM ET. Record: `store_assets/release_notes/2.1.0.md`.
 - 2.0.0 (17), 3 Oct 2026: the major transformation (DD-34 to DD-37). Record: `store_assets/release_notes/2.0.0.md`.
 - Release toolchain: Flutter 3.47.2 at `C:\flutter-release-3.47.2` (`docs/RELEASE_TOOLCHAIN.md`). The global `C:\flutter` is a different version and gives false test failures ("Unsupported runtime stages format"). Run analyze and tests with the release toolchain.
 
@@ -47,7 +47,7 @@ Look: paper `#F3EFE7`, white cards, ink `#17202B` (`lib/core/theme/ob.dart`). Am
 - The old public flagship lifecycle on Home (`PublicOverviewWidget`) and the public pages retired in DD-26 (`/product`, `/ai-governed-revenue`, `/lead-sourcing`, `/trust-architecture`, `/for-evaluators`, `/why-orchestrate`, `/answers`, `/journey/*`, newsletter and others), plus the four public knowledge feeds (`1c6e182`).
 - The seven-faculty operator workspace (Cognition, Trust & Readiness, Continuity, Runtime Truth, Adaptation, Governance, Platform Supervision) and `/ops/overview`.
 - Retired commercial packages: lanes, tiers (focused/multi/precision, opportunity/revenue), trials. Prices are $29.99 a month or $299.99 a year on the web; store builds show the store's own offer.
-- Dead files still on disk, not routed or constructed: `lib/features/client/screens/leads_screen.dart`, `meetings_screen.dart`, `client_replies_screen.dart`, `client_notifications_screen.dart`, `lib/features/public/widgets/public_overview_widget.dart`, `commercial_execution_surface.dart`. Do not re-mount them.
+- Deleted 4 Oct 2026 (dead, never routed): `leads_screen.dart`, `meetings_screen.dart`, `client_replies_screen.dart`, `client_notifications_screen.dart`, `public_overview_widget.dart`, `commercial_execution_surface.dart`; the router's leftover `/app/*` and `/client/subscribe` names removed. Do not recreate them.
 
 ## Where truth lives
 

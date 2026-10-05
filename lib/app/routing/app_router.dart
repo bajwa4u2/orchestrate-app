@@ -15,13 +15,9 @@ import 'package:orchestrate_app/features/client/screens/client_authorised_people
 import 'package:orchestrate_app/features/client/setup/one_path_setup_screen.dart';
 import 'package:orchestrate_app/features/client/money/money_screen.dart';
 import 'package:orchestrate_app/features/public/b/public_b.dart';
-import 'package:orchestrate_app/features/client/screens/client_notifications_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_records_screen.dart';
-import 'package:orchestrate_app/features/client/screens/client_replies_screen.dart';
-import 'package:orchestrate_app/features/client/screens/leads_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/inquiry_detail_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/audit_timeline_screen.dart';
-import 'package:orchestrate_app/features/client/screens/meetings_screen.dart';
 import 'package:orchestrate_app/features/client/screens/client_support_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_backend_surface_screen.dart';
 import 'package:orchestrate_app/features/operator/screens/operator_debug_screen.dart';
@@ -309,9 +305,9 @@ GoRouter _buildRouter() {
         <String>{'/auth/verify-email', '/client/verify-email'}.contains(path);
     final isReset = <String>{'/auth/reset-password', '/client/reset-password'}
         .contains(path);
-    final isSetup = <String>{'/app/setup', '/client/setup'}.contains(path);
-    final isSubscribe =
-        <String>{'/app/subscribe', '/client/subscribe'}.contains(path);
+    // Only today's setup address (DD-36: /app/* and /client/subscribe are
+    // gone, so nothing here names them).
+    final isSetup = path == '/client/setup';
     // The account layer describes the business's relationship with
     // Orchestrate and governs what the workspace may do. Authenticated like
     // everything else, and deliberately outside the setup and subscription
@@ -355,10 +351,10 @@ GoRouter _buildRouter() {
       // existing-user sign-in intent. Start account creation first so the
       // visitor can establish access and carry the selected setup context
       // into onboarding.
-      if (isSetup || isSubscribe) {
+      if (isSetup) {
         return _clientRoute('/auth/register', returnTo: path);
       }
-      if (isClientArea || isSetup || isSubscribe) {
+      if (isClientArea || isSetup) {
         // WHERE THEY WERE TRYING TO GO.
         //
         // This carried only plan/tier/trial, so every deep link into the
@@ -387,17 +383,7 @@ GoRouter _buildRouter() {
             returnTo: readReturnTo(state.uri.queryParameters) ?? path);
       }
 
-      final setupAllowed = <String>{
-        '/app/setup',
-        '/app/home',
-        '/app/billing',
-        '/app/account',
-        '/client/setup',
-        '/client/overview',
-        '/client/billing',
-        '/client/account',
-        '/client/settings',
-      };
+      final setupAllowed = <String>{'/client/setup'};
       if (!session.hasSetupCompleted) {
         if (setupAllowed.contains(path) || isAccountLayer) return null;
         // ONE CANONICAL SETUP ROUTE: /client/setup.
@@ -444,14 +430,8 @@ GoRouter _buildRouter() {
       if (isClientAuth ||
           isVerification ||
           isReset ||
-          // Setup is no longer bounced once complete: it is also the
-          // "where everything stands" place the Setup link opens (DD-26).
-          (isSetup && path == '/app/setup') ||
-          // NOT isSubscribe. Being signed in is the precondition for
-          // activating, not a reason to be sent away from it — and this
-          // redirect made the activation screen unreachable by everyone who
-          // could use it. Nothing routes anyone here; it is chosen from
-          // Billing, and iOS still refuses the route through its own policy.
+          // Setup is never bounced once complete: it is also the "where
+          // everything stands" place the Setup link opens (DD-26).
           path == '/') {
         // WHERE THEY WERE TRYING TO GO, HONOURED HERE.
         //
