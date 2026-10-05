@@ -29,7 +29,7 @@ Look: paper `#F3EFE7`, white cards, ink `#17202B` (`lib/core/theme/ob.dart`). Am
 
 ## Release baseline
 
-- **2.1.0 (19)** submitted 4 Oct 2026, source `d8d45a3`, record `95fb7ef`: Microsoft in certification (about 8:21 PM ET), Google Play sent for review (about 8:26 PM ET, live on approval), iOS build 19 through Codemagic TestFlight, submitted to App Review 4 Oct 2026 · 9:00 PM ET (automatic release on approval). Web deployed from `main` 4 Oct 7:55 PM ET. Record: `store_assets/release_notes/2.1.0.md`.
+- **2.1.0 (19)** submitted 4 Oct 2026, source `d8d45a3`, record `95fb7ef`: Microsoft LIVE and Google Play LIVE (both read from the store APIs 4 Oct 2026 · 9:08 PM ET), iOS build 19 through Codemagic TestFlight, submitted to App Review 4 Oct 2026 · 9:00 PM ET (automatic release on approval). Web deployed from `main` 4 Oct 7:55 PM ET. Record: `store_assets/release_notes/2.1.0.md`.
 - 2.0.0 (17), 3 Oct 2026: the major transformation (DD-34 to DD-37). Record: `store_assets/release_notes/2.0.0.md`.
 - Release toolchain: Flutter 3.47.2 at `C:\flutter-release-3.47.2` (`docs/RELEASE_TOOLCHAIN.md`). The global `C:\flutter` is a different version and gives false test failures ("Unsupported runtime stages format"). Run analyze and tests with the release toolchain.
 
