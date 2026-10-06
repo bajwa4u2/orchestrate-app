@@ -34,6 +34,7 @@ class ClientMarketRepository {
     required String key,
     required PursuitDisposition disposition,
     String? note,
+    CardNote? write,
   }) async {
     if (disposition.wire.isEmpty) {
       throw ArgumentError('Only a known decision can be sent.');
@@ -44,9 +45,31 @@ class ClientMarketRepository {
       body: {
         'disposition': disposition.wire,
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+        // "Yes, send this note": the exact words on the card (6 Oct 2026).
+        if (write != null && write.subject != null && write.body != null)
+          'write': {'subject': write.subject, 'body': write.body},
       },
     );
     return Map<String, dynamic>.from(json as Map);
+  }
+
+  /// The note on a card: the exact first note this business would receive.
+  Future<CardNote> note(String key, {bool rewrite = false}) async {
+    final path = '/client/market/candidate/${Uri.encodeComponent(key)}/note';
+    final json = rewrite
+        ? await _apiClient.postJson('$path/rewrite', surface: ApiSurface.client, body: const {})
+        : await _apiClient.getJson(path, surface: ApiSurface.client);
+    return CardNote.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
+  /// The owner's own words for the card's note.
+  Future<CardNote> editNote(String key, {required String subject, required String body}) async {
+    final json = await _apiClient.postJson(
+      '/client/market/candidate/${Uri.encodeComponent(key)}/note',
+      surface: ApiSurface.client,
+      body: {'subject': subject, 'body': body},
+    );
+    return CardNote.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
   /// The business's standing yes: write to every business that passes all
@@ -671,4 +694,52 @@ class MarketCounts {
 String? _text(Object? value) {
   final s = value?.toString().trim();
   return s == null || s.isEmpty ? null : s;
+}
+
+/// THE NOTE ON A MARKET CARD (6 Oct 2026). One yes covers who is written to
+/// and what they receive: the card shows the exact note, and "Yes, send this
+/// note" approves those words.
+class CardNote {
+  const CardNote({
+    required this.ok,
+    this.status,
+    this.subject,
+    this.body,
+    this.writtenAt,
+    this.factsChanged = false,
+    this.refusedBecause = const [],
+    this.whatFollows,
+    this.bookingLinked = false,
+    this.reason,
+  });
+
+  /// False when no note is offered for this business at all.
+  final bool ok;
+  /// READY, EDITED or REFUSED.
+  final String? status;
+  final String? subject;
+  final String? body;
+  final DateTime? writtenAt;
+  final bool factsChanged;
+  final List<String> refusedBecause;
+  final String? whatFollows;
+  final bool bookingLinked;
+  final String? reason;
+
+  bool get refused => status == 'REFUSED';
+  bool get edited => status == 'EDITED';
+  bool get sendable => ok && !refused && (subject ?? '').isNotEmpty && (body ?? '').isNotEmpty;
+
+  factory CardNote.fromJson(Map<String, dynamic> j) => CardNote(
+        ok: j['ok'] == true,
+        status: j['status']?.toString(),
+        subject: j['subject']?.toString(),
+        body: j['body']?.toString(),
+        writtenAt: DateTime.tryParse('${j['writtenAt'] ?? ''}')?.toLocal(),
+        factsChanged: j['factsChanged'] == true,
+        refusedBecause: (j['refusedBecause'] as List? ?? const []).map((e) => '$e').toList(),
+        whatFollows: j['whatFollows']?.toString(),
+        bookingLinked: j['bookingLinked'] == true,
+        reason: j['reason']?.toString(),
+      );
 }

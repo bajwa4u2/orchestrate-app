@@ -7,6 +7,7 @@ import 'package:orchestrate_app/core/theme/app_theme.dart';
 import 'package:orchestrate_app/core/ui/authority_gate.dart';
 import 'package:orchestrate_app/core/ui/governed_action.dart';
 import 'package:orchestrate_app/core/commercial/client_capabilities.dart';
+import 'package:orchestrate_app/features/client/widgets/card_note.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/widgets/contact_readiness_panel.dart';
 import 'package:orchestrate_app/features/client/widgets/prospect_facts.dart';
@@ -30,6 +31,44 @@ class _CandidateSheetState extends State<CandidateSheet> {
   CandidateDepth? _depth;
   Object? _error;
   bool _busy = false;
+  /// The note they would receive, shown before the yes (6 Oct 2026).
+  CardNote? _note;
+  String? _noteFailure;
+
+  Future<void> _loadNote({bool rewrite = false}) async {
+    setState(() {
+      _busy = true;
+      _noteFailure = null;
+    });
+    try {
+      final note = await ClientMarket.instance.note(widget.candidate.key, rewrite: rewrite);
+      if (mounted) setState(() => _note = note);
+    } catch (_) {
+      if (mounted) setState(() => _noteFailure = 'The note could not be written just now. Try again in a moment.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _editNote() async {
+    final note = _note;
+    if (note == null) return;
+    try {
+      final updated = await editCardNote(context,
+          businessName: widget.candidate.name, candidateKey: widget.candidate.key, note: note);
+      if (!mounted || updated == null) return;
+      setState(() {
+        if (updated.ok) {
+          _note = updated;
+          _noteFailure = null;
+        } else {
+          _noteFailure = updated.reason ?? 'Those words could not be saved.';
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _noteFailure = 'Your words could not be saved just now.');
+    }
+  }
   Refusal? _refusal;
   bool _showProvenance = false;
 
@@ -168,16 +207,39 @@ class _CandidateSheetState extends State<CandidateSheet> {
           ] else ...[
             _Answer(
               title: 'If you say yes',
-              body: 'Orchestrate writes them a short first note from your own '
+              body: 'Orchestrate sends them exactly the note below, from your own '
                   'email, and follows up if they do not answer. Replies come '
                   'straight to you. Not now keeps them for later; Not for us '
                   'means they are not proposed again.',
             ),
+            if (_note != null) ...[
+              const SizedBox(height: 12),
+              NoteOnCard(
+                note: _note!,
+                busy: _busy,
+                onEdit: _editNote,
+                onRewrite: () => _loadNote(rewrite: true),
+              ),
+            ],
+            if (_noteFailure != null) ...[
+              const SizedBox(height: 8),
+              Text(_noteFailure!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ],
             const SizedBox(height: 16),
             Wrap(spacing: 10, runSpacing: 10, children: [
               FilledButton(
-                onPressed: _busy ? null : () => _set(PursuitDisposition.pursuing),
-                child: Text(_busy ? 'Saving…' : 'Yes, write to them'),
+                onPressed: _busy || (_note != null && !_note!.sendable)
+                    ? null
+                    : () => _note == null
+                        ? _loadNote()
+                        : _set(PursuitDisposition.pursuing, write: _note),
+                child: Text(_busy
+                    ? 'One moment…'
+                    : _note == null
+                        ? 'Read the note'
+                        : _note!.sendable
+                            ? 'Yes, send this note'
+                            : 'No note to send yet'),
               ),
               OutlinedButton(
                 onPressed: _busy || c.disposition == PursuitDisposition.holding
@@ -356,14 +418,14 @@ class _CandidateSheetState extends State<CandidateSheet> {
         ),
       );
 
-  Future<void> _set(PursuitDisposition disposition) async {
+  Future<void> _set(PursuitDisposition disposition, {CardNote? write}) async {
     setState(() {
       _busy = true;
       _refusal = null;
     });
     try {
       final result = await ClientMarket.instance
-          .setPursuit(key: widget.candidate.key, disposition: disposition);
+          .setPursuit(key: widget.candidate.key, disposition: disposition, write: write);
       if (!mounted) return;
       final refusal = Refusal.fromResponse(result);
       if (refusal != null) {

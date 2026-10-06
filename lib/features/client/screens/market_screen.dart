@@ -11,6 +11,7 @@ import 'package:orchestrate_app/core/network/api_client.dart';
 import 'package:orchestrate_app/core/theme/ob.dart';
 import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/features/client/widgets/candidate_sheet.dart';
+import 'package:orchestrate_app/features/client/widgets/card_note.dart';
 import 'package:orchestrate_app/features/client/widgets/commercial_boundary.dart';
 import 'package:orchestrate_app/features/client/widgets/prospect_facts.dart';
 
@@ -305,13 +306,13 @@ class _MarketScreenState extends State<MarketScreen> {
   final Set<String> _deciding = {};
   String? _decisionFailure;
 
-  Future<void> _decide(Candidate c, PursuitDisposition d) async {
+  Future<void> _decide(Candidate c, PursuitDisposition d, {CardNote? write}) async {
     setState(() {
       _deciding.add(c.key);
       _decisionFailure = null;
     });
     try {
-      final result = await _market.setPursuit(key: c.key, disposition: d);
+      final result = await _market.setPursuit(key: c.key, disposition: d, write: write);
       if (result['ok'] == true && mounted) showPursuitOutcome(context, result);
       if (result['ok'] != true && mounted) {
         setState(() => _decisionFailure = (result['reason'] ?? result['says'] ??
@@ -675,7 +676,13 @@ class _DecidedRow extends StatelessWidget {
 
 /// One business that passed every check: why it fits, what was proven, and
 /// the owner's decision.
-class _CandidateCard extends StatelessWidget {
+/// A BUSINESS THAT PASSED EVERY CHECK, WITH THE NOTE IT WOULD RECEIVE.
+///
+/// One yes covers who is written to and what they receive (founder, 6 Oct
+/// 2026). The note is written when the owner first opens it, so Market does
+/// not write dozens at once; the owner may change the words, and "Yes, send
+/// this note" approves exactly those words.
+class _CandidateCard extends StatefulWidget {
   const _CandidateCard({
     required this.candidate,
     required this.busy,
@@ -686,11 +693,61 @@ class _CandidateCard extends StatelessWidget {
   final Candidate candidate;
   final bool busy;
   final void Function(Candidate) onOpen;
-  final Future<void> Function(Candidate, PursuitDisposition)? onDecide;
+  final Future<void> Function(Candidate, PursuitDisposition, {CardNote? write})? onDecide;
+
+  @override
+  State<_CandidateCard> createState() => _CandidateCardState();
+}
+
+class _CandidateCardState extends State<_CandidateCard> {
+  CardNote? _note;
+  bool _writing = false;
+  String? _noteFailure;
+
+  Future<void> _loadNote({bool rewrite = false}) async {
+    setState(() {
+      _writing = true;
+      _noteFailure = null;
+    });
+    try {
+      final note = await ClientMarket.instance.note(widget.candidate.key, rewrite: rewrite);
+      if (mounted) setState(() => _note = note);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _noteFailure = 'The note could not be written just now. Try again in a moment.');
+      }
+    } finally {
+      if (mounted) setState(() => _writing = false);
+    }
+  }
+
+  Future<void> _edit() async {
+    final note = _note;
+    if (note == null) return;
+    setState(() => _writing = true);
+    try {
+      final updated = await editCardNote(context,
+          businessName: widget.candidate.name, candidateKey: widget.candidate.key, note: note);
+      if (!mounted || updated == null) return;
+      setState(() {
+        if (updated.ok) {
+          _note = updated;
+          _noteFailure = null;
+        } else {
+          _noteFailure = updated.reason ?? 'Those words could not be saved.';
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _noteFailure = 'Your words could not be saved just now.');
+    } finally {
+      if (mounted) setState(() => _writing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final c = candidate;
+    final c = widget.candidate;
+    final busy = widget.busy || _writing;
     final checks = c.checks;
     final reason = switch (c.certainty) {
       Certainty.evidenced || Certainty.thin => c.whyItMatters ?? c.certaintyMeans,
@@ -701,7 +758,8 @@ class _CandidateCard extends StatelessWidget {
     final pill = checks != null
         ? const ObPill('Checked', tone: PillTone.ink)
         : ObPill(c.certainty.label, tone: PillTone.plain);
-    final decide = onDecide;
+    final decide = widget.onDecide;
+    final note = _note;
     Widget fact(IconData icon, String text, {Color color = Ob.inkSoft}) => Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -713,8 +771,20 @@ class _CandidateCard extends StatelessWidget {
             Expanded(child: Text(text, style: Ob.body(13.5, color: color))),
           ]),
         );
+    final String primaryLabel;
+    if (widget.busy) {
+      primaryLabel = 'Saving…';
+    } else if (_writing) {
+      primaryLabel = 'Writing the note…';
+    } else if (note == null) {
+      primaryLabel = 'Read the note';
+    } else if (note.sendable) {
+      primaryLabel = 'Yes, send this note';
+    } else {
+      primaryLabel = 'No note to send yet';
+    }
     return InkWell(
-      onTap: () => onOpen(c),
+      onTap: () => widget.onOpen(c),
       borderRadius: BorderRadius.circular(Ob.radiusCard),
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -767,13 +837,30 @@ class _CandidateCard extends StatelessWidget {
                 fact(Icons.schedule, 'Checked ${_when(checks.checkedAt!)}',
                     color: Ob.inkMuted),
             ],
+            if (note != null) ...[
+              const SizedBox(height: 14),
+              NoteOnCard(
+                note: note,
+                busy: busy,
+                onEdit: _edit,
+                onRewrite: () => _loadNote(rewrite: true),
+              ),
+            ],
+            if (_noteFailure != null) ...[
+              const SizedBox(height: 8),
+              Text(_noteFailure!, style: Ob.body(13.5, color: Ob.refused)),
+            ],
             const SizedBox(height: 16),
             if (decide != null)
               Row(children: [
                 Expanded(
                   child: FilledButton(
-                    onPressed: busy ? null : () => decide(c, PursuitDisposition.pursuing),
-                    child: Text(busy ? 'Saving…' : 'Yes, write to them'),
+                    onPressed: busy || (note != null && !note.sendable)
+                        ? null
+                        : () => note == null
+                            ? _loadNote()
+                            : decide(c, PursuitDisposition.pursuing, write: note),
+                    child: Text(primaryLabel),
                   ),
                 ),
                 const SizedBox(width: 8),

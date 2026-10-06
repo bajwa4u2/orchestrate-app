@@ -6,6 +6,7 @@ import '../auth/auth_session.dart';
 export '../../data/repositories/client/client_market_repository.dart'
     show
         BusinessIntent,
+        CardNote,
         Candidate,
         CandidateMoment,
         MarketWatching,
@@ -91,6 +92,12 @@ class ClientMarket extends ChangeNotifier {
 
   Future<CandidateDepth> candidate(String key) => _repository.candidate(key);
 
+  /// The note on a card, written on first look (6 Oct 2026).
+  Future<CardNote> note(String key, {bool rewrite = false}) => _repository.note(key, rewrite: rewrite);
+
+  Future<CardNote> editNote(String key, {required String subject, required String body}) =>
+      _repository.editNote(key, subject: subject, body: body);
+
   Future<Map<String, dynamic>> automaticWriting() => _repository.automaticWriting();
 
   Future<Map<String, dynamic>> setAutomaticWriting({required bool on, int? dailyLimit}) =>
@@ -107,9 +114,10 @@ class ClientMarket extends ChangeNotifier {
     required String key,
     required PursuitDisposition disposition,
     String? note,
+    CardNote? write,
   }) async {
-    final result =
-        await _repository.setPursuit(key: key, disposition: disposition, note: note);
+    final result = await _repository.setPursuit(
+        key: key, disposition: disposition, note: note, write: write);
     if (result['ok'] == true) await refresh();
     return result;
   }

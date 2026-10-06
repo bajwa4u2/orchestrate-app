@@ -396,8 +396,20 @@ class _TodayScreenState extends State<TodayScreen> {
             onChanged: () => _market.refresh(),
           ),
         ),
-        primary: busy ? 'Saving…' : 'Yes, write to them',
-        onPrimary: busy ? () {} : () => _decide(c, PursuitDisposition.pursuing),
+        // The note is read before any yes (6 Oct 2026): this opens the
+        // business, where its note and "Yes, send this note" are.
+        primary: busy ? 'Saving…' : 'Read the note',
+        onPrimary: busy
+            ? () {}
+            : () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (_) => CandidateSheet(
+                    candidate: c,
+                    onChanged: () => _market.refresh(),
+                  ),
+                ),
         secondary: 'Not now',
         onSecondary: busy ? null : () => _decide(c, PursuitDisposition.holding),
       ));
