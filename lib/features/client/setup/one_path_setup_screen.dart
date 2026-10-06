@@ -595,6 +595,17 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ? piece
           : '$said${RegExp(r'[.!?]$').hasMatch(said) ? ' ' : ', '}$piece');
 
+  /// What customers value and what makes the business different are whole
+  /// sentences, one per line (6 Oct 2026). Splitting them at commas sent the
+  /// writer fragments such as "admission" and "and refused when it is not".
+  String _lines(dynamic v) => _list(v).map((e) => '$e'.trim()).where((e) => e.isNotEmpty).join('\n');
+  List<String> _lineList(TextEditingController c) => c.text
+      .split(RegExp(r'[;\n]'))
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toSet()
+      .toList();
+
   List<String> _wordList(TextEditingController c) => c.text
       .split(RegExp(r'[,;\n]'))
       .map((e) => e.trim())
@@ -613,8 +624,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     _titles.text = _words(icp['titleKeywords']);
     _neverKinds.text = _words(icp['exclusionKeywords']);
     _neverMarkets.text = _words(icp['disallowedMarkets']);
-    _valueProps.text = _words(p['valuePropositions']);
-    _differentiators.text = _words(p['differentiators']);
+    _valueProps.text = _lines(p['valuePropositions']);
+    _differentiators.text = _lines(p['differentiators']);
     _forbidden.text = _words(p['forbiddenClaims']);
     _rules.text = _words(p['complianceConstraints']);
     _disclaimers.text = _words(p['requiredDisclaimers']);
@@ -1238,8 +1249,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
     try {
       final result = await _identity.patchProfile({
         'outboundOffer': offer,
-        'valuePropositions': _wordList(_valueProps),
-        'differentiators': _wordList(_differentiators),
+        'valuePropositions': _lineList(_valueProps),
+        'differentiators': _lineList(_differentiators),
         'forbiddenClaims': _wordList(_forbidden),
         'complianceConstraints': _wordList(_rules),
         'requiredDisclaimers': _wordList(_disclaimers),
@@ -2341,14 +2352,17 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           ObField(
             label: 'What customers value most (optional)',
             controller: _valueProps,
-            placeholder: 'Same-day answers, one invoice a month',
-            hint: 'Separated by commas.',
+            maxLines: 4,
+            placeholder: 'Same-day answers, with one person to call\nOne invoice a month',
+            hint: 'One per line.',
           ),
           const SizedBox(height: 12),
           ObField(
             label: 'What makes you different (optional)',
             controller: _differentiators,
-            placeholder: 'Family-owned since 1998, union crews',
+            maxLines: 4,
+            placeholder: 'Family-owned since 1998\nUnion crews on every job',
+            hint: 'One per line.',
           ),
           if (_book != null) ...[
             _gap(),
