@@ -1,0 +1,5 @@
+Each business in Market now shows the exact first note it would receive. Read it, change the words if you like, and one yes sends exactly that note from your own email.
+
+Market also checks more before it shows you a business: who it serves, whether it is an institution or an independent business, and that the address belongs to the business itself.
+
+Notes now invite people to pick a time with your booking link, when you have one.
