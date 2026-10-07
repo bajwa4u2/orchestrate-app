@@ -26,12 +26,13 @@ class ApiClient {
     String path, {
     Map<String, String>? query,
     ApiSurface surface = ApiSurface.public,
+    Duration? timeout,
   }) async {
     final sentToken = _token();
     final response = await _httpClient.get(
       _uri(path, query),
       headers: await _headers(surface),
-    ).timeout(AppConfig.apiTimeout);
+    ).timeout(timeout ?? AppConfig.apiTimeout);
     return _decode(response, sentToken);
   }
 

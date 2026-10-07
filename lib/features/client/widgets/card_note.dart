@@ -104,10 +104,13 @@ Future<CardNote?> editCardNote(
   final saved = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
+      // Scrollable, with a fixed width: a tall multi-line field inside the
+      // dialog's intrinsic sizing froze the page in a browser (7 Oct 2026).
+      scrollable: true,
       title: Text('Your note to $businessName', style: Ob.strong(17)),
       content: SizedBox(
         width: 560,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           TextField(
             controller: subject,
             maxLength: 120,

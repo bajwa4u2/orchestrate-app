@@ -49,16 +49,23 @@ class ClientMarketRepository {
         if (write != null && write.subject != null && write.body != null)
           'write': {'subject': write.subject, 'body': write.body},
       },
+      // A yes with a note holds it and records the approval before replying.
+      timeout: write != null ? _writing : null,
     );
     return Map<String, dynamic>.from(json as Map);
   }
+
+  /// Writing a note takes longer than an ordinary request: the app waited
+  /// 20 seconds and said it could not be written while the server finished
+  /// it (7 Oct 2026).
+  static const _writing = Duration(seconds: 90);
 
   /// The note on a card: the exact first note this business would receive.
   Future<CardNote> note(String key, {bool rewrite = false}) async {
     final path = '/client/market/candidate/${Uri.encodeComponent(key)}/note';
     final json = rewrite
-        ? await _apiClient.postJson('$path/rewrite', surface: ApiSurface.client, body: const {})
-        : await _apiClient.getJson(path, surface: ApiSurface.client);
+        ? await _apiClient.postJson('$path/rewrite', surface: ApiSurface.client, body: const {}, timeout: _writing)
+        : await _apiClient.getJson(path, surface: ApiSurface.client, timeout: _writing);
     return CardNote.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
@@ -68,6 +75,7 @@ class ClientMarketRepository {
       '/client/market/candidate/${Uri.encodeComponent(key)}/note',
       surface: ApiSurface.client,
       body: {'subject': subject, 'body': body},
+      timeout: _writing,
     );
     return CardNote.fromJson(Map<String, dynamic>.from(json as Map));
   }
