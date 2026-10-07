@@ -1,0 +1,41 @@
+Orchestrate finds the businesses that need what you sell, writes to them from your own email, and carries each one to an agreement and a paid invoice, in one record for each relationship.
+
+ONE YES, FOR WHO AND WHAT IS SAID
+
+Each business Orchestrate finds comes with why it fits, where its address was found, and the exact first note it would receive. Read it, change the words if you like, and one yes approves both who is written to and what they receive. If you would rather not decide one by one, a standing yes lets Orchestrate write to the businesses that pass every check, sending only notes that pass the same check as a card.
+
+THE WORKSPACE
+
+Today. Only what needs a decision from you. A quiet day looks quiet, because the product does not invent work to fill a dashboard.
+
+Customers. The businesses you work with, each with where it stands and why.
+
+Market. Businesses worth your time, checked before you see them: they exist, they are live, they fit what you sell, they can be reached at an address that is their own, and why they fit is said in plain words.
+
+Money. Agreements, invoices and payments for each customer.
+
+Setup. Your business, who you sell to, what you offer, the mailbox you send from, and who may act for the business.
+
+WHAT ORCHESTRATE WILL NOT DO
+
+It will not send anything on your behalf until a mailbox belonging to your business is connected and authorised.
+
+It will not write to an address that is not the business's own, such as a records office, a web administrator or a parent group listed beside it.
+
+It does not answer replies on its own. Each answer is drafted for you, and you send it.
+
+It is not a general inbox reader. For a connected mailbox it reads the envelope and a narrow set of headers before any matching decision. A message body is fetched only once that message resolves to something Orchestrate sent for you. Unmatched mail stays where it is.
+
+Activating the service makes a capability available. It never makes anyone authorised to represent your company. Those are separate facts and they are recorded separately: who may decide for the business is held against the organisation, not inferred from who happens to be signed in.
+
+ACCOUNT
+
+You can permanently delete your account from inside the app, under Account, and the deletion cannot be undone.
+
+SUBSCRIPTION
+
+Orchestrate Platform is an auto-renewing subscription, offered monthly at $29.99 and annually at $299.99. Payment is charged to your Apple Account at confirmation of purchase. The subscription renews automatically unless auto-renew is turned off at least 24 hours before the end of the current period, and it can be managed or cancelled in Apple Account settings.
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Service terms: https://orchestrateops.com/legal/terms
+Privacy policy: https://orchestrateops.com/legal/privacy
