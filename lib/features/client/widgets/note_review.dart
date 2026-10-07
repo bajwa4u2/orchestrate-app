@@ -18,9 +18,11 @@ Future<void> showNoteReview(
   VoidCallback? onDecided,
 }) {
   final phone = MediaQuery.sizeOf(context).width < 760;
-  final review = _NoteReview(candidate: candidate, onDecided: onDecided);
+  final review = _NoteReview(candidate: candidate, onDecided: onDecided, phone: phone);
   if (phone) {
-    return Navigator.of(context).push(MaterialPageRoute<void>(
+    // Above the app's tabs, the whole screen (7 Oct 2026: inside the tab
+    // area it left the note a sliver between two bars).
+    return Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
       fullscreenDialog: true,
       builder: (_) => Scaffold(
         backgroundColor: Ob.paper,
@@ -31,6 +33,7 @@ Future<void> showNoteReview(
   }
   return showDialog<void>(
     context: context,
+    useRootNavigator: true,
     builder: (_) => Dialog(
       backgroundColor: Ob.paper,
       insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
@@ -44,10 +47,12 @@ Future<void> showNoteReview(
 }
 
 class _NoteReview extends StatefulWidget {
-  const _NoteReview({required this.candidate, this.onDecided});
+  const _NoteReview({required this.candidate, this.onDecided, this.phone = false});
 
   final Candidate candidate;
   final VoidCallback? onDecided;
+  /// Full screen on a phone: the screen's bar carries the name and the close.
+  final bool phone;
 
   @override
   State<_NoteReview> createState() => _NoteReviewState();
@@ -168,6 +173,62 @@ class _NoteReviewState extends State<_NoteReview> {
     final busy = _writing || _deciding;
     final note0 = _note;
     final canSend = !busy && !_editing && note0 != null && note0.sendable;
+    final yesLabel = _deciding
+        ? 'Saving…'
+        : _writing
+            ? 'Writing the note…'
+            : note0 != null && !note0.sendable
+                ? 'No note to send yet'
+                : 'Yes, send this note';
+    if (widget.phone) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              note,
+              const SizedBox(height: 20),
+              business,
+            ]),
+          ),
+        ),
+        // While the words are being edited the decision waits, and its bar
+        // steps aside so Cancel and Save are in full view (7 Oct 2026).
+        if (!_editing) Container(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          decoration: const BoxDecoration(
+            color: Ob.paper,
+            border: Border(top: BorderSide(color: Ob.line)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (_failure != null) ...[
+              Text(_failure!, style: Ob.body(14, color: Ob.refused)),
+              const SizedBox(height: 8),
+            ],
+            FilledButton(
+              onPressed: canSend ? () => _decide(PursuitDisposition.pursuing) : null,
+              child: Text(yesLabel),
+            ),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: busy ? null : () => _decide(PursuitDisposition.holding),
+                  child: const Text('Not now'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextButton(
+                  onPressed: busy ? null : () => _decide(PursuitDisposition.declined),
+                  child: const Text('Not for us'),
+                ),
+              ),
+            ]),
+          ]),
+        ),
+      ]);
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 24, 28, 20),
       child: Column(
@@ -213,13 +274,7 @@ class _NoteReviewState extends State<_NoteReview> {
             ),
             FilledButton(
               onPressed: canSend ? () => _decide(PursuitDisposition.pursuing) : null,
-              child: Text(_deciding
-                  ? 'Saving…'
-                  : _writing
-                      ? 'Writing the note…'
-                      : note0 != null && !note0.sendable
-                          ? 'No note to send yet'
-                          : 'Yes, send this note'),
+              child: Text(yesLabel),
             ),
           ]),
         ],
@@ -336,11 +391,9 @@ class _NotePanel extends StatelessWidget {
       ]));
     }
     return _panel(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Expanded(
-          child: Text(n.edited ? 'Your note to them' : 'The note they will receive',
-              style: Ob.body(12.5, color: Ob.inkMuted)),
-        ),
+      Text(n.edited ? 'Your note to them' : 'The note they will receive',
+          style: Ob.body(12.5, color: Ob.inkMuted)),
+      Wrap(spacing: 4, children: [
         TextButton(onPressed: writing ? null : onEdit, child: const Text('Edit')),
         if (!n.edited || n.factsChanged)
           TextButton(onPressed: writing ? null : onRewrite, child: const Text('Write it again')),
