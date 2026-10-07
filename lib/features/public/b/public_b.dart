@@ -365,11 +365,11 @@ class OneCustomerScreen extends StatelessWidget {
         'Hiring a site manager, three new projects listed, 12 miles away. Fits the market you described.',
         'Orchestrate did this', false),
     ('DAY 2 · WROTE', 'A short note, from your own email',
-        'Drafted for them, checked before it could leave. It went out from your address, as you.',
+        'You read the exact note on their card and said yes. It went out from your address, as you.',
         'You said yes', true),
     ('DAY 5 · REPLIED', '"Can you do a call on Tuesday?"',
-        'The reply was read, understood as interest, and a time was offered. The call landed in your calendar.',
-        'Orchestrate did this', false),
+        'The reply was read and an answer offering a time was drafted for you. You sent it, and the call landed in your calendar.',
+        'You said yes', true),
     ('DAY 9 · AGREE', 'A proposal with the terms from the call',
         '$exampleProposal, start October 14. Signed by Kestrel on day 11. What was agreed stays in the record.',
         'You said yes', true),
@@ -397,7 +397,7 @@ class OneCustomerScreen extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                   'Six steps, nineteen days. Orchestrate did the work in each '
-                  'one. The owner said yes three times.',
+                  'one. The owner said yes four times.',
                   style: Ob.body(18)),
               const SizedBox(height: 32),
               Wrap(spacing: 16, runSpacing: 16, children: [
@@ -600,7 +600,7 @@ class PricingBScreen extends StatelessWidget {
               ('01', 'Finds businesses that need you',
                   'In the market you describe, checked for fit before you see them.'),
               ('02', 'Writes to them from your own email',
-                  'Your address, your domain, kept deliverable. Nothing leaves without your yes.'),
+                  'Your address, your domain, kept deliverable. You see the exact note before you say yes.'),
               ('03', 'Reads the replies and follows up',
                   'Interest becomes a meeting in your calendar. Silence gets a timely nudge.'),
               ('04', 'Turns the call into an agreement',
