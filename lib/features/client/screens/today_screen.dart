@@ -1,3 +1,4 @@
+import 'package:orchestrate_app/features/client/widgets/note_review.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -401,15 +402,7 @@ class _TodayScreenState extends State<TodayScreen> {
         primary: busy ? 'Saving…' : 'Read the note',
         onPrimary: busy
             ? () {}
-            : () => showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
-                  useSafeArea: true,
-                  builder: (_) => CandidateSheet(
-                    candidate: c,
-                    onChanged: () => _market.refresh(),
-                  ),
-                ),
+            : () => showNoteReview(context, candidate: c, onDecided: () => _market.refresh()),
         secondary: 'Not now',
         onSecondary: busy ? null : () => _decide(c, PursuitDisposition.holding),
       ));
