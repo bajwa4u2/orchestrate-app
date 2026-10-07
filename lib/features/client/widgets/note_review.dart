@@ -402,8 +402,14 @@ class _NotePanel extends StatelessWidget {
       SelectableText(n.subject ?? '', style: Ob.strong(17)),
       const SizedBox(height: 12),
       SelectableText(n.body ?? '', style: Ob.body(16)),
+      // The signature that goes under it, as they will see it (7 Oct 2026:
+      // the window showed the words alone while the note left signed).
+      if ((n.signature ?? '').isNotEmpty) ...[
+        const SizedBox(height: 14),
+        SelectableText(n.signature!, style: Ob.body(15, color: Ob.inkSoft)),
+      ],
       const SizedBox(height: 16),
-      if (n.bookingLinked)
+      if ((n.signature ?? '').isEmpty && n.bookingLinked)
         Text('Under it: your name and your booking link, so they can pick a time.',
             style: Ob.body(13, color: Ob.inkMuted)),
       if ((n.whatFollows ?? '').isNotEmpty) ...[

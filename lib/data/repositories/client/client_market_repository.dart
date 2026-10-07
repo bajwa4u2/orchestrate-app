@@ -718,6 +718,7 @@ class CardNote {
     this.refusedBecause = const [],
     this.whatFollows,
     this.bookingLinked = false,
+    this.signature,
     this.reason,
   });
 
@@ -732,6 +733,8 @@ class CardNote {
   final List<String> refusedBecause;
   final String? whatFollows;
   final bool bookingLinked;
+  /// Exactly what is printed under the note: name, role, booking link.
+  final String? signature;
   final String? reason;
 
   bool get refused => status == 'REFUSED';
@@ -748,6 +751,7 @@ class CardNote {
         refusedBecause: (j['refusedBecause'] as List? ?? const []).map((e) => '$e').toList(),
         whatFollows: j['whatFollows']?.toString(),
         bookingLinked: j['bookingLinked'] == true,
+        signature: (j['signature'] ?? '').toString().trim().isEmpty ? null : j['signature'].toString(),
         reason: j['reason']?.toString(),
       );
 }
