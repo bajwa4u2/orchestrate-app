@@ -3837,8 +3837,8 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
           Text(
               _logoNote ??
                   (_hasLogo
-                      ? 'On your proposals and invoices.'
-                      : 'Shown on your proposals and invoices. PNG or JPG.'),
+                      ? 'On your replies, proposals and invoices.'
+                      : 'Shown on your replies, proposals and invoices. PNG or JPG.'),
               style: Ob.body(13, color: Ob.inkMuted)),
         ]),
       ),
@@ -3877,7 +3877,7 @@ class _OnePathSetupScreenState extends State<OnePathSetupScreen> {
       );
       _hasLogo = true;
       _logoVersion++;
-      _logoNote = 'Saved. It appears on your proposals and invoices.';
+      _logoNote = 'Saved. It appears on your replies, proposals and invoices.';
     } catch (error) {
       _logoNote = _reasonFor(error, fallback: 'The logo could not be saved. Try a PNG or JPG under 2 MB.');
     } finally {
