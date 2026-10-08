@@ -25,7 +25,6 @@ class _SignOffSectionState extends State<SignOffSection> {
   final _role = TextEditingController();
   final _phone = TextEditingController();
   final _booking = TextEditingController();
-  final _logo = TextEditingController();
   Map<String, dynamic> _kept = const {};
   String _preview = '';
   bool _loading = true;
@@ -44,7 +43,6 @@ class _SignOffSectionState extends State<SignOffSection> {
     _role.dispose();
     _phone.dispose();
     _booking.dispose();
-    _logo.dispose();
     super.dispose();
   }
 
@@ -56,7 +54,6 @@ class _SignOffSectionState extends State<SignOffSection> {
       _role.text = '${sig['role'] ?? ''}';
       _phone.text = '${sig['phone'] ?? ''}';
       _booking.text = '${sig['schedulingUrl'] ?? ''}';
-      _logo.text = '${sig['logoUrl'] ?? ''}';
       _preview = '${data['preview'] ?? ''}'.trim();
     } catch (_) {
       _failed = true;
@@ -81,7 +78,6 @@ class _SignOffSectionState extends State<SignOffSection> {
         role: _v(_role.text),
         phone: _v(_phone.text),
         schedulingUrl: _v(_booking.text),
-        logoUrl: _v(_logo.text),
       );
       _preview = '${data['preview'] ?? ''}'.trim();
       _note = 'Saved. Every note you approve ends this way.';
@@ -120,27 +116,6 @@ class _SignOffSectionState extends State<SignOffSection> {
             keyboardType: TextInputType.url,
             placeholder: 'https://calendly.com/yourname',
             hint: 'Where a buyer can pick a time with you.'),
-        const SizedBox(height: 12),
-        ObField(
-            label: 'Your logo, for answers (optional)',
-            controller: _logo,
-            keyboardType: TextInputType.url,
-            placeholder: 'https://yourbusiness.com/logo.png',
-            hint: 'An image link. It sits under your name when you answer someone who wrote to you. First notes stay plain, the way a person writes.'),
-        if (_logo.text.trim().startsWith('https://')) ...[
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.network(_logo.text.trim(),
-                  width: 40,
-                  height: 40,
-                  errorBuilder: (_, __, ___) => Text('That link did not open as an image.',
-                      style: Ob.body(13, color: Ob.refused))),
-            ),
-          ),
-        ],
         if (_preview.isNotEmpty) ...[
           const SizedBox(height: 12),
           Container(
