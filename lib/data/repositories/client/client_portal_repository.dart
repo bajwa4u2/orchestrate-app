@@ -276,6 +276,7 @@ class ClientPortalRepository {
     String? phone,
     String? websiteUrl,
     String? schedulingUrl,
+    String? logoUrl,
     String? complianceFooter,
   }) async {
     final json = await _apiClient.postJson(
@@ -287,6 +288,7 @@ class ClientPortalRepository {
         'phone': phone,
         'websiteUrl': websiteUrl,
         'schedulingUrl': schedulingUrl,
+        'logoUrl': logoUrl,
         'complianceFooter': complianceFooter,
       },
     );
