@@ -336,6 +336,9 @@ class _MarketScreenState extends State<MarketScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      // Above the bottom bar: on a phone the sheet's Read the note, Not now
+      // and Not for us sat behind it (10 Oct 2026).
+      useRootNavigator: true,
       builder: (_) => CandidateSheet(
         candidate: candidate,
         onChanged: () => _market.refresh(),

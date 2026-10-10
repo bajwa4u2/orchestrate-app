@@ -269,6 +269,8 @@ class _TodayScreenState extends State<TodayScreen> {
                     context: context,
                     isScrollControlled: true,
                     useSafeArea: true,
+                    // Above the bottom bar, so its buttons are never behind it.
+                    useRootNavigator: true,
                     builder: (_) => _ReplyAnswerSheet(
                       decision: w,
                       onSend: (body) => _decideWaiting(w, true, editedBody: body),
@@ -392,6 +394,8 @@ class _TodayScreenState extends State<TodayScreen> {
           context: context,
           isScrollControlled: true,
           useSafeArea: true,
+          // Above the bottom bar, so its buttons are never behind it.
+          useRootNavigator: true,
           builder: (_) => CandidateSheet(
             candidate: c,
             onChanged: () => _market.refresh(),
@@ -772,24 +776,27 @@ class _Card extends StatelessWidget {
               Text('Done', style: Ob.strong(14.5)),
             ])
           else
-          Row(children: [
-            Expanded(
-              child: FilledButton(
+          // Side by side when both labels fit, stacked when they do not: a
+          // narrow card cut "Send from my email" to "Send from m…" (10 Oct 2026).
+          OverflowBar(
+            spacing: 8,
+            overflowSpacing: 8,
+            overflowAlignment: OverflowBarAlignment.start,
+            children: [
+              FilledButton(
                 style: card.primaryIsMoney
                     ? FilledButton.styleFrom(backgroundColor: Ob.money)
                     : null,
                 onPressed: card.onPrimary,
-                child: Text(card.primary, overflow: TextOverflow.ellipsis),
+                child: Text(card.primary),
               ),
-            ),
-            if (card.secondary != null) ...[
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: card.onSecondary,
-                child: Text(card.secondary!),
-              ),
+              if (card.secondary != null)
+                OutlinedButton(
+                  onPressed: card.onSecondary,
+                  child: Text(card.secondary!),
+                ),
             ],
-          ]),
+          ),
         ],
       ),
     );

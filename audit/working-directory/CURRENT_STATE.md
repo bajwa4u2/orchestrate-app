@@ -59,3 +59,9 @@ Look: paper `#F3EFE7`, white cards, ink `#17202B` (`lib/core/theme/ob.dart`). Am
 ## Superseded
 
 The 31 Aug 2026 version described the public Home flagship lifecycle (`aa46ec4` and earlier), release `0.2.2+11` and the ROS Phase II closeout (`a71b39e`, 13 Jul 2026). All of it is history; see git log.
+
+## 10 Oct 2026 · Overview (/deck) and Demo (/demo) rebuilt (DD-44)
+
+- `web/deck/index.html` is now the buyer's Overview; `web/demo/index.html` + `web/demo/stories.js` a kind picker of four fictional businesses through Found, Proposed, Your note, Replies, Customers, Money. Screens in `web/shots/<kind>/*.webp`, captured from this app with fictional data only (local fake API; never production data).
+- Fixed in the client: Today's yes-card buttons sit in an `OverflowBar` (no more "Send from m…"); the candidate sheet (Market, Today) and the reply-answer sheet open with `useRootNavigator: true`, above the phone's bottom bar.
+- Open: the phone Money table shows an empty divider above the first row; the Overview's film slot is hidden until the film exists.

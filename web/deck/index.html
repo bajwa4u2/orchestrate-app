@@ -3,579 +3,285 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Orchestrate Investor Overview</title>
+<title>Orchestrate · New customers, followed through to paid</title>
 <link rel="canonical" href="https://orchestrateops.com/deck">
-<!--
-  INDEXABLE SINCE 2026-09-12, and the change is a policy rather than a tweak.
-
-  These pages carried `noindex, nofollow` from the day they were written, with
-  the reasoning "a durable readiness asset, not a search surface" -- correct
-  while they were links handed to particular people. The estate has since
-  adopted a permanent-representation doctrine: /deck and /demo are standing
-  public surfaces for investors, accelerators, partners, diligence, media and
-  prospective customers, and a representation surface that search and answer
-  engines cannot read is a representation surface with no reach.
-
-  They were re-read before this was flipped, against the one condition that
-  matters: no private content, no authenticated surface, no real correspondence,
-  no credential. Every name, quotation and timestamp in the demo is illustrative
-  and says so on the page.
-
-  Training crawlers remain blocked at the edge. This opens the pages to search
-  and user-retrieval agents, which is what they are for.
--->
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
-<meta name="description" content="Orchestrate runs customer relationships from the first opportunity through agreement, delivery and payment. An investor overview from Aura Platform LLC.">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Orchestrate Investor Overview">
-<meta property="og:description" content="Orchestrate runs customer relationships from the first opportunity through agreement, delivery and payment.">
-<meta property="og:url" content="https://orchestrateops.com/deck">
-<meta property="og:site_name" content="Orchestrate">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#091521">
+<meta name="description" content="Orchestrate finds businesses that need you, writes to them from your own email, and carries each one to an agreement and a paid invoice. You only say yes.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/shared/orchestrate.css">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3EFE7; --card:#FFFFFF; --soft:#F7F4EE; --well:#EEE9DF; --line:#E4DED2; --line2:#D6D1C6;
+    --ink:#17202B; --ink2:#3A4553; --muted:#5B6573; --faint:#8A8F98; --onink:#F3EFE7; --oninkm:#D6D3CC;
+    --yes:#D97706; --yesdeep:#B45309; --yessoft:#FEF3C7; --yesink:#92400E;
+    --money:#15803D; --moneysoft:#DCFCE7; --moneyink:#166534; --moneyonink:#86EFAC;
+    --serif:'Newsreader',Georgia,serif; --sans:'Public Sans',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  .eyebrow{font:600 12px/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:-.01em;margin:0}
+  h1{font-size:clamp(40px,6.4vw,76px);line-height:1.02}
+  h2{font-size:clamp(30px,4vw,48px);line-height:1.08}
+  h3{font-size:22px;line-height:1.2}
+  .paid{color:var(--money);font-style:italic}
+  .lede{font-size:clamp(18px,2vw,21px);color:var(--ink2);max-width:620px}
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:14px 22px;font:600 16px var(--sans);text-decoration:none;border:1.5px solid var(--ink)}
+  .btn--ink{background:var(--ink);color:var(--onink)} .btn--ghost{background:transparent;color:var(--ink)}
+  .btn:focus-visible{outline:3px solid var(--yes);outline-offset:3px}
+  header.top{position:sticky;top:0;z-index:5;background:rgba(243,239,231,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{font:600 20px var(--serif);text-decoration:none} .brand small{font:500 13px var(--sans);color:var(--muted);margin-left:8px}
+  nav.top a{font:500 15px var(--sans);text-decoration:none;color:var(--ink2);margin-left:22px}
+  nav.top a.cta{color:var(--ink);border-bottom:2px solid var(--yes)}
+  section{padding:88px 0;border-bottom:1px solid var(--line)}
+  .hero{padding:72px 0 64px}
+  .hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+  .hero .actions{display:flex;flex-wrap:wrap;gap:12px;margin:30px 0 16px}
+  .price-note{font:500 14px var(--sans);color:var(--muted)}
+  .phone{background:var(--ink);border-radius:38px;padding:12px;box-shadow:0 30px 60px -25px rgba(23,32,43,.45);max-width:360px;margin:0 auto}
+  .phone img{display:block;width:100%;border-radius:28px;background:var(--card)}
+  .shot{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 20px 40px -28px rgba(23,32,43,.35)}
+  .shot img{display:block;width:100%}
+  .film{margin-top:40px;background:var(--ink);color:var(--onink);border-radius:22px;aspect-ratio:16/9;display:grid;place-items:center;text-align:center;padding:24px}
+  .film .play{width:74px;height:74px;border-radius:50%;background:var(--onink);display:grid;place-items:center;margin:0 auto 14px}
+  .film .play:after{content:"";border-left:22px solid var(--ink);border-top:13px solid transparent;border-bottom:13px solid transparent;margin-left:6px}
+  .film p{margin:0;color:var(--oninkm);font-size:15px}
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:44px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .step .n{font:600 12px var(--mono);letter-spacing:.12em;color:var(--muted)}
+  .step .who{align-self:flex-start;font:600 12px var(--sans);border-radius:999px;padding:4px 10px}
+  .who--you{background:var(--yessoft);color:var(--yesink)} .who--us{background:var(--well);color:var(--ink2)} .who--money{background:var(--moneysoft);color:var(--moneyink)}
+  .step img{width:100%;border-radius:12px;border:1px solid var(--line);background:var(--soft);aspect-ratio:390/600;object-fit:cover;object-position:top}
+  .step p{margin:0;color:var(--ink2);font-size:15px}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+  .promises{display:grid;gap:14px;margin:0;padding:0;list-style:none}
+  .promises li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .promises b{display:block;font:600 17px var(--sans);margin-bottom:2px}
+  .promises span{color:var(--ink2);font-size:15px}
+  .pricebox{background:var(--ink);color:var(--onink);border-radius:22px;padding:34px}
+  .pricebox .big{font:600 56px/1 var(--serif)} .pricebox .big small{font:500 18px var(--sans);color:var(--oninkm)}
+  .pricebox ul{margin:18px 0 26px;padding-left:18px;color:var(--oninkm)} .pricebox li{margin:6px 0}
+  .pricebox .btn--ink{background:var(--onink);color:var(--ink);border-color:var(--onink)}
+  table.cmp{width:100%;border-collapse:collapse;margin-top:34px;background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+  .cmp th,.cmp td{text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);font-size:15px;vertical-align:top}
+  .cmp th{font:600 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--soft)}
+  .cmp tr.us td{background:var(--yessoft)} .cmp td:first-child{font-weight:600}
+  .founder{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start}
+  .founder .years{font:600 88px/0.9 var(--serif);color:var(--money)}
+  details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:10px}
+  summary{cursor:pointer;font-weight:600;font-size:17px;list-style:none} summary::-webkit-details-marker{display:none}
+  summary:after{content:"+";float:right;color:var(--muted);font-weight:500} details[open] summary:after{content:"–"}
+  details p{color:var(--ink2);margin:10px 0 0}
+  .final{text-align:center;padding:96px 0}
+  .final .actions{justify-content:center;display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  footer.foot{padding:28px 0 40px;font-size:14px;color:var(--muted)}
+  footer.foot .wrap{display:flex;flex-wrap:wrap;gap:10px 22px}
+  footer.foot a{color:var(--ink2)}
+  .kinds{margin-top:36px}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+  .tabs button{font:600 15px var(--sans);border:1.5px solid var(--line2);background:var(--card);color:var(--ink2);border-radius:999px;padding:10px 16px;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:var(--ink);color:var(--onink);border-color:var(--ink)}
+  .tabs button:focus-visible{outline:3px solid var(--yes);outline-offset:2px}
+  .panel{display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:30px}
+  .panel[hidden]{display:none}
+  .panel dl{margin:0;display:grid;gap:16px}
+  .panel dt{font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .panel dd{margin:4px 0 0;color:var(--ink2)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chips span{font:500 13px var(--sans);background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--ink2)}
+  .panel .phone{max-width:300px}
+  .panel .quote{font:italic 600 22px/1.3 var(--serif);color:var(--ink);border-left:3px solid var(--yes);padding-left:16px;margin:0}
+  @media (max-width:900px){.panel{grid-template-columns:1fr}}
+  @media (max-width:900px){
+    .hero .grid,.split,.founder{grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr 1fr}
+    nav.top a:not(.cta){display:none}
+    section{padding:64px 0}
+  }
+  @media (max-width:560px){ .steps{grid-template-columns:1fr} .cmp th:nth-child(3),.cmp td:nth-child(3){display:none} }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
 
-<header class="topbar">
-  <div class="wrap topbar__in">
-    <div class="brand">
-      <span class="brand__name">Orchestrate</span>
-      <span class="brand__by">by Aura Platform LLC</span>
+<header class="top"><div class="wrap">
+  <a class="brand" href="https://orchestrateops.com">Orchestrate<small>by Aura Platform LLC</small></a>
+  <nav class="top"><a href="#kinds">Your kind of business</a><a href="#how">How it works</a><a href="#price">Price</a><a href="/demo">See it work</a><a class="cta" href="https://orchestrateops.com/auth/register">Start with your business</a></nav>
+</div></header>
+
+<main>
+<section class="hero"><div class="wrap grid">
+  <div>
+    <p class="eyebrow">For businesses that sell to businesses and institutions</p>
+    <h1>New customers, followed through to <span class="paid">paid.</span></h1>
+    <p class="lede" style="margin-top:22px">Orchestrate finds businesses that need what you do, writes to them from your own email, and carries each one to an agreement and a paid invoice. It prepares every step. You only say yes.</p>
+    <div class="actions">
+      <a class="btn btn--ink" href="https://orchestrateops.com/auth/register">Start with your business</a>
+      <a class="btn btn--ghost" href="/demo">See it work for your kind of business</a>
     </div>
-    <div class="topbar__spacer"></div>
-    <div class="topbar__meta"><a href="/demo">See the product&nbsp;→</a></div>
+    <p class="price-note">$29.99 a month for your whole business · setup is free · cancel any time</p>
   </div>
-</header>
+  <div class="phone"><img src="/shots/mechanical/01_today_phone.webp" alt="Orchestrate's Today screen on a phone: three things waiting for the owner's yes, one of them an invoice shown in green."></div>
+</div></section>
 
-<main id="main">
 
-  <!-- 1 -->
-  <section class="section hero js-obs" data-anim="frag">
-    <div class="wrap">
-      <p class="section__eyebrow">Investor overview</p>
-      <h1>The commercial relationship is continuous. The software running it is not.</h1>
-      <p class="hero__line">Orchestrate runs customer relationships from the first opportunity through agreement, delivery and payment, in one system where a person with authority approves what commits the business.</p>
-      <p class="hero__pos"><b>CRM records the relationship. Orchestrate operates it.</b></p>
-
-    <div class="frag">
-      <div class="frag__stage">
-        <svg viewBox="0 0 900 190" role="img"
-             aria-label="A single commercial line, from market through agreement, delivery, acceptance, invoice and payment. In its fragmented state each stage sits at a different level in a different system, with gaps between them. Reunified, the stages sit on one continuous line held by the relationship.">
-          <!-- gaps between systems, visible only while fragmented -->
-          <!-- Fragmentation is carried by four independent signals so it survives
-               greyscale, colour-vision differences, reduced motion and print:
-               vertical displacement, the physical gap, a break glyph, and a word. -->
-          <g class="frag__gap">
-            <g stroke="var(--rose)" stroke-width="1" stroke-dasharray="3 3" opacity=".5">
-              <line x1="150" y1="46" x2="150" y2="118"/>
-              <line x1="300" y1="118" x2="300" y2="62"/>
-              <line x1="450" y1="62" x2="450" y2="134"/>
-              <line x1="600" y1="134" x2="600" y2="78"/>
-              <line x1="750" y1="78" x2="750" y2="102"/>
-            </g>
-            <g stroke="var(--subdued)" stroke-width="1.5" stroke-linecap="round" fill="none">
-              <path d="M144 78 l6 -7 M150 71 l6 7"/>
-              <path d="M294 84 l6 -7 M300 77 l6 7"/>
-              <path d="M444 92 l6 -7 M450 85 l6 7"/>
-              <path d="M594 100 l6 -7 M600 93 l6 7"/>
-              <path d="M744 84 l6 -7 M750 77 l6 7"/>
-            </g>
-            <g text-anchor="middle" font-size="9" fill="var(--subdued)" letter-spacing=".08em">
-              <text x="150" y="64">HANDOFF</text><text x="300" y="70">HANDOFF</text>
-              <text x="450" y="78">HANDOFF</text><text x="600" y="86">HANDOFF</text>
-              <text x="750" y="70">HANDOFF</text>
-            </g>
-          </g>
-
-          <!-- the six spans of one commercial line -->
-          <g stroke-width="3" stroke-linecap="round" fill="none">
-            <line class="frag__seg" style="--dy:-44px" x1="20"  y1="90" x2="148" y2="90" stroke="var(--accent)"/>
-            <line class="frag__seg" style="--dy:28px"  x1="152" y1="90" x2="298" y2="90" stroke="var(--accent)"/>
-            <line class="frag__seg" style="--dy:-28px" x1="302" y1="90" x2="448" y2="90" stroke="var(--accent)"/>
-            <line class="frag__seg" style="--dy:44px"  x1="452" y1="90" x2="598" y2="90" stroke="var(--accent)"/>
-            <line class="frag__seg" style="--dy:-12px" x1="602" y1="90" x2="748" y2="90" stroke="var(--accent)"/>
-            <line class="frag__seg" style="--dy:12px"  x1="752" y1="90" x2="880" y2="90" stroke="var(--accent)"/>
-          </g>
-
-          <!-- what each span is, and which system usually owns it -->
-          <g class="frag__label" text-anchor="middle">
-            <text class="frag__seg" style="--dy:-44px" x="84"  y="76">market</text>
-            <text class="frag__seg" style="--dy:28px"  x="225" y="76">engagement</text>
-            <text class="frag__seg" style="--dy:-28px" x="375" y="76">agreement</text>
-            <text class="frag__seg" style="--dy:44px"  x="525" y="76">delivery</text>
-            <text class="frag__seg" style="--dy:-12px" x="675" y="76">acceptance</text>
-            <text class="frag__seg" style="--dy:12px"  x="816" y="76">payment</text>
-          </g>
-          <g class="frag__label" text-anchor="middle" opacity=".55">
-            <text class="frag__seg" style="--dy:-44px" x="84"  y="112">data tools</text>
-            <text class="frag__seg" style="--dy:28px"  x="225" y="112">CRM, email</text>
-            <text class="frag__seg" style="--dy:-28px" x="375" y="112">documents</text>
-            <text class="frag__seg" style="--dy:44px"  x="525" y="112">project tools</text>
-            <text class="frag__seg" style="--dy:-12px" x="675" y="112">email again</text>
-            <text class="frag__seg" style="--dy:12px"  x="816" y="112">accounting</text>
-          </g>
-
-          <!-- the spine that holds it once reunified -->
-          <g class="frag__spineLabel">
-            <line x1="20" y1="150" x2="880" y2="150" stroke="var(--accent-deep)" stroke-width="1"/>
-            <rect x="368" y="138" width="164" height="24" rx="12" fill="var(--accent-soft)" stroke="var(--accent-deep)"/>
-            <text x="450" y="154" text-anchor="middle" font-size="11" fill="var(--accent)"
-                  letter-spacing="1.2" font-weight="600">ONE RELATIONSHIP</text>
-          </g>
-        </svg>
-      </div>
-      <p class="frag__caption">
-        <span class="is-before"><b>Six stages of one commercial line.</b> Each one lives in a different system, and the record starts over each time work moves to the next tool.</span>
-        <span class="is-after"><b>The same six stages, held by one relationship.</b> The underlying
-          tools do not disappear. What changes is that the commercial record stops being handed
-          across them, and the relationship carries the whole line.</span>
-      </p>
+<section id="kinds"><div class="wrap">
+  <p class="eyebrow">Built for your kind of business</p>
+  <h2>Thirty-four kinds of business, five ways of winning work.</h2>
+  <p class="lede" style="margin-top:16px">You choose your kind in setup. Orchestrate then knows who your buyers are, which moments mean they are ready, what proof they expect, and how you get paid.</p>
+  <div class="kinds">
+    <div class="tabs" role="tablist" aria-label="Kinds of business">
+      <button role="tab" id="t-trades" aria-controls="p-trades" aria-selected="true">Construction trades</button>
+      <button role="tab" id="t-builders" aria-controls="p-builders" aria-selected="false" tabindex="-1">Builders</button>
+      <button role="tab" id="t-insurance" aria-controls="p-insurance" aria-selected="false" tabindex="-1">Insurance</button>
+      <button role="tab" id="t-services" aria-controls="p-services" aria-selected="false" tabindex="-1">Services to businesses</button>
+      <button role="tab" id="t-institutions" aria-controls="p-institutions" aria-selected="false" tabindex="-1">Services to institutions</button>
+    </div>
+    <div class="panel" role="tabpanel" id="p-trades" aria-labelledby="t-trades">
+      <dl>
+        <div><dt>Kinds</dt><dd><div class="chips"><span>Electrical</span><span>Plumbing, heating and air conditioning</span><span>Fire protection</span><span>Concrete</span><span>Site work</span><span>Roofing</span><span>Glazing</span><span>Painting</span><span>Flooring</span><span>and six more</span></div></dd></div>
+        <div><dt>Who you win</dt><dd>General contractors, property managers, developers, facilities managers, schools and hospitals.</dd></div>
+        <div><dt>Moments that mean they are ready</dt><dd>A contractor wins a project near you &middot; a project opens for bids &middot; a commercial building permit is issued &middot; a severe storm hits your area.</dd></div>
+        <div><dt>How you get paid</dt><dd>Progress billing against accepted work, with retainage.</dd></div>
+        <p class="quote">&ldquo;A permit was filed on your street last week. We service the building next door.&rdquo;</p>
+      </dl>
+      <div class="phone"><img src="/shots/mechanical/03_proposal_phone.webp" alt="A proposal for a heating and cooling contractor: a property manager, why now, and Yes, write to them."></div>
+    </div>
+    <div class="panel" role="tabpanel" id="p-builders" aria-labelledby="t-builders" hidden>
+      <dl>
+        <div><dt>Kinds</dt><dd><div class="chips"><span>Commercial general contractor</span><span>Design-build firm</span><span>Construction manager</span></div></dd></div>
+        <div><dt>Who you win</dt><dd>Developers, building owners, cities, counties and school districts, hospitals and manufacturers.</dd></div>
+        <div><dt>Moments that mean they are ready</dt><dd>A project opens for bids &middot; a new development is approved &middot; a buyer announces a new location or expansion.</dd></div>
+        <div><dt>How you get paid</dt><dd>Progress billing with retainage, matched to the agreement.</dd></div>
+        <p class="quote">&ldquo;Your expansion on Michigan Avenue was approved on Tuesday. We build for owners like you.&rdquo;</p>
+      </dl>
+      <div class="phone"><img src="/shots/mechanical/02_market_phone.webp" alt="Market: businesses checked before they are shown, each with the reason it fits."></div>
+    </div>
+    <div class="panel" role="tabpanel" id="p-insurance" aria-labelledby="t-insurance" hidden>
+      <dl>
+        <div><dt>Kinds</dt><dd><div class="chips"><span>Commercial insurance agency</span><span>Employee benefits broker</span></div></dd></div>
+        <div><dt>Who you win</dt><dd>Contractors, trucking companies, restaurants, manufacturers, offices and medical practices.</dd></div>
+        <div><dt>Moments that mean they are ready</dt><dd>A trucking company gets its operating authority &middot; a policy comes up for renewal in 60 to 120 days &middot; a new business registers &middot; a contractor gets a new licence.</dd></div>
+        <div><dt>How you get paid</dt><dd>Commission, the way agencies are paid.</dd></div>
+        <p class="quote">&ldquo;Congratulations on your new operating authority. Before your first load, here is the cover you will need.&rdquo;</p>
+      </dl>
+      <div class="phone"><img src="/shots/commercial_insurance/03_proposal_phone.webp" alt="A proposal for an insurance agency: a trucking company that has just received its operating authority."></div>
+    </div>
+    <div class="panel" role="tabpanel" id="p-services" aria-labelledby="t-services" hidden>
+      <dl>
+        <div><dt>Kinds</dt><dd><div class="chips"><span>IT and managed services</span><span>Accounting</span><span>Commercial cleaning</span><span>Staffing</span><span>Trucking and logistics</span><span>Legal</span><span>Marketing and design</span><span>Software</span><span>Engineering</span><span>Security</span><span>Consulting</span><span>Awards and gifts</span></div></dd></div>
+        <div><dt>Who you win</dt><dd>Small businesses, law and accounting offices, clinics and dental practices, contractors, shops and nonprofits.</dd></div>
+        <div><dt>Moments that mean they are ready</dt><dd>A new business registers near you &middot; a buyer opens a new location &middot; a buyer is hiring &middot; a buyer wins a public contract.</dd></div>
+        <div><dt>How you get paid</dt><dd>Invoices on your terms, usually 30 days.</dd></div>
+        <p class="quote">&ldquo;You are opening a second clinic in Novi. We clean medical offices to clinical standard.&rdquo;</p>
+      </dl>
+      <div class="phone"><img src="/shots/commercial_cleaning/03_proposal_phone.webp" alt="A proposal for a commercial cleaning company: a clinic opening a new location."></div>
+    </div>
+    <div class="panel" role="tabpanel" id="p-institutions" aria-labelledby="t-institutions" hidden>
+      <dl>
+        <div><dt>Kinds</dt><dd><div class="chips"><span>Communication and software for institutions</span></div></dd></div>
+        <div><dt>Who you win</dt><dd>Cities, counties and school districts, universities, faith communities, associations and community organizations.</dd></div>
+        <div><dt>Moments that mean they are ready</dt><dd>A new organization registers &middot; an institution announces a new project &middot; it is hiring for the work you do.</dd></div>
+        <div><dt>How you get paid</dt><dd>Invoices on your terms.</dd></div>
+        <p class="quote">&ldquo;Your district is hiring a communications lead. Here is how other districts answer parents in public.&rdquo;</p>
+      </dl>
+      <div class="phone"><img src="/shots/it_services/03_proposal_phone.webp" alt="A proposal card for a service business."></div>
     </div>
   </div>
-    </div>
-  </section>
+</div></section>
 
-  <!-- 2 -->
-  <section class="section section--alt">
-    <div class="wrap">
-      <p class="section__eyebrow">The problem</p>
-      <h2>One line of work. Half a dozen systems that do not know about each other.</h2>
-      <p class="lede" style="margin-top:1.25rem">A business's commercial life runs as a single
-        line: who the customer is, what was agreed, what was delivered, what was accepted, what was
-        invoiced, what was paid. Market intelligence, CRM, email, contracts, project tools,
-        invoicing, payments, approvals and now AI tools each own a fragment. None owns the thread.</p>
-      <p class="body" style="margin-top:1.5rem">Every time work moves from one of those systems to the next, the record starts over, and something can be sent, promised or billed that nobody approved.</p>
-    </div>
-  </section>
-
-  <!-- 3 -->
-  <section class="section">
-    <div class="wrap">
-      <p class="section__eyebrow">Why we know this problem</p>
-      <h2>Nineteen years running this exact line, by hand.</h2>
-      <p class="body" style="margin-top:1.25rem">Orchestrate is not a diagnosis made from outside the
-        problem. Its founder ran commercial operations for two decades before writing any of it.</p>
-
-      <div class="tl">
-        <div class="tl__item">
-          <div class="tl__when">1991–2000</div>
-          <div class="tl__what">Pakistan Army, signals</div>
-          <p class="tl__est">Long-cycle communication systems, where a missed message is not a metric.</p>
-        </div>
-        <div class="tl__item tl__item--key">
-          <div class="tl__when">2003–2022</div>
-          <div class="tl__what">Al Senena Enterprises LLC, Oman: operational and executive leadership</div>
-          <p class="tl__est">Nineteen years of procurement, tendering, negotiation, client management,
-            workforce leadership and commercial execution across oil, gas, civil construction and
-            municipal works.</p>
-        </div>
-        <div class="tl__item">
-          <div class="tl__when">2022–2025</div>
-          <div class="tl__what">Platform formation</div>
-          <p class="tl__est">Three years converting that operating experience into software.</p>
-        </div>
-        <div class="tl__item">
-          <div class="tl__when">2026–</div>
-          <div class="tl__what">Aura Platform LLC</div>
-          <p class="tl__est">Company formed. Orchestrate available on the web, the Apple App Store,
-            Google Play and the Microsoft Store.</p>
-        </div>
-      </div>
-
-      <div class="figs">
-        <div><div class="fig__n">~50</div><div class="fig__l">people managed</div></div>
-        <div><div class="fig__n">~35</div><div class="fig__l">operational assets</div></div>
-        <div><div class="fig__n">500+</div><div class="fig__l">tenders and proposals</div></div>
-        <div><div class="fig__n">~2M OMR</div><div class="fig__l">annual business scale</div></div>
-      </div>
-      <p class="figs__note">Representative aggregates of the 2003–2022 period. Clients over
-        that period included PDO, Galfar, Muscat Municipality and Carillion Alawi.</p>
-
-      <div class="callout">
-        <p>Orchestrate follows the path of that working life. Tendering is how an engagement becomes an agreement. Delivering a municipal works contract is meeting its obligations and doing the work. Getting a
-          completion signed off is acceptance. Getting paid against it is the last step.</p>
-        <p>Five hundred times, across email and paper, with clients where a mistake costs far more than a cancelled subscription.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 4 -->
-  <section class="section section--alt">
-    <div class="wrap">
-      <p class="section__eyebrow">What businesses lose</p>
-      <h2>Fragmentation is not an inconvenience. It costs five specific things.</h2>
-      <div class="grid grid--3">
-        <div class="cell"><span class="cell__k">Context</span>
-          <p>The person delivering the work cannot see what was promised to win it.</p></div>
-        <div class="cell"><span class="cell__k">Authority</span>
-          <p>Nobody can say who was allowed to commit the business to this, or when that was decided.</p></div>
-        <div class="cell"><span class="cell__k">Continuity</span>
-          <p>The relationship survives. The record of it starts over in every tool.</p></div>
-        <div class="cell"><span class="cell__k">Explanation</span>
-          <p>"Why did we pursue them, and what happened?" has no answer that survives staff turnover.</p></div>
-        <div class="cell"><span class="cell__k">Control over what goes out</span>
-          <p>Every handoff is a place where something can be sent, promised or billed that nobody approved.</p></div>
-        <div class="cell"><span class="cell__k">Why now it matters</span>
-          <p>All of that was survivable while software only <em>recorded</em> work. It stops being
-            survivable when software starts performing it.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 5 -->
-  <section class="section">
-    <div class="wrap">
-      <p class="section__eyebrow">The Orchestrate model</p>
-      <h2>Orchestrate is built around the customer relationship, which outlasts any single deal.</h2>
-      <p class="lede" style="margin-top:1.25rem">The record belongs to the relationship, not to one deal or one transaction. Orchestrate begins with the market, before contact exists, and it does not
-        end when the invoice is paid.</p>
-
-      <div class="movement" role="img" aria-label="The path of customer work in Orchestrate: business intent, then market, then relationship, then engagement, containing agreement, obligations, execution, acceptance, invoice and payment, after which the relationship continues.">
-        <div class="movement__row">
-          <span class="movement__step">Business intent</span>
-          <span class="movement__step movement__step--key">Market</span>
-          <span class="movement__step movement__step--key">Relationship</span>
-          <span class="movement__step movement__step--key">Engagement</span>
-        </div>
-        <div class="movement__row" style="margin-top:.4rem">
-          <span class="movement__step">Agreement</span>
-          <span class="movement__step">Obligations</span>
-          <span class="movement__step">Execution</span>
-          <span class="movement__step">Acceptance</span>
-          <span class="movement__step">Invoice</span>
-          <span class="movement__step">Payment</span>
-          <span class="movement__step movement__step--loop">The relationship continues</span>
-        </div>
-        <p class="movement__cross">At every step, Orchestrate keeps track of <b>what needs a person</b> · <b>who is allowed to act</b> · <b>why</b> · <b>where each fact came from</b> · <b>how to undo a mistake</b> · <b>what AI did, under human control</b></p>
-        <p class="movement__cross">This is the same six-stage line shown above, in more detail: market,
-          engagement, agreement, delivery (obligations and execution), acceptance, and payment
-          (invoice and payment), with the relationship carrying on afterwards.</p>
-      </div>
-
-      <div class="grid grid--2">
-        <div class="cell">
-          <h3>Not every prospect becomes a relationship</h3>
-          <p>The market is a set of possibilities. A relationship starts only when a confirmed fact connects the business to a specific, identifiable customer. It never starts just because a score crossed a threshold.</p>
-        </div>
-        <div class="cell">
-          <h3>Payment does not end it</h3>
-          <p>An engagement is one piece of work inside a relationship. When it completes, the relationship remains, with its history, its context and its permissions intact for the next one.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 6 -->
-  <section class="section section--alt">
-    <div class="wrap">
-      <p class="section__eyebrow">How it works</p>
-      <h2>Four areas, and one question each.</h2>
-      <div class="grid grid--2">
-        <div class="cell"><span class="cell__k">Today</span><h3>What needs me, and what is moving</h3>
-          <p>A view drawn from the other three areas. Something appears here only when a person genuinely needs to act, not to fill a notification count.</p></div>
-        <div class="cell"><span class="cell__k">Market</span><h3>Who may be worth pursuing, and why</h3>
-          <p>Compares many possible customers, showing the reasons for and against each one.</p></div>
-        <div class="cell"><span class="cell__k">Relationships</span><h3>Who we deal with, and what is happening</h3>
-          <p>The full picture with one customer: how things stand, the one thing blocking progress, the current work, and the next step that matters.</p></div>
-        <div class="cell"><span class="cell__k">Business</span><h3>How Orchestrate should operate for us</h3>
-          <p>Settings and permissions, including who may act in the company's name, and how far.</p></div>
-      </div>
-      <p class="note">Market and Relationships are separate because they are different <em>kinds of work</em>, not different data. One compares many; the other goes deep with one.</p>
-      <p class="body" style="margin-top:1.5rem"><a href="/demo">Walk through a complete relationship
-        in the product&nbsp;→</a></p>
-    </div>
-  </section>
-
-  <!-- 7 -->
-  <section class="section">
-    <div class="wrap">
-      <p class="section__eyebrow">AI under human control</p>
-      <h2>AI creates the leverage. It does not acquire the authority.</h2>
-      <p class="lede" style="margin-top:1.25rem">AI observes, reasons, drafts, classifies and prepares
-        work across the whole line. A fixed, rule-based check, not the AI, stands in front of anything that has an effect outside the business.</p>
-      <div class="grid grid--2">
-        <div class="cell">
-          <h3>What AI does here</h3>
-          <p>Understands the market, gathers the evidence behind a recommendation, drafts messages from confirmed facts, summarises what came back, prepares the next action, and says what
-            is missing.</p>
-        </div>
-        <div class="cell">
-          <h3>What it is never permitted to do</h3>
-          <p>Decide that a business may commit, send, agree or bill. Permission is given explicitly, for specific kinds of action, and can be withdrawn. Permission to send messages is not permission to agree terms, and permission to agree terms is not permission to bill or pay. Being allowed to do something is separate from being allowed to pass that permission to someone else.</p>
-        </div>
-      </div>
-      <div class="callout">
-        <p>The commercial value here is speed with control. A business can operate at
-          machine pace and still answer, months later, who authorized an action, on what evidence,
-          and how to undo it.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 8 -->
-  <section class="section section--alt">
-    <div class="wrap">
-      <p class="section__eyebrow">Who needs it first</p>
-      <h2>A narrow entry point into a broad market.</h2>
-      <div class="grid grid--2">
-        <div class="cell">
-          <span class="cell__k">Current acquisition focus</span>
-          <h3>Owner-led commercial contractors and specialist service firms</h3>
-          <p>Roughly 5–50 people. They win work through proposals or tenders, deliver in stages,
-            invoice against work their customers accept, and keep the same clients across many
-            jobs. Michigan first.</p>
-        </div>
-        <div class="cell">
-          <span class="cell__k">Platform market</span>
-          <h3>Service businesses and operating teams managing customer relationships, agreements, delivery and payment across fragmented tools</h3>
-          <p>Starting with contractors is a sales decision, not a limit on the product. Orchestrate is not contractor
-            software; contractors are simply where the fragmentation is sharpest and the buyer is
-            reachable.</p>
-        </div>
-      </div>
-      <p class="note">Where the problem is worst: work delivered in stages against an agreed scope, the same clients over many years, mistakes that are expensive or damage reputation, many disconnected tools already in use, and an owner personally involved in decisions.</p>
-    </div>
-  </section>
-
-  <!-- 9 -->
-  <section class="section">
-    <div class="wrap">
-      <p class="section__eyebrow">Business model</p>
-      <h2>Priced primarily at the organization level.</h2>
-      <div class="layers">
-        <div class="layer">
-          <h3>Platform subscription</h3>
-          <p>Recurring, at the organization level, for the maintained system: the lasting customer record, relationships, permissions, a traceable history, security and core features, with a reasonable amount of use included.</p>
-        </div>
-        <div class="layer">
-          <h3>Operational consumption</h3>
-          <p>Additional charges only where heavy use creates real cost or real value: AI processing, messaging and third-party services, and the volume of work handled.</p>
-        </div>
-        <div class="layer">
-          <h3>Implementation<span class="layer__opt">optional</span></h3>
-          <p>Charged only where genuine assisted work is required: migration, configuration,
-            integration or deployment support. Not every customer needs it, and self-service
-            customers are not charged for work nobody performed.</p>
-        </div>
-      </div>
-      <div class="callout">
-        <p>Pricing grows mainly with how much of the business's customer work Orchestrate carries, with usage-based charges only where heavy use creates real cost or value.</p>
-        <p>The reasoning behind that is commercial rather than conventional. A purely seat-driven
-          model gives a buyer a reason to keep part of the business outside the system, and an
-          incomplete commercial record is the thing this product exists to prevent. So the primary
-          axis is the work Orchestrate carries, not the number of people who touch it.</p>
-      </div>
-      <p class="note">Orchestrate is priced at $29.99 a month or $299.99 a year. Commercial validation
-        with the first customers is under way.</p>
-    </div>
-  </section>
-
-  <!-- 10 -->
-  <section class="section section--alt">
-    <div class="wrap">
-      <p class="section__eyebrow">Market</p>
-      <h2>This market does not have to be created.</h2>
-      <p class="lede" style="margin-top:1.25rem">More than two million U.S. establishments sit within
-        the initial sectors, and established software categories already charge for individual parts of this work.</p>
-      <div class="tblwrap">
-        <table>
-          <caption class="sr-only">Buyer population and adjacent software spend</caption>
-          <thead>
-            <tr><th scope="col">Population</th><th scope="col">Establishments</th><th scope="col">Definition</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>United States</td><td>2,254,753</td><td>Construction, professional and technical services, administrative and support services</td></tr>
-            <tr class="is-us"><td>Under 20 employees</td><td>2,029,580</td><td>The same sectors, small-employer proxy for owner-led operations</td></tr>
-            <tr><td>Michigan, under 20</td><td>51,333</td><td>The initial validation geography</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="note">U.S. Census Bureau, County Business Patterns 2023. Establishments, not firms;
-        excludes non-employer businesses. "Owner-led" is not measured directly by the Census. The
-        under-20 size class is used as a working proxy.</p>
-      <div class="grid grid--3f">
-        <div class="cell"><span class="cell__k">HoneyBook</span><h3>$29–$129 / month</h3><p>Clientflow for independent businesses.</p></div>
-        <div class="cell"><span class="cell__k">Jobber</span><h3>$49–$499 / month</h3><p>Field-service business management.</p></div>
-        <div class="cell"><span class="cell__k">HubSpot Sales Hub</span><h3>$7–$150 / seat / month</h3><p>CRM and sales.</p></div>
-      </div>
-      <p class="note">Evidence that these buyers pay recurring software fees for parts of this work. Published pricing, retrieved August 2026. Not Orchestrate pricing.</p>
-    </div>
-  </section>
-
-  <!-- 11 -->
-  <section class="section js-obs" data-anim="span">
-    <div class="wrap">
-      <p class="section__eyebrow">Competition</p>
-      <h2>Where the commercial relationship gets handed on.</h2>
-    <div class="spanfig">
-      <p class="spanfig__legend">What each category is mainly built around, not a claim about what any product can be made to do. Overlap is expected.</p>
-      <div class="spanfig__axis" aria-hidden="true">
-        <span>Market</span><span>Engage</span><span>Agree</span><span>Deliver</span><span>Accept</span><span>Pay</span>
-      </div>
-      <div class="spanfig__row"><div class="spanfig__who">Sales engagement</div>
-        <div class="spanfig__track"><div class="span__bar" style="--from:0%;--w:33.3%"></div></div></div>
-      <div class="spanfig__row"><div class="spanfig__who">CRM</div>
-        <div class="spanfig__track"><div class="span__bar" style="--from:16.6%;--w:33.3%"></div></div></div>
-      <div class="spanfig__row"><div class="spanfig__who">Contract lifecycle</div>
-        <div class="spanfig__track"><div class="span__bar" style="--from:33.3%;--w:16.6%"></div></div></div>
-      <div class="spanfig__row"><div class="spanfig__who">Service execution</div>
-        <div class="spanfig__track"><div class="span__bar" style="--from:33.3%;--w:66.6%"></div></div></div>
-      <div class="spanfig__row"><div class="spanfig__who">Accounting</div>
-        <div class="spanfig__track"><div class="span__bar" style="--from:83.3%;--w:16.6%"></div></div></div>
-      <div class="spanfig__row spanfig__row--us"><div class="spanfig__who">Orchestrate</div>
-        <div class="spanfig__track"><div class="span__bar" style="--from:0%;--w:100%"></div></div></div>
-      <p class="spanfig__note">Each bar shows the stages a category is mainly built around, which is a statement about how a product is organized rather than about its feature list. Several of
-        these do their own span better than a newcomer will, and several can be extended beyond it.
-        The bet is that one relationship record carries all six stages, so permissions, reasons and history apply to every step rather than to one of them.</p>
-    </div>
+<section id="how"><div class="wrap">
+  <p class="eyebrow">How it works</p>
+  <h2>Orchestrate does the work. You decide four times.</h2>
+  <div class="steps">
+    <div class="step"><span class="n">01 · FOUND</span><span class="who who--us">Orchestrate</span><img src="/shots/mechanical/02_market_phone.webp" alt="Market: businesses checked before they are shown, each with the reason it fits."><h3>Businesses that need you</h3><p>Checked five ways before you see one, with the reason it fits and, where it is watched, the moment it is ready to buy.</p></div>
+    <div class="step"><span class="n">02 · YOU SAY YES</span><span class="who who--you">You</span><img src="/shots/mechanical/03_proposal_phone.webp" alt="A proposal card: what we propose, why now, who you would be writing to, and Yes, write to them."><h3>One proposal, one yes</h3><p>See exactly who you would write to and why now. Yes, Not now, or Not for us.</p></div>
+    <div class="step"><span class="n">03 · THE NOTE</span><span class="who who--you">You</span><img src="/shots/mechanical/04_note_phone.webp" alt="The first note, written from the owner's own email, shown before it goes."><h3>From your own email</h3><p>A short first note, in your name, read before it goes. Replies come straight to you.</p></div>
+    <div class="step"><span class="n">04 · TO PAID</span><span class="who who--money">Money</span><img src="/shots/mechanical/06_money_phone.webp" alt="Money: an agreement, the invoice that matches it, and a payment received in green."><h3>Agreement, invoice, paid</h3><p>The answer, the proposal and the invoice are drafted for you. The money is shown in green when it lands.</p></div>
   </div>
+</div></section>
 
-      <div class="tblwrap">
-        <table>
-          <thead><tr><th scope="col">Category</th><th scope="col">Representative</th><th scope="col">Owns</th><th scope="col">Where it stops</th></tr></thead>
-          <tbody>
-            <tr><td>CRM</td><td>Salesforce, HubSpot, Attio</td><td>The relationship record</td><td>Organized around the deal record</td></tr>
-            <tr><td>Sales engagement</td><td>Outreach, Apollo</td><td>Sequencing and deliverability</td><td>Concentrated before agreement</td></tr>
-            <tr><td>Contract lifecycle</td><td>Ironclad, PandaDoc</td><td>Agreement and signature</td><td>Treats the agreement as a separate document</td></tr>
-            <tr class="is-us"><td>Service execution</td><td>HoneyBook, Jobber, ServiceTitan</td><td>Quote to invoice to payment</td><td>Organized around the job and the operational record</td></tr>
-            <tr><td>Workflow automation</td><td>Zapier, Workato</td><td>Moving data between tools</td><td>Copies data between tools without keeping what it means</td></tr>
-            <tr><td>AI agent platforms</td><td>AI agent management tools</td><td>Controlling AI agents</td><td>Organized around the agent rather than the relationship</td></tr>
-            <tr><td>The real incumbent</td><td>Email, spreadsheets, memory</td><td>Everything</td><td>Free, universal, and holds nothing together</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="callout">
-        <p>These are good products with real customers, and a business can assemble much of this
-          lifecycle from them today. Several will overlap with Orchestrate on individual features.</p>
-        <p>Orchestrate's difference is in how it is built, not in a feature list. Existing systems are built mainly around one stage, one record, one module or one workflow, so the customer relationship is passed from tool to tool. Orchestrate keeps the relationship itself as the record from first opportunity to payment, which is what lets permissions, reasons and history apply to every step rather than to one of them.</p>
-      </div>
-    </div>
-  </section>
+<section><div class="wrap split">
+  <div>
+    <p class="eyebrow">What stays in your hands</p>
+    <h2>Nothing goes out without your yes.</h2>
+    <p class="lede" style="margin-top:18px">Orchestrate works on your behalf, never past you. If you want it to write without asking each time, you give a standing yes with a daily limit, and you can take it back whenever you like.</p>
+  </div>
+  <ul class="promises">
+    <li><b>Your own email, your own name</b><span>Notes go from your mailbox, as you. Replies come to you.</span></li>
+    <li><b>Your inbox stays yours</b><span>Orchestrate never reads or comments on mail that has nothing to do with the customers it is working on.</span></li>
+    <li><b>Checked before it reaches you</b><span>Every business is checked five ways, and the reason is on its card.</span></li>
+    <li><b>Every answer waits for you</b><span>Replies are drafted; none is sent until you say yes.</span></li>
+  </ul>
+</div></section>
 
-  <!-- 12 -->
-  <section class="section section--alt">
-    <div class="wrap">
-      <p class="section__eyebrow">Why now</p>
-      <h2>AI can now participate in commercial work. The controls for allowing it safely have not caught up.</h2>
-      <p class="lede" style="margin-top:1.25rem">Software can increasingly do commercial work that matters, not only record it. What businesses still lack is a continuous record, clear permissions and control over what goes out, so they can safely hand that work over across a whole relationship.</p>
-      <div class="grid grid--2">
-        <div class="cell"><h3>The leverage arrived first</h3>
-          <p>Drafting, classification, reasoning over commercial context and preparation of the next
-            action are all now practical inside ordinary business workflows.</p></div>
-        <div class="cell"><h3>The cost of unchecked action rose with it</h3>
-          <p>The same capability that sends the right message can send a wrong one, commit to the
-            wrong terms, or bill for work nobody accepted, at speed and at volume.</p></div>
-      </div>
-    </div>
-  </section>
+<section id="price"><div class="wrap split">
+  <div>
+    <p class="eyebrow">Price</p>
+    <h2>One price for the whole business.</h2>
+    <p class="lede" style="margin-top:18px">Setting up is free, and you see where you stand before you pay anything. These are starting prices for the first businesses to join; they will rise later.</p>
+    <table class="cmp">
+      <tr><th>Tool</th><th>What it is for</th><th>Price a month</th></tr>
+      <tr class="us"><td>Orchestrate</td><td>Finding the next customer and carrying it to paid</td><td>$29.99</td></tr>
+      <tr><td>Jobber</td><td>Scheduling and invoicing jobs already won</td><td>$49–$499</td></tr>
+      <tr><td>Housecall Pro</td><td>Running home-service crews</td><td>$79–$329</td></tr>
+      <tr><td>HubSpot Sales Hub</td><td>A pipeline a salesperson keeps up to date</td><td>Free for 2; $20–$100 a seat</td></tr>
+    </table>
+  </div>
+  <div class="pricebox">
+    <p class="eyebrow" style="color:var(--oninkm)">Orchestrate</p>
+    <div class="big">$29.99 <small>a month</small></div>
+    <p style="margin:8px 0 0;color:var(--oninkm)">or $299.99 a year, two months free</p>
+    <ul><li>Your whole business, not per seat</li><li>Setup and readiness free</li><li>Cancel any time</li></ul>
+    <a class="btn btn--ink" href="https://orchestrateops.com/auth/register">Start with your business</a>
+  </div>
+</div></section>
 
-  <!-- 13 -->
-  <section class="section">
-    <div class="wrap">
-      <p class="section__eyebrow">Orchestrate in action</p>
-      <h2>What the product actually feels like.</h2>
-      <div class="grid grid--2">
-        <div class="cell"><h3>Available where businesses work</h3>
-          <p>On the web, the Apple App Store, Google Play and the Microsoft Store.</p></div>
-        <div class="cell"><h3>Built as one system</h3>
-          <p>Finding customers, the relationship record, permissions, messaging that reports honestly whether a message arrived, the work from agreement to payment, a traceable history and the ability to undo are one system, not a suite of connected tools.</p></div>
-      </div>
-      <div class="callout">
-        <p>The demonstration is the evidence. It walks one business through one complete commercial
-          relationship, from market opportunity to payment, with the relationship still open afterward.</p>
-        <p><a href="/demo">See how Orchestrate works&nbsp;→</a></p>
-      </div>
-      <div class="stage">
-        <span class="chip"><b>Commercial stage</b> · pre-revenue, no paying customers yet</span>
-        <span class="chip"><b>Company</b> · Aura Platform LLC, Michigan, formed March 2026</span>
-        <span class="chip"><b>Funding</b> · founder-funded to date</span>
-      </div>
-      <p class="note">Winning the first customers and proving the pricing and sales model are the next priorities.</p>
-    </div>
-  </section>
+<section><div class="wrap founder">
+  <div class="years">19</div>
+  <div>
+    <p class="eyebrow">Why it exists</p>
+    <h2>Built from nineteen years of doing this by hand.</h2>
+    <p class="lede" style="margin-top:16px">Orchestrate's founder ran a contracting and municipal-works business from 2003 to 2022: tenders, crews, staged delivery, sign-offs, and getting paid. Orchestrate is what that work needed and never had.</p>
+  </div>
+</div></section>
 
-  <!-- 14 -->
-  <section class="section section--alt">
-    <div class="wrap">
-      <p class="section__eyebrow">Go to market</p>
-      <h2>The founder is the buyer's peer.</h2>
-      <p class="body" style="margin-top:1.25rem">The first customers come from direct founder outreach
-        and ecosystem introductions into Michigan, the starting market, where 51,333 establishments sit in the initial
-        sectors. An owner-led contractor is not being sold to by a software company; they are being
-        shown a system by someone who ran a contracting business for two decades.</p>
-      <p class="body" style="margin-top:1rem">The lead vertical will be chosen once the first customers
-        show where need, willingness to pay and repeat business are strongest. No unproven channel is
-        being claimed.</p>
-    </div>
-  </section>
+<section><div class="wrap">
+  <p class="eyebrow">Questions owners ask</p>
+  <h2>Before you start</h2>
+  <div style="margin-top:28px;max-width:820px">
+    <details><summary>Will it send anything I have not seen?</summary><p>No. Every first note and every answer waits for your yes. A standing yes is your choice, with a daily limit, and you can switch it off.</p></details>
+    <details><summary>Where do the businesses come from?</summary><p>Public sources, such as open business directories and each business's own website, plus public records where Orchestrate watches them for your kind of business. Each card says where the business was found and why it fits.</p></details>
+    <details><summary>Does it read my email?</summary><p>Only the conversations with the businesses it is working on for you. It never reads or comments on anything else in your inbox.</p></details>
+    <details><summary>What if I already use Jobber or a CRM?</summary><p>Keep them. Orchestrate works before the job exists: finding the customer and carrying them to an agreement and payment.</p></details>
+    <details><summary>How long does setup take?</summary><p>Eight short steps about your business and who you want to work with. It is free, and you see where you stand before you choose a plan.</p></details>
+  </div>
+</div></section>
 
-  <!-- 15 -->
-  <section class="section">
-    <div class="wrap">
-      <p class="section__eyebrow">What capital accelerates</p>
-      <h2>Capital lets selling and product development move forward at the same time.</h2>
-      <div class="grid grid--2">
-        <div class="cell"><h3>Reaching first customers</h3><p>Everything else depends on it.</p></div>
-        <div class="cell"><h3>Validating the commercial model</h3><p>Fit rate, willingness to pay, contract value and sales-cycle length: the four unknowns the market model rests on.</p></div>
-        <div class="cell"><h3>First hires</h3><p>Customer success and infrastructure.</p></div>
-        <div class="cell"><h3>Runway</h3><p>To do the first three properly, and at the same time.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 16 -->
-  <section class="section section--alt">
-    <div class="wrap">
-      <p class="section__eyebrow">Company and team</p>
-      <h2>Aura Platform LLC</h2>
-      <div class="grid grid--3f">
-        <div class="cell"><h3>Muhammad Sakhawat</h3>
-          <p><strong>Founder and Managing Member</strong><br>Full time.</p></div>
-        <div class="cell"><h3>Amjad M. Chaudhry</h3>
-          <p><strong>Strategic Member</strong><br>Part-time.<br>Banking and commercial lending background.</p></div>
-        <div class="cell"><h3>Iffat S. Chaudhry</h3>
-          <p><strong>Strategic Member</strong><br>Part-time.<br>Law and regulated financial services background.</p></div>
-      </div>
-      <p class="note">A Michigan limited liability company, formed 4 March 2026, based in Taylor,
-        Michigan. Orchestrate is one of the company's products and is wholly owned by it.</p>
-    </div>
-  </section>
-
+<section class="final"><div class="wrap">
+  <h2>See a week of it, for a business like <span class="paid">yours.</span></h2>
+  <div class="actions">
+    <a class="btn btn--ink" href="/demo">See it work</a>
+    <a class="btn btn--ghost" href="https://orchestrateops.com/auth/register">Start with your business</a>
+  </div>
+  <p class="price-note" style="margin-top:22px">Investors: the company overview is at <a href="https://company.auraplatform.org">company.auraplatform.org</a>.</p>
+</div></section>
 </main>
 
-<footer class="foot">
-  <div class="wrap foot__in">
-    <span><strong>Orchestrate</strong> by <a href="https://company.auraplatform.org">Aura Platform LLC</a></span>
-    <span><a href="https://orchestrateops.com">orchestrateops.com</a></span>
-    <span><a href="/demo">Product demonstration</a></span>
-    <span><a href="/privacy">Privacy</a></span>
-    <span><a href="/terms">Terms</a></span>
-    <span>Last updated 15 September 2026</span>
-  </div>
-</footer>
-
-<style>
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-</style>
-
+<footer class="foot"><div class="wrap">
+  <span><strong>Orchestrate</strong> by <a href="https://company.auraplatform.org">Aura Platform LLC</a></span>
+  <span><a href="https://orchestrateops.com">orchestrateops.com</a></span>
+  <span><a href="/demo">See it work</a></span>
+  <span><a href="/privacy">Privacy</a></span>
+  <span><a href="/terms">Terms</a></span>
+</div></footer>
 <script>
-(function () {
-  var els = document.querySelectorAll('.js-obs');
-  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function settle(el) { el.setAttribute('data-state', el.dataset.anim === 'frag' ? 'joined' : 'on'); }
-  if (!('IntersectionObserver' in window) || reduce) { els.forEach(settle); return; }
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (en) { if (en.isIntersecting) { settle(en.target); io.unobserve(en.target); } });
-  }, { threshold: 0.25 });
-  els.forEach(function (e) { if (e.dataset.anim !== 'frag') io.observe(e); });
-  var hero = document.querySelector('[data-anim="frag"]');
-  if (hero) setTimeout(function () { settle(hero); }, 1400);
-})();
+(function(){var tabs=[].slice.call(document.querySelectorAll('[role=tab]'));
+function sel(t){tabs.forEach(function(x){var on=x===t;x.setAttribute('aria-selected',on);x.tabIndex=on?0:-1;document.getElementById(x.getAttribute('aria-controls')).hidden=!on;});}
+tabs.forEach(function(t,i){t.addEventListener('click',function(){sel(t);});t.addEventListener('keydown',function(e){var k=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(k){var n=tabs[(i+k+tabs.length)%tabs.length];sel(n);n.focus();}});});})();
 </script>
 </body>
 </html>
