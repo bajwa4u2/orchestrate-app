@@ -45,10 +45,9 @@
   .phone img{display:block;width:100%;border-radius:28px;background:var(--card)}
   .shot{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 20px 40px -28px rgba(23,32,43,.35)}
   .shot img{display:block;width:100%}
-  .film{margin-top:40px;background:var(--ink);color:var(--onink);border-radius:22px;aspect-ratio:16/9;display:grid;place-items:center;text-align:center;padding:24px}
-  .film .play{width:74px;height:74px;border-radius:50%;background:var(--onink);display:grid;place-items:center;margin:0 auto 14px}
-  .film .play:after{content:"";border-left:22px solid var(--ink);border-top:13px solid transparent;border-bottom:13px solid transparent;margin-left:6px}
-  .film p{margin:0;color:var(--oninkm);font-size:15px}
+  .film{margin:44px 0 0}
+  .film video{display:block;width:100%;aspect-ratio:16/9;border-radius:22px;background:var(--ink);box-shadow:0 30px 60px -30px rgba(23,32,43,.45)}
+  .film figcaption{margin-top:12px;font-size:14px;color:var(--muted)}
   .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:44px}
   .step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
   .step .n{font:600 12px var(--mono);letter-spacing:.12em;color:var(--muted)}
@@ -202,6 +201,10 @@
     <div class="step"><span class="n">03 · THE NOTE</span><span class="who who--you">You</span><img src="/shots/mechanical/04_note_phone.webp?v=20261010b" alt="The first note, written from the owner's own email, shown before it goes."><h3>From your own email</h3><p>A short first note, in your name, read before it goes. Replies come straight to you.</p></div>
     <div class="step"><span class="n">04 · TO PAID</span><span class="who who--money">Money</span><img src="/shots/mechanical/06_money_phone.webp?v=20261010b" alt="Money: an agreement, the invoice that matches it, and a payment received in green."><h3>Agreement, invoice, paid</h3><p>The answer, the proposal and the invoice are drafted for you. The money is shown in green when it lands.</p></div>
   </div>
+  <figure class="film">
+    <video controls playsinline preload="none" poster="/films/orchestrate_overview_v1_poster.webp" src="/films/orchestrate_overview_v1.mp4" aria-label="Orchestrate in 45 seconds: five kinds of business, from the moment a buyer is ready to work that is paid."></video>
+    <figcaption>Orchestrate in 45 seconds, five kinds of business at once. Narration generated from the founder's own recorded voice. Music: J. S. Bach, Prelude in D major, BWV 850, Kimiko Ishizaka (public domain).</figcaption>
+  </figure>
 </div></section>
 
 <section><div class="wrap split">
