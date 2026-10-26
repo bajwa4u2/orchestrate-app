@@ -1,0 +1,18 @@
+Orchestrate is a B2B workspace for a business and the commercial relationships it holds. It is not a consumer app.
+
+SIGNING IN
+Use the demo account in the Sign-In Information above. It is on a reviewer allowlist, so it signs in directly without an emailed code.
+
+SUBSCRIPTIONS (Guideline 3.1.1)
+Orchestrate offers one auto-renewable subscription, "Orchestrate", in two durations: Monthly and Annual. Both give the organisation the whole product; only the billing period differs.
+To reach them: sign in, tap the account avatar at the top right, choose "Plan & billing". Both options are listed there with their App Store prices and are bought through StoreKit, inside the app.
+The demo account holds no active subscription, so both options are offered. Please use an App Store sandbox account to complete a purchase; no real-money charge is needed for review.
+
+WHAT A SUCCESSFUL PURCHASE CHANGES
+After the sandbox purchase completes, the server verifies it with Apple. "Plan & billing" then states that Orchestrate is active for the organisation, and the plan requirement disappears from Today. Other requirements can remain (for example, connecting the business's own mailbox and granting Orchestrate permission to write on its behalf); the product states each one plainly, because a subscription makes capability available but never authorises anyone to act for the business.
+
+PAYMENT ON OTHER PLATFORMS
+On the web, Orchestrate may also be purchased by card. The iOS app does not link to, mention, or steer users to that web payment; on iOS, purchasing is only through StoreKit.
+
+ACCOUNT DELETION (Guideline 5.1.1(v))
+Account avatar > Account & security > Your account > Delete account. Deletion is confirmed in the app by typing DELETE, happens immediately, and cannot be undone. The screen states what is erased and what business records are kept.
