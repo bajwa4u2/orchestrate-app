@@ -1,0 +1,33 @@
+# Orchestrate
+
+> Orchestrate finds businesses that need what you do, writes to them from your own email, and carries each one to an agreement and a paid invoice. It prepares every step; a person approves every consequential one. $29.99 a month or $299.99 a year for the whole business.
+
+CRM records the relationship. Orchestrate operates it. It is for service businesses that sell to businesses and institutions: construction trades, builders, insurance agencies, services to businesses and services to institutions, thirty-four kinds of business in all. It finds and qualifies customers, writes to them from the owner's own email, agrees terms, tracks delivery, invoices and records payment, in one record for each relationship.
+
+Each business it finds comes with the exact first note it would receive. The owner can read it, change it, and one yes approves both who is written to and what they receive. Replies are drafted for the owner to send. Nothing is agreed or billed until a person with that authority approves it.
+
+Orchestrate is made by Aura Platform LLC of Michigan, USA (https://company.auraplatform.org). Apps on the web, Apple App Store, Google Play and Microsoft Store. Contact: hello@orchestrateops.com
+
+## Start here
+
+- [Home](https://orchestrateops.com/)
+- [Overview: new customers, followed through to paid](https://orchestrateops.com/deck)
+- [See it work for your kind of business](https://orchestrateops.com/demo)
+- [How it works](https://orchestrateops.com/how-it-works)
+- [Pricing](https://orchestrateops.com/pricing)
+- [FAQ](https://orchestrateops.com/faq)
+
+## Trust and evaluation
+
+- [Trust and compliance](https://orchestrateops.com/trust-compliance)
+- [Trust architecture](https://orchestrateops.com/trust-architecture)
+- [For evaluators](https://orchestrateops.com/for-evaluators)
+- [Security evaluation](https://orchestrateops.com/security-evaluation)
+
+## Company
+
+- [About](https://orchestrateops.com/about)
+- [Contact](https://orchestrateops.com/contact)
+- [Terms](https://orchestrateops.com/legal/terms)
+- [Privacy](https://orchestrateops.com/legal/privacy)
+- [Sitemap](https://orchestrateops.com/sitemap.xml)
