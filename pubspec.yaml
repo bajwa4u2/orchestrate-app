@@ -20,7 +20,7 @@ dependencies:
   url_launcher: ^6.3.1
   # Reports the running app version with feedback, so a report says which
   # build it came from without anyone maintaining a constant by hand.
-  package_info_plus: ^8.0.0
+  package_info_plus: ^9.0.1
   file_picker: ^8.0.0
   flutter_svg: ^2.2.4
   # Native store purchase, for iOS and Android only.
