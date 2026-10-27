@@ -15,6 +15,7 @@ import 'package:orchestrate_app/core/ui/ob_widgets.dart';
 import 'package:orchestrate_app/data/repositories/client/client_attention_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_authority_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_digest_repository.dart';
+import 'package:orchestrate_app/data/repositories/client/client_held_follow_ups_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_money_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_representative_repository.dart';
 import 'package:orchestrate_app/data/repositories/client/client_today_repository.dart';
@@ -36,7 +37,10 @@ import 'package:orchestrate_app/features/client/widgets/prospect_facts.dart';
 ///
 /// Nothing here is counted or phrased locally beyond joining those answers.
 class TodayScreen extends StatefulWidget {
-  const TodayScreen({super.key});
+  const TodayScreen({super.key, this.heldFollowUps});
+
+  /// Where held follow-ups come from; tests give their own.
+  final ClientHeldFollowUpsRepository? heldFollowUps;
 
   @override
   State<TodayScreen> createState() => _TodayScreenState();
@@ -60,7 +64,11 @@ class _YesCard {
     this.onSecondary,
     this.facts = const [],
     this.onOpen,
+    this.openLabel = 'See the business',
   });
+
+  /// What the open link says; a business by default.
+  final String openLabel;
 
   /// Facts behind the ask, one line each (a business's checks).
   final List<ProspectFact> facts;
@@ -100,6 +108,11 @@ class _TodayScreenState extends State<TodayScreen> {
   final _authority = ClientAuthorityRepository();
   final _representative = ClientRepresentativeRepository();
   final _digestRepo = ClientDigestRepository();
+  late final ClientHeldFollowUpsRepository _heldRepo =
+      widget.heldFollowUps ?? ClientHeldFollowUpsRepository();
+
+  /// Follow-ups Orchestrate is holding for the owner's yes (26 Oct 2026).
+  List<HeldFollowUp> _held = const [];
   /// Since yesterday morning: the same lines as the 8 AM email.
   DigestView? _digest;
   bool _savingMorningEmail = false;
@@ -152,6 +165,9 @@ class _TodayScreenState extends State<TodayScreen> {
       }).catchError((_) {}),
       _digestRepo.fetch().then((d) {
         _digest = d;
+      }).catchError((_) {}),
+      _heldRepo.list().then((h) {
+        _held = h;
       }).catchError((_) {}),
       _money.fetch().then((m) {
         _moneyView = m;
@@ -209,6 +225,34 @@ class _TodayScreenState extends State<TodayScreen> {
       }
     } finally {
       if (mounted) setState(() => _deciding.remove(w.id));
+    }
+  }
+
+  /// Yes or no to a follow-up Orchestrate held for the owner.
+  Future<void> _decideHeld(HeldFollowUp h, bool send) async {
+    setState(() {
+      _deciding.add(h.id);
+      _decisionFailure = null;
+    });
+    try {
+      final result = send ? await _heldRepo.send(h.id) : await _heldRepo.dontSend(h.id);
+      if (!mounted) return;
+      final says = (result['message'] ?? result['reason'] ?? '').toString();
+      if (result['ok'] == true) {
+        setState(() => _held = _held.where((x) => x.id != h.id).toList());
+        if (says.isNotEmpty) {
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(says)));
+        }
+      } else {
+        setState(() => _decisionFailure = says.isEmpty ? 'That decision was not recorded.' : says);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _decisionFailure =
+            'Your decision on ${h.company} could not be recorded just now. Try again in a moment.');
+      }
+    } finally {
+      if (mounted) setState(() => _deciding.remove(h.id));
     }
   }
 
@@ -330,6 +374,41 @@ class _TodayScreenState extends State<TodayScreen> {
         secondary: w.youCanDecide ? 'Hold' : null,
         onSecondary:
             w.youCanDecide && !busy ? () => _decideWaiting(w, false) : null,
+      ));
+    }
+    // FOLLOW-UPS WAITING FOR YOUR YES (26 Oct 2026): Orchestrate was not sure
+    // enough to write again on its own, so it asks. Its words are written when
+    // it goes; what is shown is the first note already sent.
+    for (final h in _held) {
+      final busy = _deciding.contains(h.id);
+      cards.add(_YesCard(
+        name: h.company,
+        eyebrow: 'FOLLOW-UP',
+        ask: 'Write to them again?',
+        detail: [
+          h.reasonText,
+          if ((h.firstSubject ?? '').trim().isNotEmpty || (h.firstBody ?? '').trim().isNotEmpty)
+            'Your first note${h.firstSentAt == null ? '' : ', ${_sentDaySaid(h.firstSentAt!)}'}: '
+                '${[
+              if ((h.firstSubject ?? '').trim().isNotEmpty) '"${h.firstSubject!.trim()}"',
+              if ((h.firstBody ?? '').trim().isNotEmpty) _short(h.firstBody!, 200),
+            ].join('  ')}',
+        ].join('\n\n'),
+        onOpen: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          useRootNavigator: true,
+          builder: (_) => _HeldFollowUpSheet(
+            held: h,
+            onDecide: (send) => _decideHeld(h, send),
+          ),
+        ),
+        openLabel: 'Read the first note',
+        primary: busy ? 'Saving…' : 'Follow up',
+        onPrimary: busy ? () {} : () => _decideHeld(h, true),
+        secondary: "Don't send",
+        onSecondary: busy ? null : () => _decideHeld(h, false),
       ));
     }
     if (!session.hasSetupCompleted) {
@@ -764,7 +843,7 @@ class _Card extends StatelessWidget {
               child: TextButton(
                 onPressed: card.onOpen,
                 style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 0)),
-                child: const Text('See the business'),
+                child: Text(card.openLabel),
               ),
             ),
           const SizedBox(height: 18),
@@ -1033,6 +1112,87 @@ class _ReplyAnswerSheetState extends State<_ReplyAnswerSheet> {
       ),
     );
   }
+}
+
+/// One held follow-up, read in full: why it waits, and the first note it follows.
+class _HeldFollowUpSheet extends StatelessWidget {
+  const _HeldFollowUpSheet({required this.held, required this.onDecide});
+  final HeldFollowUp held;
+  final Future<void> Function(bool send) onDecide;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = held;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(h.company, style: Ob.name(20)),
+            if ((h.contactName ?? '').isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(h.contactName!, style: Ob.body(13, color: Ob.inkSoft)),
+            ],
+            const SizedBox(height: 14),
+            Text(h.reasonText, style: Ob.body(14.5, color: Ob.inkSoft)),
+            if ((h.firstSubject ?? '').isNotEmpty || (h.firstBody ?? '').isNotEmpty) ...[
+              const SizedBox(height: 18),
+              Text(h.firstSentAt == null ? 'Your first note' : 'Your first note, ${_sentDaySaid(h.firstSentAt!)}',
+                  style: Ob.strong(14)),
+              const SizedBox(height: 6),
+              if ((h.firstSubject ?? '').isNotEmpty)
+                Text(h.firstSubject!, style: Ob.strong(14.5)),
+              if ((h.firstBody ?? '').isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(h.firstBody!.trim(), style: Ob.body(14.5, color: Ob.inkSoft)),
+              ],
+            ],
+            const SizedBox(height: 18),
+            Text(
+              'Orchestrate writes the follow-up when it goes, from the conversation as it stands then, '
+              'from your own email. If they have written back by then, it does not send.',
+              style: Ob.body(13, color: Ob.inkSoft),
+            ),
+            if (h.waitsUntil != null) ...[
+              const SizedBox(height: 6),
+              Text('It waits for your answer until ${_daySaid(h.waitsUntil!)}.',
+                  style: Ob.body(13, color: Ob.inkSoft)),
+            ],
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                await onDecide(true);
+                navigator.pop();
+              },
+              child: const Text('Yes, follow up'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                await onDecide(false);
+                navigator.pop();
+              },
+              child: const Text("Don't send"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "today", "yesterday" or "14 Oct": the day something already went.
+String _sentDaySaid(DateTime at) {
+  final now = DateTime.now();
+  final days = DateTime(now.year, now.month, now.day).difference(DateTime(at.year, at.month, at.day)).inDays;
+  if (days <= 0) return 'today';
+  if (days == 1) return 'yesterday';
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return '${at.day} ${months[at.month - 1]}';
 }
 
 /// "today", "tomorrow" or "9 Oct": a day, for something sent in working hours.
