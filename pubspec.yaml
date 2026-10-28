@@ -11,13 +11,13 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  dio: ^5.9.2
+  dio: ^5.11.1
   go_router: ^14.8.1
   google_sign_in: ^6.2.1
   http: ^1.2.1
   http_parser: ^4.0.0
-  shared_preferences: ^2.3.2
-  url_launcher: ^6.3.1
+  shared_preferences: ^2.5.6
+  url_launcher: ^6.3.3
   # Reports the running app version with feedback, so a report says which
   # build it came from without anyone maintaining a constant by hand.
   package_info_plus: ^8.0.0
@@ -33,17 +33,17 @@ dependencies:
   # The client initiates a purchase and hands the result to the server. It never
   # decides entitlement — a receipt on a device is a claim, and only what Apple
   # or Google confirms to our own backend is evidence.
-  in_app_purchase: ^3.2.0
+  in_app_purchase: ^3.3.1
   # Direct, deliberately. Google models one subscription holding several
   # base plans and only this package's type says which one a returned
   # product entry describes. Without it monthly and annual are two
   # indistinguishable entries carrying the same id.
-  in_app_purchase_android: ^0.5.0
+  in_app_purchase_android: ^0.5.5
 
 dev_dependencies:
   # Used only by the product-identity conformance test, which decodes the
   # shipped launcher icons and checks them against the canonical mark.
-  image: ^4.8.0
+  image: ^4.12.0
   flutter_test:
     sdk: flutter
   # Runs the real native app — the actual Windows executable, the actual
@@ -52,7 +52,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-  msix: ^3.16.13
+  msix: ^3.18.0
 
 flutter:
   uses-material-design: true
